@@ -1,0 +1,1085 @@
+:root {
+  --bg: #1a1612;
+  --bg2: #241f19;
+  --paper: #f3ead7;
+  --ink: #f3ead7;
+  --muted: #a89880;
+  --accent: #c45c3e;
+  --danger: #d4564e;
+  --success: #6a9a6a;
+  --grain: rgba(255, 240, 200, 0.03);
+  --font-display: 'Libre Baskerville', serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --anim-scale: 1;
+  color-scheme: dark;
+}
+
+html.density-full {
+  --anim-scale: 1.15;
+}
+
+html.density-tasteful {
+  --anim-scale: 1;
+}
+
+html.density-minimal {
+  --anim-scale: 0.35;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-mono);
+  background: var(--bg);
+  color: var(--ink);
+}
+
+a {
+  color: var(--accent);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.shelf-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background:
+    var(--pack-pattern, none),
+    linear-gradient(180deg, #2a2018, #1a1410 40%, #120e0a),
+    repeating-linear-gradient(90deg, rgba(255, 200, 120, 0.03) 0 1px, transparent 1px 60px);
+  padding: 1.5rem;
+}
+
+.shelf-hero {
+  text-align: center;
+  padding: 2rem 1rem 1rem;
+}
+
+.shelf-sub {
+  color: var(--muted);
+  max-width: 28rem;
+  margin: 0.75rem auto 0;
+}
+
+.shelf-lore {
+  color: color-mix(in srgb, var(--accent) 45%, var(--muted));
+  max-width: 34rem;
+  margin: 0.85rem auto 0;
+  font-style: italic;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.shelf-dev-link {
+  color: #e09f3e !important;
+  border: 1px solid color-mix(in srgb, #e09f3e 45%, transparent);
+  padding: 0.35rem 0.65rem;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.shelf-dev-link:hover {
+  background: color-mix(in srgb, #e09f3e 14%, transparent);
+}
+
+.guide-lore {
+  margin: 0.5rem 0 0.75rem;
+  max-width: 40rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--accent) 50%, var(--ink));
+}
+
+.guide-section {
+  margin: 1.25rem 0;
+  padding: 1rem 1.05rem;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--bg2) 70%, transparent);
+}
+
+.guide-section pre {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  font-size: 0.82rem;
+}
+
+.shelf-wood {
+  display: grid;
+  place-items: center;
+  padding: 2rem 0;
+}
+
+.shelf-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 1.5rem 1rem 2rem;
+  border-bottom: 10px solid #4a3424;
+  box-shadow: 0 12px 0 #2a1c12;
+  width: min(960px, 100%);
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.2));
+}
+
+.game-card {
+  width: 150px;
+  height: 210px;
+  border: none;
+  background: #2c241c;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  text-align: left;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.game-card .card-spine {
+  background: var(--card-accent, var(--accent));
+}
+
+.game-card .card-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.game-card h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0 0 0.35rem;
+}
+
+.game-card.coming-soon {
+  opacity: 0.5;
+  filter: grayscale(0.55) brightness(0.72);
+}
+
+.game-card.coming-soon h2 {
+  color: transparent;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--card-accent, var(--ink)) 55%, transparent);
+  user-select: none;
+}
+
+.game-card.coming-soon .card-body p {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.game-card.selected {
+  outline: 2px solid var(--card-accent, var(--accent));
+}
+
+.shelf-detail {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+.detail-actions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.shelf-scrap-burst {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.shelf-scrap {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 10px;
+  height: 14px;
+  background: color-mix(in srgb, var(--accent) 55%, #f3ead7);
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: shelf-scrap-fly 0.65s ease-out forwards;
+}
+
+.shelf-scrap--1 { --dx: -54px; --dy: -38px; --rot: -28deg; animation-delay: 0ms; }
+.shelf-scrap--2 { --dx: -18px; --dy: -52px; --rot: 12deg; animation-delay: 20ms; width: 8px; height: 11px; }
+.shelf-scrap--3 { --dx: 22px; --dy: -46px; --rot: 34deg; animation-delay: 35ms; }
+.shelf-scrap--4 { --dx: 58px; --dy: -28px; --rot: -8deg; animation-delay: 10ms; width: 12px; height: 9px; }
+.shelf-scrap--5 { --dx: -62px; --dy: 8px; --rot: 18deg; animation-delay: 45ms; }
+.shelf-scrap--6 { --dx: 64px; --dy: 12px; --rot: -22deg; animation-delay: 30ms; width: 7px; height: 12px; }
+.shelf-scrap--7 { --dx: -28px; --dy: 36px; --rot: 42deg; animation-delay: 55ms; }
+.shelf-scrap--8 { --dx: 26px; --dy: 40px; --rot: -36deg; animation-delay: 40ms; width: 9px; height: 8px; }
+
+@keyframes shelf-scrap-fly {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-scrap {
+    animation: none;
+    display: none;
+  }
+}
+
+.shelf-profile {
+  margin: 0.35rem 0 0.6rem;
+}
+
+.shelf-profile__btn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.shelf-profile__list {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.settings-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.settings-profile button {
+  font-family: var(--font-mono);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.settings-profile__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.ach-gallery-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.85rem;
+}
+
+.ach-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.ach-card--picked {
+  border-color: var(--accent);
+}
+
+.detail-actions .primary,
+button.primary {
+  background: var(--accent);
+  color: #1a1612;
+  border: none;
+  padding: 0.65rem 1.2rem;
+  font-family: var(--font-display);
+  cursor: pointer;
+}
+
+.muted,
+.tokens {
+  color: var(--muted);
+}
+
+.shop-page,
+.ach-page,
+.guide-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.shop-hero {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.1rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background:
+    radial-gradient(ellipse 80% 70% at 10% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    color-mix(in srgb, var(--bg2) 75%, transparent);
+}
+
+.shop-hero__lore {
+  margin: 0.35rem 0 0.65rem;
+  max-width: 36rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--accent) 55%, var(--ink));
+}
+
+.shop-grid,
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.shop-card,
+.ach-card {
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  padding: 0.9rem;
+  background: color-mix(in srgb, var(--bg2) 80%, black);
+}
+
+.shop-card.equipped,
+.shop-card.selected {
+  border-color: var(--accent);
+}
+
+.shop-tabs,
+.ach-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+}
+
+.shop-tabs button,
+.ach-filters button {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+
+.shop-tabs button.active,
+.ach-filters button.active {
+  color: var(--ink);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.shop-preview {
+  margin-bottom: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  overflow: hidden;
+}
+
+.shop-preview__chrome {
+  padding: 1rem;
+  background-color: var(--bg);
+  min-height: 120px;
+}
+
+.shop-preview__label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.shop-preview__card {
+  background: var(--bg2);
+  border-left: 4px solid var(--accent);
+  padding: 0.75rem 1rem;
+  max-width: 280px;
+}
+
+.shop-preview__swatches {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.shop-preview__swatches i {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.shop-ledger-demo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  padding: 0.55rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  border: 1px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.shop-fx-demo {
+  height: 56px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--bg) 70%, black);
+}
+
+.swatch {
+  height: 72px;
+  border: 2px solid;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-display);
+  background-size: cover;
+}
+
+.ach-card.got {
+  border-color: var(--success);
+}
+
+.ach-card.mythic {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.ach-card.mystery {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.ach-share {
+  display: block;
+  margin-top: 0.55rem;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  padding: 0.35rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.ach-share:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.shelf-daily-stamp {
+  letter-spacing: 0.02em;
+}
+
+/* Brief receipt-scrap burst on Continue / New game */
+.shelf-page--burst::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background:
+    radial-gradient(circle at 52% 72%, color-mix(in srgb, var(--paper) 55%, transparent) 0 3px, transparent 4px),
+    radial-gradient(circle at 46% 68%, color-mix(in srgb, var(--accent) 45%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 58% 70%, color-mix(in srgb, var(--muted) 50%, transparent) 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 50% 64%, color-mix(in srgb, var(--paper) 40%, transparent) 0 2px, transparent 3px);
+  animation: shelf-burst 0.35s ease-out forwards;
+}
+
+@keyframes shelf-burst {
+  from {
+    opacity: 0.9;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-28px) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-page--burst::after {
+    animation: none;
+    display: none;
+  }
+}
+
+.ach-progress {
+  position: relative;
+  height: 1.1rem;
+  margin: 0.45rem 0;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden;
+}
+
+.ach-progress__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.ach-progress--done .ach-progress__bar {
+  background: color-mix(in srgb, var(--success) 55%, transparent);
+}
+
+.ach-progress span {
+  position: relative;
+  z-index: 1;
+  font-size: 0.7rem;
+  padding: 0 0.35rem;
+  color: var(--ink);
+}
+
+.guide-spoiler {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.guide-era {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  margin-right: 0.35rem;
+}
+
+.settings-fab {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 0;
+  z-index: 70;
+  background: var(--bg2);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  cursor: pointer;
+}
+
+.settings-panel {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 70;
+  width: min(320px, calc(100vw - 2rem));
+  background: var(--bg2);
+  border: 1px solid var(--accent);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: min(80vh, 560px);
+  overflow: auto;
+}
+
+.settings-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.settings-io {
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  padding: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.settings-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.settings-slots__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.settings-io button.primary {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.settings-io button {
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+
+.hotkey-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.hotkey-panel {
+  width: min(420px, 100%);
+  background: var(--bg2);
+  border: 1px solid var(--accent);
+  padding: 1rem 1.1rem;
+}
+
+.hotkey-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.hotkey-panel h2 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.hotkey-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.hotkey-panel li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  font-size: 0.88rem;
+}
+
+.hotkey-panel kbd {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  padding: 0.1rem 0.35rem;
+  font-size: 0.78rem;
+}
+
+/* Ledger skins (visual only) */
+.ledger-skin--torn-receipt.ge-ledger,
+.ledger-skin--torn-receipt {
+  border-image: repeating-linear-gradient(
+      90deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--ink) 35%, transparent) 6px 7px
+    )
+    1;
+}
+
+.ledger-skin--carbon-copy.ge-ledger,
+.ledger-skin--carbon-copy,
+.shop-ledger-demo.ledger-skin--carbon-copy {
+  color: #9ec4ff;
+  background: color-mix(in srgb, #1a2a44 70%, black);
+  font-family: var(--font-mono);
+}
+
+.ledger-skin--thermal-fade.ge-ledger,
+.ledger-skin--thermal-fade,
+.shop-ledger-demo.ledger-skin--thermal-fade {
+  color: #b8b0a4;
+  background: linear-gradient(180deg, #2a2824, #1c1a18);
+}
+
+.ledger-skin--thermal-fade .ge-ledger__row:nth-child(n + 4) {
+  opacity: 0.72;
+}
+
+.ledger-skin--thermal-fade .ge-ledger__row:nth-child(n + 8) {
+  opacity: 0.45;
+}
+
+/* Texture-pack chrome — applied on <html> via MetaContext.applyPack */
+html[class*='pack-chrome--'] {
+  background-color: var(--bg);
+}
+
+html[class*='pack-chrome--'] body {
+  background:
+    var(--pack-pattern, none),
+    linear-gradient(180deg, var(--bg2), var(--bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chrome-edge, #3a2e24) 40%, transparent);
+}
+
+html.pack-chrome--bodega .shelf-page,
+html.pack-chrome--bodega .ge-root {
+  box-shadow: inset 0 0 80px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+html.pack-chrome--night .shelf-page,
+html.pack-chrome--night .ge-root {
+  box-shadow: inset 0 -120px 160px color-mix(in srgb, var(--chrome-shine, rgba(255, 179, 71, 0.12)) 50%, transparent);
+}
+
+html.pack-chrome--cold .shelf-page,
+html.pack-chrome--cold .ge-root {
+  box-shadow: inset 0 0 100px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+html.pack-chrome--ticker body {
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+html.pack-chrome--neon .shelf-page {
+  outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: -4px;
+}
+
+html.pack-chrome--hungry .shelf-page,
+html.pack-chrome--hungry .ge-root {
+  box-shadow: inset 0 0 90px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Unpack FX stubs (document class; panels can keyframe off these) */
+.unpack-fx--confetti-crumbs [data-coach-id='floor-unpack'] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.unpack-fx--stamp-thud [data-coach-id='floor-unpack']:active {
+  transform: scale(0.97);
+  filter: contrast(1.1);
+}
+
+.unpack-fx--can-clink [data-coach-id='floor-unpack']:active {
+  letter-spacing: 0.04em;
+  filter: brightness(1.08);
+}
+
+.shop-fx-demo.unpack-fx--confetti-crumbs {
+  background-image: radial-gradient(circle at 20% 40%, var(--accent) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, var(--success) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 20%, var(--danger) 0 1.5px, transparent 2.5px);
+}
+
+.shop-fx-demo.unpack-fx--stamp-thud span {
+  border: 2px solid var(--accent);
+  padding: 0.2rem 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+}
+
+.shop-fx-demo.unpack-fx--can-clink span {
+  border-bottom: 2px dotted var(--accent);
+}
+
+.unpack-fx--can-clink [data-coach-id='floor-unpack']:active {
+  filter: brightness(1.08);
+}
+
+.shop-fx-demo.unpack-fx--can-clink span {
+  border-bottom: 2px solid var(--accent);
+  letter-spacing: 0.06em;
+}
+
+html.anim-density--minimal .ge-rail__indicator,
+html.anim-density--minimal .shop-card {
+  transition: none !important;
+}
+
+html.anim-density--full .shop-card:hover {
+  transform: translateY(-2px);
+}
+
+.ge-rail__btn.is-pinned {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+html.a11y-colorblind {
+  --accent: #0072b2;
+  --danger: #d55e00;
+  --success: #009e73;
+  --ge-accent: #0072b2;
+  --ge-danger: #d55e00;
+  --ge-success: #009e73;
+}
+
+/* Shop surprise row above pack grid */
+.shop-surprise {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.shop-surprise button {
+  font-family: var(--font-mono);
+  cursor: pointer;
+  background: color-mix(in srgb, var(--bg2) 80%, black);
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  padding: 0.45rem 0.9rem;
+}
+
+/* Shop card ornament preview */
+.shop-ornament-demo {
+  position: relative;
+  height: 56px;
+  margin-bottom: 0.5rem;
+  border: 1px dashed color-mix(in srgb, var(--ink) 22%, transparent);
+  background: color-mix(in srgb, var(--bg) 75%, #2a2018);
+  overflow: hidden;
+}
+
+.shop-ornament-demo__shelf {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 10px;
+  height: 8px;
+  background: #4a3424;
+  box-shadow: 0 4px 0 #2a1c12;
+}
+
+/* Shelf ornaments — presentation only (html.ornament--* from packs.ts).
+   Scoped to .shelf-page. Each host differs so equipped ornaments can stack. */
+html.ornament--price-tag .shelf-page .shelf-wood,
+html.ornament--sold-stamp .shelf-page .shelf-hero,
+html.ornament--aisle-star .shelf-page .shelf-row,
+html.ornament--bodega-tape .shelf-page .shelf-wood,
+html.ornament--receipt-corner .shelf-page .brand,
+html.ornament--open-sign .shelf-page .shelf-hero {
+  position: relative;
+}
+
+/* Price tag — small red corner tag on shelf wood */
+html.ornament--price-tag .shelf-page .shelf-wood::before {
+  content: '$';
+  position: absolute;
+  top: 0.35rem;
+  right: max(0.5rem, calc(50% - 480px + 0.5rem));
+  min-width: 2.2rem;
+  height: 1.35rem;
+  display: grid;
+  place-items: center;
+  padding: 0 0.35rem 0 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: color-mix(in srgb, var(--paper) 70%, #1a1612);
+  background: color-mix(in srgb, var(--accent) 85%, #8a3a28);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 18% 100%, 0 55%);
+  opacity: 0.72;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Sold stamp — muted ink mark on shelf hero */
+html.ornament--sold-stamp .shelf-page .shelf-hero::after {
+  content: 'SOLD';
+  position: absolute;
+  top: 1.1rem;
+  right: max(0.75rem, calc(50% - 12rem));
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  color: color-mix(in srgb, var(--danger) 55%, #6a4038);
+  border: 2px solid color-mix(in srgb, var(--danger) 45%, #5a3830);
+  padding: 0.15rem 0.4rem;
+  transform: rotate(-12deg);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Aisle star — gold foil star near game cards */
+html.ornament--aisle-star .shelf-page .shelf-row::before {
+  content: '★';
+  position: absolute;
+  top: 0.35rem;
+  left: 0.5rem;
+  font-size: 1.05rem;
+  color: color-mix(in srgb, #c9a227 70%, var(--muted));
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Bodega tape — torn packing tape stripe across shelf wood */
+html.ornament--bodega-tape .shelf-page .shelf-wood::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 42%;
+  height: 14px;
+  background: repeating-linear-gradient(
+    -8deg,
+    color-mix(in srgb, #d4c4a0 55%, transparent) 0 10px,
+    color-mix(in srgb, #b8a888 40%, transparent) 10px 14px
+  );
+  border-top: 1px dashed color-mix(in srgb, #8a7a5c 40%, transparent);
+  border-bottom: 1px dashed color-mix(in srgb, #8a7a5c 40%, transparent);
+  transform: rotate(-1.5deg);
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Receipt corner — perforated scrap under brand */
+html.ornament--receipt-corner .shelf-page .brand::after {
+  content: '';
+  position: absolute;
+  right: -0.35rem;
+  bottom: -0.15rem;
+  width: 2.8rem;
+  height: 1.6rem;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      color-mix(in srgb, var(--muted) 35%, transparent) 5px 6px
+    ),
+    color-mix(in srgb, var(--paper) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+  border-style: dashed solid solid dashed;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 1;
+  transform: rotate(4deg);
+}
+
+/* Shop card demos reuse ornament class names on a mini stage */
+.shop-ornament-demo.ornament--price-tag::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  width: 1.6rem;
+  height: 0.9rem;
+  background: color-mix(in srgb, var(--accent) 85%, #8a3a28);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 18% 100%, 0 55%);
+  opacity: 0.85;
+}
+
+.shop-ornament-demo.ornament--sold-stamp::after {
+  content: 'SOLD';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-10deg);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--danger) 60%, #6a4038);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, #5a3830);
+  padding: 0.05rem 0.25rem;
+  opacity: 0.7;
+}
+
+.shop-ornament-demo.ornament--aisle-star::before {
+  content: '★';
+  position: absolute;
+  left: 12px;
+  bottom: 22px;
+  color: color-mix(in srgb, #c9a227 75%, var(--muted));
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+.shop-ornament-demo.ornament--bodega-tape::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 40%;
+  height: 8px;
+  background: color-mix(in srgb, #d4c4a0 50%, transparent);
+  transform: rotate(-2deg);
+  opacity: 0.6;
+}
+
+.shop-ornament-demo.ornament--receipt-corner::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  bottom: 18px;
+  width: 1.6rem;
+  height: 1rem;
+  background: color-mix(in srgb, var(--paper) 22%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--muted) 40%, transparent);
+  opacity: 0.75;
+  transform: rotate(3deg);
+}
+
+/* Open sign — soft neon along shelf hero */
+html.ornament--open-sign .shelf-page .shelf-hero::before {
+  content: 'OPEN';
+  position: absolute;
+  top: 0.85rem;
+  left: max(0.75rem, calc(50% - 12rem));
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  color: color-mix(in srgb, var(--success) 75%, #9dff9d);
+  text-shadow:
+    0 0 8px color-mix(in srgb, var(--success) 55%, transparent),
+    0 0 18px color-mix(in srgb, var(--success) 35%, transparent);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.shop-ornament-demo.ornament--open-sign::before {
+  content: 'OPEN';
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  color: color-mix(in srgb, var(--success) 80%, #9dff9d);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--success) 50%, transparent);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ornament--sold-stamp .shelf-page .shelf-hero::after,
+  html.ornament--bodega-tape .shelf-page .shelf-wood::after,
+  html.ornament--receipt-corner .shelf-page .brand::after,
+  .shop-ornament-demo.ornament--sold-stamp::after,
+  .shop-ornament-demo.ornament--bodega-tape::after,
+  .shop-ornament-demo.ornament--receipt-corner::after {
+    transform: none;
+  }
+}

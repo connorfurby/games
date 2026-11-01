@@ -1,0 +1,23 @@
+/** Rare Ideas-gated ledger lines — almost verse (Part K). */
+export const RECEIPT_POEMS: readonly string[] = [
+  'A can of beans remembers the shelf better than we do.',
+  'Receipt paper yellows; baskets do not.',
+  'The cooler hums a hymn only stockers hear.',
+  'Price tags flip like coins that never land.',
+  'Produce browns on schedule. We call it honesty.',
+  'Somewhere a nephew floats eighty dollars forever.',
+  'Attention fills Archives the way rain fills gutters.',
+  'The last ration is a sentence with no period.',
+  'Off-Brand smiles with our fonts.',
+  'Rent pauses into arrears; the street keeps walking.',
+  'Wholesale walks; we only choose which step to board.',
+  'A chalkboard is a flag for people who still look down.',
+  'Night latch: the door that pretends the day never closed.',
+  'Cold plants invent tomorrow’s freshness out of tonight’s fuel.',
+  'Barges carry seed the way clerks carry crates — carefully, and with names.',
+  'Empire is a word cashiers invent when the till gets heavy.',
+  'The hungry universe asks politely. Then it asks again.',
+  'Memos are doors that charge admission in cash and Attention.',
+  'Drift is what a brand does when nobody walks the aisle.',
+  'You cannot lose. You can only arrive later than the story wanted.',
+]
