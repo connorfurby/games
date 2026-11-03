@@ -5,6 +5,7 @@ import type { TutorialRun } from '../../sim/state'
 import { menuForCoachId } from '../coachTargets'
 import { useGame } from '../GameContext'
 import { Btn } from './Btn'
+import { SpeakerChrome } from './SpeakerChrome'
 
 export function CoachOverlay({ active }: { active: TutorialRun }) {
   const { state, dispatch, setActiveMenu, activeMenu, reducedMotion } = useGame()
@@ -160,8 +161,9 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
         </>
       ) : null}
       <div className="ge-coach__card">
+        <SpeakerChrome speaker="operations" size={48} className="ge-coach__speaker" />
         <div className="ge-coach__kicker">
-          Coach · {tut.name}
+          Operations · {tut.name}
           {tut.steps.length > 1 ? ` · ${active.step + 1}/${tut.steps.length}` : ''}
         </div>
         <h3>{step.title}</h3>

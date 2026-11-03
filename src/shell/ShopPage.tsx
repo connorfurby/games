@@ -10,7 +10,21 @@ import {
   previewPackVars,
   type TexturePack,
 } from '@/cosmetics/packs'
+import { PLATES, type PlateId } from '@/games/grocery-empire/art/cast'
 import { useMeta } from './MetaContext'
+
+/** Optional plate thumbs for known pack ids (presentation only). */
+const PACK_PLATES: Record<string, PlateId> = {
+  'receipt-classic': 'counter',
+  'corner-bodega': 'corner',
+  'sunday-flyer': 'corner',
+  'cold-room': 'cold',
+  'night-shift': 'counter',
+  'port-authority': 'fleet',
+  'vacuum-aisle': 'fleet',
+  'hungry-universe': 'fleet',
+  'last-ration': 'cold',
+}
 
 type Tab = 'packs' | 'ledger' | 'unpack' | 'ornaments' | 'bundles'
 
@@ -57,8 +71,10 @@ export function ShopPage() {
         <p className="shop-hero__lore">
           Dress the counter. Packs change the paper and light — never the math of baskets.
         </p>
-        <p>Texture packs, ledger skins, unpack FX, ornaments. Pure presentation — never balance.</p>
-        <p className="tokens">Tokens: {meta.shelfTokens}</p>
+        <p className="shop-hero__meta">
+          <span className="tokens">Tokens · {meta.shelfTokens}</span>
+          <span className="muted">Presentation only</span>
+        </p>
       </header>
 
       <div className="shop-tabs" role="tablist" aria-label="Shop sections">
@@ -341,7 +357,11 @@ function PackCard({
         style={{
           background: pack.vars['--bg'],
           borderColor: pack.vars['--accent'],
-          backgroundImage: pack.pattern,
+          backgroundImage: PACK_PLATES[pack.id]
+            ? `linear-gradient(180deg, transparent 35%, ${pack.vars['--bg']} 100%), url(${PLATES[PACK_PLATES[pack.id]!]})`
+            : pack.pattern,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
         <span style={{ color: pack.vars['--ink'], fontFamily: pack.fontDisplay }}>{pack.name}</span>

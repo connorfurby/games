@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { MenuId } from '../../content/menus'
+import { Icon } from '../icons/Icon'
 import { LoreBlurb } from './LoreBlurb'
 
 export function Panel({
@@ -19,7 +20,10 @@ export function Panel({
   return (
     <section className={`ge-panel ${className}`.trim()}>
       <header className="ge-panel__head">
-        <h2 className="ge-panel__title">{title}</h2>
+        <h2 className="ge-panel__title">
+          {lore ? <Icon name={lore} size={18} tone="accent" /> : null}
+          {title}
+        </h2>
         {purpose ? <p className="ge-panel__purpose">{purpose}</p> : null}
         {lore ? <LoreBlurb menu={lore} /> : null}
       </header>

@@ -41,6 +41,7 @@ export function LogisticsPanel() {
           </Btn>
           <Btn
             tone="ghost"
+            coachId="logistics-franchise"
             disabled={!can(s, { type: 'openFranchise' }).ok}
             onClick={() => dispatch({ type: 'openFranchise' })}
           >

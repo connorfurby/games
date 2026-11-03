@@ -11,6 +11,7 @@ import {
   todaysChallenge,
 } from './dailyChallenge'
 import { localDayKey } from './dailyStamp'
+import { GE_COVER } from '@/games/grocery-empire/art/cast'
 import { useMeta } from './MetaContext'
 
 interface SaveGlance {
@@ -186,6 +187,13 @@ export function Shelf() {
               custom={i}
             >
               <div className="card-spine" />
+              {g.id === 'grocery-empire' ? (
+                <div
+                  className="card-cover"
+                  style={{ backgroundImage: `url(${GE_COVER})` }}
+                  aria-hidden
+                />
+              ) : null}
               <div className="card-body">
                 <h2>{g.title}</h2>
                 <p>{g.status === 'playable' ? 'Playable' : 'Coming soon'}</p>

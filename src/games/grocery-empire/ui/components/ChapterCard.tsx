@@ -1,7 +1,9 @@
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
+import { plateSrc } from '../../art/cast'
 import { CHAPTERS } from '../chapters'
 import { Btn } from './Btn'
+import { SpeakerChrome } from './SpeakerChrome'
 
 export function ChapterCard({
   era,
@@ -16,14 +18,23 @@ export function ChapterCard({
     title: `Era ${era}`,
     body: 'A new chapter opens. Keep unpacking.',
     epigraph: 'The shelf remembers.',
-    recap: ['A new chapter opens', 'Keep unpacking', 'Check the guide when stuck'] as [
+    lines: ['A new chapter opens', 'Keep unpacking', 'Check the guide when stuck'] as [
       string,
       string,
       string,
     ],
+    speaker: 'operations' as const,
+    plate: 'corner' as const,
   }
+  const plate = plateSrc(def.plate)
+
   return (
     <div className="ge-chapter" role="dialog" aria-labelledby="ge-chapter-title">
+      <div
+        className="ge-chapter__plate"
+        style={{ backgroundImage: plate ? `url(${plate})` : undefined }}
+        aria-hidden
+      />
       <div className="ge-chapter__haze" aria-hidden />
       <motion.div
         className="ge-chapter__card"
@@ -35,12 +46,13 @@ export function ChapterCard({
             : { type: 'spring', stiffness: 380, damping: 28, mass: 0.85 }
         }
       >
+        <SpeakerChrome speaker={def.speaker} size={56} />
         <p className="ge-chapter__era">Chapter {era}</p>
         <h2 id="ge-chapter-title">{def.title}</h2>
         <p className="ge-chapter__epigraph">“{def.epigraph}”</p>
         <p className="ge-chapter__body">{def.body}</p>
         <ul className="ge-chapter__recap">
-          {def.recap.slice(0, 3).map((line) => (
+          {def.lines.slice(0, 3).map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>

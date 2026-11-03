@@ -131,7 +131,7 @@ function era2Chain(): GameState {
   s.invest.engineLevel = 2
   s.invest.balance = 800
   s.depot = true
-  s.expansions['side-yard'] = 1
+  s.expansions['side-yard'] = true
   s.memos['lot-survey'] = 1
   s.memos['passbook'] = 1
   s.memos['trading-desk'] = 1

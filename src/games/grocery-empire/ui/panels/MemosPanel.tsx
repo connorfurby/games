@@ -11,6 +11,7 @@ import { Btn } from '../components/Btn'
 import { Line } from '../components/Line'
 import { Meter } from '../components/Meter'
 import { Section } from '../components/Section'
+import { Icon } from '../icons/Icon'
 
 function costLabel(def: MemoDef, s: Parameters<MemoDef['cost']>[0], fmt: NumberFormat) {
   let c: { cash?: number; attention?: number; ideas?: number } = {}
@@ -76,13 +77,17 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
     <div className={`ge-memos ${compact ? 'ge-memos--rail' : ''}`.trim()} data-coach-id="floor-memos">
       {!compact ? (
         <header className="ge-panel__head">
-          <h2 className="ge-panel__title">Memos</h2>
+          <h2 className="ge-panel__title">
+            <Icon name="memo" size={18} /> Memos
+          </h2>
           <p className="ge-panel__purpose">Projects that open the next door.</p>
         </header>
       ) : (
         <div className="ge-memos__rail-head">
-          <div className="ge-memos__rail-title">Memos</div>
-          <p className="ge-memos__rail-blurb">Projects that open the next door. Voice first, cost second.</p>
+          <div className="ge-memos__rail-title">
+            <Icon name="memo" size={16} /> Memos
+          </div>
+          <p className="ge-memos__rail-blurb">Voice first, cost second.</p>
         </div>
       )}
 
@@ -162,6 +167,7 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
               data-memo-id={m.id}
               tabIndex={0}
               className={`ge-memo ${affordable ? 'ge-memo--ready' : ''}`.trim()}
+              layout={!reducedMotion}
               animate={
                 affordable && !reducedMotion
                   ? { filter: ['brightness(1)', 'brightness(1.12)', 'brightness(1)'] }
@@ -172,8 +178,12 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
                   ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
                   : undefined
               }
+              whileTap={reducedMotion ? undefined : { scale: 0.98 }}
             >
               <div className="ge-memo__top">
+                <span className="ge-memo__icon" aria-hidden>
+                  <Icon name="memo" size={15} tone="accent" />
+                </span>
                 <strong>{m.name}</strong>
                 <button
                   type="button"
@@ -185,25 +195,20 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
                 </button>
               </div>
               <p className="ge-memo__voice">{m.voice}</p>
-              <p className="ge-muted">{m.effect}</p>
-              <p className="ge-memo__after" title={m.effect}>
-                After buy · {m.effect}
-                {(() => {
-                  try {
-                    const c = m.cost(s)
-                    if (c.cash) return ` · Cash after: ${money(s.cash - c.cash, numberFormat)}`
-                    return cost !== 'Free' ? ` · ${cost}` : ''
-                  } catch {
-                    return cost !== 'Free' ? ` · ${cost}` : ''
-                  }
-                })()}
-              </p>
+              <span className="ge-memo__effect" title={m.effect}>
+                {m.effect}
+              </span>
               <Btn
                 tone={affordable ? 'primary' : 'ghost'}
                 coachId={`memo-${m.id}`}
                 disabled={!affordable}
-                onClick={() => {
+                onClick={(e) => {
                   playMemoFx(meta.settings.muted)
+                  const row = (e.currentTarget as HTMLElement).closest('.ge-memo')
+                  if (row && !reducedMotion) {
+                    row.classList.add('ge-memo--stamped')
+                    window.setTimeout(() => row.classList.remove('ge-memo--stamped'), 480)
+                  }
                   dispatch({ type: 'buyMemo', id: m.id })
                 }}
               >

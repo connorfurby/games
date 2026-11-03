@@ -76,6 +76,7 @@ export function ColdPanel() {
           </Btn>
           <Btn
             tone="primary"
+            coachId="cold-buy-tank"
             disabled={!can(s, { type: 'buyTank' }).ok}
             onClick={() => dispatch({ type: 'buyTank' })}
           >

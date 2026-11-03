@@ -405,8 +405,9 @@ export function inspectionFine(s: GameState) {
 // ── Fixed costs ─────────────────────────────────────────────────────────────
 
 export function rentPerSec(s: GameState) {
-  let perMin = 0.3
-  if (s.era >= 1) perMin = 0.8
+  // Softer Era 0 rent so the heartbeat teaches before the clock feels loud.
+  let perMin = 0.18
+  if (s.era >= 1) perMin = 0.7
   if (s.expansions['side-yard']) perMin += 0.5
   return perMin / 60
 }

@@ -14,6 +14,7 @@ import { Line } from '../components/Line'
 import { Meter } from '../components/Meter'
 import { Panel } from '../components/Panel'
 import { Section } from '../components/Section'
+import { Icon } from '../icons/Icon'
 
 function spoilFrac(age: number | undefined, life: number | null): number {
   if (life == null || age == null) return 0
@@ -100,9 +101,7 @@ export function FloorPanel() {
         <div className="ge-goal" data-coach-id="floor-goal">
           <strong>Right now</strong>
           <p>
-            Goal: Unpack cans onto the <em>shelf</em>, sell <em>baskets</em> (score, top-left), and
-            keep <em>cash</em> for rent and trucks. Backroom = storage. Wholesale = buy more crates.
-            Story dialogue writes along the bottom as you go.
+            Unpack → shelf. Sell baskets (score). Cash pays rent &amp; trucks.
           </p>
         </div>
       ) : null}
@@ -175,6 +174,7 @@ export function FloorPanel() {
               onPointerLeave={canHold ? stopHold : undefined}
               onPointerCancel={canHold ? stopHold : undefined}
             >
+              <Icon name="unpack" size={16} />
               Unpack
               <span className="ge-unpack__amt">+{manualUnpackAmount(s)}</span>
             </Btn>
@@ -186,7 +186,9 @@ export function FloorPanel() {
             className={`ge-price${priceFlick ? ' ge-price--flick' : ''}`.trim()}
             data-coach-id="floor-price"
           >
-            <span className="ge-price__tag">Shelf price</span>
+            <span className="ge-price__tag">
+              <Icon name="price" size={14} /> Shelf price
+            </span>
             <div className="ge-price__row">
               <Btn tone="ghost" onClick={() => nudge(-0.1)} aria-label="Lower price">
                 −
@@ -218,7 +220,7 @@ export function FloorPanel() {
 
         <Section label="Buy stock (wholesale)">
           <p className="ge-muted">
-            Spends cash · trucks fill the <em>backroom</em> · then Unpack to the <em>shelf</em>.
+            Cash → truck → backroom → Unpack to shelf.
           </p>
           <Btn
             tone="primary"
@@ -226,6 +228,7 @@ export function FloorPanel() {
             disabled={s.cash < wholesaleCost}
             onClick={() => dispatch({ type: 'buyWholesale', cat: s.orderCat || 'cans', crates: 1 })}
           >
+            <Icon name="wholesale" size={16} />
             Buy wholesale · {money(wholesaleCost, numberFormat)}
           </Btn>
           <Btn
@@ -252,7 +255,10 @@ export function FloorPanel() {
         </Section>
 
         <Section label="Shelf (what shoppers can buy)">
-          <Meter value={shelf} max={Math.max(1, cap)} label={`${qty(shelf)} / ${qty(cap)} on shelf`} tone="accent" />
+          <div className="ge-floor__shelf-head">
+            <Icon name="shelf" size={16} tone="accent" />
+            <Meter value={shelf} max={Math.max(1, cap)} label={`${qty(shelf)} / ${qty(cap)} on shelf`} tone="accent" />
+          </div>
           <div className="ge-cat-grid">
             {unlockedCats.map((c) => {
               const def = CATEGORIES[c]

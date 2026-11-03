@@ -47,6 +47,7 @@ export function PoliticsPanel() {
         <Line left="Left region" right={p.leftRegion ? 'Yes — Era 4+' : 'No'} />
         <Btn
           tone="primary"
+          coachId="politics-leave"
           disabled={!can(s, { type: 'leaveRegion' }).ok}
           onClick={() => dispatch({ type: 'leaveRegion' })}
         >

@@ -53,12 +53,17 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'menu-logistics': null,
   'menu-fleet': null,
   'cold-buy-plant': 'cold',
+  'cold-buy-tank': 'cold',
   'cold-momentum': 'cold',
   'politics-lobby': 'politics',
+  'politics-leave': 'politics',
   'logistics-lane': 'logistics',
+  'logistics-franchise': 'logistics',
   'fleet-launch': 'fleet',
   'fleet-guardian': 'fleet',
+  'fleet-drift': 'fleet',
   'ending-accept': 'fleet',
+  'ending-reject': 'fleet',
 }
 
 /** Map coachId prefixes / exact ids to the panel that hosts the control. */

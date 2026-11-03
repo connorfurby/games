@@ -1,6 +1,14 @@
 import { Link } from 'react-router-dom'
+import { PLATES, type PlateId } from '@/games/grocery-empire/art/cast'
 import { GUIDE_SECTIONS } from '@/games/grocery-empire/content/guide'
 import { useMeta } from './MetaContext'
+
+function plateForGuideEra(era: number): PlateId {
+  if (era <= 1) return 'corner'
+  if (era === 2) return 'counter'
+  if (era === 3) return 'cold'
+  return 'fleet'
+}
 
 export function GuidePage() {
   const { meta, updateSettings } = useMeta()
@@ -25,14 +33,25 @@ export function GuidePage() {
         Show spoilers
       </label>
       <p className="tokens">{sections.length} sections visible</p>
-      {sections.map((g) => (
-        <section key={g.id} className="guide-section">
-          <h2>
-            <span className="guide-era">E{g.era}</span> {g.title}
-          </h2>
-          <pre>{g.body}</pre>
-        </section>
-      ))}
+      <div className="guide-grid">
+        {sections.map((g) => {
+          const plate = PLATES[plateForGuideEra(g.era)]
+          return (
+            <article key={g.id} className="guide-card">
+              <div
+                className="guide-card__plate"
+                style={{ backgroundImage: `url(${plate})` }}
+                aria-hidden
+              />
+              <header className="guide-card__head">
+                <span className="guide-era">E{g.era}</span>
+                <h2>{g.title}</h2>
+              </header>
+              <div className="guide-card__body">{g.body}</div>
+            </article>
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -1,6 +1,10 @@
+import type { PlateId, SpeakerId } from '../art/cast'
+
 /** Opening cutscene — shown once per save before any coach tour. */
 
 export interface IntroBeat {
+  speaker: SpeakerId
+  plate?: PlateId
   kicker: string
   title: string
   body: string
@@ -10,45 +14,43 @@ export interface IntroBeat {
 
 export const INTRO_BEATS: IntroBeat[] = [
   {
-    kicker: 'Grocery Empire',
-    title: 'A corner store that outgrows the block',
-    body: 'Grocery Empire is the long story of one counter. You start with cans and a soft rent clock. Eras later you run cold plants, barges, and ration networks that feed a hungry universe. The name is the joke and the thesis: every empire begins as a shelf someone kept stocked.',
+    speaker: 'operations',
+    plate: 'counter',
+    kicker: 'Operations',
+    title: 'Keys on the counter',
+    body: 'You keep the shelf stocked. I keep you from deleting the save. Welcome to Grocery Empire — one corner store that outgrows the block.',
     ledger: 'Grocery Empire — one counter, then everything that grows from it.',
   },
   {
-    kicker: 'You run the counter',
-    title: 'Today is Era 0',
-    body: 'Right now you are the clerk, the buyer, and the pricing board. Get cans onto the shelf and sell them. Later departments appear as memos and menus — Staff, Suppliers, Cold, Fleet — each teaching itself when it arrives. You do not need those yet.',
+    speaker: 'clerk',
+    plate: 'corner',
+    kicker: 'You',
+    title: 'Era 0 starts here',
+    body: 'Cans. A soft rent clock. Unpack onto the shelf, sell baskets, buy a truck when cash allows. Later departments teach themselves when they arrive.',
     ledger: 'Keys on the counter. The sign still says OPEN.',
   },
   {
+    speaker: 'operations',
+    plate: 'corner',
     kicker: 'The score',
-    title: 'Baskets are progress',
-    body: 'Every completed sale fills a basket. Baskets never spend — they are how the game measures how far you have come. Cash (next to baskets) pays rent and crates. Baskets unlock memos, menus, and the next chapter of the story. Watch the big number top-left.',
+    title: 'Baskets never spend',
+    body: 'Baskets are progress — they unlock memos and chapters. Cash (beside them) pays rent and crates. Watch the big number top-left.',
     ledger: 'A basket is a trip that finished. Count those.',
   },
   {
-    kicker: 'The floor',
-    title: 'Shelf vs backroom',
-    body: 'Crates live in the backroom (storage). Unpack moves stock onto the shelf where shoppers can reach it. Empty shelf means no sales. Full backroom means trucks refuse delivery until you clear space. Those two piles are the whole early game.',
-    ledger: 'Backroom holds the crates. Shelf holds the offer.',
-  },
-  {
+    speaker: 'clerk',
+    plate: 'counter',
     kicker: 'The loop',
     title: 'Three verbs',
-    body: 'Unpack. Set a price. Buy wholesale when the truck looks cheap. That heartbeat — wholesale → stock → baskets → cash — runs the whole empire. Everything else is a department layered on top of those three verbs.',
+    body: 'Unpack. Price. Wholesale. That heartbeat runs the whole empire. Everything else is a department on top.',
     ledger: 'Three verbs. Everything else is a department.',
   },
   {
-    kicker: 'You cannot lose',
-    title: 'Bad weeks only slow you',
-    body: 'There is no game over, no bankruptcy wipe, no unwinnable death spiral. Empty shelves, rent arrears, and mistakes cost time. Helpers and bailouts always exist. Play badly for an hour and you are behind — not stuck.',
-    ledger: 'Operations does not delete the save. It only intervenes.',
-  },
-  {
+    speaker: 'operations',
+    plate: 'corner',
     kicker: 'Begin',
-    title: 'Open the counter',
-    body: 'A short coach will spotlight each control once — Unpack, baskets, price, wholesale, rent. Skip anytime. Replay from Coach later. Your first goal: unpack cans, sell a basket, and buy a crate before rent makes you nervous. Story lines keep writing at the bottom of the screen.',
+    title: 'You cannot lose',
+    body: 'Bad weeks only slow you. I will spotlight Unpack, baskets, price, wholesale, and rent once. Skip anytime. Open the counter when ready.',
     ledger: 'Coach on standby. Unpack when you are ready.',
   },
 ]

@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
+import { speakerForEra } from '../../art/cast'
 import type { GameState } from '../../sim/state'
+import { SpeakerChrome } from './SpeakerChrome'
 
 /** Big bottom dialogue — latest story ledger line while early game still teaches. */
 export function StoryBanner({ state }: { state: GameState }) {
@@ -15,10 +17,15 @@ export function StoryBanner({ state }: { state: GameState }) {
   const show = !state.introSeen || state.era < 2 || state.baskets < 120
   if (!show || !line) return null
 
+  const speaker = speakerForEra(state.era)
+
   return (
     <div className="ge-story-banner" role="status" aria-live="polite">
-      <span className="ge-story-banner__label">Story</span>
-      <p className="ge-story-banner__text">{line.text}</p>
+      <SpeakerChrome speaker={speaker} size={40} className="ge-story-banner__speaker" />
+      <div className="ge-story-banner__copy">
+        <span className="ge-story-banner__label">Story</span>
+        <p className="ge-story-banner__text">{line.text}</p>
+      </div>
     </div>
   )
 }

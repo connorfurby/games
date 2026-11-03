@@ -143,13 +143,22 @@ function tickTutorialQueue(s: GameState) {
 
   // Eras 3–6
   if (s.menus.cold || s.memos['cold-plant-permit'] || s.era >= 3) queueTutorial(s, 'cold')
+  if ((s.cold.tanks ?? 0) >= 1 || s.memos['tank-farm']) queueTutorial(s, 'tanks')
   if (s.cold.momentumOn || s.memos.momentum) queueTutorial(s, 'momentum')
   if (s.menus.politics || s.memos['lobby-office']) queueTutorial(s, 'politics')
+  if (s.cold.yieldLeft <= 0 || s.memos['leave-region'] || s.politics.leftRegion) {
+    queueTutorial(s, 'leave-region')
+  }
   if (s.menus.logistics || s.era >= 4 || s.politics.leftRegion) queueTutorial(s, 'logistics')
+  if (s.memos['franchise-kit'] || (s.fleet.franchises ?? 0) > 0 || s.era >= 4) {
+    queueTutorial(s, 'franchise')
+  }
   if (s.menus.fleet || s.fleet.launched || s.memos['barge-berth']) queueTutorial(s, 'charter')
   if (s.fleet.guardianUsed || s.memos['guardian-shell'] || (s.fleet.warOn && s.fleet.barges <= 2)) {
     queueTutorial(s, 'guardian')
   }
+  if (s.fleet.warOn || s.memos['off-brand-war']) queueTutorial(s, 'drift-war')
+  if (s.era >= 3 || s.memos['private-label-works']) queueTutorial(s, 'venture-late')
   if (s.era >= 6 || s.endingChoice || s.memos['universal-ration']) queueTutorial(s, 'endings')
 }
 

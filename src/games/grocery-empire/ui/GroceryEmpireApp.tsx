@@ -30,6 +30,7 @@ import { StoryBanner } from './components/StoryBanner'
 import { OfflineReceiptModal } from './components/OfflineReceipt'
 import { PopLayer, useSalePops } from './components/Pop'
 import { Btn } from './components/Btn'
+import { Icon } from './icons/Icon'
 import { BackroomPanel } from './panels/BackroomPanel'
 import { BooksPanel } from './panels/BooksPanel'
 import { BuildPanel } from './panels/BuildPanel'
@@ -459,7 +460,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           {devMode ? <DevModeBar /> : null}
           <header className="ge-top">
             <div className="ge-baskets" data-coach-id="floor-baskets">
-              <span className="ge-baskets__label">Baskets</span>
+              <span className="ge-baskets__label">
+                <Icon name="baskets" size={14} /> Baskets
+              </span>
               {qty(state.baskets, numberFormat)}
               {state.era < 1 && state.baskets < 40 ? (
                 <span className="ge-baskets__hint">Score · never spends</span>
@@ -467,7 +470,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
               <PopLayer pops={pops} />
             </div>
             <div className="ge-top__cash">
-              <span className="ge-top__cash-label">Cash</span>
+              <span className="ge-top__cash-label">
+                <Icon name="cash" size={14} /> Cash
+              </span>
               {money(state.cash, numberFormat)}
             </div>
             <span
@@ -553,7 +558,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                         }
                       />
                     ) : null}
-                    <span className="ge-rail__glyph">{def.glyph}</span>
+                    <span className="ge-rail__glyph" aria-hidden>
+                      <Icon name={def.id} size={18} />
+                    </span>
                     <span>{def.name}</span>
                   </button>
                 )
@@ -660,7 +667,12 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
             <CoachOverlay active={state.tutorials.active} />
           ) : null}
 
-          {tip ? (
+          {/* Tips wait until intro/chapter clear so overlays do not stack into a wall. */}
+          {tip &&
+          state.introSeen &&
+          !state.offlineReceipt &&
+          !state.pendingAccept &&
+          !chapterEra ? (
             <div className="ge-tip-whisper" role="status" aria-live="polite">
               <p className="ge-tip-whisper__text">{tip.text}</p>
               <Btn tone="ghost" onClick={() => dispatch({ type: 'dismissTip', id: tip.id })}>

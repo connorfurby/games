@@ -36,6 +36,7 @@ export function FleetPanel() {
           </Btn>
           <Btn
             tone="ghost"
+            coachId="fleet-drift"
             disabled={!can(s, { type: 'startDriftWar' }).ok}
             onClick={() => dispatch({ type: 'startDriftWar' })}
           >

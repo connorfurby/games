@@ -8,9 +8,11 @@ export const AUTOSAVE_MS = 10_000
 export const SAVE_VERSION = 2
 
 export const START = {
-  cash: 20,
+  /** Gentler open: enough for a first wholesale dip without immediate rent panic. */
+  cash: 35,
   price: 1.5,
-  backroomCans: 12,
+  /** More starter stock so Unpack → first baskets lands before the truck is urgent. */
+  backroomCans: 24,
 }
 
 export const PRICE = { min: 0.05, max: 50, step: 0.01 }
