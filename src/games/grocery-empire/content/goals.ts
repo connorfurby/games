@@ -232,6 +232,7 @@ export const GOALS: GoalDef[] = [
     hint: 'More barges harvest faster.',
     done: (s) => s.era >= 6,
     progress: (s) => 1 - frac(s.fleet.biomass, s.fleet.biomassMax),
+    cash: (s) => bargeCost(s),
     action: () => ({ type: 'launchBarge' }),
     opensEra: 6,
   },

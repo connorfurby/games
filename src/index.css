@@ -530,15 +530,11 @@ a {
 }
 
 .game-card.coming-soon h2 {
-  color: transparent;
-  text-shadow: 0 0 10px color-mix(in srgb, var(--card-accent, var(--ink)) 55%, transparent);
-  user-select: none;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
 }
 
 .game-card.coming-soon .card-body p {
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
 }
 
 .game-card.selected {

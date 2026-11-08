@@ -12,6 +12,6 @@ test('library shelf and shell routes', async ({ page }) => {
   await expect(page.getByText(/Achievements/i).first()).toBeVisible()
 
   await page.goto('/guide/grocery-empire')
-  await expect(page.getByRole('heading', { name: /Guide/i })).toBeVisible()
-  await expect(page.getByText(/sections visible/i)).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Ops Wiki/i })).toBeVisible()
+  await expect(page.getByText(/articles/i)).toBeVisible()
 })

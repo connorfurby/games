@@ -1,49 +1,21 @@
-# Grocery Empire — honest plan audit
+# Grocery Empire — progress
 
-**Plan (never edit):** chat master plan.  
-**Rule:** systems scaffold ≠ product-finished. Do not claim 100%.
-
-Updated: 2026-11-03 (Feel overhaul — dialogue, scenes, motion).
+The 2.0 rebuild is tracked in [`docs/2.0-plan.md`](docs/2.0-plan.md) (phases, pacing, stat engine,
+decision log). The original audit lives at https://claude.ai/artifact/DgAJbqsxSb6RBq8FTd7uGW.
 
 ## Gates
 
-| Gate | Status |
+| Gate | How |
 | --- | --- |
-| Vitest (70) | ✅ |
-| tsc + vite build | ✅ |
-| Playwright e2e | ⚠️ env (Chrome SIGABRT / arch) — not treated as sim regressions |
-| Live UI ticks | ✅ fixed 2026-10-28 — snapshot identity for useSyncExternalStore |
+| Type-check + build | `npm run build` |
+| Unit, balance, pacing | `npm test` (`LONG=1 npm test` adds the full-campaign run) |
+| Lint | `npm run lint` |
+| Browser | `CHROME_PATH=/path/to/chrome npx playwright test` |
+| DevMode snapshots | `SNAPSHOTS=1 npx vitest run src/games/grocery-empire/sim/devSnapshots` after balance changes |
 
----
+## Still open
 
-## Verdict
-
-**~88% of plan systems exist in code.** Presentation pass landed 2026-11-03: bottom dialogue strip, department SVG scenes, card rows, snapshot-delta motion. Still not Paperclips-level craft or multi-day balance. Second game + combat canvas still deferred.
-
-### DONE
-- Library shell: routes, shelf, shop, achievements, tokens, packs, ornaments, pity, share, daily stamp  
-- Kernel: BN, 10Hz, commands, migrate, recovery rails, watchdog, fuzz softlock assert  
-- **Critical:** engine `getSnapshot()` returns a new `{v,state}` each bump so React re-renders  
-- Eras 0–6 sim + panels + memos + endings  
-- Coach + tip whispers + Scanner Array  
-- Depth: 7 upgrade trees, builds, ventures (all gated), empire XP, weather  
-- QoL: hold Esc, Esc stack, photo mode, museum, memo compare, coupon wars, celebrity endcap, receipt poetry, Hungry laws modal after Accept  
-- Seeded daily challenge + DevMode sandbox (`grocery-empire-dev`) isolated from primary save / meta / tokens / achievements  
-- Phase 1 gaps: ventures unlocks, E3–E6 coach tours, Era 0–1 balance soft start, Guide cards, Shop hero meta, overlay tip gating  
-- Phase 2 art: `public/ge-art/portraits|plates`, cast registry, SVG `Icon` on rail/Floor/top/Memos/Panel  
-- Phase 2 story chrome: shorter intro (5 beats + portraits/plates/typewriter), Chapter cutscene plates, Coach as Operations, StoryBanner speakers  
-- Phase 2 shell: Shelf GE cover plate, Guide illustrated headers, Shop pack plate thumbs, Ask Operations HelpCards, memo effect chips + stamp motion  
-- **Feel overhaul (2026-11-03):** `content/dialogue.ts` + `seenLines`/`dialogueQueue` save fields; bottom `DialogueStrip` (never over Floor); slower Era 0 after intro before coach; multi-beat chapter cards; SVG scenes on departments; role/build/venture/charter icons + `ge-card` rows; sale pops + spoil wilt + cold rail pulse + venture arc + barge birth + affordable memo breathe  
-
-### PARTIAL
-- Texture/SFX depth still thinner than full cosmetic fantasy  
-- Late-era balance / coach density still thinner than Era 0–1  
-- Venture loops still share one till pattern (not uniquely crafted loops)  
-- Motion polish intentional but not exhaustive across every control  
-
-### MISSING
-- Second playable game, combat canvas (explicitly deferred)  
-- Claiming 100% of the old master plan  
-- Human multi-hour balance pass  
-
-See chat for line-level DONE/PARTIAL/MISSING if needed. Live source of truth for “what shipped” is this file + tests.
+- Named rival chains with portraits and buyouts
+- Empire Map (a zoomable map of everything you own)
+- Rewriting the remaining department panels in the 2.0 style (they are re-skinned today)
+- A human multi-hour balance pass

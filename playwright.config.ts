@@ -5,6 +5,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 /** Prefer full Chromium when headless_shell arch mismatches (arm64 Mac vs x64 default). */
 function chromiumExecutable(): string | undefined {
+  if (process.env.CHROME_PATH) return process.env.CHROME_PATH
   const arm = join(
     homedir(),
     'Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',

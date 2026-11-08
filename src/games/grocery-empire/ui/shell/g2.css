@@ -890,8 +890,28 @@
   }
 
   .g2-stat__value {
-    font-size: 1.35rem;
+    font-size: 1.2rem;
     min-width: 0;
+  }
+
+  .g2-stat--baskets {
+    display: none;
+  }
+
+  .g2-hud__money {
+    min-width: 0;
+    gap: 0.8rem;
+  }
+
+  .g2-root .g2-whisper {
+    bottom: calc(4.75rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    right: 0.75rem;
+    max-width: none;
+  }
+
+  .g2-root .g2-toasts {
+    bottom: calc(5rem + env(safe-area-inset-bottom));
   }
 
   .g2-hubs {
