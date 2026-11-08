@@ -55,7 +55,7 @@ import { BooksPanel } from './panels/BooksPanel'
 import { BuildPanel } from './panels/BuildPanel'
 import { CoachPanel } from './panels/CoachPanel'
 import { ColdPanel } from './panels/ColdPanel'
-import { EmpirePanel } from './panels/EmpirePanel'
+import { EmpireBoard } from './panels/EmpireBoard'
 import { FleetPanel } from './panels/FleetPanel'
 import { FloorPanel } from './panels/FloorPanel'
 import { InvestPanel } from './panels/InvestPanel'
@@ -68,7 +68,7 @@ import { PoliticsPanel } from './panels/PoliticsPanel'
 import { StaffPanel } from './panels/StaffPanel'
 import { StrategyPanel } from './panels/StrategyPanel'
 import { SuppliersPanel } from './panels/SuppliersPanel'
-import { UpgradesPanel } from './panels/UpgradesPanel'
+import { UpgradesBoard } from './panels/UpgradesBoard'
 import { VenturesPanel } from './panels/VenturesPanel'
 import './grocery.css'
 
@@ -82,10 +82,10 @@ const PANEL: Record<MenuId, () => ReactNode> = {
   books: () => <BooksPanel />,
   invest: () => <InvestPanel />,
   build: () => <BuildPanel />,
-  upgrades: () => <UpgradesPanel />,
+  upgrades: () => <UpgradesBoard />,
   ventures: () => <VenturesPanel />,
   land: () => <LandPanel />,
-  empire: () => <EmpirePanel />,
+  empire: () => <EmpireBoard />,
   strategy: () => <StrategyPanel />,
   cold: () => <ColdPanel />,
   politics: () => <PoliticsPanel />,

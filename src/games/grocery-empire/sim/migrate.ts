@@ -391,6 +391,28 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         }
       }
 
+      if (isObject(raw.rebrand)) {
+        base.rebrand = {
+          goodwill: Math.max(0, Math.floor(num(raw.rebrand.goodwill, 0))),
+          count: Math.max(0, Math.floor(num(raw.rebrand.count, 0))),
+          bankedThisRun: Math.max(0, Math.floor(num(raw.rebrand.bankedThisRun, 0))),
+        }
+      }
+      if (isObject(raw.projects)) {
+        const done: Record<string, true> = {}
+        if (isObject(raw.projects.done)) {
+          for (const [k, v] of Object.entries(raw.projects.done)) if (v) done[k] = true
+        }
+        const active = Array.isArray(raw.projects.active)
+          ? (raw.projects.active as unknown[])
+              .filter((a): a is { id: string; endsAt: number } =>
+                isObject(a) && typeof a.id === 'string' && typeof a.endsAt === 'number',
+              )
+              .map((a) => ({ id: a.id, endsAt: a.endsAt }))
+          : []
+        base.projects = { done, active }
+      }
+
       if (isObject(raw.menus)) {
         for (const id of MENU_IDS) base.menus[id] = bool(raw.menus[id], base.menus[id])
       }

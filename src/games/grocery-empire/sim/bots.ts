@@ -1,6 +1,7 @@
 import { goalCash, goalNeeds, nextGoal } from '../content/goals'
 import { MEMOS } from '../content/memos'
 import { PERK_BY_ID } from '../content/perks'
+import { PROJECTS } from '../content/projects'
 import { ROLE_IDS, type RoleId } from '../content/staff'
 import { UPGRADE_BY_ID } from '../content/upgrades'
 import { BUILD_FILTERS } from '../content/builds'
@@ -560,6 +561,10 @@ export function campaignCommands(s: GameState, step: number): Command[] {
     if (canWithin(s, c, reserve + 200)) cmds.push(c)
   }
   for (const p of Object.keys(PERK_BY_ID)) cmds.push({ type: 'buyPerk', id: p })
+  for (const pj of PROJECTS) {
+    const c: Command = { type: 'startProject', id: pj.id }
+    if (canWithin(s, c, reserve)) run(s, c)
+  }
   if (s.fleet.launched) {
     cmds.push({ type: 'buyCharter' })
     for (const axis of ['replication', 'survey', 'transit', 'shell']) cmds.push({ type: 'setCharterAxis', axis, delta: 1 })

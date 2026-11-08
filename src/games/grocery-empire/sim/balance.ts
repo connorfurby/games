@@ -257,9 +257,9 @@ export const EMPIRE = {
   /** Soft XP from venture collect — scaled by payout, far below basket XP. */
   xpPerVentureCollect: 2,
   xpPerVentureCash: 0.0004,
-  levelBase: 100,
-  levelGrowth: 1.35,
-  maxLevel: 50,
+  levelBase: 120,
+  levelGrowth: 1.37,
+  maxLevel: 100,
   /** +2.5% demand per Empire level above 1. */
   demandPerLevel: 0.025,
 }
@@ -523,7 +523,7 @@ export const FLEET = {
   bargeGrowth: 1.9,
   bargeLaunchRead: 8,
   bargeSoftFloor: 1,
-  biomassStart: 50_000,
+  biomassStart: 1_000_000,
   harvestPerBargePerSec: 2,
   replicationPerSec: 0.002,
   charterBaseCap: 12,
@@ -585,7 +585,7 @@ export const NETWORK = {
   perBarge: 0.15,
   autonomousMul: 1.3,
   /** Empire XP from copied baskets, relative to flagship baskets. */
-  xpShare: 0.35,
+  xpShare: 0.06,
 }
 
 /** 2.0 value ladder — premium stock: price and wholesale cost both scale. */
@@ -594,6 +594,16 @@ export const VALUE = {
   storefront: [1, 1, 2, 3.5, 6, 10, 16, 24] as const,
   /** By era 0..6. */
   era: [1, 1.5, 2.5, 5, 10, 20, 40] as const,
+}
+
+/** 2.0 Rebrand prestige. Goodwill = floor(cbrt(lifetime revenue / revenuePerGoodwillCube)). */
+export const REBRAND = {
+  minEra: 3,
+  revenuePerGoodwillCube: 1e6,
+  /** Stat bonus per Goodwill (soft-capped with everything else). */
+  valuePerGoodwill: 0.04,
+  demandPerGoodwill: 0.03,
+  startCashPerGoodwill: 0.25,
 }
 
 /** 2.0 word of mouth — every basket sold brings a few more shoppers. Log-scaled, never runs away. */

@@ -1,3 +1,4 @@
+import { statMul } from './stats'
 import { CHARTER_AXES, CHARTER_OPENER } from '../../content/lateEras'
 import { upgradeEffect } from '../../content/upgrades'
 import { FLEET, LOGISTICS } from '../balance'
@@ -261,6 +262,7 @@ export function tickFleet(s: GameState, dt: number) {
       s.fleet.barges *
       (1 + survey * 0.08) *
       (1 + (s.fleet.charter.transit ?? 0) * 0.05) *
+      statMul(s, 'harvest') *
       dt
     const took = Math.min(s.fleet.biomass, rate)
     s.fleet.biomass = Math.max(0, s.fleet.biomass - took)

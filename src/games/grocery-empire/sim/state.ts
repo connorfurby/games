@@ -408,6 +408,10 @@ export interface GameState {
   pendingAccept: boolean
   /** Mild permanent bonuses after Accept prestige. */
   prestigeCarry: PrestigeCarry
+  /** 2.0 Rebrand prestige: Goodwill carried across runs. */
+  rebrand: { goodwill: number; count: number; bankedThisRun: number }
+  /** 2.0 Empire Projects: finished ids and the builds in progress. */
+  projects: { done: Record<string, true>; active: { id: string; endsAt: number }[] }
 
   menus: Record<MenuId, boolean>
   seenMenus: Record<string, boolean>
@@ -759,6 +763,8 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     endingChoice: null,
     pendingAccept: false,
     prestigeCarry: emptyPrestigeCarry(),
+    projects: { done: {}, active: [] },
+    rebrand: { goodwill: 0, count: 0, bankedThisRun: 0 },
 
     menus,
     seenMenus: { floor: true, more: true },

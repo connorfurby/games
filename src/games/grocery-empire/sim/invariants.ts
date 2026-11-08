@@ -247,6 +247,11 @@ export function repair(s: GameState): GameState {
       s.fleet.barges = 1
     }
   }
+  if (!s.rebrand || typeof s.rebrand !== 'object') s.rebrand = { goodwill: 0, count: 0, bankedThisRun: 0 }
+  s.rebrand.goodwill = Math.max(0, Math.floor(finite(s.rebrand.goodwill)))
+  if (!s.projects || typeof s.projects !== 'object') s.projects = { done: {}, active: [] }
+  if (!Array.isArray(s.projects.active)) s.projects.active = []
+  if (!s.projects.done || typeof s.projects.done !== 'object') s.projects.done = {}
   if (s.prestigeCarry) {
     s.prestigeCarry.appetite = Math.max(0, finite(s.prestigeCarry.appetite))
     s.prestigeCarry.tipSharpness = Math.max(0, finite(s.prestigeCarry.tipSharpness))

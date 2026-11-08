@@ -2,6 +2,7 @@ import { CHAIN, EMPIRE, NETWORK, VALUE } from '../balance'
 import { clamp } from '../helpers'
 import type { GameState, StoreState } from '../state'
 import { upgradeEffect } from '../../content/upgrades'
+import { statMul } from './stats'
 
 /**
  * 2.0 scale layer.
@@ -25,7 +26,7 @@ export function storeEngineWeight(s: GameState, st: StoreState, index: number): 
   const attMul = NETWORK.neglectFloor + (1 - NETWORK.neglectFloor) * Math.min(1, attended)
   const drift = 1 - NETWORK.driftCut * clamp(st.drift ?? 0, 0, 1)
   const noDepot = !s.depot && index >= NETWORK.storesBeforeDepot ? NETWORK.noDepotMul : 1
-  return levelW * policy * attMul * drift * noDepot
+  return levelW * policy * attMul * drift * noDepot * statMul(s, 'store')
 }
 
 /** Store-equivalents beyond the flagship: chain stores + franchises. */
@@ -42,16 +43,18 @@ export function networkStores(s: GameState): number {
 /** Separate multiplicative layers, broken out for the UI. */
 export function networkBreakdown(s: GameState) {
   const stores = 1 + networkStores(s)
-  const districts = 1 + (s.politics?.acquisitions ?? 0) * NETWORK.perDistrict
-  const cold =
+  const districts = 1 + (s.politics?.acquisitions ?? 0) * NETWORK.perDistrict * statMul(s, 'district')
+  const momentum =
     s.cold?.momentumOn && !s.cold.browned && (s.cold.freshness ?? 0) >= 1
       ? Math.max(1, s.cold.momentum)
       : 1
+  const cold = momentum * ((s.cold?.plants ?? 0) > 0 ? statMul(s, 'cold') : 1)
   const lanesN = s.fleet?.lanes ?? 0
-  const lanes = 1 + lanesN * (s.fuel > 0 ? NETWORK.perLane : NETWORK.perDryLane)
-  const barges = 1 + (s.fleet?.barges ?? 0) * NETWORK.perBarge
+  const lanes = 1 + lanesN * (s.fuel > 0 ? NETWORK.perLane : NETWORK.perDryLane) * statMul(s, 'lane')
+  const barges = 1 + (s.fleet?.barges ?? 0) * NETWORK.perBarge * statMul(s, 'barge')
   const autonomous = s.autonomous ? NETWORK.autonomousMul : 1
-  const parts = { stores, districts, cold, lanes, barges, autonomous }
+  const trees = statMul(s, 'network')
+  const parts = { stores, districts, cold, lanes, barges, autonomous, trees }
   let total = 1
   for (const v of Object.values(parts)) total *= v
   return { parts, total }
@@ -70,8 +73,9 @@ export function valueBreakdown(s: GameState) {
   const front = s.builds?.storefront ?? 1
   const storefront = VALUE.storefront[Math.min(front, VALUE.storefront.length - 1)] ?? 1
   const era = VALUE.era[Math.min(Math.max(0, s.era), VALUE.era.length - 1)] ?? 1
-  const parts = { storefront, era }
-  return { parts, total: storefront * era }
+  const trees = statMul(s, 'value')
+  const parts = { storefront, era, trees }
+  return { parts, total: storefront * era * trees }
 }
 
 export function valueMul(s: GameState): number {
@@ -92,7 +96,7 @@ export function bookNetworkSales(s: GameState, sold: number, revenue: number): n
   s.lifetimeRevenue += netRev
   s.baskets += netSold
   s.stats.networkRevenue = (s.stats.networkRevenue ?? 0) + netRev
-  s.empire.xp += netSold * EMPIRE.xpPerUnitSold * NETWORK.xpShare
+  s.empire.xp += netSold * EMPIRE.xpPerUnitSold * NETWORK.xpShare * statMul(s, 'xp')
   s.acc.revWindow += netRev
   s.acc.soldWindow += netSold
   return netRev

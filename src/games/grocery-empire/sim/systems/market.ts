@@ -1,4 +1,5 @@
 import { bookNetworkSales } from './network'
+import { statMul } from './stats'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
 import { DEMAND, EMPIRE, INSPECTION, SHRINK, WEATHER_SEC, WHOLESALE } from '../balance'
 import {
@@ -195,7 +196,7 @@ export function tickSales(s: GameState, dt: number): { sold: number; revenue: nu
     s.lifetimeRevenue += revenue
     s.acc.revWindow += revenue
     s.acc.soldWindow += sold
-    s.empire.xp += sold * EMPIRE.xpPerUnitSold
+    s.empire.xp += sold * EMPIRE.xpPerUnitSold * statMul(s, 'xp')
     if (firstBasket) {
       log(
         s,

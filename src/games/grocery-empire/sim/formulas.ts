@@ -1,4 +1,5 @@
 import { valueMul } from './systems/network'
+import { statCut, statMul } from './systems/stats'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ROLES, STAFF_TRAITS, type RoleId, type StaffTraitId } from '../content/staff'
 import {
@@ -172,7 +173,7 @@ export function shelfCap(s: GameState) {
   // One Perfect Aisle: shelf growth from nesting stops; Wall of Cans adds asymptotic capacity.
   const nest = up(s, 'one-perfect-aisle') > 0 ? 0 : up(s, 'basket-nesting') * 0.03
   const fullShelves = memo(s, 'full-shelves') ? 0.03 : 0
-  return Math.floor(cap * (1 + nest + fullShelves + upgradeMagnitude(s, 'wall-of-cans')))
+  return Math.floor(cap * (1 + nest + fullShelves + upgradeMagnitude(s, 'wall-of-cans')) * statMul(s, 'shelf'))
 }
 
 export function backroomCap(s: GameState) {
@@ -182,7 +183,7 @@ export function backroomCap(s: GameState) {
   if (st >= 3) cap += 400
   if (s.expansions['side-yard']) cap += 40
   if (memo(s, 'dock-plate')) cap += 20
-  return Math.floor(cap * (1 + up(s, 'case-cube') * 0.03))
+  return Math.floor(cap * (1 + up(s, 'case-cube') * 0.03) * statMul(s, 'backroom'))
 }
 
 /** Door overflow Refuse Softener lets a truck squeeze past the backroom cap. */
@@ -221,7 +222,12 @@ export function wholesaleMul(s: GameState) {
 
 export function unitCost(s: GameState, cat: CategoryId, supplier: SupplierId = s.supplier) {
   const base =
-    WHOLESALE.baseCanCost * s.wholesale.index * CATEGORIES[cat].costMul * wholesaleMul(s) * valueMul(s)
+    WHOLESALE.baseCanCost *
+    s.wholesale.index *
+    CATEGORIES[cat].costMul *
+    wholesaleMul(s) *
+    valueMul(s) *
+    statCut(s, 'crateCut')
   return supplier === 'b' ? base * WHOLESALE.supplierB.discount : base
 }
 
@@ -441,6 +447,8 @@ export function demandBreakdown(s: GameState) {
     ventures: ventureTrafficMul(s),
     /** 2.0: lifetime baskets bring shoppers back. */
     wordOfMouth: wordOfMouthMul(s),
+    /** 2.0 stat engine: trees, doctrines, rank rewards, projects. */
+    trees: statMul(s, 'demand'),
   }
   let total = 1
   for (const v of Object.values(parts)) total *= v
@@ -605,7 +613,7 @@ export function checkoutCap(s: GameState) {
   if (memo(s, 'express-lane')) cap *= CHECKOUT.expressLaneMul
   cap *= 1 + up(s, 'two-way-radio') * 0.03 + upgradeMagnitude(s, 'register-glance')
   if (memo(s, 'two-way-radio-memo')) cap *= 1.03
-  return cap * Math.min(1, s.morale + 0.1)
+  return cap * Math.min(1, s.morale + 0.1) * statMul(s, 'checkout')
 }
 
 /** What one unit of `cat` actually rings up for at the register (value ladder included). */
@@ -619,7 +627,8 @@ export function revenueMul(s: GameState) {
     (memo(s, 'price-gun') ? 1.01 : 1) *
     chainRevenueMul(s) *
     marketingRevenueMul(s) *
-    valueMul(s)
+    valueMul(s) *
+    statMul(s, 'margin')
   )
 }
 
@@ -668,7 +677,13 @@ export function wagesPerSec(s: GameState) {
   const hoursMul = Math.max(0.5, s.hours)
   // House Crew softens the wage floor; Traveling Team leaves wages alone.
   const wageCut = up(s, 'wage-eff') * 0.04 + upgradeMagnitude(s, 'house-crew') * 0.15
-  return (w / 60) * hoursMul * Math.max(0.6, 1 - wageCut) * (memo(s, 'open-book-accounting') ? 0.98 : 1)
+  return (
+    (w / 60) *
+    hoursMul *
+    Math.max(0.6, 1 - wageCut) *
+    (memo(s, 'open-book-accounting') ? 0.98 : 1) *
+    statCut(s, 'wageCut')
+  )
 }
 
 export function staffLevelCap(s: GameState) {
@@ -706,7 +721,7 @@ export function unpackPerSec(s: GameState) {
   if (memo(s, 'pallet-jack')) r *= 1.25
   if (memo(s, 'pallet-chain')) r *= 1.5
   if (hasDoctrine(s, 'throughput')) r *= DOCTRINE_EFFECTS.throughputUnpackMul
-  return r * s.morale * Math.min(1.25, Math.max(0.5, s.hours))
+  return r * s.morale * Math.min(1.25, Math.max(0.5, s.hours)) * statMul(s, 'unpack')
 }
 
 export function manualUnpackAmount(s: GameState) {
@@ -806,7 +821,7 @@ export function agingMul(s: GameState, where: 'shelf' | 'backroom', cat?: Catego
   }
   // Brownout: warm aisles age faster (perishables only).
   if (coldBrownout(s) && (!cat || CATEGORIES[cat].life != null)) m *= COLD.brownoutAgingMul
-  return m
+  return m * statCut(s, 'spoilCut')
 }
 
 export function shrinkMul(s: GameState) {
@@ -979,11 +994,11 @@ export function attentionCap(s: GameState) {
 }
 
 export function attentionPerSec(s: GameState) {
-  return s.compute.analysts * COMPUTE.attentionPerAnalyst * (memo(s, 'ledger-tape') ? 1.1 : 1)
+  return s.compute.analysts * COMPUTE.attentionPerAnalyst * (memo(s, 'ledger-tape') ? 1.1 : 1) * statMul(s, 'attention')
 }
 
 export function ideasPerSec(s: GameState) {
-  return COMPUTE.ideasBase * Math.pow(s.compute.analysts, COMPUTE.ideasExp)
+  return COMPUTE.ideasBase * Math.pow(s.compute.analysts, COMPUTE.ideasExp) * statMul(s, 'ideas')
 }
 
 export function nextUpgradeCost(s: GameState, id: string) {

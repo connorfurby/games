@@ -5,6 +5,7 @@ import { migrate } from './migrate'
 import { getActiveSaveId } from './saveKey'
 import { createInitialState, type GameState } from './state'
 import { applyOffline, applyTick } from './tick'
+import { canRebrand, rebrand as rebrandState } from './systems/prestige'
 import { applyUndo, canUndo as undoAvailable, clearUndo, pushUndo } from './undo'
 
 type Listener = () => void
@@ -206,6 +207,15 @@ export class GroceryEngine {
   newGame(seed?: number) {
     clearGameSave(getActiveSaveId())
     this.reset(seed)
+  }
+
+  /** Rebrand prestige: fresh store, keep Empire + Goodwill. Returns a reason if blocked. */
+  rebrand(): string | null {
+    const blocked = canRebrand(this.state)
+    if (blocked) return blocked
+    clearUndo()
+    this.replaceState(rebrandState(this.state))
+    return null
   }
 
   /** Replace live state from a deserialized save (after import / slot load). */

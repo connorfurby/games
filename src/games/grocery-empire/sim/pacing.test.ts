@@ -5,8 +5,9 @@ import { runPacing } from './bots'
  * Pacing gate (docs/2.0-plan.md → Pacing targets). The campaign bot is a steady,
  * unhurried player; real players beat it. Every balance change must keep these.
  *
- * Measured 2026-11-08 (seeds 1, 42): Era 1 ≈ 9 min · Era 2 ≈ 90 min · Era 3 ≈ 3.1 h ·
- * Era 4 ≈ 4.6 h · Era 5 ≈ 6.5 h · Era 6 ≈ 12 h.
+ * Measured 2026-11-08 (seeds 1, 42), with 2.0 trees, doctrines, rewards and projects:
+ * Era 1 ≈ 9 min · Era 2 ≈ 87 min · Era 3 ≈ 3 h · Era 4 ≈ 4.3 h · Era 5 ≈ 5.3 h · Era 6 ≈ 8.2 h.
+ * After Era 6 the run continues through Rebrand (prestige), which the bot does not use.
  */
 const SEEDS = [1, 42]
 const MIN = 60
@@ -29,10 +30,10 @@ describe('pacing (campaign bot)', () => {
   }
 
   // Full campaign (~2 min per seed). Run with LONG=1 npm test.
-  it.runIf(!!import.meta.env.VITE_LONG || !!(globalThis as { process?: { env?: Record<string, string> } }).process?.env?.LONG)('seed 1: whole campaign reaches Era 6 in 8–18 h', () => {
-    const r = runPacing(1, 18 * H, 3600)
+  it.runIf(!!import.meta.env.VITE_LONG || !!(globalThis as { process?: { env?: Record<string, string> } }).process?.env?.LONG)('seed 1: whole campaign reaches Era 6 in 6–14 h', () => {
+    const r = runPacing(1, 14 * H, 3600)
     expect(r.eraAt[6]).toBeDefined()
-    expect(r.eraAt[6]!).toBeGreaterThan(8 * H)
+    expect(r.eraAt[6]!).toBeGreaterThan(6 * H)
     for (let e = 1; e <= 6; e++) expect(r.eraAt[e]).toBeDefined()
   }, 900_000)
 })

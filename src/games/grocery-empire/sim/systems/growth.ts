@@ -1,3 +1,5 @@
+import { PROJECT_BY_ID } from '../../content/projects'
+import { EMPIRE_REWARDS, EMPIRE_REWARD_POINTS } from '../../content/empireRewards'
 import { VENTURE_BY_ID, ventureIncome } from '../../content/ventures'
 import { EMPIRE } from '../balance'
 import { backroomCap, empireXpToNext, perk, up } from '../formulas'
@@ -97,11 +99,35 @@ export function tickEmpire(s: GameState) {
     s.empire.xp -= need
     s.empire.level += 1
     s.empire.points += 1
-    log(s, `Empire level ${s.empire.level}. +1 perk point.`, 'era')
+    const reward = EMPIRE_REWARDS.find((r) => r.level === s.empire.level)
+    if (reward) {
+      s.empire.points += EMPIRE_REWARD_POINTS
+      log(s, `Empire ${s.empire.level}: ${reward.name}. ${reward.blurb} +${1 + EMPIRE_REWARD_POINTS} trait points.`, 'era')
+    } else {
+      log(s, `Empire level ${s.empire.level}. +1 trait point.`, 'era')
+    }
   }
 }
 
+/** Finish Empire Projects whose timers have run out (works offline too). */
+export function tickProjects(s: GameState) {
+  const pj = s.projects
+  if (!pj || pj.active.length === 0) return
+  const still: typeof pj.active = []
+  for (const a of pj.active) {
+    if (s.time >= a.endsAt) {
+      pj.done[a.id] = true
+      const def = PROJECT_BY_ID[a.id]
+      log(s, `Project finished: ${def?.name ?? a.id}.`, 'era')
+    } else {
+      still.push(a)
+    }
+  }
+  pj.active = still
+}
+
 export function tickGrowth(s: GameState, dt: number) {
+  tickProjects(s)
   tickGarden(s, dt)
   tickVentures(s, dt)
   tickEmpire(s)

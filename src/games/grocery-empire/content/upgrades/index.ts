@@ -7,6 +7,7 @@ import { FLOOR_UPGRADES } from './floor'
 import { PEOPLE_UPGRADES } from './people'
 import { SPACE_UPGRADES } from './space'
 import { SUPPLY_UPGRADES } from './supply'
+import { V2_UPGRADES } from './v2'
 import {
   BAND_IDS,
   BAND_LABELS,
@@ -42,6 +43,7 @@ export const UPGRADES: UpgradeDef[] = [
   ...CAPITAL_UPGRADES,
   ...AUTOMATION_UPGRADES,
   ...SPACE_UPGRADES,
+  ...V2_UPGRADES,
 ]
 
 export const UPGRADE_BY_ID: Record<string, UpgradeDef> = Object.fromEntries(

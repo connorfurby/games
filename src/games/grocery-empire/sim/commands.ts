@@ -4,6 +4,8 @@ import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ERA2_EXPANSION_BY_ID } from '../content/era2'
 import { INTRO_BEATS } from '../content/intro'
 import { MEMO_BY_ID, MEMOS } from '../content/memos'
+import { PROJECT_BY_ID } from '../content/projects'
+import { empireUnlocked } from '../content/empireRewards'
 import { PERK_BY_ID } from '../content/perks'
 import { ROLE_IDS, traitForStaffId, type RoleId } from '../content/staff'
 import { TIP_BY_ID } from '../content/tips'
@@ -151,6 +153,7 @@ export type Command =
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
+  | { type: 'startProject'; id: string }
   | { type: 'respecPerks' }
   | { type: 'expandLot'; id?: string }
   | { type: 'expandSideYard' }
@@ -721,6 +724,28 @@ const coreHandlers = {
       def.run?.(s)
       log(s, def.voice, 'story')
       log(s, def.done, 'memo')
+    },
+  },
+  startProject: {
+    can: (s, cmd) => {
+      const id = (cmd as Extract<Command, { type: 'startProject' }>).id
+      const def = PROJECT_BY_ID[id]
+      if (!def) return no('Unknown project.')
+      if (!empireUnlocked(s.empire.level, 'projects')) return no('Projects open at Empire 15.')
+      if (s.era < def.era) return no(`Needs era ${def.era}.`)
+      if (s.projects.done[id]) return no('Already built.')
+      if (s.projects.active.some((a) => a.id === id)) return no('Already under way.')
+      const crews = empireUnlocked(s.empire.level, 'second-project') ? 2 : 1
+      if (s.projects.active.length >= crews) return no(crews > 1 ? 'Both crews are busy.' : 'The crew is busy.')
+      if (s.cash < def.cash) return no(`Need $${Math.ceil(def.cash)}.`)
+      return ok
+    },
+    run: (s, cmd) => {
+      const id = (cmd as Extract<Command, { type: 'startProject' }>).id
+      const def = PROJECT_BY_ID[id]!
+      s.cash -= def.cash
+      s.projects.active.push({ id, endsAt: s.time + def.seconds })
+      log(s, `Project started: ${def.name}.`, 'good')
     },
   },
   buyUpgrade: {

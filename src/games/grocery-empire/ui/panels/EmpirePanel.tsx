@@ -20,7 +20,7 @@ import { HelpCard } from '../components/HelpCard'
 import { HungryLawsBoard } from '../components/HungryLaws'
 import { Panel } from '../components/Panel'
 
-const BRANCHES: PerkBranch[] = ['floorcraft', 'ledger', 'charter']
+const BRANCHES: PerkBranch[] = ['floorcraft', 'ledger', 'charter', 'frontier', 'legacy']
 
 function perkVisible(s: Parameters<NonNullable<PerkDef['visible']>>[0], p: PerkDef) {
   if (!p.visible) return true

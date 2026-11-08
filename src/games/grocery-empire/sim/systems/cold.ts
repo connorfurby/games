@@ -1,3 +1,4 @@
+import { statMul } from './stats'
 import { COLD, HUNGRY_LAWS } from '../balance'
 import { hasMutator } from '../formulas'
 import { log, round2, unlockMenu } from '../helpers'
@@ -160,7 +161,7 @@ export function tickCold(s: GameState, dt: number) {
   // Mild income from cold infrastructure (momentum multiplies when healthy)
   if (s.cold.plants > 0) {
     const mom = s.cold.momentumOn && !s.cold.browned && s.cold.freshness >= 1 ? s.cold.momentum : 1
-    const income = COLD.plantCashIncome * s.cold.plants * mom * dt
+    const income = COLD.plantCashIncome * s.cold.plants * mom * statMul(s, 'plantIncome') * dt
     const bonus = Math.max(0, s.cold.surplus) * COLD.surplusCashMul * dt
     const yieldLaw = hasMutator(s, 'richerYield') ? HUNGRY_LAWS.richerYieldMul : 1
     const gain = (income + bonus) * (1 + s.prestigeCarry.appetite) * yieldLaw
