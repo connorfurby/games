@@ -84,6 +84,7 @@ export function acceptEnding(s: GameState) {
   s.baskets = 0
   s.fleet.biomass = s.fleet.biomassMax
   s.fleet.barges = 0
+  s.fleet.launches = 0
   s.fleet.launched = false
   s.fleet.warOn = false
   s.cold.plants = 0
@@ -104,6 +105,7 @@ export function rejectEnding(s: GameState) {
   s.pendingAccept = false
   s.fleet.warOn = false
   s.fleet.barges = 0
+  s.fleet.launches = 0
   s.fleet.biomass = 0
   s.cold.plants = 0
   s.cold.tanks = 0

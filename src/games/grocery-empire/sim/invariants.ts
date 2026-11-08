@@ -235,6 +235,7 @@ export function repair(s: GameState): GameState {
   s.brand = clamp(finite(s.brand, 1), 0, 1)
   if (s.fleet) {
     s.fleet.barges = Math.max(0, Math.floor(finite(s.fleet.barges)))
+    s.fleet.launches = Math.max(0, Math.floor(finite(s.fleet.launches ?? 0)))
     s.fleet.biomass = Math.max(0, finite(s.fleet.biomass))
     s.fleet.biomassMax = Math.max(0, finite(s.fleet.biomassMax))
     s.fleet.charterPool = Math.max(0, Math.floor(finite(s.fleet.charterPool)))
@@ -252,6 +253,7 @@ export function repair(s: GameState): GameState {
   if (!s.projects || typeof s.projects !== 'object') s.projects = { done: {}, active: [] }
   if (!Array.isArray(s.projects.active)) s.projects.active = []
   if (!s.projects.done || typeof s.projects.done !== 'object') s.projects.done = {}
+  if (!s.rivals || typeof s.rivals !== 'object') s.rivals = {}
   if (s.prestigeCarry) {
     s.prestigeCarry.appetite = Math.max(0, finite(s.prestigeCarry.appetite))
     s.prestigeCarry.tipSharpness = Math.max(0, finite(s.prestigeCarry.tipSharpness))

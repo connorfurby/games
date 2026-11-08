@@ -65,6 +65,8 @@ import { MarketingPanel } from './panels/MarketingPanel'
 import { MemosPanel } from './panels/MemosPanel'
 import { MorePanel } from './panels/MorePanel'
 import { PoliticsPanel } from './panels/PoliticsPanel'
+import { RivalsPanel } from './panels/RivalsPanel'
+import { EmpireMap } from './panels/EmpireMap'
 import { StaffPanel } from './panels/StaffPanel'
 import { StrategyPanel } from './panels/StrategyPanel'
 import { SuppliersPanel } from './panels/SuppliersPanel'
@@ -79,6 +81,8 @@ const PANEL: Record<MenuId, () => ReactNode> = {
   suppliers: () => <SuppliersPanel />,
   staff: () => <StaffPanel />,
   marketing: () => <MarketingPanel />,
+  rivals: () => <RivalsPanel />,
+  map: () => <EmpireMap />,
   books: () => <BooksPanel />,
   invest: () => <InvestPanel />,
   build: () => <BuildPanel />,

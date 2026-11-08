@@ -15,7 +15,5 @@ decision log). The original audit lives at https://claude.ai/artifact/DgAJbqsxSb
 
 ## Still open
 
-- Named rival chains with portraits and buyouts
-- Empire Map (a zoomable map of everything you own)
 - Rewriting the remaining department panels in the 2.0 style (they are re-skinned today)
 - A human multi-hour balance pass

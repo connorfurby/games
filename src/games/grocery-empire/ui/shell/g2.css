@@ -492,6 +492,7 @@
 .g2-subtabs {
   display: flex;
   flex-wrap: wrap;
+  flex-shrink: 0;
   gap: 0.3rem;
 }
 
@@ -954,7 +955,9 @@
 
   .g2-subtabs {
     flex-wrap: nowrap;
+    flex-shrink: 0;
     overflow-x: auto;
+    scrollbar-width: none;
   }
 }
 
@@ -1633,4 +1636,407 @@
   line-height: 1.15;
   margin: 0.2rem 0 0.4rem;
   text-wrap: balance;
+}
+
+/* ── Rivals ─────────────────────────────────────────────────────────────── */
+.rv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rv-summary__nums {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.rv-summary__nums > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+}
+
+.rv-summary__label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ge-muted);
+}
+
+.rv-summary__nums strong {
+  font-family: var(--g2-display);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-summary__nums strong.is-bad {
+  color: var(--ge-danger, #e06a5a);
+}
+
+.rv-summary__nums strong.is-good {
+  color: var(--ge-success);
+}
+
+.rv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 0.75rem;
+}
+
+.rv-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.9rem;
+  align-items: start;
+  margin: 0;
+}
+
+.rv-card.is-locked {
+  opacity: 0.7;
+  align-items: center;
+}
+
+.rv-card.is-bought {
+  background: color-mix(in srgb, var(--ge-success) 7%, var(--ge-panel-bg, transparent));
+}
+
+.rv-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.rv-card__name {
+  margin: 0;
+  font-family: var(--g2-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.rv-card__who,
+.rv-card__tag {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ge-muted);
+}
+
+.rv-card__tag {
+  font-style: italic;
+}
+
+.rv-card__status {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.rv-card__pull {
+  color: var(--ge-danger, #e06a5a);
+}
+
+.rv-card__quote {
+  margin: 0;
+  font-family: var(--g2-display);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.rv-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.rv-stores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.rv-store {
+  width: 12px;
+  height: 10px;
+  border-radius: 2px 2px 0 0;
+  background: var(--g2-line);
+  clip-path: polygon(0 35%, 50% 0, 100% 35%, 100% 100%, 0 100%);
+}
+
+.rv-store.is-open {
+  background: var(--ge-danger, #e06a5a);
+}
+
+.rv-store.is-ours {
+  background: var(--g2-tag);
+}
+
+.rv-portrait {
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .rv-summary__nums {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .rv-summary__nums > div:last-child {
+    grid-column: span 2;
+  }
+
+  .rv-portrait {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* ── Empire Map ─────────────────────────────────────────────────────────── */
+.mp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mp-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.mp-counts > div {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+}
+
+.mp-counts dt {
+  font-size: 0.72rem;
+  color: var(--ge-muted);
+}
+
+.mp-counts dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mp-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+@media (min-width: 1000px) {
+  .mp-stage {
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    align-items: start;
+  }
+
+  .mp-zoom {
+    grid-column: 1 / -1;
+  }
+
+  .mp-detail {
+    position: sticky;
+    top: 0.5rem;
+  }
+}
+
+.mp-svg {
+  width: 100%;
+  max-height: min(68vh, 680px);
+  aspect-ratio: 1;
+  justify-self: center;
+  border-radius: var(--g2-r-md);
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+.mp-zoomable {
+  transition: transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.mp-orbit {
+  animation: mp-spin 240s linear infinite;
+}
+
+@keyframes mp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mp-ring {
+  fill: none;
+  stroke-opacity: 0.09;
+}
+
+.mp-ring--city {
+  stroke: var(--g2-tag);
+}
+
+.mp-ring--region {
+  stroke: var(--ge-success);
+}
+
+.mp-ring--world {
+  stroke: #5b9bd5;
+}
+
+.mp-ring--orbit {
+  stroke: #a98be0;
+  stroke-opacity: 0.14;
+}
+
+.mp-ring__label {
+  fill: var(--ge-muted);
+  letter-spacing: 0.25em;
+  opacity: 0.7;
+}
+
+.mp-biomass {
+  fill: none;
+  stroke: #a98be0;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 500px 500px;
+}
+
+.mp-lane {
+  fill: none;
+  stroke: #5b9bd5;
+  stroke-dasharray: 4 3;
+  opacity: 0.7;
+}
+
+.mp-lane.is-dry {
+  opacity: 0.25;
+}
+
+.mp-pin {
+  cursor: pointer;
+  stroke: var(--ge-bg, #0d0f14);
+  stroke-width: 0.6;
+  transition: opacity 160ms;
+}
+
+.mp-pin:focus-visible,
+.mp-pin.is-active {
+  outline: none;
+  stroke: var(--ge-ink, #fff);
+  stroke-width: 1.4;
+}
+
+.mp-pin--flagship {
+  fill: var(--g2-tag);
+}
+
+.mp-halo {
+  fill: var(--g2-tag);
+  opacity: 0.18;
+}
+
+.mp-pin--store {
+  fill: color-mix(in srgb, var(--g2-tag) 75%, white);
+}
+
+.mp-pin--district {
+  fill: var(--ge-success);
+  fill-opacity: 0.75;
+}
+
+.mp-pin--plant {
+  fill: #7fd3e8;
+}
+
+.mp-pin--plant.is-off {
+  fill: var(--g2-line);
+}
+
+.mp-pin--port {
+  fill: #5b9bd5;
+}
+
+.mp-pin--franchise {
+  fill: #9bc0e6;
+}
+
+.mp-pin--barge {
+  fill: #c3aaf0;
+}
+
+.mp-pin--rival {
+  fill: var(--ge-danger, #e06a5a);
+}
+
+.mp-pin--rival.is-bought {
+  fill: var(--g2-tag);
+  fill-opacity: 0.55;
+}
+
+.mp-detail {
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  min-height: 4.2rem;
+}
+
+.mp-detail h3 {
+  margin: 0 0 0.2rem;
+  font-family: var(--g2-display);
+  font-size: 1rem;
+}
+
+.mp-detail p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ge-muted);
+}
+
+.mp-legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+}
+
+.mp-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.3rem;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.mp-key--flagship { background: var(--g2-tag); }
+.mp-key--store { background: color-mix(in srgb, var(--g2-tag) 75%, white); }
+.mp-key--district { background: var(--ge-success); }
+.mp-key--plant { background: #7fd3e8; }
+.mp-key--port { background: #5b9bd5; border-radius: 50%; }
+.mp-key--franchise { background: #9bc0e6; }
+.mp-key--barge { background: #c3aaf0; border-radius: 50%; }
+.mp-key--rival { background: var(--ge-danger, #e06a5a); }
+.mp-key--bought { background: color-mix(in srgb, var(--g2-tag) 55%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-zoomable,
+  .mp-orbit {
+    transition: none;
+    animation: none;
+  }
 }

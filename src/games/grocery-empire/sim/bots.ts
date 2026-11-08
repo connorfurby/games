@@ -1,4 +1,5 @@
 import { goalCash, goalNeeds, nextGoal } from '../content/goals'
+import { RIVALS } from '../content/rivals'
 import { MEMOS } from '../content/memos'
 import { PERK_BY_ID } from '../content/perks'
 import { PROJECTS } from '../content/projects'
@@ -531,6 +532,8 @@ export function campaignCommands(s: GameState, step: number): Command[] {
     if (canWithin(s, c, reserve)) run(s, c)
   }
   for (const m of MEMOS) {
+    // A respec, not progress: a steady player files it once at most.
+    if (m.id === 'reboot-fleet') continue
     const c: Command = { type: 'buyMemo', id: m.id }
     if (holdAttention) {
       try {
@@ -564,6 +567,16 @@ export function campaignCommands(s: GameState, step: number): Command[] {
   for (const pj of PROJECTS) {
     const c: Command = { type: 'startProject', id: pj.id }
     if (canWithin(s, c, reserve)) run(s, c)
+  }
+  for (const r of RIVALS) {
+    const buy: Command = { type: 'buyoutRival', id: r.id }
+    if (canWithin(s, buy, reserve)) {
+      run(s, buy)
+      continue
+    }
+    const st = s.rivals?.[r.id]
+    const war: Command = { type: 'priceWar', id: r.id }
+    if (st && st.stores >= r.maxStores / 2 && canWithin(s, war, reserve)) run(s, war)
   }
   if (s.fleet.launched) {
     cmds.push({ type: 'buyCharter' })

@@ -1,4 +1,5 @@
 import { valueMul } from './systems/network'
+import { rivalDemandMul } from './systems/rivals'
 import { statCut, statMul } from './systems/stats'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ROLES, STAFF_TRAITS, type RoleId, type StaffTraitId } from '../content/staff'
@@ -447,6 +448,8 @@ export function demandBreakdown(s: GameState) {
     ventures: ventureTrafficMul(s),
     /** 2.0: lifetime baskets bring shoppers back. */
     wordOfMouth: wordOfMouthMul(s),
+    /** 2.0: independent rival chains pull shoppers away. */
+    rivals: rivalDemandMul(s),
     /** 2.0 stat engine: trees, doctrines, rank rewards, projects. */
     trees: statMul(s, 'demand'),
   }

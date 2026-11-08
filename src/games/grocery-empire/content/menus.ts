@@ -4,6 +4,7 @@ export const MENU_IDS = [
   'suppliers',
   'staff',
   'marketing',
+  'rivals',
   'books',
   'invest',
   'build',
@@ -16,6 +17,7 @@ export const MENU_IDS = [
   'logistics',
   'fleet',
   'empire',
+  'map',
   'coach',
   'more',
 ] as const
@@ -59,6 +61,12 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Marketing',
     glyph: 'MK',
     purpose: 'Buy demand — only when shoppers are the limit.',
+  },
+  rivals: {
+    id: 'rivals',
+    name: 'Rivals',
+    glyph: 'RV',
+    purpose: 'Named chains steal shoppers. Fight them or buy them.',
   },
   books: {
     id: 'books',
@@ -131,6 +139,12 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Empire',
     glyph: 'EM',
     purpose: 'Baskets raise rank. Rank unlocks upgrades and invest caps.',
+  },
+  map: {
+    id: 'map',
+    name: 'Map',
+    glyph: 'MP',
+    purpose: 'Everything you own, in rings around the flagship.',
   },
   coach: {
     id: 'coach',

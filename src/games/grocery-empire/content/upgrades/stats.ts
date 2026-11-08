@@ -28,6 +28,8 @@ export const STAT_IDS = [
   'wageCut',
   'spoilCut',
   'crateCut',
+  'rivalCut',
+  'dealCut',
 ] as const
 export type StatId = (typeof STAT_IDS)[number]
 
@@ -54,6 +56,8 @@ export const STAT_INFO: Record<StatId, { label: string; kind: 'boost' | 'cut' }>
   wageCut: { label: 'wages', kind: 'cut' },
   spoilCut: { label: 'spoilage', kind: 'cut' },
   crateCut: { label: 'crate prices', kind: 'cut' },
+  rivalCut: { label: 'rival pull', kind: 'cut' },
+  dealCut: { label: 'buyout prices', kind: 'cut' },
 }
 
 export interface StatEffect {

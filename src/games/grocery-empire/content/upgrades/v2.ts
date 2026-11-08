@@ -149,6 +149,8 @@ const BRAND: Row[] = [
   ['br-nostalgia', 'Nostalgia Line', 'Old labels, original recipes, new prices.', [['value', 0.04]], 3, 4],
   ['br-viral', 'Viral Moment', 'Something about a can went around the world.', [['demand', 0.03], ['xp', 0.03]], 1, 3],
   ['br-anthem', 'Company Anthem', 'Staff sing it on Fridays. Customers join in.', [['checkout', 0.03], ['demand', 0.02]], 2, 5],
+  ['br-price-match', 'Price-Match Promise', 'Bring their circular; we beat it at the till.', [['rivalCut', 0.06]], 1, 2],
+  ['br-side-by-side', 'Side-by-Side Ads', 'Two receipts on a billboard. Yours is shorter.', [['rivalCut', 0.05], ['demand', 0.01]], 2, 3, { needs: [['br-price-match', 5]] }],
 ]
 
 // ── Automation ─────────────────────────────────────────────────────────────
@@ -193,6 +195,8 @@ const CAPITAL: Row[] = [
   ['ca-orbital-bank', 'Orbital Bank', 'Interest compounds faster in low orbit.', [['barge', 0.04], ['margin', 0.02]], 2, 5],
   ['ca-ipo', 'IPO', 'Ring the bell. Everyone owns a can.', [['xp', 0.04], ['store', 0.02]], 2, 2],
   ['ca-tax-team', 'Tax Team', 'Six people who make the rest of the numbers bigger.', [['margin', 0.035]], 3, 4],
+  ['ca-war-chest', 'War Chest', 'Cash set aside for the day a rival wants to sell.', [['dealCut', 0.05]], 1, 2],
+  ['ca-takeover-desk', 'Takeover Desk', 'Analysts who read rival balance sheets for weak spots.', [['dealCut', 0.05], ['rivalCut', 0.02]], 2, 4, { needs: [['ca-war-chest', 5]] }],
 ]
 
 // ── Lab (new) ──────────────────────────────────────────────────────────────

@@ -176,6 +176,8 @@ export interface PoliticsState {
 /** Era 5 — seed barges / Charter. */
 export interface FleetState {
   barges: number
+  /** Barges you paid for (replicated barges are free and do not raise the price). */
+  launches: number
   biomass: number
   biomassMax: number
   charter: Record<string, number>
@@ -256,10 +258,26 @@ export interface Stats {
   boardMeetings: number
   couponMatches: number
   rivalAnswers: number
+  rivalsBought: number
   walks: number
   trains: number
   /** 2.0: revenue booked by the store network (copies of flagship sales). */
   networkRevenue: number
+}
+
+export interface RivalState {
+  stores: number
+  /** Bought out: its stores count toward your network. */
+  bought: boolean
+  /** Stores it had when bought (frozen). */
+  boughtStores: number
+  nextGrowAt: number
+  /** Growth frozen until this time (price war). */
+  frozenUntil: number
+  /** Next price war allowed at this time. */
+  warReadyAt: number
+  grown: number
+  wars: number
 }
 
 export interface GameState {
@@ -412,6 +430,8 @@ export interface GameState {
   rebrand: { goodwill: number; count: number; bankedThisRun: number }
   /** 2.0 Empire Projects: finished ids and the builds in progress. */
   projects: { done: Record<string, true>; active: { id: string; endsAt: number }[] }
+  /** 2.0 named rival chains, keyed by rival id. Missing = not opened yet. */
+  rivals: Record<string, RivalState>
 
   menus: Record<MenuId, boolean>
   seenMenus: Record<string, boolean>
@@ -538,6 +558,7 @@ export function emptyFleet(): FleetState {
   const charter = Object.fromEntries(CHARTER_AXES.map((a) => [a.id, 0])) as Record<string, number>
   return {
     barges: 0,
+    launches: 0,
     biomass: FLEET.biomassStart,
     biomassMax: FLEET.biomassStart,
     charter,
@@ -610,6 +631,7 @@ export function emptyStats(): Stats {
     boardMeetings: 0,
     couponMatches: 0,
     rivalAnswers: 0,
+    rivalsBought: 0,
     walks: 0,
     trains: 0,
     networkRevenue: 0,
@@ -764,6 +786,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     pendingAccept: false,
     prestigeCarry: emptyPrestigeCarry(),
     projects: { done: {}, active: [] },
+    rivals: {},
     rebrand: { goodwill: 0, count: 0, bankedThisRun: 0 },
 
     menus,

@@ -1,4 +1,5 @@
 import { LOT_SURVEY_LIFETIME } from '../sim/balance'
+import { rebootFee } from '../sim/formulas'
 import { LATE_MEMOS } from './lateEras'
 import { AMEND_MINUTES, RETRAIN, STANDING_ORDERS } from '../sim/balance'
 import { log, queueTutorial, setEra, unlockMenu } from '../sim/helpers'
@@ -981,9 +982,9 @@ export const MEMOS: MemoDef[] = [
     id: 'reboot-fleet',
     name: 'Reboot Fleet',
     voice: 'Refund Charter. Respec. No shame.',
-    effect: 'Respec Charter points (small cash fee).',
+    effect: 'Respec Charter points. Fee: a slice of cash on hand.',
     era: 5,
-    cost: c(0),
+    cost: (s) => ({ cash: Math.ceil(rebootFee(s)), attention: 0, ideas: 0 }),
     visible: (s) => s.fleet.launched,
     run: (s) => rebootFleet(s),
     repeatable: true,

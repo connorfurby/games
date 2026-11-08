@@ -356,6 +356,8 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         }
         base.fleet = {
           barges: Math.max(0, Math.floor(num(f.barges, d.barges))),
+          // Pre-v6 saves priced barges by count; cap so replicated fleets aren't priced out.
+          launches: Math.max(0, Math.floor(num(f.launches, Math.min(num(f.barges, 0), 12)))),
           biomass: Math.max(0, num(f.biomass, d.biomass)),
           biomassMax: Math.max(0, num(f.biomassMax, d.biomassMax)),
           charter,
@@ -411,6 +413,23 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
               .map((a) => ({ id: a.id, endsAt: a.endsAt }))
           : []
         base.projects = { done, active }
+      }
+      if (isObject(raw.rivals)) {
+        const rivals: GameState['rivals'] = {}
+        for (const [k, v] of Object.entries(raw.rivals)) {
+          if (!isObject(v)) continue
+          rivals[k] = {
+            stores: Math.max(1, Math.floor(num(v.stores, 1))),
+            bought: bool(v.bought, false),
+            boughtStores: Math.max(0, Math.floor(num(v.boughtStores, 0))),
+            nextGrowAt: num(v.nextGrowAt, 0),
+            frozenUntil: num(v.frozenUntil, 0),
+            warReadyAt: num(v.warReadyAt, 0),
+            grown: Math.max(0, Math.floor(num(v.grown, 0))),
+            wars: Math.max(0, Math.floor(num(v.wars, 0))),
+          }
+        }
+        base.rivals = rivals
       }
 
       if (isObject(raw.menus)) {

@@ -5,8 +5,8 @@ import { runPacing } from './bots'
  * Pacing gate (docs/2.0-plan.md → Pacing targets). The campaign bot is a steady,
  * unhurried player; real players beat it. Every balance change must keep these.
  *
- * Measured 2026-11-08 (seeds 1, 42), with 2.0 trees, doctrines, rewards and projects:
- * Era 1 ≈ 9 min · Era 2 ≈ 87 min · Era 3 ≈ 3 h · Era 4 ≈ 4.3 h · Era 5 ≈ 5.3 h · Era 6 ≈ 8.2 h.
+ * Measured 2026-11-08 (seeds 1, 42), with trees, doctrines, rewards, projects and rival chains:
+ * Era 1 ≈ 9 min · Era 2 ≈ 85 min · Era 3 ≈ 3–3.2 h · Era 4 ≈ 4.4–4.6 h · Era 5 ≈ 5.7–6 h · Era 6 ≈ 7.8–8 h.
  * After Era 6 the run continues through Rebrand (prestige), which the bot does not use.
  */
 const SEEDS = [1, 42]

@@ -2,6 +2,7 @@ import { CHAIN, EMPIRE, NETWORK, VALUE } from '../balance'
 import { clamp } from '../helpers'
 import type { GameState, StoreState } from '../state'
 import { upgradeEffect } from '../../content/upgrades'
+import { boughtRivalStores } from './rivals'
 import { statMul } from './stats'
 
 /**
@@ -37,6 +38,7 @@ export function networkStores(s: GameState): number {
   w *= 1 + upgradeEffect(s, 'store-runner') * 0.5
   const franchises = s.fleet?.franchises ?? 0
   w += franchises * NETWORK.perFranchise * (0.5 + 0.5 * clamp(s.brand, 0, 1))
+  w += boughtRivalStores(s)
   return w
 }
 

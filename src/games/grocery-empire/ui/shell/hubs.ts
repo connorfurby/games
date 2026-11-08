@@ -35,9 +35,9 @@ export const HUBS: HubDef[] = [
   {
     id: 'team',
     name: 'Team',
-    purpose: 'Staff, marketing and side businesses.',
+    purpose: 'Staff, marketing, rivals and side businesses.',
     icon: 'staff',
-    menus: ['staff', 'marketing', 'ventures'],
+    menus: ['staff', 'marketing', 'rivals', 'ventures'],
   },
   {
     id: 'money',
@@ -49,9 +49,9 @@ export const HUBS: HubDef[] = [
   {
     id: 'empire',
     name: 'Empire',
-    purpose: 'Grow the chain: upgrades, rank, strategy, land and the fleet.',
+    purpose: 'Grow the chain: upgrades, rank, strategy, land, the fleet and the map.',
     icon: 'empire',
-    menus: ['empire', 'upgrades', 'strategy', 'land', 'fleet'],
+    menus: ['empire', 'map', 'upgrades', 'strategy', 'land', 'fleet'],
   },
 ]
 

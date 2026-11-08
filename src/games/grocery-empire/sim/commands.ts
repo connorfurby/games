@@ -1,4 +1,6 @@
 import { valueMul } from './systems/network'
+import { buyout, canBuyout, canPriceWar, priceWar } from './systems/rivals'
+import type { RivalId } from '../content/rivals'
 import { TRACK_BY_ID, type BuildFilter, refundFrac } from '../content/builds'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ERA2_EXPANSION_BY_ID } from '../content/era2'
@@ -154,6 +156,8 @@ export type Command =
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
   | { type: 'startProject'; id: string }
+  | { type: 'priceWar'; id: RivalId }
+  | { type: 'buyoutRival'; id: RivalId }
   | { type: 'respecPerks' }
   | { type: 'expandLot'; id?: string }
   | { type: 'expandSideYard' }
@@ -725,6 +729,20 @@ const coreHandlers = {
       log(s, def.voice, 'story')
       log(s, def.done, 'memo')
     },
+  },
+  priceWar: {
+    can: (s, cmd) => {
+      const why = canPriceWar(s, (cmd as Extract<Command, { type: 'priceWar' }>).id)
+      return why ? no(why) : ok
+    },
+    run: (s, cmd) => priceWar(s, (cmd as Extract<Command, { type: 'priceWar' }>).id),
+  },
+  buyoutRival: {
+    can: (s, cmd) => {
+      const why = canBuyout(s, (cmd as Extract<Command, { type: 'buyoutRival' }>).id)
+      return why ? no(why) : ok
+    },
+    run: (s, cmd) => buyout(s, (cmd as Extract<Command, { type: 'buyoutRival' }>).id),
   },
   startProject: {
     can: (s, cmd) => {

@@ -12,8 +12,9 @@ export function franchiseCost(s: GameState): number {
   return Math.ceil(LOGISTICS.franchiseCash * Math.pow(LOGISTICS.franchiseGrowth, s.fleet.franchises))
 }
 
+/** Priced by barges you bought; replication is free and doesn't raise the price. */
 export function bargeCost(s: GameState): number {
-  return Math.ceil(FLEET.bargeLaunchCash * Math.pow(FLEET.bargeGrowth, s.fleet.barges))
+  return Math.ceil(FLEET.bargeLaunchCash * Math.pow(FLEET.bargeGrowth, s.fleet.launches ?? s.fleet.barges))
 }
 
 export function laneCost(s: GameState): number {
@@ -83,6 +84,7 @@ export function launchBarge(s: GameState) {
     s.fleet.launched = true
   }
   s.fleet.barges += 1
+  s.fleet.launches = (s.fleet.launches ?? 0) + 1
   unlockMenu(s, 'fleet')
   if (s.era < 5) setEra(s, 5)
   log(s, `Seed barge #${s.fleet.barges} launched into the dark.`, 'era')

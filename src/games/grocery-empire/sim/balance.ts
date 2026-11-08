@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 5
+export const SAVE_VERSION = 6
 
 /** Lifetime revenue before the Lot Survey memo appears (Era 1 → 2 spine). */
 export const LOT_SURVEY_LIFETIME = 4000
@@ -520,10 +520,10 @@ export const LOGISTICS = {
 /** Era 5 — seed barges / charter. */
 export const FLEET = {
   bargeLaunchCash: 5_000_000_000,
-  bargeGrowth: 1.9,
+  bargeGrowth: 2.4,
   bargeLaunchRead: 8,
   bargeSoftFloor: 1,
-  biomassStart: 1_000_000,
+  biomassStart: 12_000_000,
   harvestPerBargePerSec: 2,
   replicationPerSec: 0.002,
   charterBaseCap: 12,
@@ -611,4 +611,23 @@ export const WORD_OF_MOUTH = {
   /** Demand × (1 + perDecade × log10(1 + baskets / scale)). */
   perDecade: 0.45,
   scale: 60,
+}
+
+/** 2.0 named rival chains (content/rivals.ts). */
+export const RIVAL_CHAINS = {
+  /** Demand cut per independent rival store: demand × 1 / (1 + Σ stores × perStore). */
+  perStore: 0.006,
+  /** Buyout = buyoutBase × (1 + stores × buyoutPerStore). */
+  buyoutPerStore: 0.35,
+  /** A bought rival store is worth this many flagships in the network. */
+  boughtStoreWeight: 0.25,
+  /** Price war: costs this share of the buyout, closes stores, freezes growth. */
+  warCostFrac: 0.05,
+  warStoresClosed: 2,
+  warFreezeSec: 600,
+  warCooldownSec: 180,
+  /** Empire XP on buyout: this share of the current level's cost, per store bought. */
+  buyoutLevelShare: 0.06,
+  /** A taunt is logged every this-many new stores. */
+  tauntEvery: 3,
 }
