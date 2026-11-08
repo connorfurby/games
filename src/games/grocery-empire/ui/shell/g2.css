@@ -3985,3 +3985,77 @@
   letter-spacing: 0;
   text-transform: none;
 }
+
+.u2-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.u2-viewswitch {
+  display: flex;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.u2-viewswitch button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  background: transparent;
+  color: var(--ge-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.u2-viewswitch button.is-on {
+  background: var(--g2-tag);
+  color: var(--g2-tag-ink);
+  font-weight: 650;
+}
+
+.dt-branches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0.5rem;
+}
+
+.dt-branch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--g2-r-md);
+  border: 1px solid var(--g2-line);
+  border-left: 3px solid var(--bt);
+  background: var(--g2-raised);
+  color: var(--ge-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.dt-branch strong {
+  font-family: var(--g2-display);
+  font-size: 0.95rem;
+}
+
+.dt-branch small {
+  font-size: 0.68rem;
+  color: var(--ge-muted);
+}
+
+.dt-branch.is-on {
+  background: color-mix(in srgb, var(--bt) 18%, var(--g2-raised));
+  border-color: var(--bt);
+}
+
+.dt-branch .g2-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+}

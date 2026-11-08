@@ -16,7 +16,9 @@ import {
   type UpgradeBand,
   type UpgradeDef,
 } from '../../content/upgrades'
-import { MASTERY, MILESTONES, masteryMul, milestoneMul, nextMilestone } from '../../content/upgrades/stats'
+import { MASTERY, MILESTONES, STAT_INFO, effectiveRank, masteryMul, milestoneMul, nextMilestone } from '../../content/upgrades/stats'
+import { SkillTree, type TreeNode, type TreeNodeState } from '../tree/SkillTree'
+import { StatGlyph } from '../tree/StatGlyph'
 import { UPGRADE_RANKS } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { upgradeBulkCost, upgradeRankCap } from '../../sim/formulas'
@@ -148,10 +150,164 @@ function NodeCard({ v, s, fmt, onBuy }: { v: NodeView; s: GameState; fmt: Parame
   )
 }
 
+const TREE_TINT: Record<TreeId, string> = {
+  floor: '#f2c14e',
+  people: '#7fd3a0',
+  supply: '#8fb6e0',
+  brand: '#ff8a7a',
+  automation: '#9be3d8',
+  capital: '#d4b06a',
+  lab: '#b79cf0',
+  fresh: '#8fe39a',
+  logistics: '#6fb0e8',
+  space: '#c3aaf0',
+}
+
+function toTreeNode(v: NodeView, fmt: Parameters<typeof money>[1]): TreeNode {
+  const { def, lvl } = v
+  const state: TreeNodeState = !v.shown
+    ? 'unknown'
+    : lvl >= def.max
+      ? 'max'
+      : v.can1
+        ? 'ready'
+        : v.locked
+          ? lvl > 0
+            ? 'owned'
+            : 'locked'
+          : lvl > 0
+            ? 'owned'
+            : 'open'
+  return {
+    id: def.id,
+    name: def.name,
+    tier: bandOf(def),
+    requires: def.requires ?? [],
+    fork: def.fork,
+    lvl,
+    max: def.max,
+    state,
+    stat: def.effects?.[0]?.stat,
+    sub: lvl >= def.max || !v.shown ? undefined : v.locked ? undefined : money(v.cost1, fmt),
+  }
+}
+
+function UpgradeDetail({
+  v,
+  s,
+  fmt,
+  mastery,
+  onBuy,
+  onJump,
+}: {
+  v: NodeView
+  s: GameState
+  fmt: Parameters<typeof money>[1]
+  mastery: number
+  onBuy: (n: number) => void
+  onJump: (id: string) => void
+}) {
+  const { def, lvl } = v
+  const maxed = lvl >= def.max
+  const afford = !maxed && !v.locked ? affordableCount(s, v) : 0
+  const children = UPGRADES.filter((u) => u.requires?.some((r) => r.id === def.id))
+  const eff = effectiveRank(lvl) * mastery
+  const nm = nextMilestone(lvl)
+  return (
+    <div className="sd">
+      <div className="sd-head">
+        <span className="sd-icon">
+          <StatGlyph stat={def.effects?.[0]?.stat} size={24} />
+        </span>
+        <div>
+          <h3>{def.name}</h3>
+          <small>
+            Rank {lvl} of {def.max}
+            {v.cap < def.max ? ` · cap ${v.cap} now` : ''}
+          </small>
+        </div>
+      </div>
+      <p className="sd-blurb">{def.blurb}</p>
+      <ul className="sd-rows">
+        <li>
+          <span>Each rank</span>
+          <strong>{def.per}</strong>
+        </li>
+        {def.effects?.map((e) => (
+          <li key={e.stat}>
+            <span>Now: {STAT_INFO[e.stat].label}</span>
+            <strong>
+              {STAT_INFO[e.stat].kind === 'cut' ? '−' : '+'}
+              {(e.per * eff * 100).toFixed(1)}%
+            </strong>
+          </li>
+        ))}
+        {nm && def.effects?.length ? (
+          <li>
+            <span>Milestone</span>
+            <strong>doubles at rank {nm}</strong>
+          </li>
+        ) : null}
+        {v.locked && !maxed ? (
+          <li className="is-bad">
+            <span>Locked</span>
+            <strong>{v.locked}</strong>
+          </li>
+        ) : null}
+      </ul>
+      {!maxed && !v.locked ? (
+        <div className="sd-buy">
+          <button type="button" className="g2-tag" disabled={!v.can1} onClick={() => onBuy(1)}>
+            <span className="g2-tag__price">{money(v.cost1, fmt)}</span>
+            <span className="g2-tag__label">+1 rank</span>
+          </button>
+          {afford > 1 ? (
+            <button type="button" className="g2-tag g2-tag--small" onClick={() => onBuy(afford)}>
+              <span className="g2-tag__price">{money(upgradeBulkCost(s, def.id, afford), fmt)}</span>
+              <span className="g2-tag__label">+{afford} ranks</span>
+            </button>
+          ) : null}
+        </div>
+      ) : maxed ? (
+        <p className="sd-links">Maxed. Every rank counts toward tree mastery.</p>
+      ) : null}
+      {def.requires?.length ? (
+        <p className="sd-links">
+          Needs:{' '}
+          {def.requires.map((r, i) => (
+            <span key={r.id}>
+              {i ? ', ' : ''}
+              <button type="button" onClick={() => onJump(r.id)}>
+                {UPGRADE_BY_ID[r.id]?.name ?? r.id}
+              </button>{' '}
+              {r.level}
+            </span>
+          ))}
+        </p>
+      ) : null}
+      {children.length ? (
+        <p className="sd-links">
+          Unlocks:{' '}
+          {children.map((c, i) => (
+            <span key={c.id}>
+              {i ? ', ' : ''}
+              <button type="button" onClick={() => onJump(c.id)}>
+                {c.name}
+              </button>
+            </span>
+          ))}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 export function UpgradesBoard() {
-  const { state: s, tick, dispatch, numberFormat } = useGame()
+  const { state: s, tick, dispatch, numberFormat, reducedMotion } = useGame()
   const [tree, setTree] = useState<TreeId>('floor')
   const [affordOnly, setAffordOnly] = useState(false)
+  const [view, setView] = useState<'tree' | 'list'>('tree')
+  const [sel, setSel] = useState<string | null>(null)
 
   const ranks = useMemo(() => treeRanks(s), [tick, s])
 
@@ -194,10 +350,21 @@ export function UpgradesBoard() {
             tree adds {Math.round(MASTERY.perStep * 100)}% to all of it.
           </p>
         </div>
-        <label className="u2-toggle">
-          <input type="checkbox" checked={affordOnly} onChange={(e) => setAffordOnly(e.target.checked)} />
-          Only what I can buy
-        </label>
+        <div className="u2-tools">
+          <div className="u2-viewswitch" role="tablist" aria-label="View">
+            {(['tree', 'list'] as const).map((v) => (
+              <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'is-on' : ''} onClick={() => setView(v)}>
+                {v === 'tree' ? 'Tree' : 'List'}
+              </button>
+            ))}
+          </div>
+          {view === 'list' ? (
+            <label className="u2-toggle">
+              <input type="checkbox" checked={affordOnly} onChange={(e) => setAffordOnly(e.target.checked)} />
+              Only what I can buy
+            </label>
+          ) : null}
+        </div>
       </header>
 
       <nav className="u2-trees" aria-label="Trees">
@@ -228,7 +395,34 @@ export function UpgradesBoard() {
         </div>
       </div>
 
-      {BAND_IDS.map((band) => {
+      {view === 'tree' ? (
+        <SkillTree
+          nodes={active.views.map((v) => toTreeNode(v, numberFormat))}
+          tiers={BAND_IDS.map((b) => {
+            const open = UPGRADE_RANKS.bands[b].empireOpen
+            return {
+              label: BAND_LABELS[b],
+              note: s.empire.level >= open ? (b === 3 ? 'capstones: pick one' : 'open') : `opens at Empire ${open}`,
+            }
+          })}
+          tint={TREE_TINT[active.id]}
+          selected={sel && UPGRADE_BY_ID[sel]?.tree === active.id ? sel : null}
+          onSelect={setSel}
+          reducedMotion={reducedMotion}
+          renderDetail={(id) => (
+            <UpgradeDetail
+              v={active.views.find((x) => x.def.id === id)!}
+              s={s}
+              fmt={numberFormat}
+              mastery={mastery}
+              onBuy={(n) => dispatch({ type: 'buyUpgrade', id, count: n })}
+              onJump={setSel}
+            />
+          )}
+        />
+      ) : null}
+
+      {view === 'list' && BAND_IDS.map((band) => {
         const views = active.views.filter(
           (v) => bandOf(v.def) === (band as UpgradeBand) && v.shown && (!affordOnly || v.can1),
         )

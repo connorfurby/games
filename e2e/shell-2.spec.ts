@@ -20,7 +20,7 @@ test('2.0 shell boots into the store with a next goal', async ({ page }) => {
   await expect(page.locator('.g2-inbox')).toHaveCount(0)
   await page.locator('.g2-hub', { hasText: 'Empire' }).click()
   await page.locator('.g2-main .g2-subtab', { hasText: 'Upgrades' }).click()
-  await expect(page.locator('.u2-node').first()).toBeVisible()
+  await expect(page.locator('.st-node').first()).toBeVisible()
   expect(errors).toEqual([])
 })
 
