@@ -1,4 +1,5 @@
 import { CHAIN, CHECKOUT } from '../balance'
+import { upgradeEffect } from '../../content/upgrades'
 import { clamp, log } from '../helpers'
 import type { GameState, StorePolicy, StoreState } from '../state'
 
@@ -136,9 +137,8 @@ export function chainCheckoutBonus(s: GameState): number {
   const laneBoss =
     1 +
     (s.upgrades['lane-boss'] ?? 0) * 0.08 +
-    // store-runner / lane-rhythm use curve magnitude via ranks × soft constants (cycle-safe).
-    Math.min(0.35, (s.upgrades['store-runner'] ?? 0) * 0.012) +
-    Math.min(0.35, (s.upgrades['lane-rhythm'] ?? 0) * 0.01)
+    upgradeEffect(s, 'store-runner') +
+    upgradeEffect(s, 'lane-rhythm')
   let bonus = 0
   // Flagship is index 0 — extras are stores beyond the first.
   for (let i = 1; i < s.stores.length; i++) {
@@ -267,7 +267,7 @@ export function openStoreCost(s: GameState): number {
   }
   // Soft Opening / Second Key Desk / Many Doors perk (cycle-safe: no formulas import).
   const soft = (s.upgrades['soft-opening'] ?? 0) * 0.03
-  const desk = Math.min(0.28, (s.upgrades['second-key'] ?? 0) * 0.012)
+  const desk = upgradeEffect(s, 'second-key')
   const manyDoors = (s.empire.perks['many-doors'] ?? 0) * 0.04
   cost *= Math.max(0.55, 1 - soft - desk - manyDoors)
   if (s.memos['many-doors-memo']) cost *= 0.97

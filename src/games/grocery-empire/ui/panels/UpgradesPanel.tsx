@@ -145,7 +145,7 @@ function NodeCard({
       data-suggest-id={sid}
       data-upgrade-id={node.def.id}
       className={cls}
-      style={{ gridColumn: (node.def.col ?? 0) + 1, gridRow: (node.def.row ?? 0) + 1 }}
+      style={{ gridColumn: (node.def.col ?? 0) + 1, gridRow: (node.def.band ?? 0) * 3 + (node.def.row ?? 0) + 1 }}
       onClick={onSelect}
     >
       <div className="ge-up-card__ring" style={{ background: ring }} aria-hidden>

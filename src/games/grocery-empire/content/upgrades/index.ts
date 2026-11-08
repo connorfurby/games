@@ -85,6 +85,26 @@ export function upgradeCurveAt(def: UpgradeDef, level: number): number {
   }
 }
 
+/** Synergy product for a node: each doctrine point multiplies by mul, capped. */
+export function upgradeSynergy(s: GameState, def: UpgradeDef): number {
+  if (!def.synergy) return 1
+  const pts = s.empire.perks[def.synergy.perk] ?? 0
+  if (pts <= 0) return 1
+  return Math.min(UPGRADE_RANKS.synergyCap, Math.pow(def.synergy.mul, pts))
+}
+
+/**
+ * The one way systems read an upgrade's strength: curve(level) × synergy.
+ * Cycle-safe (no formulas import), so sim/systems can call it directly.
+ */
+export function upgradeEffect(s: GameState, id: string): number {
+  const def = UPGRADE_BY_ID[id]
+  if (!def) return 0
+  const lvl = s.upgrades[id] ?? 0
+  if (lvl <= 0) return 0
+  return upgradeCurveAt(def, lvl) * upgradeSynergy(s, def)
+}
+
 /** True when a listed breakpoint rank has been reached. */
 export function upgradeBreakpointHit(def: UpgradeDef, level: number, mark: number): boolean {
   if (scaleOf(def) !== 'breakpoint') return level >= mark
@@ -123,11 +143,11 @@ export function bandRankUnlocked(s: GameState, def: UpgradeDef): number {
   }
   if (band === 2) {
     if (lv < UPGRADE_RANKS.bands[2].empireOpen) return 0
-    return Math.floor((lv - 8) / 2)
+    return 1 + Math.floor((lv - 8) / 2)
   }
   // band 3
   if (lv < UPGRADE_RANKS.bands[3].empireOpen) return 0
-  return Math.floor((lv - 16) / 3)
+  return 1 + Math.floor((lv - 16) / 3)
 }
 
 export function requirementsMet(s: GameState, def: UpgradeDef): boolean {
@@ -184,10 +204,9 @@ export function empireLevelForNextBandRank(s: GameState, def: UpgradeDef): numbe
   }
   if (band === 2) {
     if (s.empire.level < 8) return 8
-    // next rank opens every 2 levels
-    const need = 8 + (unlocked + 1) * 2
-    return need
+    // band opens with 1 rank at 8; one more every 2 levels
+    return 8 + unlocked * 2
   }
   if (s.empire.level < 16) return 16
-  return 16 + (unlocked + 1) * 3
+  return 16 + unlocked * 3
 }

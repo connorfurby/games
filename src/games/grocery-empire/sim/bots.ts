@@ -440,3 +440,65 @@ export function fuzzBot(seed: number, ticks: number, dt = 1): FuzzResult {
     ticks,
   }
 }
+
+// ── Greedy bot (2.0 pacing gate) ─────────────────────────────────────────────
+
+/** Era → first sim-second reached. Used by pacing.test.ts. */
+export type EraTimes = Record<number, number>
+
+export interface PacingResult {
+  eraAt: EraTimes
+  final: GameState
+  samples: { t: number; era: number; empire: number; cash: number; revPerSec: number }[]
+}
+
+/**
+ * Buys whatever it can afford every few seconds — memos, builds, lots, stores,
+ * the cheapest upgrade rank, staff — on top of the attentive habits. A pessimistic
+ * stand-in for a casual player; pacing targets are asserted against it.
+ */
+export function greedyCommands(s: GameState, step: number): Command[] {
+  const cmds: Command[] = [...recoveryCommands(s), ...attentiveCommands(s)]
+  if (step % 5 !== 0) return cmds
+  cmds.push({ type: 'acceptChapter' })
+  for (const m of MEMOS) cmds.push({ type: 'buyMemo', id: m.id })
+  for (const tr of BUILD_FILTERS) cmds.push({ type: 'buyBuild', track: tr })
+  cmds.push(
+    { type: 'expandLot', id: 'side-yard' },
+    { type: 'incorporate' },
+    { type: 'openStore' },
+    { type: 'buyEndcap' },
+  )
+  let best: { id: string; cost: number } | null = null
+  for (const id of Object.keys(UPGRADE_BY_ID)) {
+    const cmd: Command = { type: 'buyUpgrade', id }
+    if (!can(s, cmd).ok) continue
+    const def = UPGRADE_BY_ID[id]!
+    const cost = Math.ceil(def.base * Math.pow(def.growth, s.upgrades[id] ?? 0))
+    if (!best || cost < best.cost) best = { id, cost }
+  }
+  if (best && best.cost < s.cash * 0.7) cmds.push({ type: 'buyUpgrade', id: best.id })
+  for (const role of ['clerk', 'cashier', 'stocker'] as RoleId[]) {
+    if (s.cash > 300) cmds.push({ type: 'hire', role })
+  }
+  return cmds
+}
+
+export function runPacing(seed: number, seconds: number, sampleEvery = 600): PacingResult {
+  const s = createInitialState(seed, 0)
+  s.introSeen = true
+  const eraAt: EraTimes = { 0: 0 }
+  const samples: PacingResult['samples'] = []
+  for (let t = 1; t <= seconds; t++) {
+    for (const cmd of greedyCommands(s, t)) {
+      if (can(s, cmd).ok) run(s, cmd)
+    }
+    applyTick(s, 1)
+    repair(s)
+    if (eraAt[s.era] === undefined) eraAt[s.era] = t
+    if (t % sampleEvery === 0) {
+      samples.push({ t, era: s.era, empire: s.empire.level, cash: s.cash, revPerSec: s.rates.revenuePerSec })
+    }
+  }
+  return { eraAt, final: s, samples }
+}

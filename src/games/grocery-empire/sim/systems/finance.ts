@@ -1,4 +1,5 @@
 import { BUILD_TRACKS } from '../../content/builds'
+import { upgradeEffect } from '../../content/upgrades'
 import { DEBT, LOYALTY, RECOVERY } from '../balance'
 import {
   arrearsCap,
@@ -58,7 +59,7 @@ export function tickFinance(s: GameState, dt: number, revenueThisTick = 0) {
     if (s.debt.owed > 0) {
       const share =
         DEBT.revenueShare *
-        (1 + up(s, 'debt-plan') * DEBT.planBonusPerLevel + Math.min(0.5, (s.upgrades['iou-folder'] ?? 0) * 0.02))
+        (1 + up(s, 'debt-plan') * DEBT.planBonusPerLevel + upgradeEffect(s, 'iou-folder'))
       const pay = Math.min(s.debt.owed, revenueThisTick * share, s.cash)
       if (pay > 0) {
         s.cash -= pay

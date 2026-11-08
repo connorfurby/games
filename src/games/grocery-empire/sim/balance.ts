@@ -386,8 +386,8 @@ export const DOCTRINE_EFFECTS = {
  * Upgrade rank gates by band.
  * Band 0 (Counter): classic `2 + floor(empire/2)` — teaching nodes ignore this.
  * Band 1 (Aisle): opens at empire 4 → `4 + max(0, empire - 4)`.
- * Band 2 (Chain): locked until empire 8 → `floor((empire - 8) / 2)`.
- * Band 3 (Institution): locked until empire 16 → `floor((empire - 16) / 3)`.
+ * Band 2 (Chain): opens at empire 8 → `1 + floor((empire - 8) / 2)`.
+ * Band 3 (Institution): opens at empire 16 → `1 + floor((empire - 16) / 3)`.
  */
 export const UPGRADE_RANKS = {
   baseUnlocked: 2,

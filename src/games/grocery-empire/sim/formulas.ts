@@ -4,6 +4,8 @@ import {
   UPGRADE_BY_ID,
   upgradeCostWithToll,
   upgradeCurveAt,
+  upgradeEffect,
+  upgradeSynergy,
   bandRankUnlocked,
   type UpgradeDef,
 } from '../content/upgrades'
@@ -109,10 +111,7 @@ export const memoRank = (s: GameState, id: string) => s.memos[id] ?? 0
  * capped at UPGRADE_RANKS.synergyCap.
  */
 export function upgradeSynergyMul(s: GameState, def: UpgradeDef): number {
-  if (!def.synergy) return 1
-  const pts = perk(s, def.synergy.perk)
-  if (pts <= 0) return 1
-  return Math.min(UPGRADE_RANKS.synergyCap, Math.pow(def.synergy.mul, pts))
+  return upgradeSynergy(s, def)
 }
 
 /**
@@ -120,11 +119,7 @@ export function upgradeSynergyMul(s: GameState, def: UpgradeDef): number {
  * Untouched linear nodes without effectCap return raw ranks (same as up()).
  */
 export function upgradeMagnitude(s: GameState, id: string): number {
-  const def = UPGRADE_BY_ID[id]
-  if (!def) return 0
-  const lvl = up(s, id)
-  if (lvl <= 0) return 0
-  return upgradeCurveAt(def, lvl) * upgradeSynergyMul(s, def)
+  return upgradeEffect(s, id)
 }
 
 /** Preview magnitude at an arbitrary level (includes current synergy). */

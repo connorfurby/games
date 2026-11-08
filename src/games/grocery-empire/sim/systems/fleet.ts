@@ -1,4 +1,5 @@
 import { CHARTER_AXES, CHARTER_OPENER } from '../../content/lateEras'
+import { upgradeEffect } from '../../content/upgrades'
 import { FLEET, LOGISTICS } from '../balance'
 import { rebootFee, up } from '../formulas'
 import { clamp, log, round2, setEra, unlockMenu } from '../helpers'
@@ -194,7 +195,7 @@ export function tickLogistics(s: GameState, dt: number) {
       1 -
       Math.min(
         0.45,
-        up(s, 'sealant') * 0.04 + Math.min(0.3, (s.upgrades['berth-time'] ?? 0) * 0.012),
+        up(s, 'sealant') * 0.04 + upgradeEffect(s, 'berth-time'),
       )
     const burn = LOGISTICS.fuelBurnPerLanePerSec * s.fleet.lanes * dt * seal
     s.fuel = Math.max(0, s.fuel - burn)
@@ -228,9 +229,9 @@ export function tickFleet(s: GameState, dt: number) {
 
   refreshCharterCap(s)
 
-  const thick = Math.min(0.45, (s.upgrades['thick-shell'] ?? 0) * 0.01)
-  const longChart = Math.min(0.5, (s.upgrades['long-chart'] ?? 0) * 0.011)
-  const chartRoom = Math.min(0.4, (s.upgrades['chart-room'] ?? 0) * 0.015)
+  const thick = upgradeEffect(s, 'thick-shell')
+  const longChart = upgradeEffect(s, 'long-chart')
+  const chartRoom = upgradeEffect(s, 'chart-room')
   const shell = (s.fleet.charter.shell ?? 0) * (1 + up(s, 'shell-eff') * 0.04 + thick)
   const replication = s.fleet.charter.replication ?? 0
   const survey =

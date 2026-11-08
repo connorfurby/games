@@ -47,7 +47,11 @@ export function EmpirePanel() {
   const [focusId, setFocusId] = useState<string | null>(null)
 
   const spent = useMemo(
-    () => Object.entries(s.empire.perks).reduce((n, [, v]) => n + (v ?? 0), 0),
+    () =>
+      Object.entries(s.empire.perks).reduce(
+        (n, [id, v]) => n + (v ?? 0) * (PERK_BY_ID[id]?.cost ?? 1),
+        0,
+      ),
     [s.empire.perks],
   )
 
