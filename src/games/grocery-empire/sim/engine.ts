@@ -5,7 +5,7 @@ import { migrate } from './migrate'
 import { getActiveSaveId } from './saveKey'
 import { createInitialState, type GameState } from './state'
 import { applyOffline, applyTick } from './tick'
-import { applyUndo, canUndo as undoAvailable, pushUndo } from './undo'
+import { applyUndo, canUndo as undoAvailable, clearUndo, pushUndo } from './undo'
 
 type Listener = () => void
 
@@ -154,7 +154,13 @@ export class GroceryEngine {
       'buyDoctrine',
       'buyInvestEngine',
     ])
-    if (undoable.has(cmd.type)) pushUndo(this.state, cmd.type)
+    // Only snapshot when the command can succeed — otherwise Undo arms on a no-op
+    // and spend buttons feel "frozen" (click → silent fail → Undo lights up).
+    if (undoable.has(cmd.type)) {
+      const gate = canCmd(this.state, cmd)
+      if (!gate.ok) return gate
+      pushUndo(this.state, cmd.type)
+    }
     const check = runCmd(this.state, cmd)
     if (check.ok) this.bump()
     return check
@@ -185,12 +191,18 @@ export class GroceryEngine {
   }
 
   reset(seed?: number) {
+    clearUndo()
     this.state = createInitialState(seed)
+    this.state.lastSavedAt = Date.now()
     this.bump()
     this.save()
   }
 
-  /** UI "New Game" — wipe the active save id (campaign or DevMode) and start fresh. */
+  /**
+   * UI "New Game" — wipe the active save id (campaign or DevMode) and start fresh.
+   * Must update the in-memory singleton, not only localStorage — otherwise a later
+   * autosave / Play remount rewrites the wiped disk with the old run.
+   */
   newGame(seed?: number) {
     clearGameSave(getActiveSaveId())
     this.reset(seed)

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Command } from '../../sim/commands'
 import { can } from '../../sim/commands'
 import { engine } from '../../sim/engine'
@@ -5,13 +6,12 @@ import { plantCost, tankCost } from '../../sim/systems/cold'
 import { useGame } from '../GameContext'
 import { money } from '../format'
 import { Btn } from '../components/Btn'
+import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { HelpCard } from '../components/HelpCard'
-import { Line } from '../components/Line'
-import { Meter } from '../components/Meter'
 import { Panel } from '../components/Panel'
-import { Section } from '../components/Section'
+import { Icon } from '../icons/Icon'
+import { ColdBand } from '../scenes/DepartmentBands'
 
-/** Convenience one-click: plant + tank buffer, skip any step that isn't affordable. */
 const BALANCED_COLD: Command[] = [
   { type: 'buyPlant' },
   { type: 'buyTank' },
@@ -19,100 +19,118 @@ const BALANCED_COLD: Command[] = [
 ]
 
 export function ColdPanel() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
   const c = s.cold
-  const freshPct = Math.min(200, Math.round(c.freshness * 100))
   const balancedAny = BALANCED_COLD.some((cmd) => engine.can(cmd).ok)
+  const plantCheck = can(s, { type: 'buyPlant' })
+  const tankCheck = can(s, { type: 'buyTank' })
+  const decommissionCheck = can(s, { type: 'decommissionPlant' })
+  const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
 
   return (
-    <Panel title="Cold" purpose="Plants, tanks, freshness, and Momentum." lore="cold">
-      <Section label="Convenience">
-        <p className="ge-muted">
-          One-click helper — not a new system. Buys a plant then tanks if you can afford them.
-        </p>
+    <Panel
+      title="Cold"
+      purpose="Buy freshness time for dairy and meat."
+      lore="cold"
+      scene={<ColdBand state={s} />}
+    >
+      <div className={`ge-dept-callout${c.browned ? ' is-ready' : ''}`.trim()}>
+        <div className="ge-dept-callout__copy">
+          <h3>{c.browned ? 'Brownout' : c.momentumOn ? `Momentum ×${c.momentum.toFixed(2)}` : 'Cold line'}</h3>
+          <p>
+            {c.browned
+              ? 'Recover freshness before Momentum slips further.'
+              : 'Buy plants for supply, tanks for buffer — keep surplus positive.'}
+            {c.quadratic ? ' Quadratic plants drain yield fast.' : ''}
+            {c.autoSheds > 0 ? ` Auto-sheds: ${c.autoSheds}.` : ''}
+          </p>
+        </div>
         <Btn
-          tone="ghost"
+          tone="primary"
           disabled={!balancedAny}
+          title={!balancedAny ? 'Need cash for plant or tank' : undefined}
           onClick={() => {
             for (const cmd of BALANCED_COLD) {
               if (engine.can(cmd).ok) engine.dispatch(cmd)
             }
           }}
         >
-          Balanced Cold
+          Build buffer
         </Btn>
-      </Section>
+      </div>
 
-      <Section label="Line">
-        <Line left="Freshness" right={`${freshPct}%`} />
-        <Meter
-          value={Math.min(1.5, c.freshness)}
-          max={1.5}
-          label={c.browned ? 'Brownout floor' : 'Supply / demand'}
-        />
-        <div data-coach-id="cold-momentum">
-          <Line left="Momentum" right={c.momentumOn ? `×${c.momentum.toFixed(2)}` : 'Off'} />
-        </div>
-        <Line left="Surplus" right={c.surplus.toFixed(1)} muted />
-        <Line
-          left="Yield"
-          right={`${Math.floor(c.yieldLeft).toLocaleString()} / ${Math.floor(c.yieldMax).toLocaleString()}`}
-        />
-        {c.quadratic ? <p className="ge-muted">Quadratic plants active — yield drains fast.</p> : null}
-        {c.autoSheds > 0 ? <Line left="Auto-sheds" right={String(c.autoSheds)} muted /> : null}
-      </Section>
-
-      <Section label="Infrastructure">
-        <Line left="Plants" right={String(c.plants)} />
-        <Line left="Tanks" right={String(c.tanks)} />
-        <div className="ge-chip-row">
+      <article className={`ge-card${plantCheck.ok || tankCheck.ok ? ' is-ready' : ''}`.trim()}>
+        <header className="ge-empire-block__head">
+          <h3>Infrastructure</h3>
+          <p>
+            {c.plants} plant{c.plants === 1 ? '' : 's'} · {c.tanks} tank{c.tanks === 1 ? '' : 's'}
+          </p>
+        </header>
+        <div className="ge-card__actions">
           <Btn
-            tone="primary"
+            tone={plantCheck.ok ? 'primary' : 'ghost'}
             coachId="cold-buy-plant"
-            disabled={!can(s, { type: 'buyPlant' }).ok}
+            disabled={!plantCheck.ok}
+            title={!plantCheck.ok ? plantCheck.reason : undefined}
             onClick={() => dispatch({ type: 'buyPlant' })}
           >
+            <Icon name="plant" size={14} />
             Plant · {money(plantCost(s), numberFormat)}
           </Btn>
           <Btn
-            tone="primary"
+            tone={tankCheck.ok ? 'primary' : 'ghost'}
             coachId="cold-buy-tank"
-            disabled={!can(s, { type: 'buyTank' }).ok}
+            disabled={!tankCheck.ok}
+            title={!tankCheck.ok ? tankCheck.reason : undefined}
             onClick={() => dispatch({ type: 'buyTank' })}
           >
+            <Icon name="tank" size={14} />
             Tank · {money(tankCost(s), numberFormat)}
           </Btn>
+        </div>
+        <div className="ge-chip-row">
           <Btn
             tone="ghost"
-            disabled={!can(s, { type: 'decommissionPlant' }).ok}
+            disabled={!decommissionCheck.ok}
+            title={!decommissionCheck.ok ? decommissionCheck.reason : undefined}
             onClick={() => dispatch({ type: 'decommissionPlant' })}
           >
-            Decommission plant
+            Decommission 1
           </Btn>
           <Btn
             tone="danger"
             disabled={c.plants < 1}
+            title={c.plants < 1 ? 'No plants to remove' : undefined}
             onClick={() => {
               const n = c.plants
               if (n < 1) return
-              if (
-                !window.confirm(
-                  `Decommission all ${n} plant${n === 1 ? '' : 's'}? Full refund each (newest first).`,
-                )
-              )
-                return
-              for (let i = 0; i < n; i++) dispatch({ type: 'decommissionPlant' })
+              setConfirm({
+                title: 'Decommission all plants?',
+                body: `Refund all ${n} plant${n === 1 ? '' : 's'} (newest first). Freshness will drop.`,
+                confirmLabel: 'Decommission all',
+                tone: 'danger',
+                onConfirm: () => {
+                  for (let i = 0; i < n; i++) dispatch({ type: 'decommissionPlant' })
+                },
+              })
             }}
           >
             Decommission all
           </Btn>
         </div>
-      </Section>
+      </article>
 
       <HelpCard title="Cold is a promise">
         Plants and tanks buy time for perishables. Momentum compounds while freshness holds and
         auto-sheds when it slips — brownouts delay, they do not delete the save.
       </HelpCard>
+
+      <ConfirmModal
+        open={!!confirm}
+        spec={confirm}
+        reducedMotion={reducedMotion}
+        onClose={() => setConfirm(null)}
+      />
     </Panel>
   )
 }

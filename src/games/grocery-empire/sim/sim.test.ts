@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { serializeState, deserializeState } from '@/shared/save'
-import { DT } from './balance'
+import { DT, SAVE_VERSION } from './balance'
 import { runAttentiveLoop } from './bots'
 import { can, run } from './commands'
 import { sumQty } from './helpers'
@@ -25,7 +25,7 @@ describe('grocery empire sim', () => {
   it('migrate(null) never throws', () => {
     expect(() => migrate(null)).not.toThrow()
     const s = migrate(null)
-    expect(s.version).toBe(2)
+    expect(s.version).toBe(SAVE_VERSION)
     expect(s.cash).toBeGreaterThanOrEqual(0)
   })
 
@@ -39,7 +39,7 @@ describe('grocery empire sim', () => {
     }
     expect(() => migrate(proto)).not.toThrow()
     const s = migrate(proto)
-    expect(s.version).toBe(2)
+    expect(s.version).toBe(SAVE_VERSION)
     expect(s.ledger.some((e) => /reset|fresh|Old save|unreadable/i.test(e.text))).toBe(true)
   })
 
@@ -101,6 +101,34 @@ describe('grocery empire sim', () => {
     expect(run(s, { type: 'bailout' }).ok).toBe(true)
     expect(s.cash).toBeGreaterThan(0)
     expect(sumQty(s.backroom) + sumQty(s.shelf)).toBeGreaterThan(0)
+  })
+
+  it('bailout honours the real cooldown; mentor has its own cooldown', () => {
+    const s = createInitialState(4)
+    s.cash = 0
+    s.shelf = []
+    s.backroom = []
+    s.orders = []
+    expect(run(s, { type: 'bailout' }).ok).toBe(true)
+    s.backroom = []
+    s.cash = 0
+    s.time += 60
+    expect(can(s, { type: 'bailout' }).ok).toBe(false)
+    expect(run(s, { type: 'bailout' }).ok).toBe(false)
+    expect(run(s, { type: 'mentorRestock' }).ok).toBe(true)
+    s.backroom = []
+    expect(can(s, { type: 'mentorRestock' }).ok).toBe(false)
+  })
+
+  it('dumpCooler leaves the shelf alone unless includeShelf', () => {
+    const s = createInitialState(6)
+    s.shelf = [{ cat: 'produce', qty: 5, age: 1 }]
+    s.backroom = [{ cat: 'produce', qty: 7, age: 1 }]
+    expect(run(s, { type: 'dumpCooler' }).ok).toBe(true)
+    expect(sumQty(s.backroom)).toBe(0)
+    expect(sumQty(s.shelf)).toBe(5)
+    expect(run(s, { type: 'dumpCoolerPartial', cat: 'produce', qty: 2, where: 'shelf' }).ok).toBe(true)
+    expect(sumQty(s.shelf)).toBe(3)
   })
 
   it('callStarterCrate grants when shelves and backroom are dry', () => {

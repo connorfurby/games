@@ -62,9 +62,13 @@ export function ShopPage() {
   const equippedOrnaments = meta.equippedOrnaments ?? []
 
   return (
-    <div className="shop-page">
+    <div className="shop-page shell-subpage">
       <header className="shop-hero">
-        <Link to="/">← Shelf</Link>
+        <p className="shell-subpage__nav">
+          <Link to="/">Home</Link>
+          <Link to="/play/grocery-empire">Play</Link>
+          <Link to="/achievements">Awards</Link>
+        </p>
         <motion.h1 className="brand" layoutId="brand">
           SHOP
         </motion.h1>

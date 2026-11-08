@@ -1,59 +1,89 @@
 import { can } from '../../sim/commands'
 import { acquireCost } from '../../sim/systems/politics'
 import { useGame } from '../GameContext'
-import { money } from '../format'
+import { money, pct } from '../format'
 import { Btn } from '../components/Btn'
-import { Line } from '../components/Line'
-import { Meter } from '../components/Meter'
+import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
-import { Section } from '../components/Section'
+import { Icon } from '../icons/Icon'
+import { PoliticsBand } from '../scenes/DepartmentBands'
 
 export function PoliticsPanel() {
   const { state: s, dispatch, numberFormat } = useGame()
   const p = s.politics
   const acq = acquireCost(s)
+  const heat = p.monopolyRisk > 0.55
+  const lobbyCheck = can(s, { type: 'hireLobby' })
+  const acquireCheck = can(s, { type: 'acquireRegion' })
+  const leaveCheck = can(s, { type: 'leaveRegion' })
 
   return (
-    <Panel title="Politics" purpose="Lobby, capital, acquisitions, leave region." lore="politics">
-      <Section label="Wallet">
-        <Line left="Political Capital" right={p.capital.toFixed(1)} />
-        <Line left="Lobbyists" right={String(p.lobby)} />
-        <Line left="Monopoly risk" right={`${Math.round(p.monopolyRisk * 100)}%`} />
-        <Meter value={p.monopolyRisk} max={1} label="Acquisition heat" />
+    <Panel
+      title="Politics"
+      purpose="Spend political capital — lobby, buy, leave."
+      lore="politics"
+      scene={<PoliticsBand state={s} />}
+    >
+      <div className={`ge-dept-callout${heat ? ' is-ready' : ''}`.trim()}>
+        <div className="ge-dept-callout__copy">
+          <h3>Acquisition heat · {pct(p.monopolyRisk)}</h3>
+          <p>
+            {p.acquisitions} neighbor{p.acquisitions === 1 ? '' : 's'} bought
+            {heat ? ' — pressure is up, fines stay capped.' : '. Heat is a gauge, not a gavel.'}
+          </p>
+        </div>
         <Btn
           tone="primary"
-          coachId="politics-lobby"
-          disabled={!can(s, { type: 'hireLobby' }).ok}
-          onClick={() => dispatch({ type: 'hireLobby' })}
-        >
-          Hire lobbyist
-        </Btn>
-      </Section>
-
-      <Section label="Acquisition">
-        <Line left="Neighbors bought" right={String(p.acquisitions)} />
-        <Btn
-          tone="primary"
-          disabled={!can(s, { type: 'acquireRegion' }).ok}
+          disabled={!acquireCheck.ok}
+          title={!acquireCheck.ok ? acquireCheck.reason : undefined}
           onClick={() => dispatch({ type: 'acquireRegion' })}
         >
           Acquire · {money(acq.cash, numberFormat)} + {acq.capital} PC
         </Btn>
-        <p className="ge-muted">Fines are capped. Monopoly never bricks the run.</p>
-      </Section>
+      </div>
 
-      <Section label="Departure">
-        <Line left="Regional yield" right={s.cold.yieldLeft <= 0 ? 'Empty' : 'Still flowing'} />
-        <Line left="Left region" right={p.leftRegion ? 'Yes — Era 4+' : 'No'} />
-        <Btn
-          tone="primary"
-          coachId="politics-leave"
-          disabled={!can(s, { type: 'leaveRegion' }).ok}
-          onClick={() => dispatch({ type: 'leaveRegion' })}
-        >
-          Leave the Region
-        </Btn>
-      </Section>
+      <div className="ge-dept-split">
+        <article className="ge-card">
+          <header className="ge-empire-block__head">
+            <h3>Lobby</h3>
+            <p>Lobbyists mint political capital for cover and neighbors.</p>
+          </header>
+          <Btn
+            tone="primary"
+            coachId="politics-lobby"
+            disabled={!lobbyCheck.ok}
+            title={!lobbyCheck.ok ? lobbyCheck.reason : undefined}
+            onClick={() => dispatch({ type: 'hireLobby' })}
+          >
+            <Icon name="lobby" size={14} />
+            Hire lobbyist
+          </Btn>
+        </article>
+
+        <article className="ge-card">
+          <header className="ge-empire-block__head">
+            <h3>Departure</h3>
+            <p>
+              Yield {s.cold.yieldLeft <= 0 ? 'empty' : 'still flowing'} ·{' '}
+              {p.leftRegion ? 'already left' : 'still in region'}
+            </p>
+          </header>
+          <Btn
+            tone="primary"
+            coachId="politics-leave"
+            disabled={!leaveCheck.ok}
+            title={!leaveCheck.ok ? leaveCheck.reason : undefined}
+            onClick={() => dispatch({ type: 'leaveRegion' })}
+          >
+            Leave the Region
+          </Btn>
+        </article>
+      </div>
+
+      <HelpCard title="Pressure, not brick walls">
+        Lobbyists mint capital. Acquisitions raise heat. Leaving the region is a hard choice —
+        nothing here permanently deletes the save.
+      </HelpCard>
     </Panel>
   )
 }

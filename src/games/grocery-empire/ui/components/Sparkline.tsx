@@ -42,9 +42,10 @@ export function Sparkline({
       {label ? <span className="ge-sparkline__label">{label}</span> : null}
       <svg
         className={`ge-sparkline__svg ${up ? 'is-up' : 'is-down'}`}
-        width={width}
+        width="100%"
         height={height}
         viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
         aria-hidden
       >
         <path d={d} fill="none" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />

@@ -1,5 +1,5 @@
-import { DOCTRINES, LATE_MEMOS } from './lateEras'
-import { RETRAIN } from '../sim/balance'
+import { LATE_MEMOS } from './lateEras'
+import { AMEND_MINUTES, RETRAIN, STANDING_ORDERS } from '../sim/balance'
 import { log, queueTutorial, setEra, unlockMenu } from '../sim/helpers'
 import type { GameState } from '../sim/state'
 import { enableMomentum, enableQuadratic } from '../sim/systems/cold'
@@ -7,6 +7,8 @@ import { acceptEnding, rejectEnding } from '../sim/systems/endings'
 import { applyGuardianPreset, rebootFleet, startDriftWar } from '../sim/systems/fleet'
 import { leaveRegion, openPolitics } from '../sim/systems/politics'
 import { ERA2_MEMOS } from './era2'
+import { FLAVOR_MEMOS } from './flavorMemos'
+import { FLAVOR_MEMOS_MORE } from './flavorMemosMore'
 
 export interface MemoCost {
   cash?: number
@@ -27,12 +29,162 @@ export interface MemoDef {
   blocked?: (s: GameState) => string | null
   run?: (s: GameState) => void
   repeatable?: boolean
+  /** Exclusive standing-order group — filing one blocks siblings until Amend. */
+  fork?: string
+  /** Max ranks for repeatable standing orders (default unlimited / 1 for one-shots). */
+  max?: number
+  /** Operational standing order (shown on the Standing tab). */
+  standing?: boolean
   /** Written to the ledger after the memo completes. */
   done: string
 }
 
 const c = (cash = 0, attention = 0, ideas = 0) => () => ({ cash, attention, ideas })
 const had = (s: GameState, id: string) => (s.memos[id] ?? 0) > 0
+
+export const FORK_IDS = ['hours-posture', 'shelf-posture', 'chain-posture', 'cold-posture'] as const
+
+export const FORK_PAIR: Record<string, [string, string]> = {
+  'hours-posture': ['night-store', 'morning-rush'],
+  'shelf-posture': ['tight-ship', 'full-shelves'],
+  'chain-posture': ['flagship-memo', 'many-doors-memo'],
+  'cold-posture': ['cold-vault', 'dry-empire'],
+}
+
+export const FORK_LABELS: Record<string, string> = {
+  'hours-posture': 'Hours',
+  'shelf-posture': 'Shelves',
+  'chain-posture': 'Chain',
+  'cold-posture': 'Cold',
+}
+
+export function FORK_IDS_OWNED(s: GameState, fork: string): boolean {
+  const pair = FORK_PAIR[fork]
+  if (!pair) return false
+  return pair.some((id) => (s.memos[id] ?? 0) > 0)
+}
+
+const forkTaken = (s: GameState, fork: string, self: string) => {
+  const pair = FORK_PAIR[fork]
+  if (!pair) return null
+  for (const id of pair) {
+    if (id === self) continue
+    if ((s.memos[id] ?? 0) > 0) {
+      const names: Record<string, string> = {
+        'night-store': 'Night Store',
+        'morning-rush': 'Morning Rush',
+        'tight-ship': 'Tight Ship',
+        'full-shelves': 'Full Shelves',
+        'flagship-memo': 'Flagship Memo',
+        'many-doors-memo': 'Many Doors Memo',
+        'cold-vault': 'Cold Vault',
+        'dry-empire': 'Dry Empire',
+      }
+      return names[id] ?? id
+    }
+  }
+  return null
+}
+
+/** Repeatable operational standing orders (Attention ranks). */
+export const STANDING_ORDER_MEMOS: MemoDef[] = [
+  {
+    id: 'extra-facing-hour',
+    name: 'Extra Facing Hour',
+    voice: 'One more pass on the feature aisle before the rush.',
+    effect: 'Diminishing feature weight (saturates by rank 10).',
+    era: 1,
+    standing: true,
+    repeatable: true,
+    max: STANDING_ORDERS.max,
+    cost: (s) => ({
+      attention:
+        STANDING_ORDERS.baseAttention *
+        Math.pow(STANDING_ORDERS.growth, s.memos['extra-facing-hour'] ?? 0),
+    }),
+    visible: (s) => s.era >= 1 && s.menus.upgrades,
+    blocked: (s) =>
+      (s.memos['extra-facing-hour'] ?? 0) >= STANDING_ORDERS.max ? 'Maxed.' : null,
+    done: 'Extra facing hour logged.',
+  },
+  {
+    id: 'courtesy-call',
+    name: 'Courtesy Call',
+    voice: 'A polite ring before the clipboard arrives.',
+    effect: 'Diminishing inspection heat softener.',
+    era: 1,
+    standing: true,
+    repeatable: true,
+    max: STANDING_ORDERS.max,
+    cost: (s) => ({
+      attention:
+        STANDING_ORDERS.baseAttention *
+        1.1 *
+        Math.pow(STANDING_ORDERS.growth, s.memos['courtesy-call'] ?? 0),
+    }),
+    visible: (s) => s.stats.inspections > 0 || s.inspection.meter > 0.05,
+    blocked: (s) => ((s.memos['courtesy-call'] ?? 0) >= STANDING_ORDERS.max ? 'Maxed.' : null),
+    done: 'Courtesy call logged.',
+  },
+  {
+    id: 'circular-rewrite',
+    name: 'Circular Rewrite',
+    voice: 'Sharper words on the same paper.',
+    effect: 'Diminishing ad efficiency step.',
+    era: 1,
+    standing: true,
+    repeatable: true,
+    max: STANDING_ORDERS.max,
+    cost: (s) => ({
+      attention:
+        STANDING_ORDERS.baseAttention *
+        1.15 *
+        Math.pow(STANDING_ORDERS.growth, s.memos['circular-rewrite'] ?? 0),
+    }),
+    visible: (s) => s.menus.marketing,
+    blocked: (s) =>
+      (s.memos['circular-rewrite'] ?? 0) >= STANDING_ORDERS.max ? 'Maxed.' : null,
+    done: 'Circular rewrite filed.',
+  },
+  {
+    id: 'crate-recount',
+    name: 'Crate Recount',
+    voice: 'Count twice. Shrink argues less.',
+    effect: 'Diminishing shrink cut.',
+    era: 1,
+    standing: true,
+    repeatable: true,
+    max: STANDING_ORDERS.max,
+    cost: (s) => ({
+      attention:
+        STANDING_ORDERS.baseAttention *
+        Math.pow(STANDING_ORDERS.growth, s.memos['crate-recount'] ?? 0),
+    }),
+    visible: (s) => s.stats.shrunk > 0 || s.stats.ordersPlaced >= 4,
+    blocked: (s) => ((s.memos['crate-recount'] ?? 0) >= STANDING_ORDERS.max ? 'Maxed.' : null),
+    done: 'Crate recount logged.',
+  },
+  {
+    id: 'break-extension',
+    name: 'Break Extension',
+    voice: 'Five more minutes in the break room. Cheap morale.',
+    effect: 'Diminishing morale recovery.',
+    era: 1,
+    standing: true,
+    repeatable: true,
+    max: STANDING_ORDERS.max,
+    cost: (s) => ({
+      attention:
+        STANDING_ORDERS.baseAttention *
+        0.9 *
+        Math.pow(STANDING_ORDERS.growth, s.memos['break-extension'] ?? 0),
+    }),
+    visible: (s) => s.staff.length > 0,
+    blocked: (s) =>
+      (s.memos['break-extension'] ?? 0) >= STANDING_ORDERS.max ? 'Maxed.' : null,
+    done: 'Break extension approved.',
+  },
+]
 
 export const MEMOS: MemoDef[] = [
   // ── Era 0: the counter (cash only) ───────────────────────────────────────
@@ -443,7 +595,7 @@ export const MEMOS: MemoDef[] = [
     effect: 'Rain bonus doubled; heat spoilage penalty halved.',
     era: 1,
     cost: c(100, 2500),
-    visible: (s) => had(s, 'weather-radio') || had(s, 'barometer'),
+    visible: (s) => had(s, 'weather-radio'),
     done: 'Rain plan pinned to the corkboard.',
   },
   {
@@ -479,6 +631,16 @@ export const MEMOS: MemoDef[] = [
     cost: c(500, 5000),
     visible: (s) => had(s, 'second-wholesaler') && s.stats.ordersPlaced >= 50,
     done: 'Joined the buying club. Invoices shrink.',
+  },
+  {
+    id: 'price-lock',
+    name: 'Price Lock Desk',
+    voice: 'A stamped form and a phone to the yard. Catch a dip, freeze it for three minutes.',
+    effect: 'Unlocks Price Lock on Suppliers: spend ~8 crates to freeze the wholesale index for 3 minutes.',
+    era: 1,
+    cost: c(200, 2500),
+    visible: (s) => had(s, 'second-wholesaler') && s.compute.unlocked && s.stats.ordersPlaced >= 20,
+    done: 'Price Lock desk open. Catch a dip, then freeze it.',
   },
   {
     id: 'butcher-block',
@@ -540,7 +702,8 @@ export const MEMOS: MemoDef[] = [
     id: 'retraining',
     name: 'Retraining Seminar',
     voice: 'A weekend course. Everyone forgets the old way and learns the new one.',
-    effect: 'Refunds every upgrade level you bought, in full cash. Cost doubles each time.',
+    effect:
+      'Refunds every upgrade level you bought, in full cash — including exclusive capstone forks. Cost doubles each time.',
     era: 1,
     cost: (s) => ({
       cash: 0,
@@ -588,6 +751,10 @@ export const MEMOS: MemoDef[] = [
     done: 'Surveyor’s report on file. Land menu open.',
   },
 
+  // Era 0–1 flavor memos (small, cheap, mild hooks)
+  ...FLAVOR_MEMOS,
+  ...FLAVOR_MEMOS_MORE,
+
   // Era 2 memos (chain, capital, doctrines, ventures)
   ...ERA2_MEMOS,
 
@@ -596,10 +763,10 @@ export const MEMOS: MemoDef[] = [
     id: 'cold-plant-permit',
     name: 'Cold Plant Permit',
     voice: 'Compressors the size of trucks. The county wants forms.',
-    effect: 'Unlock Cold menu and plant builds. Enter Era 3.',
+    effect: 'Unlock Cold menu and plant builds.',
     era: 3,
     cost: c(8000, 4000),
-    visible: (s) => s.era >= 2 || (s.builds.cold ?? 0) >= 2 || s.autonomous,
+    visible: (s) => s.autonomous || (s.builds.cold ?? 0) >= 2,
     run: (s) => {
       setEra(s, 3)
       unlockMenu(s, 'cold')
@@ -672,13 +839,13 @@ export const MEMOS: MemoDef[] = [
     id: 'leave-region',
     name: 'Leave the Region',
     voice: 'Pack the brand. The map gets bigger.',
-    effect: 'Era 4 unlock when yield is empty.',
+    effect: 'Leave when county yield is empty.',
     era: 3,
     cost: c(100_000, 10_000, 50),
     visible: (s) => had(s, 'monopoly-watch') && s.cold.yieldLeft <= 0,
     blocked: (s) => (s.politics.capital >= 15 ? null : 'Need 15 Political Capital.'),
     run: (s) => leaveRegion(s),
-    done: 'Left the region. Era 4 — the globe.',
+    done: 'Left the region. The map gets bigger.',
   },
   {
     id: 'private-label-works',
@@ -751,7 +918,7 @@ export const MEMOS: MemoDef[] = [
     id: 'barge-berth',
     name: 'Seed Barge Berth',
     voice: 'A dock that points at the dark.',
-    effect: 'Unlock Fleet / Charter. Enter Era 5.',
+    effect: 'Unlock Fleet / Charter.',
     era: 5,
     cost: c(200_000, 12_000, 100),
     visible: (s) => s.era >= 4 && (s.autonomous || s.fleet.lanes >= 1 || s.control >= 5),
@@ -871,30 +1038,164 @@ export const MEMOS: MemoDef[] = [
     run: (s) => rejectEnding(s),
     done: 'Reject — silence and a plaque.',
   },
+
+  // ── Standing-order forks (bias + reveal; never lock aisles/eras/endings) ──
+  {
+    id: 'night-store',
+    name: 'Night Store',
+    voice: 'The latch stays late. The quiet hours become a habit.',
+    effect: 'Reveals Closer · +2% night efficiency.',
+    era: 1,
+    cost: c(40, 400),
+    fork: 'hours-posture',
+    visible: (s) => s.era >= 1 && s.baskets >= 200,
+    blocked: (s) => {
+      const other = forkTaken(s, 'hours-posture', 'night-store')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Night Store filed. The closer’s shift has a name.',
+  },
+  {
+    id: 'morning-rush',
+    name: 'Morning Rush',
+    voice: 'Doors open early. Coffee first, cans second.',
+    effect: 'Reveals Sidewalk Bench early · +2% morning demand.',
+    era: 1,
+    cost: c(40, 400),
+    fork: 'hours-posture',
+    visible: (s) => s.era >= 1 && s.baskets >= 200,
+    blocked: (s) => {
+      const other = forkTaken(s, 'hours-posture', 'morning-rush')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Morning Rush filed. The first hour owns the day.',
+  },
+  {
+    id: 'tight-ship',
+    name: 'Tight Ship',
+    voice: 'Count everything. Shrink becomes a story you refuse to tell.',
+    effect: 'Reveals shrink branch early · mild shrink cut.',
+    era: 1,
+    cost: c(50, 500),
+    fork: 'shelf-posture',
+    visible: (s) => s.era >= 1 && (s.stats.shrunk > 0 || s.stats.ordersPlaced >= 5),
+    blocked: (s) => {
+      const other = forkTaken(s, 'shelf-posture', 'tight-ship')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Tight Ship filed. The clipboard trusts nobody.',
+  },
+  {
+    id: 'full-shelves',
+    name: 'Full Shelves',
+    voice: 'Empty facings are a confession. Keep them honest.',
+    effect: 'Reveals capacity branch early · +3% shelf capacity.',
+    era: 1,
+    cost: c(50, 500),
+    fork: 'shelf-posture',
+    visible: (s) => s.era >= 1 && s.stats.sold >= 80,
+    blocked: (s) => {
+      const other = forkTaken(s, 'shelf-posture', 'full-shelves')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Full Shelves filed. Gaps get filled before lunch.',
+  },
+  {
+    id: 'flagship-memo',
+    name: 'Flagship Memo',
+    voice: 'One door is the museum. The others are footnotes.',
+    effect: 'Reveals flagship-leaning Floor/Brand nodes · +3% flagship demand.',
+    era: 2,
+    cost: c(200, 2000),
+    fork: 'chain-posture',
+    visible: (s) => s.era >= 2,
+    blocked: (s) => {
+      const other = forkTaken(s, 'chain-posture', 'flagship-memo')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Flagship Memo filed. The first door stays first.',
+  },
+  {
+    id: 'many-doors-memo',
+    name: 'Many Doors Memo',
+    voice: 'Keys on a ring. Every neighborhood gets a copy.',
+    effect: 'Reveals Many Doors cost nodes · −3% next store cost.',
+    era: 2,
+    cost: c(200, 2000),
+    fork: 'chain-posture',
+    visible: (s) => s.era >= 2,
+    blocked: (s) => {
+      const other = forkTaken(s, 'chain-posture', 'many-doors-memo')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Many Doors Memo filed. The ring gets heavier on purpose.',
+  },
+  {
+    id: 'cold-vault',
+    name: 'Cold Vault',
+    voice: 'Compressors hum. Perishables get a longer sentence.',
+    effect: 'Reveals cold-chain drills · +4% perishable life.',
+    era: 3,
+    cost: c(400, 3000, 20),
+    fork: 'cold-posture',
+    visible: (s) => s.era >= 3 || !!s.categories.produce || !!s.categories.dairy,
+    blocked: (s) => {
+      const other = forkTaken(s, 'cold-posture', 'cold-vault')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Cold Vault filed. The case stays honest longer.',
+  },
+  {
+    id: 'dry-empire',
+    name: 'Dry Empire',
+    voice: 'Cans and paper. Your name on the label.',
+    effect: 'Private Label weight +8%. Categories stay unlockable either way.',
+    era: 3,
+    cost: c(400, 3000, 20),
+    fork: 'cold-posture',
+    visible: (s) => s.era >= 3 || !!s.memos['private-label-sku'],
+    blocked: (s) => {
+      const other = forkTaken(s, 'cold-posture', 'dry-empire')
+      return other ? `Other standing order filed: ${other}.` : null
+    },
+    done: 'Dry Empire filed. The label does the talking.',
+  },
+
+  // Amend the Minutes — clear one fork so the other standing order can be filed.
+  {
+    id: 'amend-minutes',
+    name: 'Amend the Minutes',
+    voice: 'Scratch out the posture. File the other page.',
+    effect: 'Clears one standing-order fork so you can file the sibling. Cost doubles each use.',
+    era: 1,
+    cost: (s) => ({
+      ideas: AMEND_MINUTES.ideas * Math.pow(AMEND_MINUTES.growth, s.stats.amendMinutes ?? 0),
+    }),
+    visible: (s) => s.compute.ideasUnlocked && FORK_IDS.some((f) => FORK_IDS_OWNED(s, f)),
+    blocked: (s) => (FORK_IDS.some((f) => FORK_IDS_OWNED(s, f)) ? null : 'No standing-order fork filed.'),
+    run: (s) => {
+      // Clear the first owned fork found (player can file Amend again for others).
+      for (const fork of FORK_IDS) {
+        const pair = FORK_PAIR[fork]
+        if (!pair) continue
+        const owned = pair.filter((id) => (s.memos[id] ?? 0) > 0)
+        if (!owned.length) continue
+        for (const id of owned) delete s.memos[id]
+        s.stats.amendMinutes = (s.stats.amendMinutes ?? 0) + 1
+        log(s, `Amended ${fork}: standing order cleared.`, 'good')
+        return
+      }
+    },
+    repeatable: true,
+    done: 'Minutes amended. File the other standing order when ready.',
+  },
+
+  // Standing orders — repeatable operational ranks
+  ...STANDING_ORDER_MEMOS,
 ]
 
-// Soft doctrine unlocks if Era 2 catalog did not already define them.
-for (const d of DOCTRINES) {
-  const id = `doctrine-${d.id}`
-  if (MEMOS.some((m) => m.id === id)) continue
-  MEMOS.push({
-    id,
-    name: d.name,
-    voice: d.blurb,
-    effect: `Doctrine: ${d.blurb}`,
-    era: 2,
-    cost: (s) => ({ attention: 500, ideas: 5 + (s.stats.doctrinesBought || 0) * 2 }),
-    visible: (s) => s.era >= 2 && s.read >= 1,
-    blocked: (s) => ((s.doctrines[d.id] ?? 0) > 0 ? 'Already owned.' : null),
-    run: (s) => {
-      s.doctrines[d.id] = 1
-      s.stats.doctrinesBought += 1
-      s.read += 1
-    },
-    done: `Doctrine ${d.name} on the shelf.`,
-  })
-}
-
+// Ghost lateEras doctrine-* memos removed (they were a Read faucet with no effects).
+// Late modifiers live as tournament archetypes / hasDoctrine hooks in later slices.
 void LATE_MEMOS
 
 export const MEMO_BY_ID: Record<string, MemoDef> = Object.fromEntries(MEMOS.map((m) => [m.id, m]))

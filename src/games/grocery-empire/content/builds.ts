@@ -8,7 +8,7 @@ export interface BuildTier {
   cost: number
   upkeepPerMin: number
   effect: string
-  /** Era at which this tier becomes purchasable. Later tiers show as previews. */
+  /** Era at which this tier becomes purchasable. Earlier eras hide locked next tiers. */
   era: number
 }
 
@@ -25,7 +25,7 @@ export const BUILD_TRACKS: BuildTrack[] = [
   {
     id: 'storefront',
     name: 'Storefront',
-    blurb: 'The store itself. Each tier draws more shoppers and holds more on the shelf.',
+    blurb: 'The store itself. Each tier draws more shoppers, holds more shelf, and adds staff seats.',
     visible: () => true,
     tiers: [
       { name: 'Empty', cost: 0, upkeepPerMin: 0, effect: '', era: 0 },

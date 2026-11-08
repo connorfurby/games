@@ -4,13 +4,31 @@ import { ERA2_EXPANSION_BY_ID } from '../content/era2'
 import { INTRO_BEATS } from '../content/intro'
 import { MEMO_BY_ID } from '../content/memos'
 import { PERK_BY_ID } from '../content/perks'
-import { ROLE_IDS, type RoleId } from '../content/staff'
+import { ROLE_IDS, traitForStaffId, type RoleId } from '../content/staff'
 import { TIP_BY_ID } from '../content/tips'
-import { UPGRADE_BY_ID } from '../content/upgrades'
+import {
+  UPGRADE_BY_ID,
+  forkBlockedBy,
+  isUpgradeVisible,
+  requirementsMet,
+} from '../content/upgrades'
 import { VENTURE_BY_ID, ventureLevelCost } from '../content/ventures'
-import { DEMAND, EMPIRE, ENDCAP, HOURS, LOYALTY, PRICE, WHOLESALE } from './balance'
+import {
+  DEMAND,
+  EMPIRE,
+  ENDCAP,
+  HOURS,
+  LOYALTY,
+  MARKETING,
+  PERK_RESPEC,
+  PRICE,
+  PRICE_LOCK,
+  RESTOCK_SMARTS,
+  WHOLESALE,
+} from './balance'
 import {
   adCostGrowth,
+  attentionCap,
   backroomCap,
   crateCost,
   crateSize,
@@ -21,16 +39,21 @@ import {
   nextUpgradeCost,
   restockTargets,
   shortShipChance,
+  staffSeatCap,
   unitCost,
+  up,
   upgradeBulkCost,
+  upgradeRankCap,
 } from './formulas'
 import {
   addBatch,
+  advanceDialogue,
   advanceTutorialStep,
   beginTutorial,
   clamp,
   isMenuId,
   log,
+  queueDialogue,
   queueTutorial,
   replayTutorial,
   round2,
@@ -40,19 +63,30 @@ import {
 } from './helpers'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { chance } from './rng'
-import type { GameState, InvestRisk, PrestigeMutatorId, StorePolicy, SupplierId } from './state'
+import type {
+  GameState,
+  InvestRisk,
+  MarketingPosture,
+  PrestigeMutatorId,
+  StorePolicy,
+  SupplierId,
+} from './state'
 import {
   buyAnalyst,
   buyArchive,
   canBuyAnalyst,
   canBuyArchive,
   canPulseScanner,
+  canRebalanceOffice,
   pulseScanner,
+  rebalanceOffice,
   toggleIdeas,
 } from './systems/office'
 import {
   callInspector,
   canCallInspector,
+  answerRival,
+  canAnswerRival,
   canMatchCoupons,
   canOrderPizza,
   matchCoupons,
@@ -65,8 +99,14 @@ import {
   applyEmptyShelfHelper,
   applyEmergencyDelivery,
   applyMentorRestock,
+  canBailout,
+  canEmergencyDelivery,
   canEmptyShelfHelper,
+  canMentorRestock,
   dumpCooler,
+  dumpCoolerPartial,
+  perishableQty,
+  type DumpWhere,
 } from './systems/recovery'
 import { ensureFlagshipStore } from './systems/chain'
 import { debtCovenantBreached } from './systems/capital'
@@ -87,11 +127,16 @@ export type Command =
   | { type: 'fire'; id: number }
   | { type: 'buyAd' }
   | { type: 'refundAd' }
+  | { type: 'setMarketingPosture'; posture: MarketingPosture }
+  | { type: 'lockWholesalePrice' }
   | { type: 'setHours'; hours: number }
   | { type: 'orderPizza' }
   | { type: 'callInspector' }
   | { type: 'matchCoupons' }
-  | { type: 'dumpCooler' }
+  | { type: 'answerRival' }
+  /** Backroom perishables only unless includeShelf (UI should confirm that one). */
+  | { type: 'dumpCooler'; includeShelf?: boolean }
+  | { type: 'dumpCoolerPartial'; cat: CategoryId; qty: number; where?: DumpWhere }
   | { type: 'buyMemo'; id: string }
   | { type: 'buyUpgrade'; id: string; count?: number }
   | { type: 'buyBuild'; track?: string; id?: BuildFilter }
@@ -104,6 +149,7 @@ export type Command =
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
+  | { type: 'respecPerks' }
   | { type: 'expandLot'; id?: string }
   | { type: 'expandSideYard' }
   | { type: 'emergencyDelivery' }
@@ -111,6 +157,7 @@ export type Command =
   | { type: 'bailout' }
   | { type: 'callStarterCrate' }
   | { type: 'dismissTip'; id: string }
+  | { type: 'advanceDialogue' }
   | { type: 'finishIntro' }
   | { type: 'introBeat'; index: number }
   | { type: 'setAutoRestock'; enabled: boolean; maxCost?: number; minUnits?: number }
@@ -127,6 +174,7 @@ export type Command =
   | { type: 'buyAnalyst' }
   | { type: 'buyArchive' }
   | { type: 'spendRep'; on: 'analyst' | 'archive' }
+  | { type: 'rebalanceOffice'; toward: 'archive' | 'analyst' }
   | { type: 'toggleIdeas' }
   | { type: 'pulseScanner' }
   | { type: 'startTutorial'; id: string }
@@ -144,7 +192,10 @@ export type Command =
   | { type: 'buyDoctrine'; id: string }
   | { type: 'buildDepot' }
   | { type: 'releaseAutonomous' }
-  | { type: 'resolveBoard' }
+  | { type: 'setAutonomousHabit'; habit: import('./state').AutonomousHabit }
+  | { type: 'resolveBoard'; agenda?: import('./state').BoardAgenda }
+  | { type: 'walkStore'; storeId: string }
+  | { type: 'trainStore'; storeId: string }
   // Era 3–6
   | { type: 'buyPlant' }
   | { type: 'buyTank' }
@@ -196,7 +247,8 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
   let paid = total
   let unit = unitCost(s, cat, supplier)
   if (supplier === 'b' && chance(s, shortShipChance(s))) {
-    const kept = Math.max(1, Math.floor(qty * WHOLESALE.supplierB.shortShipFrac))
+    const keptFrac = Math.min(0.95, WHOLESALE.supplierB.shortShipFrac + up(s, 'claim-window') * 0.03)
+    const kept = Math.max(1, Math.floor(qty * keptFrac))
     const refundUnits = qty - kept
     qty = kept
     const refund = round2(refundUnits * unit)
@@ -276,6 +328,9 @@ function applyTutorialAction(s: GameState, action: { type: string; params?: Reco
     case 'matchCoupons':
       run(s, { type: 'matchCoupons' })
       break
+    case 'answerRival':
+      run(s, { type: 'answerRival' })
+      break
     case 'buyMemo':
       if (typeof p.id === 'string') run(s, { type: 'buyMemo', id: p.id })
       break
@@ -316,7 +371,22 @@ function applyTutorialAction(s: GameState, action: { type: string; params?: Reco
       run(s, { type: 'incorporate' })
       break
     case 'resolveBoard':
-      run(s, { type: 'resolveBoard' })
+      run(s, {
+        type: 'resolveBoard',
+        agenda:
+          p.agenda === 'expand' ||
+          p.agenda === 'dividend' ||
+          p.agenda === 'rnd' ||
+          p.agenda === 'hours'
+            ? p.agenda
+            : undefined,
+      })
+      break
+    case 'walkStore':
+      if (typeof p.storeId === 'string') run(s, { type: 'walkStore', storeId: p.storeId })
+      break
+    case 'trainStore':
+      if (typeof p.storeId === 'string') run(s, { type: 'trainStore', storeId: p.storeId })
       break
     case 'releaseAutonomous':
       run(s, { type: 'releaseAutonomous' })
@@ -434,6 +504,10 @@ const coreHandlers = {
       if (!ROLE_IDS.includes(role)) return no('Unknown role.')
       if (role === 'night' && !s.memos['night-latch']) return no('Night Latch memo first.')
       if (!s.menus.staff && !s.memos['help-wanted']) return no('Staff not unlocked.')
+      const seats = staffSeatCap(s)
+      if (s.staff.length >= seats) {
+        return no(`Staff seats full (${seats}). Grow the storefront or buy Shift Lead.`)
+      }
       const cost = hireCost(s, role)
       if (s.cash < cost) return no(`Need $${cost}.`)
       return ok
@@ -443,7 +517,16 @@ const coreHandlers = {
       const cost = hireCost(s, role)
       s.cash -= cost
       const id = s.nextStaffId++
-      s.staff.push({ id, role, name: staffName(id), level: 1, xp: 0, hiredAt: s.time })
+      const traitId = traitForStaffId(id)
+      s.staff.push({
+        id,
+        role,
+        name: staffName(id),
+        level: 1,
+        xp: 0,
+        hiredAt: s.time,
+        ...(traitId ? { traitId } : {}),
+      })
       s.stats.hires += 1
       log(s, `Hired ${staffName(id)} as ${role}.`, 'staff')
     },
@@ -493,6 +576,48 @@ const coreHandlers = {
       log(s, `Ad refunded. $${s.lastAdSpend.toFixed(0)} returned.`, 'info')
     },
   },
+  setMarketingPosture: {
+    can: (s, cmd) => {
+      if (!s.menus.marketing && s.era < 1) return no('Marketing locked.')
+      const posture = (cmd as Extract<Command, { type: 'setMarketingPosture' }>).posture
+      if (posture !== 'neighborhood' && posture !== 'circular' && posture !== 'houseBrand') {
+        return no('Unknown posture.')
+      }
+      if (s.marketingPosture === posture) return no('Already set.')
+      if (s.cash < MARKETING.switchFee) return no(`Need $${MARKETING.switchFee}.`)
+      return ok
+    },
+    run: (s, cmd) => {
+      const posture = (cmd as Extract<Command, { type: 'setMarketingPosture' }>).posture
+      s.cash -= MARKETING.switchFee
+      s.marketingPosture = posture
+      const label =
+        posture === 'circular' ? 'Circular' : posture === 'houseBrand' ? 'House brand' : 'Neighborhood'
+      log(s, `Marketing posture → ${label} (−$${MARKETING.switchFee}).`, 'info')
+    },
+  },
+  lockWholesalePrice: {
+    can: (s) => {
+      if (!s.memos['price-lock']) return no('Price Lock memo first.')
+      if (s.priceLockUntil > s.time) {
+        return no(`Already locked (${Math.ceil(s.priceLockUntil - s.time)}s).`)
+      }
+      const cost = crateCost(s, s.orderCat) * PRICE_LOCK.cratesCost
+      if (s.cash < cost) return no(`Need $${cost.toFixed(0)}.`)
+      return ok
+    },
+    run: (s) => {
+      const cost = crateCost(s, s.orderCat) * PRICE_LOCK.cratesCost
+      s.cash -= cost
+      s.priceLockIndex = s.wholesale.index
+      s.priceLockUntil = s.time + PRICE_LOCK.durationSec
+      log(
+        s,
+        `Wholesale index locked at ${s.priceLockIndex.toFixed(2)} for ${PRICE_LOCK.durationSec}s (−$${cost.toFixed(0)}).`,
+        'good',
+      )
+    },
+  },
   setHours: {
     can: (s, cmd) => {
       const h = (cmd as Extract<Command, { type: 'setHours' }>).hours
@@ -525,14 +650,36 @@ const coreHandlers = {
     },
     run: (s) => matchCoupons(s),
   },
-  dumpCooler: {
+  answerRival: {
     can: (s) => {
-      const n =
-        s.shelf.filter((b) => b.qty > 0).length + s.backroom.filter((b) => b.qty > 0).length
-      return n > 0 ? ok : no('Nothing to dump.')
+      const r = canAnswerRival(s)
+      return r ? no(r) : ok
     },
-    run: (s) => {
-      dumpCooler(s)
+    run: (s) => answerRival(s),
+  },
+  dumpCooler: {
+    can: (s, cmd) => {
+      const includeShelf = !!(cmd as Extract<Command, { type: 'dumpCooler' }>).includeShelf
+      const n = perishableQty(s, 'backroom') + (includeShelf ? perishableQty(s, 'shelf') : 0)
+      if (n > 0) return ok
+      return no(includeShelf ? 'No perishables to dump.' : 'No perishables in the backroom.')
+    },
+    run: (s, cmd) => {
+      dumpCooler(s, !!(cmd as Extract<Command, { type: 'dumpCooler' }>).includeShelf)
+    },
+  },
+  dumpCoolerPartial: {
+    can: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'dumpCoolerPartial' }>
+      if (!CATEGORY_IDS.includes(c.cat)) return no('Unknown aisle.')
+      if (!Number.isFinite(c.qty) || Math.floor(c.qty) < 1) return no('Pick at least 1 unit.')
+      const where: DumpWhere = c.where === 'shelf' ? 'shelf' : 'backroom'
+      if (perishableQty(s, where, c.cat) <= 0) return no('Nothing perishable there to dump.')
+      return ok
+    },
+    run: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'dumpCoolerPartial' }>
+      dumpCoolerPartial(s, c.cat, Math.floor(c.qty), c.where === 'shelf' ? 'shelf' : 'backroom')
     },
   },
   buyMemo: {
@@ -540,11 +687,15 @@ const coreHandlers = {
       const id = (cmd as Extract<Command, { type: 'buyMemo' }>).id
       const def = MEMO_BY_ID[id]
       if (!def) return no('Unknown memo.')
-      if ((s.memos[id] ?? 0) > 0 && !def.repeatable) return no('Already done.')
-      try {
-        if (!def.visible(s) && !s.memoSeen[id]) return no('Not available yet.')
-      } catch {
-        return no('Not available yet.')
+      const owned = s.memos[id] ?? 0
+      if (owned > 0 && !def.repeatable) return no('Already done.')
+      if (def.max != null && owned >= def.max) return no('Maxed.')
+      if (!s.memoSeen[id]) {
+        try {
+          if (!def.visible(s)) return no('Not available yet.')
+        } catch {
+          return no('Not available yet.')
+        }
       }
       const blocked = def.blocked?.(s)
       if (blocked) return no(blocked)
@@ -576,11 +727,18 @@ const coreHandlers = {
       const id = c.id
       const def = UPGRADE_BY_ID[id]
       if (!def) return no('Unknown upgrade.')
-      if (def.visible && !def.visible(s)) return no('Not visible yet.')
+      if (!isUpgradeVisible(s, def)) return no('Not visible yet.')
+      if (!requirementsMet(s, def)) return no('Prerequisites not met.')
+      const blocked = forkBlockedBy(s, def)
+      if (blocked) return no(`Other path filed: ${blocked.name}. Retrain to switch.`)
       const lvl = s.upgrades[id] ?? 0
       if (lvl >= def.max) return no('Maxed.')
+      const rankCap = upgradeRankCap(s, id)
+      if (lvl >= rankCap) {
+        return no(`Empire level unlocks deeper ranks (cap ${rankCap}).`)
+      }
       const want = Math.max(1, Math.floor(c.count ?? 1))
-      const count = Math.min(want, def.max - lvl, 50)
+      const count = Math.min(want, def.max - lvl, rankCap - lvl, 50)
       if (count < 1) return no('Maxed.')
       const cost = upgradeBulkCost(s, id, count)
       if (s.cash < cost) return no(`Need $${cost}.`)
@@ -590,8 +748,9 @@ const coreHandlers = {
       const c = cmd as Extract<Command, { type: 'buyUpgrade' }>
       const id = c.id
       const def = UPGRADE_BY_ID[id]
+      const rankCap = upgradeRankCap(s, id)
       const want = Math.max(1, Math.floor(c.count ?? 1))
-      const count = Math.min(want, def.max - (s.upgrades[id] ?? 0), 50)
+      const count = Math.min(want, def.max - (s.upgrades[id] ?? 0), rankCap - (s.upgrades[id] ?? 0), 50)
       for (let i = 0; i < count; i++) {
         const cost = nextUpgradeCost(s, id)
         s.cash -= cost
@@ -750,6 +909,20 @@ const coreHandlers = {
       const id = (cmd as Extract<Command, { type: 'buyPerk' }>).id
       const def = PERK_BY_ID[id]
       if (!def) return no('Unknown perk.')
+      if (def.visible && !def.visible(s)) return no('Not available yet.')
+      if (def.requires?.length) {
+        for (const r of def.requires) {
+          if ((s.empire.perks[r.id] ?? 0) < r.level) return no('Prerequisites not met.')
+        }
+      }
+      if (def.exclusive) {
+        for (const other of Object.values(PERK_BY_ID)) {
+          if (other.id === id || other.exclusive !== def.exclusive) continue
+          if ((s.empire.perks[other.id] ?? 0) > 0) {
+            return no(`Other doctrine filed: ${other.name}. Rewrite the Charter to switch.`)
+          }
+        }
+      }
       const lvl = s.empire.perks[id] ?? 0
       if (lvl >= def.max) return no('Maxed.')
       if (s.empire.points < def.cost) return no('Need perk points.')
@@ -760,8 +933,34 @@ const coreHandlers = {
       const def = PERK_BY_ID[id]
       s.empire.points -= def.cost
       s.empire.perks[id] = (s.empire.perks[id] ?? 0) + 1
-      if (id === 'starting-cash') s.cash += 10
       if (id === 'extra-archive' && s.compute.unlocked) s.compute.archives += 1
+      if (id === 'drawer-map' && s.compute.unlocked) s.compute.archives += 1
+    },
+  },
+  respecPerks: {
+    can: (s) => {
+      const spent = Object.values(s.empire.perks).reduce((n, v) => n + (v ?? 0), 0)
+      if (spent <= 0) return no('No doctrines to rewrite.')
+      const cost = Math.ceil(PERK_RESPEC.ideas * Math.pow(PERK_RESPEC.growth, s.compute.perkRespecs ?? 0))
+      if (s.compute.ideas < cost) return no(`Need ${cost} Ideas.`)
+      return ok
+    },
+    run: (s) => {
+      let refund = 0
+      for (const [id, lvl] of Object.entries(s.empire.perks)) {
+        const def = PERK_BY_ID[id]
+        if (!def || !lvl) continue
+        refund += def.cost * lvl
+        if (id === 'extra-archive' || id === 'drawer-map') {
+          // Archives granted by perks are left in place — Rewrite refunds points only.
+        }
+      }
+      const cost = Math.ceil(PERK_RESPEC.ideas * Math.pow(PERK_RESPEC.growth, s.compute.perkRespecs ?? 0))
+      s.compute.ideas -= cost
+      s.empire.perks = {}
+      s.empire.points += refund
+      s.compute.perkRespecs = (s.compute.perkRespecs ?? 0) + 1
+      log(s, `Rewrite the Charter refunded ${refund} trait point${refund === 1 ? '' : 's'}.`, 'good')
     },
   },
   expandLot: {
@@ -816,9 +1015,8 @@ const coreHandlers = {
   },
   emergencyDelivery: {
     can: (s) => {
-      const stock = sumQty(s.shelf) + sumQty(s.backroom)
-      if (stock > crateSize(s) * 2) return no('Stock is not critically low.')
-      return ok
+      const r = canEmergencyDelivery(s)
+      return r ? no(r) : ok
     },
     run: (s) => {
       applyEmergencyDelivery(s)
@@ -826,9 +1024,8 @@ const coreHandlers = {
   },
   mentorRestock: {
     can: (s) => {
-      if (sumQty(s.shelf) + sumQty(s.backroom) > 0) return no('You still have stock.')
-      if (s.era > 0 && s.stats.playSec > 1200) return no('Mentor has moved on.')
-      return ok
+      const r = canMentorRestock(s)
+      return r ? no(r) : ok
     },
     run: (s) => {
       applyMentorRestock(s)
@@ -836,19 +1033,11 @@ const coreHandlers = {
   },
   bailout: {
     can: (s) => {
-      if (s.time - s.recovery.lastBailoutAt < 30) return no('Bailout cooling down.')
-      if (s.cash > 25 && sumQty(s.backroom) + sumQty(s.shelf) > 0) return no('Not broke enough.')
-      return ok
+      const r = canBailout(s)
+      return r ? no(r) : ok
     },
     run: (s) => {
-      if (!applyBailout(s)) {
-        // Force a soft bailout when the player asks and can() passed
-        s.cash += 15
-        addBatch(s.backroom, 'cans', 12, 0)
-        s.recovery.lastBailoutAt = s.time
-        s.stats.bailouts += 1
-        log(s, 'Bailout accepted.', 'recovery')
-      }
+      applyBailout(s)
     },
   },
   callStarterCrate: {
@@ -872,6 +1061,12 @@ const coreHandlers = {
       s.tipsSeen[id] = true
     },
   },
+  advanceDialogue: {
+    can: (s) => (s.dialogueQueue.length ? ok : no('No dialogue waiting.')),
+    run: (s) => {
+      advanceDialogue(s)
+    },
+  },
   introBeat: {
     can: (s) => (s.introSeen ? no('Intro already finished.') : ok),
     run: (s, cmd) => {
@@ -886,8 +1081,8 @@ const coreHandlers = {
       s.introSeen = true
       s.paused = false
       log(s, 'The counter is yours. Unpack puts stock on the shelf. Baskets are the score; cash pays the bills.', 'story')
-      log(s, 'Coach will spotlight each control once. Story keeps writing along the bottom.', 'story')
-      queueTutorial(s, 'unpack')
+      log(s, 'Story speaks along the bottom first. Coach spotlights controls after.', 'story')
+      queueDialogue(s, 'open-shelf')
     },
   },
   setAutoRestock: {
@@ -973,7 +1168,7 @@ const coreHandlers = {
   setSpeed: {
     can: (_s, cmd) => {
       const speed = (cmd as Extract<Command, { type: 'setSpeed' }>).speed
-      if (![1, 2, 4].includes(speed)) return no('Speed must be 1, 2, or 4.')
+      if (![1, 2, 4, 8].includes(speed)) return no('Speed must be 1, 2, 4, or 8.')
       return ok
     },
     run: (s, cmd) => {
@@ -1002,6 +1197,17 @@ const coreHandlers = {
       return r ? no(r) : ok
     },
     run: (s) => buyArchive(s),
+  },
+  rebalanceOffice: {
+    can: (s, cmd) => {
+      const toward = (cmd as Extract<Command, { type: 'rebalanceOffice' }>).toward
+      const r = canRebalanceOffice(s, toward)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => {
+      const toward = (cmd as Extract<Command, { type: 'rebalanceOffice' }>).toward
+      rebalanceOffice(s, toward)
+    },
   },
   spendRep: {
     can: (s, cmd) => {
@@ -1110,26 +1316,41 @@ export function tickAutoRestock(s: GameState) {
   if (s.orders.length > 0) return
   const back = sumQty(s.backroom)
   if (back >= s.autoRestock.minUnits) return
-  // Prefer the unlocked category furthest below its mix target in the backroom.
+  // Restock Smarts: wait for a dip vs the slow EMA — unless the floor is already dry.
+  const smarts = up(s, 'restock-smarts')
+  if (smarts > 0 && sumQty(s.shelf) + back > 0) {
+    const tip = Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index
+    const tol = RESTOCK_SMARTS.tolBase - RESTOCK_SMARTS.tolPerRank * smarts
+    if (s.wholesale.index > tip * tol) return
+  }
+  // Neediest aisle first (furthest below its mix target in the backroom); skip any over the
+  // cost cap or unaffordable so one pricey aisle never blocks the cheaper ones.
   const targets = restockTargets(s)
   const backTotal = Math.max(1, back)
-  let cat: CategoryId | null = null
-  let bestGap = -Infinity
+  const ranked: { cat: CategoryId; gap: number }[] = []
   for (const c of CATEGORY_IDS) {
     const target = targets[c]
     if (target == null) continue
-    const gap = target - sumQty(s.backroom, c) / backTotal
-    if (gap > bestGap) {
-      bestGap = gap
-      cat = c
-    }
+    ranked.push({ cat: c, gap: target - sumQty(s.backroom, c) / backTotal })
   }
-  if (!cat && s.categories[s.orderCat]) cat = s.orderCat
-  if (!cat) return
-  const cost = unitCost(s, cat)
-  if (cost > s.autoRestock.maxCost) return
+  ranked.sort((a, b) => b.gap - a.gap)
+  const order: CategoryId[] = ranked.map((r) => r.cat)
+  if (!order.length && s.categories[s.orderCat]) order.push(s.orderCat)
   const crates = s.supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
-  if (can(s, { type: 'buyWholesale', cat, crates }).ok) {
+  for (const cat of order) {
+    if (unitCost(s, cat) > s.autoRestock.maxCost) continue
+    if (!can(s, { type: 'buyWholesale', cat, crates }).ok) continue
     run(s, { type: 'buyWholesale', cat, crates })
+    return
   }
+}
+
+/** Tourney While Full: spend a full Attention bar on a tournament instead of wasting the ceiling. */
+export function tickAutoTournament(s: GameState) {
+  if (up(s, 'tourney-while-full') < 1) return
+  if (s.era < 2 || !s.compute.unlocked) return
+  const cap = attentionCap(s)
+  if (cap <= 0 || s.compute.attention < cap * 0.98) return
+  const cmd: Command = { type: 'runTournament' }
+  if (can(s, cmd).ok) run(s, cmd)
 }

@@ -6,6 +6,8 @@ import {
   categoryWeights,
   checkoutCap,
   demandPerSec,
+  dipBellLevel,
+  doorOverflow,
   inspectionGainMul,
   lifeMul,
   memo,
@@ -13,6 +15,7 @@ import {
   shrinkMul,
   varietyMul,
   revenueMul,
+  wholesaleDipping,
 } from '../formulas'
 import { addBatch, compact, log, sumQty, takeUnits } from '../helpers'
 import { chance, nextRng, pick } from '../rng'
@@ -21,6 +24,13 @@ import type { Batch, GameState, WeatherId } from '../state'
 /** Paperclips-style wire walk: sine wobble around a base that bumps on buys and sags when idle. */
 export function tickWholesale(s: GameState, dt: number) {
   const w = s.wholesale
+  if (s.priceLockUntil > s.time) {
+    w.index = Math.max(0.01, s.priceLockIndex || w.index)
+    const tip = Number.isFinite(w.tipIndex) ? w.tipIndex : w.index
+    const alpha = 1 - Math.exp(-dt / 75)
+    w.tipIndex = tip + (w.index - tip) * alpha
+    return
+  }
   if (chance(s, WHOLESALE.changeChancePerSec * dt)) w.phase += 0.6 + nextRng(s) * 0.9
   w.idleSec += dt
   if (w.idleSec >= WHOLESALE.idleSagEverySec) {
@@ -29,6 +39,15 @@ export function tickWholesale(s: GameState, dt: number) {
   }
   const floor = memo(s, 'market-almanac') ? WHOLESALE.indexFloor - 0.06 : WHOLESALE.indexFloor
   w.index = Math.max(floor, w.drift * (1 + WHOLESALE.sineAmp * Math.sin(w.phase)))
+  // Price IQ reads tipIndex — ~75s EMA so Best ≈ does not chase the player tick-to-tick.
+  const tip = Number.isFinite(w.tipIndex) ? w.tipIndex : w.index
+  const alpha = 1 - Math.exp(-dt / 75)
+  w.tipIndex = tip + (w.index - tip) * alpha
+  // Dip Bell: one chime per dip, at most every two minutes.
+  if (dipBellLevel(s) > 0 && wholesaleDipping(s) && s.time - (s.acc.lastDipLogAt ?? -1e9) > 120) {
+    s.acc.lastDipLogAt = s.time
+    log(s, `Dip bell: wholesale index ${w.index.toFixed(2)} is under its average. Good time to order.`, 'info')
+  }
 }
 
 const WEATHERS: WeatherId[] = ['fair', 'fair', 'rain', 'heat', 'cold']
@@ -60,7 +79,7 @@ export function tickDeliveries(s: GameState, dt: number) {
   if (!arrived.length) return
   s.orders = s.orders.filter((o) => o.eta > 0)
   for (const o of arrived) {
-    const room = Math.max(0, backroomCap(s) - sumQty(s.backroom))
+    const room = Math.max(0, backroomCap(s) + doorOverflow(s) - sumQty(s.backroom))
     const accepted = Math.min(room, o.qty)
     const refused = o.qty - accepted
     addBatch(s.backroom, o.cat, accepted, 0)

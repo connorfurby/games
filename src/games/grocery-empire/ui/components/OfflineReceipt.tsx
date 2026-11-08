@@ -1,5 +1,7 @@
 import { motion } from 'motion/react'
 import type { OfflineReceipt as Receipt } from '../../sim/state'
+import type { MenuId } from '../../content/menus'
+import type { Suggestion } from '../../sim/suggestions'
 import { money, qty } from '../format'
 import { Btn } from './Btn'
 import { Line } from './Line'
@@ -8,10 +10,20 @@ export function OfflineReceiptModal({
   receipt,
   reducedMotion,
   onDismiss,
+  followUp,
+  onFollowUp,
+  nudge,
+  onNudge,
 }: {
   receipt: Receipt
   reducedMotion: boolean
   onDismiss: () => void
+  /** Top next-best suggestion — one tap to jump there after filing the receipt. */
+  followUp?: Suggestion | null
+  onFollowUp?: (s: Suggestion) => void
+  /** Department nudge (e.g. Floor unpack / Backroom) — closes the receipt and jumps. */
+  nudge?: { menu: MenuId; label: string; hint?: string } | null
+  onNudge?: (menu: MenuId) => void
 }) {
   return (
     <div className="ge-modal" role="dialog" aria-labelledby="ge-offline-title">
@@ -43,9 +55,35 @@ export function OfflineReceiptModal({
         <p className="ge-muted" style={{ marginTop: '0.75rem' }}>
           Stamp this first — the floor tour waits underneath.
         </p>
-        <Btn tone="primary" onClick={onDismiss}>
-          Stamp &amp; file
-        </Btn>
+        <div className="ge-chip-row">
+          <Btn tone="primary" onClick={onDismiss}>
+            Stamp &amp; file
+          </Btn>
+          {nudge && onNudge && followUp?.channel !== nudge.menu ? (
+            <Btn
+              tone="ghost"
+              title={nudge.hint}
+              onClick={() => {
+                onDismiss()
+                onNudge(nudge.menu)
+              }}
+            >
+              {nudge.label}
+            </Btn>
+          ) : null}
+          {followUp && onFollowUp ? (
+            <Btn
+              tone="ghost"
+              title={followUp.blurb}
+              onClick={() => {
+                onDismiss()
+                onFollowUp(followUp)
+              }}
+            >
+              Next: {followUp.title}
+            </Btn>
+          ) : null}
+        </div>
       </motion.div>
     </div>
   )

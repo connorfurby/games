@@ -1,4 +1,5 @@
 import type { CategoryId } from '../content/categories'
+import { DIALOGUE_BY_ID } from '../content/dialogue'
 import { ERA_STORY, MENU_LORE } from '../content/lore'
 import { MENU_IDS, type MenuId } from '../content/menus'
 import { TUTORIAL_BY_ID, type TutorialStep } from '../content/tutorials'
@@ -18,6 +19,34 @@ export function unlockMenu(s: GameState, id: MenuId) {
   if (!s.introSeen || id === 'floor' || id === 'more') return
   const line = MENU_LORE[id]
   if (line) log(s, line, 'story')
+  queueDialogue(s, `menu-${id}`)
+}
+
+/** Enqueue a spoken strip line once. Missing ids are ignored. */
+export function queueDialogue(s: GameState, id: string) {
+  if (!DIALOGUE_BY_ID[id]) return
+  if (s.seenLines[id]) return
+  if (s.dialogueQueue.includes(id)) return
+  s.dialogueQueue.push(id)
+}
+
+/** Advance / skip the active dialogue line. Idempotent. */
+export function advanceDialogue(s: GameState) {
+  const id = s.dialogueQueue.shift()
+  if (!id) return
+  s.seenLines[id] = true
+  const def = DIALOGUE_BY_ID[id]
+  if (def?.text) log(s, def.text, 'story')
+}
+
+const OPENING_DIALOGUE_IDS = ['open-shelf', 'open-baskets', 'open-unpack-only'] as const
+
+/** Mark post-intro strip beats done (DevMode, migrated saves, stage jumps). */
+export function skipOpeningDialogue(s: GameState) {
+  for (const id of OPENING_DIALOGUE_IDS) {
+    s.seenLines[id] = true
+  }
+  s.dialogueQueue = s.dialogueQueue.filter((id) => !OPENING_DIALOGUE_IDS.includes(id as (typeof OPENING_DIALOGUE_IDS)[number]))
 }
 
 /** Only queues ids that exist in TUTORIALS. */
@@ -50,6 +79,7 @@ export function captureTutorialBaseline(s: GameState): Record<string, number> {
     ordersBelow85: s.stats.ordersBelow85,
     shrunk: s.stats.shrunk,
     spoiled: s.stats.spoiled,
+    dumps: s.stats.dumps,
     cash: s.cash,
     baskets: s.baskets,
   }
@@ -213,6 +243,7 @@ export function setEra(s: GameState, era: number) {
       xp: 0,
       policy: 'standard',
       attentionShare: 1,
+      drift: 0,
     })
     s.stats.storesOpened = Math.max(s.stats.storesOpened, 1)
   }

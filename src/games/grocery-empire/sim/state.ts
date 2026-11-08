@@ -1,11 +1,22 @@
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { CHARTER_AXES } from '../content/lateEras'
 import { MENU_IDS, type MenuId } from '../content/menus'
-import type { RoleId } from '../content/staff'
+import type { RoleId, StaffTraitId } from '../content/staff'
 import { COLD, COMPUTE, FLEET, HISTORY, SAVE_VERSION, START, WHOLESALE } from './balance'
 
 export type SupplierId = 'a' | 'b'
 export type WeatherId = 'fair' | 'rain' | 'heat' | 'cold'
+/** Mild rival pressure kinds (Era 2+). One slot at a time; always answerable. */
+export type RivalKind = 'undercut' | 'poach' | 'smear' | 'raid'
+
+export function isRivalKind(x: unknown): x is RivalKind {
+  return x === 'undercut' || x === 'poach' || x === 'smear' || x === 'raid'
+}
+export interface RivalEventState {
+  kind: RivalKind | null
+  endsAt: number
+  lastAt: number
+}
 export type LedgerKind =
   | 'info'
   | 'good'
@@ -41,6 +52,8 @@ export interface StaffMember {
   level: number
   xp: number
   hiredAt: number
+  /** Soft personality trait: ±5% on one axis. Optional for old saves. */
+  traitId?: StaffTraitId
 }
 
 export interface LedgerEntry {
@@ -81,6 +94,9 @@ export interface OfflineReceipt {
 
 export type StorePolicy = 'local' | 'standard' | 'premium'
 export type InvestRisk = 'low' | 'mid' | 'high'
+export type MarketingPosture = 'neighborhood' | 'circular' | 'houseBrand'
+
+export type SalesBottleneck = 'shelf' | 'unpack' | 'checkout' | 'demand'
 
 export interface StoreState {
   id: string
@@ -90,6 +106,8 @@ export interface StoreState {
   policy: StorePolicy
   /** 0..1 share of Attention allocated to this store. */
   attentionShare: number
+  /** 0..1 neglect heat — rises when under-attended; Walk store resets. */
+  drift: number
 }
 
 export interface InvestBook {
@@ -104,11 +122,24 @@ export interface InvestBook {
   tickAcc: number
 }
 
+export type BoardAgenda = 'expand' | 'dividend' | 'rnd' | 'hours'
+
+/** Autonomous ticker focus — balanced runs all three habits. */
+export type AutonomousHabit = 'balanced' | 'price' | 'attention' | 'collect'
+
 export interface BoardState {
   seats: number
   nextMeetingAt: number
   /** Last meeting the player acknowledged (time). */
   lastResolvedAt: number
+  /** Pending agenda choice while meeting is due (UI). */
+  pendingAgenda: BoardAgenda | null
+  /** One-shot next openStore cost mul after Expand agenda. */
+  expandDiscount: number
+  /** Shelf R&D lifeMul buff until this time. */
+  rndUntil: number
+  /** Cut-hours clamp until this time. */
+  cutHoursUntil: number
 }
 
 /** Era 3 — cold chain / freshness / Momentum. */
@@ -202,6 +233,8 @@ export interface Stats {
   interestEarned: number
   memosDone: number
   upgradesBought: number
+  /** Times Amend the Minutes cleared a standing-order fork. */
+  amendMinutes: number
   buildsBought: number
   attentionFilled: number
   ideasEarned: number
@@ -219,6 +252,10 @@ export interface Stats {
   doctrinesBought: number
   investDeposits: number
   boardMeetings: number
+  couponMatches: number
+  rivalAnswers: number
+  walks: number
+  trains: number
 }
 
 export interface GameState {
@@ -250,7 +287,15 @@ export interface GameState {
   orders: Order[]
   nextOrderId: number
 
-  wholesale: { index: number; phase: number; drift: number; idleSec: number; history: number[] }
+  wholesale: {
+    index: number
+    phase: number
+    drift: number
+    idleSec: number
+    history: number[]
+    /** Slow EMA of index — Price IQ tip (avoids sine/idle jitter chasing the player). */
+    tipIndex: number
+  }
   supplier: SupplierId
   autoRestock: { enabled: boolean; maxCost: number; minUnits: number }
 
@@ -258,6 +303,12 @@ export interface GameState {
   adCost: number
   lastAdAt: number
   lastAdSpend: number
+  /** Active marketing posture (Neighborhood / Circular / House brand). */
+  marketingPosture: MarketingPosture
+  /** Wholesale index freeze until this sim-time (0 = none). */
+  priceLockUntil: number
+  /** Wholesale index value while locked. */
+  priceLockIndex: number
   hours: number
   weather: { now: WeatherId; next: WeatherId; timer: number }
 
@@ -273,6 +324,8 @@ export interface GameState {
   /** Timed soft events (coupon wars, etc.). */
   events: {
     couponWar: { active: boolean; endsAt: number; lastAt: number }
+    /** Price undercut / staff poach / health smear — one at a time, never bricks. */
+    rival: RivalEventState
   }
 
   /** Timed campaigns (celebrity endcap, etc.). */
@@ -295,6 +348,10 @@ export interface GameState {
     fibA: number
     fibB: number
     retrains: number
+    /** Times Rewrite the Charter refunded empire perk points. */
+    perkRespecs: number
+    /** Times you've paid cash to move Analyst ↔ Archive. */
+    officeMoves: number
     /** Scanner Array (Attention pulse) unlocked via memo. */
     scanner: boolean
     /** Sim-time when pulseScanner is ready again. */
@@ -325,6 +382,8 @@ export interface GameState {
   doctrines: Record<string, number>
   depot: boolean
   autonomous: boolean
+  /** After Autonomous release: which habits the ticker runs. */
+  autonomousHabit: AutonomousHabit
   board: BoardState
   /** Reputation spent since run start (for Autonomous gate). */
   repSpent: number
@@ -362,6 +421,8 @@ export interface GameState {
     /** Last empty-shelf starter crate grant (sim time). */
     lastEmptyShelfAt: number
     lastBailoutAt: number
+    /** Last Era-0 mentor crate (sim time). */
+    lastMentorAt: number
     lastInterventionAt: number
     watchdogTimer: number
     lastProgress: number
@@ -370,6 +431,11 @@ export interface GameState {
   /** Dismissed tip-whisper ids (plan Part C5 / O). */
   tipsSeen: Record<string, true>
 
+  /** Spoken dialogue lines finished or skipped (once per save). */
+  seenLines: Record<string, true>
+  /** Pending dialogue strip ids — first is active. */
+  dialogueQueue: string[]
+
   /** Opening cutscene finished (once per save). */
   introSeen: boolean
 
@@ -377,8 +443,33 @@ export interface GameState {
   museum: { exhibits: { t: number; qty: number; note: string }[] }
 
   stats: Stats
-  rates: { soldPerSec: number; revenuePerSec: number; costPerSec: number; spoilPerSec: number; demandPerSec: number }
+  rates: {
+    soldPerSec: number
+    revenuePerSec: number
+    costPerSec: number
+    spoilPerSec: number
+    demandPerSec: number
+    /** Venture paycheck income rate (stored till fill). */
+    venturePerSec: number
+    /** Passbook + invest book interest rate on yielding balances. */
+    investYieldPerSec: number
+  }
   history: { cash: number[]; sold: number[]; revenue: number[]; timer: number; lastSold: number; lastRevenue: number }
+  /**
+   * Rolling ~1s buckets for HUD averages. Rates = sum(buckets+current) / span —
+   * not EMA of instant tick rates (those thrash on discrete baskets).
+   */
+  rateAvg: {
+    t: number
+    curSold: number
+    curRev: number
+    curCost: number
+    curSpoil: number
+    sold: number[]
+    rev: number[]
+    cost: number[]
+    spoil: number[]
+  }
   acc: {
     cat: Record<CategoryId, number>
     unpack: number
@@ -393,6 +484,10 @@ export interface GameState {
     lastShrinkLogAt: number
     /** Sim time of last receipt-poetry ledger line. */
     lastPoetryAt: number
+    /** Sim time of last franchise-clone nick (Era 4+, optional). */
+    lastCloneAt?: number
+    /** Sim time of last Dip Bell chime. */
+    lastDipLogAt: number
   }
   offlineReceipt: OfflineReceipt | null
 }
@@ -486,6 +581,7 @@ export function emptyStats(): Stats {
     interestEarned: 0,
     memosDone: 0,
     upgradesBought: 0,
+    amendMinutes: 0,
     buildsBought: 0,
     attentionFilled: 0,
     ideasEarned: 0,
@@ -503,6 +599,10 @@ export function emptyStats(): Stats {
     doctrinesBought: 0,
     investDeposits: 0,
     boardMeetings: 0,
+    couponMatches: 0,
+    rivalAnswers: 0,
+    walks: 0,
+    trains: 0,
   }
 }
 
@@ -545,7 +645,14 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     orders: [],
     nextOrderId: 1,
 
-    wholesale: { index: WHOLESALE.indexStart, phase: 0, drift: 1, idleSec: 0, history: [] },
+    wholesale: {
+      index: WHOLESALE.indexStart,
+      phase: 0,
+      drift: 1,
+      idleSec: 0,
+      history: [],
+      tipIndex: WHOLESALE.indexStart,
+    },
     supplier: 'a',
     autoRestock: { enabled: false, maxCost: 0.85, minUnits: 24 },
 
@@ -553,6 +660,9 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     adCost: 20,
     lastAdAt: -1,
     lastAdSpend: 0,
+    marketingPosture: 'neighborhood',
+    priceLockUntil: 0,
+    priceLockIndex: WHOLESALE.indexStart,
     hours: 1,
     weather: { now: 'fair', next: 'fair', timer: 0 },
 
@@ -567,6 +677,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
 
     events: {
       couponWar: { active: false, endsAt: 0, lastAt: -1e9 },
+      rival: { kind: null, endsAt: 0, lastAt: -1e9 },
     },
     campaigns: {
       celebrityUntil: 0,
@@ -586,6 +697,8 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       fibA: 2,
       fibB: 3,
       retrains: 0,
+      perkRespecs: 0,
+      officeMoves: 0,
       scanner: false,
       scannerReadyAt: 0,
     },
@@ -619,7 +732,16 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     doctrines: {},
     depot: false,
     autonomous: false,
-    board: { seats: 3, nextMeetingAt: 0, lastResolvedAt: 0 },
+    autonomousHabit: 'balanced',
+    board: {
+      seats: 3,
+      nextMeetingAt: 0,
+      lastResolvedAt: 0,
+      pendingAgenda: null,
+      expandDiscount: 1,
+      rndUntil: 0,
+      cutHoursUntil: 0,
+    },
     repSpent: 0,
 
     cold: emptyCold(),
@@ -646,19 +768,31 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       stallSec: 0,
       lastEmptyShelfAt: -1e9,
       lastBailoutAt: -1e9,
+      lastMentorAt: -1e9,
       lastInterventionAt: -1e9,
       watchdogTimer: 0,
       lastProgress: 0,
     },
 
     tipsSeen: {},
+    seenLines: {},
+    dialogueQueue: [],
     introSeen: false,
 
     museum: { exhibits: [] },
 
     stats: emptyStats(),
-    rates: { soldPerSec: 0, revenuePerSec: 0, costPerSec: 0, spoilPerSec: 0, demandPerSec: 0 },
+    rates: {
+      soldPerSec: 0,
+      revenuePerSec: 0,
+      costPerSec: 0,
+      spoilPerSec: 0,
+      demandPerSec: 0,
+      venturePerSec: 0,
+      investYieldPerSec: 0,
+    },
     history: { cash: [], sold: [], revenue: [], timer: 0, lastSold: 0, lastRevenue: 0 },
+    rateAvg: emptyRateAvg(),
     acc: {
       cat: emptyByCat(),
       unpack: 0,
@@ -672,8 +806,26 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       lastSpoilLogAt: -1e9,
       lastShrinkLogAt: -1e9,
       lastPoetryAt: -1e9,
+      lastDipLogAt: -1e9,
     },
     offlineReceipt: null,
+  }
+}
+
+/** How many ~1s buckets feed Sold/Rev/Net HUD averages. */
+export const RATE_AVG_KEEP = 45
+
+export function emptyRateAvg(): GameState['rateAvg'] {
+  return {
+    t: 0,
+    curSold: 0,
+    curRev: 0,
+    curCost: 0,
+    curSpoil: 0,
+    sold: [],
+    rev: [],
+    cost: [],
+    spoil: [],
   }
 }
 

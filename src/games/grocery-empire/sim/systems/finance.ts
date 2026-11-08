@@ -3,6 +3,7 @@ import { DEBT, LOYALTY, RECOVERY } from '../balance'
 import {
   arrearsCap,
   passbookRate,
+  passbookYieldingBalance,
   rentPerSec,
   up,
   upkeepPerSec,
@@ -46,13 +47,18 @@ export function tickFinance(s: GameState, dt: number, revenueThisTick = 0) {
 
   if (revenueThisTick > 0) {
     if (s.arrears > 0) {
-      const skim = Math.min(s.arrears, revenueThisTick * RECOVERY.arrearsRevenueShare)
+      const skim = Math.min(
+        s.arrears,
+        revenueThisTick * RECOVERY.arrearsRevenueShare * (1 + up(s, 'arrears-call') * 0.1),
+      )
       s.arrears -= skim
       s.cash = Math.max(0, s.cash - skim)
       s.stats.rentPaid += skim
     }
     if (s.debt.owed > 0) {
-      const share = DEBT.revenueShare * (1 + up(s, 'debt-plan') * DEBT.planBonusPerLevel)
+      const share =
+        DEBT.revenueShare *
+        (1 + up(s, 'debt-plan') * DEBT.planBonusPerLevel + Math.min(0.5, (s.upgrades['iou-folder'] ?? 0) * 0.02))
       const pay = Math.min(s.debt.owed, revenueThisTick * share, s.cash)
       if (pay > 0) {
         s.cash -= pay
@@ -69,10 +75,17 @@ export function tickFinance(s: GameState, dt: number, revenueThisTick = 0) {
   }
 
   if (s.passbook.balance > 0) {
-    const interest = s.passbook.balance * passbookRate(s) * dt
+    const yielding = passbookYieldingBalance(s)
+    const interest = yielding * passbookRate(s) * dt
     if (interest > 0) {
       s.passbook.balance += interest
       s.stats.interestEarned += interest
+    }
+    // Fold passbook yield into the combined invest yield HUD line when book is idle.
+    if (!(s.invest?.unlocked && s.invest.balance > 0 && !s.invest.circuitBreaker)) {
+      s.rates.investYieldPerSec = interest / Math.max(dt, 1e-6)
+    } else {
+      s.rates.investYieldPerSec = (s.rates.investYieldPerSec ?? 0) + interest / Math.max(dt, 1e-6)
     }
   }
 

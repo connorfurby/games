@@ -10,7 +10,16 @@ export interface PopItem {
 
 let popSeq = 1
 
-/** Lightweight sale/receipt scrap toward the baskets counter. */
+function formatDelta(delta: number): string | null {
+  if (delta <= 0) return null
+  // Dev cheats / offline dumps shouldn't spray a green phone number into the chrome.
+  if (delta >= 500) return null
+  if (delta >= 100) return `+${Math.floor(delta)}`
+  if (delta >= 1) return `+${Math.floor(delta)}`
+  return '+…'
+}
+
+/** Lightweight sale scrap toward the baskets counter. */
 export function useSalePops(baskets: number, reducedMotion: boolean, muted = true): PopItem[] {
   const prevRef = useRef(baskets)
   const [pops, setPops] = useState<PopItem[]>([])
@@ -22,12 +31,13 @@ export function useSalePops(baskets: number, reducedMotion: boolean, muted = tru
     const delta = baskets - prev
     playSaleFx(muted)
     if (reducedMotion) return
+    const text = formatDelta(delta)
+    if (!text) return
     const id = popSeq++
-    const text = delta >= 1 ? `+${Math.floor(delta)}` : '+…'
-    setPops((p) => [...p.slice(-11), { id, text, x: 20 + Math.random() * 60 }])
+    setPops((p) => [...p.slice(-5), { id, text, x: 18 + Math.random() * 50 }])
     const t = window.setTimeout(() => {
       setPops((p) => p.filter((x) => x.id !== id))
-    }, 900)
+    }, 750)
     return () => clearTimeout(t)
   }, [baskets, reducedMotion, muted])
 
@@ -43,10 +53,10 @@ export function PopLayer({ pops }: { pops: PopItem[] }) {
             key={p.id}
             className="ge-pop"
             style={{ left: `${p.x}%` }}
-            initial={{ opacity: 0, y: 18, scale: 0.85 }}
-            animate={{ opacity: 1, y: -28, scale: 1 }}
+            initial={{ opacity: 0, y: 8, scale: 0.9 }}
+            animate={{ opacity: 1, y: -16, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.85, ease: 'easeOut' }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
           >
             {p.text}
           </motion.span>

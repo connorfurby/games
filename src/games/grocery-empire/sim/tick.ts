@@ -1,6 +1,12 @@
 import { HISTORY, OFFLINE_CAP_SEC, OFFLINE_STEP_SEC } from './balance'
-import { tickAutoRestock } from './commands'
-import { HISTORY_KEEP, type GameState, type OfflineReceipt } from './state'
+import { tickAutoRestock, tickAutoTournament } from './commands'
+import {
+  emptyRateAvg,
+  HISTORY_KEEP,
+  RATE_AVG_KEEP,
+  type GameState,
+  type OfflineReceipt,
+} from './state'
 import { repair } from './invariants'
 import {
   tickAging,
@@ -35,22 +41,69 @@ function pushHistory(s: GameState, dt: number) {
   s.history.cash.push(s.cash)
   s.history.sold.push(sold)
   s.history.revenue.push(rev)
+  if (!Array.isArray(s.wholesale.history)) s.wholesale.history = []
+  s.wholesale.history.push(Number.isFinite(s.wholesale.index) ? s.wholesale.index : 1)
+  while (s.wholesale.history.length > HISTORY_KEEP) s.wholesale.history.shift()
   while (s.history.cash.length > HISTORY_KEEP) s.history.cash.shift()
   while (s.history.sold.length > HISTORY_KEEP) s.history.sold.shift()
   while (s.history.revenue.length > HISTORY_KEEP) s.history.revenue.shift()
 }
 
+function sumBuf(xs: number[]): number {
+  let n = 0
+  for (const v of xs) n += v
+  return n
+}
+
+function pushBucket(buf: number[], value: number) {
+  buf.push(value)
+  while (buf.length > RATE_AVG_KEEP) buf.shift()
+}
+
+/**
+ * HUD Sold/Rev/Cost are averages over the last ~45 sim seconds of 1s buckets.
+ * Instant tick rates (1 basket in 0.1s → 10/s) never hit the display.
+ */
 function updateRates(s: GameState, dt: number) {
-  // Exponential-ish window via accumulator drain each second-ish chunk
-  const alpha = Math.min(1, dt)
-  s.rates.soldPerSec = s.rates.soldPerSec * (1 - alpha) + (s.acc.soldWindow / Math.max(dt, 1e-6)) * alpha
-  s.rates.revenuePerSec = s.rates.revenuePerSec * (1 - alpha) + (s.acc.revWindow / Math.max(dt, 1e-6)) * alpha
-  s.rates.costPerSec = s.rates.costPerSec * (1 - alpha) + (s.acc.costWindow / Math.max(dt, 1e-6)) * alpha
-  s.rates.spoilPerSec = s.rates.spoilPerSec * (1 - alpha) + (s.acc.spoilWindow / Math.max(dt, 1e-6)) * alpha
+  if (!s.rateAvg) s.rateAvg = emptyRateAvg()
+  const w = s.rateAvg
+  w.curSold += s.acc.soldWindow
+  w.curRev += s.acc.revWindow
+  w.curCost += s.acc.costWindow
+  w.curSpoil += s.acc.spoilWindow
+  w.t += dt
   s.acc.soldWindow = 0
   s.acc.revWindow = 0
   s.acc.costWindow = 0
   s.acc.spoilWindow = 0
+
+  while (w.t >= 1) {
+    w.t -= 1
+    // Attribute the whole unfinished second's accumulators into one bucket, then continue.
+    // Split proportionally when t was >> 1 (speed-up / offline catch-up chunks).
+    pushBucket(w.sold, w.curSold)
+    pushBucket(w.rev, w.curRev)
+    pushBucket(w.cost, w.curCost)
+    pushBucket(w.spoil, w.curSpoil)
+    w.curSold = 0
+    w.curRev = 0
+    w.curCost = 0
+    w.curSpoil = 0
+  }
+
+  const filled = w.sold.length + w.t
+  // Always divide by the full window while warming up so one early basket
+  // can't read as 10/s. Once full, filled ≈ RATE_AVG_KEEP.
+  const denom = Math.max(RATE_AVG_KEEP, filled)
+  // Quantize to 0.01 so HUD strings don't twitch on float noise.
+  const q = (n: number) => {
+    if (!Number.isFinite(n) || Math.abs(n) < 0.005) return 0
+    return Math.round(n * 100) / 100
+  }
+  s.rates.soldPerSec = q((sumBuf(w.sold) + w.curSold) / denom)
+  s.rates.revenuePerSec = q((sumBuf(w.rev) + w.curRev) / denom)
+  s.rates.costPerSec = q((sumBuf(w.cost) + w.curCost) / denom)
+  s.rates.spoilPerSec = q((sumBuf(w.spoil) + w.curSpoil) / denom)
 }
 
 /** Advance the sim by dt simulated seconds. Mutates s. */
@@ -90,6 +143,7 @@ export function applyTick(s: GameState, dt: number) {
   tickEndings(s, step)
   tickRecovery(s, step)
   tickAutoRestock(s)
+  tickAutoTournament(s)
   tickUnlocks(s, step)
   updateRates(s, step)
   pushHistory(s, step)

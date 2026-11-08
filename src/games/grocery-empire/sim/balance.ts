@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 4
 
 export const START = {
   /** Gentler open: enough for a first wholesale dip without immediate rent panic. */
@@ -31,7 +31,17 @@ export const DEMAND = {
   reputationBonusPerPoint: 0.03,
 }
 
-export const CHECKOUT = { basePerSec: 1, perCashier: 1.5, expressLaneMul: 1.4 }
+export const CHECKOUT = {
+  basePerSec: 1,
+  perCashier: 1.5,
+  expressLaneMul: 1.4,
+  /** Extra checkout lanes from a managed store (≥ half fair Attention). */
+  perManagedStore: 0.7,
+  /** Neglected store still adds a sliver of lanes. */
+  perNeglectedStore: 0.15,
+  /** Attention share vs fair share below this = neglected. */
+  neglectAttFrac: 0.5,
+}
 
 export const WHOLESALE = {
   baseCanCost: 0.8,
@@ -46,6 +56,9 @@ export const WHOLESALE = {
   idleSag: 0.004,
   supplierB: { discount: 0.85, delaySec: 30, minSpools: 2, shortShipChance: 0.15, shortShipFrac: 0.75 },
 }
+
+/** Restock Smarts: auto-order only when index <= tipIndex * (base − perRank × rank). */
+export const RESTOCK_SMARTS = { tolBase: 1.04, tolPerRank: 0.02 }
 
 export const SHELF = { baseCap: 40 }
 export const BACKROOM = { baseCap: 60, perRackLevel: 25 }
@@ -119,6 +132,34 @@ export const COUPON_WAR = {
   brandBoost: 0.05,
 }
 
+/**
+ * Era 2+ mild rival pressure cloned from the coupon-war pattern. One slot, three flavors.
+ * Each has a player verb (Answer) that ends it early; nothing here can brick a run.
+ */
+export const RIVAL_EVENTS = {
+  minGapSec: 10 * 60,
+  startChancePerSec: 1 / 240,
+  durationSec: 80,
+  /** Price undercut: mild demand dip. */
+  undercutDemandMul: 0.94,
+  /** Staff poach: morale target dip (needs staff on the clock). */
+  poachMoraleTarget: -0.06,
+  /** Health smear: mild demand dip; Answer restores Brand. */
+  smearDemandMul: 0.95,
+  /** Endcap raid: rival rents the door-side display; mild demand dip (needs ≥1 endcap). */
+  raidDemandMul: 0.96,
+  /** Answer cost = ceil(adCost * answerCostFrac), floor of 2. */
+  answerCostFrac: 0.4,
+  brandBoost: 0.03,
+} as const
+
+/** Era 4+ franchise clone: a lookalike opens down the road; Brand takes a small, recoverable nick. */
+export const FRANCHISE_CLONE = {
+  minGapSec: 8 * 60,
+  chancePerFranchisePerSec: 1 / 900,
+  brandHit: 0.02,
+}
+
 /** Era 2+ Ideas sink — temporary demand spike with mild Brand risk on end. */
 export const CELEBRITY_ENDCAP = {
   durationSec: 120,
@@ -136,7 +177,19 @@ export const COMPUTE = {
   capPerArchive: 1000,
   ideasBase: 0.35,
   ideasExp: 1.1,
-  firstRepAt: 3000,
+  /** First Reputation +1 from baskets (free starter Rep is separate). */
+  firstRepAt: 1500,
+  /** Starting free Reputation (not earned from baskets). */
+  freeRep: 2,
+  /** Gap after k basket-earned points: round(repGapBase × repGapGrowth^k). */
+  repGapBase: 900,
+  repGapGrowth: 1.16,
+}
+
+/** Cash paid to move 1 spent Reputation between Analyst ↔ Archive (keeps ≥1 of each). */
+export const OFFICE_REBALANCE = {
+  baseCash: 180,
+  growth: 1.45,
 }
 
 /** Chip-based scanner path (unused by Part K pulse UI). */
@@ -171,11 +224,26 @@ export const RECOVERY = {
   bailoutCrates: 12,
   bailoutCooldownSec: 300,
   emergencyCrates: 24,
+  /** Era 0 mentor crate: minimum gap between grants (sim seconds). */
+  mentorCooldownSec: 120,
+  /** Dump-cooler inspection meter is this fraction of the spoil rate (you chose to bin it). */
+  dumpInspectionFrac: 0.25,
   arrearsCapSec: 600,
   arrearsRevenueShare: 0.5,
 }
 
-export const PASSBOOK = { ratePerSec: 0.00005, rateBonusPerLevel: 0.15 }
+/**
+ * Passbook — slow parking, capped by Empire level.
+ * ~0.8%/hr base; Better Passbook mainly raises the cap.
+ */
+export const PASSBOOK = {
+  ratePerSec: 0.00005 / 22.5, // ≈ 0.8%/hr
+  rateBonusPerLevel: 0.04,
+  capBase: 2500,
+  capGrowth: 1.42,
+  /** Extra cap fraction per Better Passbook upgrade level. */
+  capBonusPerUpgrade: 0.12,
+}
 
 export const DEBT = { nephewCash: 80, nephewOwed: 120, revenueShare: 0.1, planBonusPerLevel: 0.25 }
 
@@ -183,11 +251,64 @@ export const EMPIRE = {
   xpPerUnitSold: 0.4,
   xpPerMemo: 25,
   xpPerUpgrade: 5,
-  /** Flat XP when collecting a venture payout. */
-  xpPerVentureCollect: 8,
+  /** Soft XP from venture collect — scaled by payout, far below basket XP. */
+  xpPerVentureCollect: 2,
+  xpPerVentureCash: 0.0004,
   levelBase: 100,
   levelGrowth: 1.35,
   maxLevel: 50,
+  /** +2.5% demand per Empire level above 1. */
+  demandPerLevel: 0.025,
+}
+
+/** Staff seats from storefront tier (index = builds.storefront). */
+export const STAFF_SEATS = {
+  byStorefront: [0, 3, 5, 8, 12, 16, 22, 30] as const,
+  sideYardBonus: 2,
+  perExtraStore: 2,
+  parkingBonus: 1,
+  /** Shift Lead upgrade: +1 seat every this many ranks. */
+  shiftLeadPerRanks: 2,
+}
+
+/** Variety / feature-aisle demand rules. */
+export const VARIETY = {
+  /** +10% for 2nd and 3rd aisle. */
+  earlyEach: 0.1,
+  /** +4% for each aisle after the 3rd. */
+  lateEach: 0.04,
+  featureMixMin: 0.75,
+  featureWeightMul: 1.25,
+  featureSpoilMul: 1.15,
+  facingBonusPerLevel: 0.04,
+}
+
+/** Marketing postures — one active at a time. */
+export const MARKETING = {
+  switchFee: 40,
+  postures: {
+    neighborhood: { demandMul: 1, revenueMul: 1, privateLabelWeightMul: 1 },
+    circular: { demandMul: 1.18, revenueMul: 0.92, privateLabelWeightMul: 1 },
+    houseBrand: { demandMul: 0.92, revenueMul: 1.16, privateLabelWeightMul: 1.35 },
+  } as const,
+  /** Loss Leader doctrine sweetens Circular shoppers. */
+  lossLeaderCircularBonus: 0.06,
+  /** Premium Bodega doctrine sweetens Premium policy revenue. */
+  premiumBodegaRevenueBonus: 0.04,
+  paybackWarnSec: 30 * 60,
+}
+
+/** Memo-gated wholesale price lock. */
+export const PRICE_LOCK = {
+  durationSec: 180,
+  /** Cost ≈ this many crates of the selected aisle. */
+  cratesCost: 8,
+}
+
+/** Venture foot traffic — open ventures bring shoppers to the aisle. */
+export const VENTURE_TRAFFIC = {
+  perOpen: 0.03,
+  cap: 0.25,
 }
 
 export const STAFF_XP = { perSec: 1, perLevel: 60, trainingBonusPerLevel: 0.25 }
@@ -199,20 +320,35 @@ export const HISTORY = { everySec: 5, keep: 72 }
 /** Era 2 — chain & capital (plan Part F). */
 export const CHAIN = {
   maxStores: 12,
-  openBaseCost: 4000,
-  openGrowth: 1.55,
+  openBaseCost: 12_000,
+  openGrowth: 2.1,
   xpPerSaleShare: 0.35,
   xpPerLevel: 80,
   maxStoreLevel: 20,
   attentionDrainPerSec: 0.45,
   depotDemandMul: 1.08,
   storeCountDemandEach: 0.35,
+  /** Metro slot: extra demand per store beyond the first. */
+  metroStoreDemandEach: 0.08,
+  metroAttDrainMul: 0.9,
+  /** Corner parcel: next store cheaper + opens one level higher. */
+  cornerParcelCostMul: 0.85,
+  cornerParcelStartLevelBonus: 1,
+  /** Lot ownership: corner presence. */
+  lotDemandMul: 1.08,
+  parkingDemandMul: 1.1,
+  parkingRentPerMin: 0.35,
   policyDemand: { local: 1.12, standard: 1, premium: 0.9 } as const,
   policyRevenue: { local: 0.96, standard: 1, premium: 1.14 } as const,
   policyShrink: { local: 1.08, standard: 1, premium: 0.92 } as const,
   neglectSpoilMul: 0.4,
 }
 
+/**
+ * Risk book — yield only on balance inside the Empire-scaled cap.
+ * Means ≈ 3% / 7% / 14% per hour at engine 0.
+ * engineMeanBonus is additive fraction of the base mean (not a runaway multiply).
+ */
 export const INVEST = {
   tickSec: 2.5,
   unlockCash: 8000,
@@ -221,12 +357,70 @@ export const INVEST = {
   maxEngine: 8,
   circuitDrop: 0.4,
   risk: {
-    low: { mean: 0.0006, vol: 0.0015 },
-    mid: { mean: 0.0014, vol: 0.006 },
-    high: { mean: 0.0028, vol: 0.02 },
+    low: { mean: 0.0000206, vol: 0.00004 },
+    mid: { mean: 0.000048, vol: 0.00022 },
+    high: { mean: 0.000096, vol: 0.00085 },
   } as const,
-  engineMeanBonus: 0.12,
+  /** Engine level required before Mid / High can be selected. */
+  riskGate: { mid: 2, high: 4 } as const,
+  /** +6% of base mean per engine level. */
+  engineMeanBonus: 0.06,
+  /** Book cap = passbookCap × (bookCapBase + bookCapPerEngine × engine). */
+  bookCapBase: 1.5,
+  bookCapPerEngine: 0.45,
+  /** Vault Clerk upgrade: +8% book/passbook cap per level. */
+  vaultClerkCapBonus: 0.08,
 }
+
+/** Strategy doctrines — small stackable rule changes. */
+export const DOCTRINE_EFFECTS = {
+  throughputUnpackMul: 1.08,
+  edlpElasticityMul: 0.92,
+  hiLoAdBonus: 0.01,
+  routeDensityDeliveryMul: 0.88,
+  floatDisciplineCapMul: 1.2,
+  bankReadBonus: 1.5,
+} as const
+
+/**
+ * Upgrade rank gates by band.
+ * Band 0 (Counter): classic `2 + floor(empire/2)` — teaching nodes ignore this.
+ * Band 1 (Aisle): opens at empire 4 → `4 + max(0, empire - 4)`.
+ * Band 2 (Chain): locked until empire 8 → `floor((empire - 8) / 2)`.
+ * Band 3 (Institution): locked until empire 16 → `floor((empire - 16) / 3)`.
+ */
+export const UPGRADE_RANKS = {
+  baseUnlocked: 2,
+  perTwoEmpireLevels: 1,
+  /** First purchase of a band > 0 node costs this × geometric cost. */
+  layerToll: 2.5,
+  /** Synergy product on a single cash node never exceeds this. */
+  synergyCap: 1.25,
+  /** Default k for diminishing curves. Rank 1 ≈ 13% of cap, 10 ≈ 60%, 30 ≈ 82%. */
+  diminishK: 0.15,
+  /** Default k for asymptotic curves. */
+  asymptoteK: 0.08,
+  bands: {
+    0: { name: 'Counter', empireOpen: 0 },
+    1: { name: 'Aisle', empireOpen: 4 },
+    2: { name: 'Chain', empireOpen: 8 },
+    3: { name: 'Institution', empireOpen: 16 },
+  } as const,
+}
+
+/** Empire doctrine board — Rewrite the Charter refunds all trait points. */
+export const PERK_RESPEC = { ideas: 40, growth: 2 }
+
+/** Standing-order memos — repeatable operational ranks (Attention). */
+export const STANDING_ORDERS = {
+  max: 10,
+  diminishK: 0.15,
+  baseAttention: 400,
+  growth: 1.35,
+}
+
+/** Amend the Minutes — clear one memo fork so the other standing order can be filed. */
+export const AMEND_MINUTES = { ideas: 25, growth: 2 }
 
 export const CAPITAL = {
   incorporateCash: 12_000,
@@ -238,7 +432,9 @@ export const CAPITAL = {
   tournamentBaseRead: 4,
   readPerDoctrine: 1.5,
   autonomousReadNeed: 40,
-  autonomousRepSpentNeed: 80,
+  /** Reachable gate — was 80 (~6e8 baskets). Analyst/Archive spend should clear ~18. */
+  autonomousRepSpentNeed: 18,
+  brandRegenPerSec: 0.002,
   covenantDebtRatio: 0.45,
   doctrineBaseRead: 6,
   doctrineGrowth: 1.4,
@@ -264,6 +460,18 @@ export const COLD = {
   quadraticYieldMul: 4,
   plantCashIncome: 8,
   surplusCashMul: 0.15,
+  /** Cold ↔ aisle coupling (Era 3+, only once a plant or tank exists). */
+  healthyLifeMul: 1.06,
+  /** Extra perishable life per Momentum step above ×1 (while Momentum is on), capped. */
+  momentumLifePerStep: 0.03,
+  momentumLifeCap: 0.06,
+  /** lifeMul cut at the brownout floor; ramps in as freshness drops below 100%. */
+  brownoutLifeMul: 0.94,
+  brownoutAgingMul: 1.15,
+  brownoutDemandMul: 0.92,
+  /** Dairy/meat category weight bump per Momentum step above ×1, capped. */
+  momentumWeightPerStep: 0.05,
+  momentumWeightCap: 1.1,
 }
 
 /** Era 3 — politics. */

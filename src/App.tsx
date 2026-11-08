@@ -1,10 +1,10 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AchievementsPage } from '@/shell/AchievementsPage'
+import { AppChrome } from '@/shell/AppChrome'
 import { GuidePage } from '@/shell/GuidePage'
 import { HotkeyOverlay } from '@/shell/HotkeyOverlay'
 import { MetaProvider } from '@/shell/MetaContext'
 import { PlayPage } from '@/shell/PlayPage'
-import { SettingsFab } from '@/shell/SettingsFab'
 import { Shelf } from '@/shell/Shelf'
 import { ShopPage } from '@/shell/ShopPage'
 
@@ -21,7 +21,7 @@ export default function App() {
           <Route path="/guide/:gameId" element={<GuidePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <SettingsFab />
+        <AppChrome />
         <HotkeyOverlay />
       </BrowserRouter>
     </MetaProvider>

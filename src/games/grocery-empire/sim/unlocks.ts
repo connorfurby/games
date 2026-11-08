@@ -1,3 +1,4 @@
+import { DIALOGUE_LINES } from '../content/dialogue'
 import { BASKET_MILESTONES } from '../content/lore'
 import { MEMOS } from '../content/memos'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
@@ -8,6 +9,7 @@ import {
   beginTutorial,
   isTutorialStepDone,
   log,
+  queueDialogue,
   queueTutorial,
   setEra,
   unlockMenu,
@@ -73,8 +75,9 @@ function sumBackroomKinds(s: GameState) {
 
 /** Queue real TUTORIALS ids when features appear — teach before / as the player acts. */
 function tickTutorialQueue(s: GameState) {
-  // Hold the coach until the opening cutscene finishes (slower, clearer start).
+  // Hold the coach until the opening cutscene + strip teaching finish.
   if (!s.introSeen) return
+  if (!s.seenLines['open-unpack-only']) return
 
   // Era 0 spine — one lesson at a time; baskets before wholesale so the score lands first.
   queueTutorial(s, 'unpack')
@@ -126,6 +129,8 @@ function tickTutorialQueue(s: GameState) {
   if (s.categories.dairy) queueTutorial(s, 'dairy')
   if (s.memos['auto-order'] || s.autoRestock.enabled) queueTutorial(s, 'autorestock')
   if (s.menus.empire || s.empire.level >= 2) queueTutorial(s, 'empire')
+  if (s.era >= 1 && s.stats.weatherDays >= 1) queueTutorial(s, 'weather')
+  if (s.era >= 2 && s.events?.rival?.kind) queueTutorial(s, 'e2-rival')
 
   // Era 2 tours
   if (s.era >= 2) {
@@ -232,6 +237,33 @@ function tickStoryMilestones(s: GameState) {
   }
 }
 
+/** Queue spoken strip lines when their when() first becomes true. */
+function tickDialogue(s: GameState) {
+  if (!s.introSeen) return
+  const ready: string[] = []
+  for (const line of DIALOGUE_LINES) {
+    if (s.seenLines[line.id]) continue
+    if (s.dialogueQueue.includes(line.id)) continue
+    try {
+      if (line.when(s)) ready.push(line.id)
+    } catch {
+      /* dialogue when() must never break the tick */
+    }
+  }
+  if (ready.length === 0) return
+  // Mid-run catch-up: a loaded Era 2 save can match dozens of lines at once.
+  // Keep one beat; mark the rest seen so the strip stops flustering.
+  if (ready.length > 2 && s.baskets >= 200) {
+    for (const id of ready.slice(0, -1)) s.seenLines[id] = true
+    if (s.dialogueQueue.length < 1) queueDialogue(s, ready[ready.length - 1]!)
+    return
+  }
+  for (const id of ready) {
+    if (s.dialogueQueue.length >= 2) break
+    queueDialogue(s, id)
+  }
+}
+
 /** Once per simulated second: menus, tutorials, memo visibility, era gates. */
 export function tickUnlocks(s: GameState, dt: number) {
   s.acc.secTimer += dt
@@ -240,6 +272,7 @@ export function tickUnlocks(s: GameState, dt: number) {
   s.stats.playSec += 1
 
   tickMenus(s)
+  tickDialogue(s)
   tickTutorials(s)
   tickMemoSeen(s)
   tickEra(s)

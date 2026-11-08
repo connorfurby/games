@@ -7,7 +7,7 @@ export const ERA_STORY: Record<
 > = {
   0: {
     title: 'The Counter',
-    line: 'Era 0 — one shelf, one price, and a soft rent clock. Everything later remembers this room.',
+    line: 'Era 0 — one shelf, one price, and a soft rent clock. Keep both moving.',
     epigraph: 'Every empire begins as a shelf someone kept stocked.',
   },
   1: {
@@ -32,7 +32,7 @@ export const ERA_STORY: Record<
   },
   5: {
     title: 'Seed Barges',
-    line: 'Era 5 — orbit and drift. Guardians. The last ration question waits at the edge of the ledger.',
+    line: 'Era 5 — orbit and drift. Guardians keep the last barge named.',
     epigraph: 'Someone still has to name what gets filled.',
   },
   6: {
@@ -51,17 +51,17 @@ export const MENU_LORE: Partial<Record<MenuId, string>> = {
   marketing: 'Marketing — paper and promises that pull feet through the door.',
   books: 'Books — the tape remembers what the day tried to forget.',
   invest: 'Invest — park cash where rent cannot see it.',
-  build: 'Build — wood, steel, cold, and civic ink. The shell grows around the counter.',
-  upgrades: 'Upgrades — small permanent edges. Always something sized for your wallet.',
+  build: 'Build — pay once for more room. Capacity, not habits.',
+  upgrades: 'Upgrades — layered cash trees. Empire rank opens the next band.',
   ventures: 'Ventures — side doors that earn while the main aisle runs.',
   land: 'Land — lots, yards, and the next footprint.',
-  strategy: 'Strategy — doctrines and tournaments. Read before you swing.',
+  strategy: 'Strategy — Attention in, Read out, doctrines spend it.',
   cold: 'Cold — plants and tanks. Freshness with a fuel bill.',
   politics: 'Politics — capital, lobby, leave. Regions have teeth.',
   logistics: 'Logistics — lanes, fuel, Control. Brand drift is a quiet thief.',
   fleet: 'Fleet — barges and guardians. The shelf reaches orbit.',
-  empire: 'Empire — levels and perks. Baskets become a title.',
-  coach: 'Coach — replay any lesson. Skip is always allowed.',
+  empire: 'Empire — baskets become a rank. Rank opens upgrade bands; trait points buy doctrines.',
+  coach: 'Coach opened — replay a lesson when the aisle feels loud again.',
   more: 'More — shop, guide, settings, the soft edges of the run.',
 }
 
@@ -70,10 +70,10 @@ export const BASKET_MILESTONES: { at: number; line: string }[] = [
   { at: 5, line: 'Five baskets. The register has a rhythm now.' },
   { at: 25, line: 'Twenty-five baskets. Regulars start recognizing the chalkboard.' },
   { at: 100, line: 'A hundred baskets. The neighborhood treats the door like weather.' },
-  { at: 400, line: 'Four hundred baskets. Era pressure gathers — the corner wants a name.' },
+  { at: 400, line: 'Four hundred baskets. The corner wants a name.' },
   { at: 1000, line: 'A thousand baskets. Somewhere a clerk tells a story that starts here.' },
   { at: 5000, line: 'Five thousand. The ledger stops feeling like a hobby.' },
-  { at: 25000, line: 'Twenty-five thousand. Cold air and politics start to make sense.' },
+  { at: 25000, line: 'Twenty-five thousand. The neighborhood feels small.' },
   { at: 100000, line: 'A hundred thousand baskets. The empire has a shadow.' },
 ]
 
@@ -81,21 +81,21 @@ export const BASKET_MILESTONES: { at: number; line: string }[] = [
 export const PANEL_LORE: Partial<Record<MenuId, string>> = {
   floor: 'The sales floor is the thesis. Everything else is a department that feeds this aisle.',
   backroom: 'Storage is patient. Spoilage is not. Rotate, cool, and leave room for the next truck.',
-  suppliers: 'Wholesale walks a sine wave. Buy the dips; unpack the arrivals; never worship a single index.',
+  suppliers: 'Wholesale walks a sine wave. Buy the dips; unpack when crates land.',
   staff: 'People unpack, sell, and guard. Morale is a soft meter that still breaks the day if ignored.',
   marketing: 'Ads buy glances. Loyalty buys returns. Celebrity buys a loud week.',
   books: 'Revenue in, rent out, arrears when you slip. The tape does not judge — it only totals.',
   invest: 'The passbook is a quiet second store. Risk grows the pile; panic empties it.',
-  build: 'Buildings change the mul. Choose the track that matches the bottleneck you feel.',
-  upgrades: 'Leveled trees fill the gaps between memos. Buy small. Buy often.',
+  build: 'One-time capacity buys. If the shelf is full or seats are gone, you are here.',
+  upgrades: 'Layered cash ranks with prereqs and capstone forks. Empire traits are the doctrine board.',
   ventures: 'Side businesses drip cash. Collect before the jar overflows into nowhere.',
   land: 'Footprint is destiny. Expand when the flagship feels small, not when you are bored.',
-  strategy: 'Doctrines are opinions with teeth. Tournaments are opinions with brackets.',
+  strategy: 'Loop: spend Attention on a tournament → bank Read → buy the next doctrine.',
   cold: 'Cold plants buy time for perishables. Momentum rewards the disciplined and punishes the greedy.',
   politics: 'Capital buys hearings. Leaving a region is also a kind of win.',
   logistics: 'Fuel and Control keep autonomous stores honest. Drift means the brand forgot its face.',
   fleet: 'Barges carry seed and question. Guardians answer with force or with patience.',
-  empire: 'Empire level is a soft prestige of baskets. Perks are permanent habits.',
-  coach: 'Every spotlight can play again. The game never locks the door behind a skipped tip.',
+  empire: 'Rank from baskets opens upgrade bands and invest caps. Trait points buy the doctrine board.',
+  coach: 'Every spotlight can play again. Skip when the counter already makes sense.',
   more: 'Settings, cosmetics, guide, daily corner — the meta shelf beside the sim.',
 }

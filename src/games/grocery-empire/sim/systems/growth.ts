@@ -1,6 +1,6 @@
 import { VENTURE_BY_ID, ventureIncome } from '../../content/ventures'
 import { EMPIRE } from '../balance'
-import { backroomCap, empireXpToNext, up } from '../formulas'
+import { backroomCap, empireXpToNext, perk, up } from '../formulas'
 import { addBatch, log, sumQty, takeUnits } from '../helpers'
 import { chance } from '../rng'
 import type { GameState } from '../state'
@@ -33,6 +33,7 @@ export function tickGarden(s: GameState, dt: number) {
 }
 
 export function tickVentures(s: GameState, dt: number) {
+  let ventureRate = 0
   for (const id of Object.keys(s.ventures)) {
     const vs = s.ventures[id]
     if (!vs || vs.level <= 0) continue
@@ -62,12 +63,16 @@ export function tickVentures(s: GameState, dt: number) {
     const income = ventureIncome(def, vs.level) * efficiency
     const cap = income * def.storeSec
     if (cap <= 0) continue
+    const before = vs.stored
     vs.stored = Math.min(cap, vs.stored + income * dt)
+    // Only count filling rate (not when capped).
+    if (vs.stored > before) ventureRate += income
 
-    if (up(s, 'auto-collect') >= 1 && vs.stored >= cap * 0.95) {
+    if ((up(s, 'auto-collect') >= 1 || perk(s, 'venture-auto') > 0) && vs.stored >= cap * 0.95) {
       collectVenture(s, id)
     }
   }
+  s.rates.venturePerSec = ventureRate
 }
 
 export function collectVenture(s: GameState, id: string): number {
@@ -80,7 +85,7 @@ export function collectVenture(s: GameState, id: string): number {
   s.lifetimeRevenue += got
   s.stats.ventureCollected += got
   s.stats.ventureCollects += 1
-  s.empire.xp += EMPIRE.xpPerVentureCollect
+  s.empire.xp += EMPIRE.xpPerVentureCollect + got * EMPIRE.xpPerVentureCash
   if (s.cash > s.stats.peakCash) s.stats.peakCash = s.cash
   return got
 }

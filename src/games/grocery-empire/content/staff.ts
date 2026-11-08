@@ -58,3 +58,34 @@ export const ROLES: Record<RoleId, RoleDef> = {
     perkPerLevel: '+5% night sales',
   },
 }
+
+export type StaffTraitId = 'quick' | 'dreamy' | 'frugal' | 'picky'
+
+export interface StaffTraitDef {
+  id: StaffTraitId
+  name: string
+  blurb: string
+  /** Multiplier on the member's role strength (unpack / checkout / shrink). */
+  strengthMul: number
+  /** Multiplier on the member's wage. */
+  wageMul: number
+}
+
+/** Soft traits — each moves exactly one axis by ±5%. */
+export const STAFF_TRAITS: Record<StaffTraitId, StaffTraitDef> = {
+  quick: { id: 'quick', name: 'Quick', blurb: '+5% pace.', strengthMul: 1.05, wageMul: 1 },
+  dreamy: { id: 'dreamy', name: 'Dreamy', blurb: '−5% pace.', strengthMul: 0.95, wageMul: 1 },
+  frugal: { id: 'frugal', name: 'Frugal', blurb: '−5% wage.', strengthMul: 1, wageMul: 0.95 },
+  picky: { id: 'picky', name: 'Picky', blurb: '+5% wage.', strengthMul: 1, wageMul: 1.05 },
+}
+
+const TRAIT_ORDER: StaffTraitId[] = ['quick', 'frugal', 'dreamy', 'picky']
+
+/**
+ * Deterministic trait roll by staff id (no RNG draw, so sim streams stay put).
+ * Roughly half the roster has none.
+ */
+export function traitForStaffId(id: number): StaffTraitId | undefined {
+  const h = (Math.imul(Math.floor(id) | 0, 2654435761) >>> 0) % 8
+  return h < TRAIT_ORDER.length ? TRAIT_ORDER[h] : undefined
+}

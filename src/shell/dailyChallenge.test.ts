@@ -47,7 +47,15 @@ describe('dailyChallenge', () => {
     expect(r.day).toBe('2026-10-28')
     expect(r.seed).toBe(seedFromDayKey('2026-10-28'))
     expect(localStorage.getItem('games.v1.grocery-empire-slot-3')).toBe('{"baskets":9}')
-    expect(localStorage.getItem('games.v1.grocery-empire')).toBeNull()
+    // Fresh seeded run is written immediately (disk + live engine), not left wiped.
+    const primary = JSON.parse(localStorage.getItem('games.v1.grocery-empire') ?? 'null') as {
+      baskets?: number
+      seed?: number
+      era?: number
+    } | null
+    expect(primary?.baskets).toBe(0)
+    expect(primary?.era).toBe(0)
+    expect(primary?.seed).toBe(r.seed)
     const blob = loadDailyChallenge()
     expect(blob?.active).toBe(true)
     expect(blob?.day).toBe('2026-10-28')

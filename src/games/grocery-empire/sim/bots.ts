@@ -369,6 +369,7 @@ export function legalCommands(s: GameState): Command[] {
   tryAdd({ type: 'orderPizza' })
   tryAdd({ type: 'callInspector' })
   tryAdd({ type: 'matchCoupons' })
+  tryAdd({ type: 'answerRival' })
   tryAdd({ type: 'dumpCooler' })
   for (const m of MEMOS) tryAdd({ type: 'buyMemo', id: m.id })
   for (const id of Object.keys(UPGRADE_BY_ID)) tryAdd({ type: 'buyUpgrade', id })

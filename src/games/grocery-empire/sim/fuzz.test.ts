@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { SAVE_VERSION } from './balance'
 import { fuzzBot, legalCommands, recoveryCommands } from './bots'
 import { run } from './commands'
 import { addBatch, sumQty } from './helpers'
@@ -38,16 +39,16 @@ describe('softlock fuzz + save/offline (H4 / Q3)', () => {
     120_000,
   )
 
-  it('migrate old / corrupt saves never throw and yield v2', () => {
+  it('migrate old / corrupt saves never throw and yield current save version', () => {
     expect(() => migrate(null)).not.toThrow()
-    expect(migrate(null).version).toBe(2)
+    expect(migrate(null).version).toBe(SAVE_VERSION)
 
     const old = migrate({ version: 1, cash: 12, salesTotal: 999, seed: 3 })
-    expect(old.version).toBe(2)
+    expect(old.version).toBe(SAVE_VERSION)
     expect(old.ledger.some((e) => /reset|fresh|Old save|unreadable/i.test(e.text))).toBe(true)
 
     const damaged = migrate({ version: 2, cash: Number.NaN, shelf: 'nope' })
-    expect(damaged.version).toBe(2)
+    expect(damaged.version).toBe(SAVE_VERSION)
     expect(Number.isFinite(damaged.cash)).toBe(true)
   })
 

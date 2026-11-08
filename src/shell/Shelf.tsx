@@ -2,8 +2,12 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { GAMES } from '@/games/registry'
-import { clearGameSave, loadGame } from '@/shared/save'
+import { GE_COVER } from '@/games/grocery-empire/art/cast'
+import { engine } from '@/games/grocery-empire/sim/engine'
+import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
+import { loadGame } from '@/shared/save'
 import {
+  clearDailyPending,
   deactivateDailyChallenge,
   hasPrimaryGrocerySave,
   loadDailyChallenge,
@@ -11,7 +15,6 @@ import {
   todaysChallenge,
 } from './dailyChallenge'
 import { localDayKey } from './dailyStamp'
-import { GE_COVER } from '@/games/grocery-empire/art/cast'
 import { useMeta } from './MetaContext'
 
 interface SaveGlance {
@@ -39,7 +42,6 @@ export function Shelf() {
   const [selected, setSelected] = useState(GAMES[0].id)
   const [now, setNow] = useState(Date.now())
   const [burst, setBurst] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
   const nav = useNavigate()
   const game = GAMES.find((g) => g.id === selected) ?? GAMES[0]
   const save = game.status === 'playable' ? loadGame<SaveGlance>('grocery-empire') : null
@@ -97,13 +99,14 @@ export function Shelf() {
       ? formatAge(now - save.lastSavedAt)
       : null
   const baskets = typeof save?.baskets === 'number' ? Math.floor(save.baskets) : null
-  const lifetimeSold =
-    typeof save?.stats?.sold === 'number' ? Math.floor(save.stats.sold) : null
 
   const newGame = () => {
     if (save && !window.confirm('Start a new Grocery Empire? This wipes the current local save.')) return
     deactivateDailyChallenge()
-    clearGameSave('grocery-empire')
+    clearDailyPending()
+    setActiveSaveId(PRIMARY_SAVE_ID)
+    // Wipe disk AND the live engine singleton (clearGameSave alone is not enough).
+    engine.newGame()
     nav(`/play/${game.id}`)
   }
 
@@ -127,46 +130,45 @@ export function Shelf() {
     nav(`/play/${game.id}`)
   }
 
-  return (
-    <div className="shelf-page">
-      <div className="shelf-hero">
-        <motion.h1
-          layoutId="brand"
-          className="brand"
-          initial={reduce ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-        >
-          GAMES
-        </motion.h1>
-        <motion.p
-          className="shelf-sub"
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-        >
-          A shelf of long games. Pull one down.
-        </motion.p>
-        <motion.p
-          className="shelf-lore"
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.28 }}
-        >
-          Grocery Empire starts as one counter and grows into cold plants, fleets, and a hungry
-          universe. Baskets are the score. You cannot lose — only arrive later.
-        </motion.p>
-      </div>
+  const cover = game.id === 'grocery-empire' ? GE_COVER : null
 
-      <div className="shelf-wood">
+  return (
+    <div
+      className="shelf-page"
+      style={cover ? { ['--shelf-cover' as string]: `url(${cover})` } : undefined}
+    >
+      <div className="shelf-stage shelf-wood" aria-hidden={false}>
+        <div className="shelf-stage__plate" aria-hidden />
+        <div className="shelf-stage__veil" aria-hidden />
+
+        <header className="shelf-hero">
+          <motion.h1
+            layoutId="brand"
+            className="brand"
+            initial={reduce ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            GAMES
+          </motion.h1>
+          <motion.p
+            className="shelf-sub"
+            initial={reduce ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.12 }}
+          >
+            Long games on one shelf. Pull a spine down.
+          </motion.p>
+        </header>
+
         <motion.div
           className="shelf-row"
           role="listbox"
           aria-label="Games"
           aria-activedescendant={`game-${selected}`}
-          initial={reduce ? false : { opacity: 0, y: 20 }}
+          initial={reduce ? false : { opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08, duration: 0.4 }}
+          transition={{ delay: 0.06, duration: 0.4 }}
         >
           {GAMES.map((g, i) => (
             <motion.button
@@ -210,22 +212,39 @@ export function Shelf() {
         initial={reduce ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h2 style={{ color: game.accent }}>{game.title}</h2>
-        <p>{game.tagline}</p>
-        {save ? (
-          <p className="muted">
-            Save found
-            {age ? ` · last saved ${age}` : ''}
-            {baskets !== null ? ` · ${baskets.toLocaleString()} lifetime baskets` : ''}
-            {lifetimeSold !== null ? ` · ${lifetimeSold.toLocaleString()} sold` : ''}
-            {typeof save.era === 'number' ? ` · era ${save.era}` : ''}
-          </p>
-        ) : (
-          <p className="muted">No save yet</p>
-        )}
-        <div className={`detail-actions ${burst ? 'detail-actions--burst' : ''}`.trim()}>
-          {game.status === 'playable' ? (
-            <>
+        <div className="shelf-detail__head">
+          <h2 style={{ color: game.accent }}>{game.title}</h2>
+          <p className="shelf-detail__tag">{game.tagline}</p>
+        </div>
+
+        {game.status === 'playable' ? (
+          <>
+            <div className="shelf-stats" aria-label="Save glance">
+              <div>
+                <span>Save</span>
+                <strong>{save ? age ?? 'Ready' : 'None yet'}</strong>
+              </div>
+              <div>
+                <span>Baskets</span>
+                <strong>{baskets != null ? baskets.toLocaleString() : '—'}</strong>
+              </div>
+              <div>
+                <span>Era</span>
+                <strong>{typeof save?.era === 'number' ? save.era : '—'}</strong>
+              </div>
+              <div>
+                <span>Play</span>
+                <strong>
+                  {Math.floor(playSec / 3600)}h {Math.floor((playSec % 3600) / 60)}m
+                </strong>
+              </div>
+              <div>
+                <span>Tokens</span>
+                <strong>{meta.shelfTokens}</strong>
+              </div>
+            </div>
+
+            <div className={`detail-actions ${burst ? 'detail-actions--burst' : ''}`.trim()}>
               <button type="button" className="primary shelf-continue" onClick={continuePlay}>
                 {save ? 'Continue' : 'New game'}
               </button>
@@ -237,59 +256,46 @@ export function Shelf() {
               <button type="button" onClick={startDaily} title={`Seed ${dailyToday.seed}`}>
                 Today&apos;s corner
               </button>
+              {burst ? (
+                <span className="shelf-scrap-burst" aria-hidden>
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <i key={i} className={`shelf-scrap shelf-scrap--${i + 1}`} />
+                  ))}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="shelf-links">
+              <Link to="/guide/grocery-empire">Guide</Link>
+              <Link to="/achievements">Achievements</Link>
+              <Link to="/shop">Shop</Link>
               <Link to="/play/grocery-empire/dev" className="shelf-dev-link">
                 DevMode
               </Link>
-              <Link to="/guide/grocery-empire">Guide</Link>
-              <Link to="/achievements">Achievements</Link>
-              <Link to="/shop">Cosmetics</Link>
-            </>
-          ) : (
-            <p className="muted">This spine is empty for now.</p>
-          )}
-          {burst ? (
-            <span className="shelf-scrap-burst" aria-hidden>
-              {Array.from({ length: 8 }, (_, i) => (
-                <i key={i} className={`shelf-scrap shelf-scrap--${i + 1}`} />
-              ))}
-            </span>
-          ) : null}
-        </div>
-        <p className="tokens">Shelf Tokens: {meta.shelfTokens}</p>
-        <div className="shelf-profile">
-          <button type="button" className="shelf-profile__btn" onClick={() => setProfileOpen((v) => !v)}>
-            {profileOpen ? 'Hide profile' : 'Profile'}
-          </button>
-          {profileOpen ? (
-            <ul className="shelf-profile__list">
-              <li>Tokens · {meta.shelfTokens}</li>
-              <li>Universes · {meta.groceryUniverses ?? 0}</li>
-              <li>Lifetime XP · {meta.lifetimeXp ?? 0}</li>
-              <li>
-                Play · {Math.floor(playSec / 3600)}h {Math.floor((playSec % 3600) / 60)}m
-              </li>
-            </ul>
-          ) : null}
-        </div>
-        {dailyStampLine || (meta.dailyStreak ?? 0) > 0 ? (
-          <p className="muted shelf-daily-stamp" style={{ fontSize: 12 }}>
-            {dailyStampLine ?? `Daily streak · day ${meta.dailyStreak}`}
-          </p>
-        ) : null}
-        {game.status === 'playable' && dailyActive ? (
-          <p className="muted shelf-daily-stamp" style={{ fontSize: 12 }}>
-            Today&apos;s corner · seed {dailyBlob?.seed ?? dailyToday.seed}
-            {bestToday ? ` · best ${bestToday.baskets.toLocaleString()} baskets` : ''}
-          </p>
-        ) : game.status === 'playable' && bestToday ? (
-          <p className="muted shelf-daily-stamp" style={{ fontSize: 12 }}>
-            Today&apos;s corner best · {bestToday.baskets.toLocaleString()} baskets · seed{' '}
-            {bestToday.seed}
-          </p>
-        ) : null}
-        <p className="muted" style={{ fontSize: 12 }}>
-          Arrow keys move · Enter continues · Esc clears focus · ? hotkeys
-        </p>
+            </div>
+
+            {dailyStampLine || (meta.dailyStreak ?? 0) > 0 ? (
+              <p className="muted shelf-daily-stamp">
+                {dailyStampLine ?? `Daily streak · day ${meta.dailyStreak}`}
+              </p>
+            ) : null}
+            {dailyActive ? (
+              <p className="muted shelf-daily-stamp">
+                Today&apos;s corner · seed {dailyBlob?.seed ?? dailyToday.seed}
+                {bestToday ? ` · best ${bestToday.baskets.toLocaleString()} baskets` : ''}
+              </p>
+            ) : bestToday ? (
+              <p className="muted shelf-daily-stamp">
+                Today&apos;s corner best · {bestToday.baskets.toLocaleString()} baskets · seed{' '}
+                {bestToday.seed}
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p className="muted shelf-empty-spine">This spine is empty for now. Check back later.</p>
+        )}
+
+        <p className="muted shelf-keys">Arrows · Enter · Esc · ? · waffle menu (top right)</p>
       </motion.aside>
     </div>
   )

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEMAND, DT } from './balance'
+import { DEMAND, DT, SAVE_VERSION } from './balance'
 import { can, run } from './commands'
 import { migrate } from './migrate'
 import { createInitialState } from './state'
@@ -25,7 +25,7 @@ describe('grocery empire sim kernel', () => {
 
   it('migrate never throws and resets pre-v2', () => {
     const m = migrate({ version: 1, cash: 99 })
-    expect(m.version).toBe(2)
+    expect(m.version).toBe(SAVE_VERSION)
     expect(m.ledger.some((e) => /reset|fresh|Old save|migrat|unreadable|damaged|recovery/i.test(e.text))).toBe(true)
   })
 

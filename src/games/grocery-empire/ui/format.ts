@@ -1,10 +1,11 @@
 import { formatBN, type NumberFormat } from '@/shared/bn'
 
 export function money(n: number, fmt: NumberFormat = 'named'): string {
-  if (!Number.isFinite(n)) return '$0'
+  if (!Number.isFinite(n)) return '$0.00'
   const sign = n < 0 ? '-' : ''
   const abs = Math.abs(n)
-  if (abs < 1000) return `${sign}$${abs.toFixed(abs < 10 ? 2 : abs < 100 ? 1 : 0)}`
+  // Fixed decimals under 1k so buy buttons don't jitter width as cash ticks.
+  if (abs < 1000) return `${sign}$${abs.toFixed(2)}`
   return `${sign}$${formatBN(abs, fmt, 2)}`
 }
 
@@ -14,11 +15,14 @@ export function qty(n: number, fmt: NumberFormat = 'named'): string {
   return formatBN(n, fmt, 2)
 }
 
+/** Steady HUD rate — two decimals; values already averaged over ~45s in the sim. */
 export function rate(n: number): string {
-  if (!Number.isFinite(n) || Math.abs(n) < 0.0005) return '0/s'
-  if (Math.abs(n) < 0.1) return `${n.toFixed(3)}/s`
-  if (Math.abs(n) < 10) return `${n.toFixed(2)}/s`
-  return `${n.toFixed(1)}/s`
+  if (!Number.isFinite(n)) return '0.00/s'
+  const sign = n < 0 ? '-' : ''
+  const abs = Math.abs(n)
+  if (abs < 0.01) return '0.00/s'
+  if (abs < 1000) return `${sign}${abs.toFixed(2)}/s`
+  return `${sign}${formatBN(abs, 'named', 2)}/s`
 }
 
 export function pct(n: number): string {

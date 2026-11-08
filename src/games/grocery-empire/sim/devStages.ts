@@ -115,6 +115,7 @@ function era2Chain(): GameState {
       xp: 40,
       policy: 'standard',
       attentionShare: 0.6,
+      drift: 0,
     },
     {
       id: 's2',
@@ -123,6 +124,7 @@ function era2Chain(): GameState {
       xp: 5,
       policy: 'local',
       attentionShare: 0.4,
+      drift: 0,
     },
   ]
   s.nextStoreId = 3

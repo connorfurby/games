@@ -1,8 +1,8 @@
 import { CATEGORY_IDS } from '../content/categories'
-import { HOURS, MORALE, PRICE } from './balance'
+import { COMPUTE, HOURS, MORALE, PRICE } from './balance'
 import { hoursMax } from './formulas'
 import { clamp, compact } from './helpers'
-import type { Batch, GameState } from './state'
+import { isRivalKind, type Batch, type GameState } from './state'
 
 function finite(n: number, fallback = 0) {
   return Number.isFinite(n) ? n : fallback
@@ -30,7 +30,7 @@ export function repair(s: GameState): GameState {
   s.price = clamp(finite(s.price, PRICE.min), PRICE.min, PRICE.max)
   s.hours = clamp(finite(s.hours, 1), HOURS.min, hoursMax(s))
   s.morale = clamp(finite(s.morale, 1), MORALE.min, MORALE.max)
-  s.speed = [1, 2, 4].includes(s.speed) ? s.speed : 1
+  s.speed = [1, 2, 4, 8].includes(s.speed) ? s.speed : 1
   s.era = Math.max(0, Math.floor(finite(s.era)))
   s.ads = Math.max(1, Math.floor(finite(s.ads, 1)))
   s.adCost = Math.max(1, finite(s.adCost, 20))
@@ -42,11 +42,22 @@ export function repair(s: GameState): GameState {
   s.inspection.lastInspectorAt = finite(s.inspection.lastInspectorAt, -1e9)
 
   if (!s.events?.couponWar) {
-    s.events = { couponWar: { active: false, endsAt: 0, lastAt: -1e9 } }
+    s.events = {
+      couponWar: { active: false, endsAt: 0, lastAt: -1e9 },
+      rival: { kind: null, endsAt: 0, lastAt: -1e9 },
+    }
   } else {
     s.events.couponWar.active = Boolean(s.events.couponWar.active)
     s.events.couponWar.endsAt = Math.max(0, finite(s.events.couponWar.endsAt))
     s.events.couponWar.lastAt = finite(s.events.couponWar.lastAt, -1e9)
+  }
+  if (!s.events.rival) {
+    s.events.rival = { kind: null, endsAt: 0, lastAt: -1e9 }
+  } else {
+    const r = s.events.rival
+    if (!isRivalKind(r.kind)) r.kind = null
+    r.endsAt = Math.max(0, finite(r.endsAt))
+    r.lastAt = finite(r.lastAt, -1e9)
   }
 
   if (!s.campaigns) {
@@ -60,11 +71,27 @@ export function repair(s: GameState): GameState {
   s.compute.reputation = Math.max(0, Math.floor(finite(s.compute.reputation)))
   s.compute.analysts = Math.max(1, Math.floor(finite(s.compute.analysts, 1)))
   s.compute.archives = Math.max(1, Math.floor(finite(s.compute.archives, 1)))
-  s.compute.nextRepAt = Math.max(1, finite(s.compute.nextRepAt, 3000))
+  s.compute.nextRepAt = Math.max(1, finite(s.compute.nextRepAt, COMPUTE.firstRepAt))
   s.compute.fibA = Math.max(1, Math.floor(finite(s.compute.fibA, 2)))
   s.compute.fibB = Math.max(1, Math.floor(finite(s.compute.fibB, 3)))
+  s.compute.officeMoves = Math.max(0, Math.floor(finite(s.compute.officeMoves)))
   s.compute.scanner = Boolean(s.compute.scanner)
   s.compute.scannerReadyAt = Math.max(0, finite(s.compute.scannerReadyAt))
+  // Soft clamp Attention after Archive moves / load repair
+  {
+    const cap = Math.max(1, s.compute.archives) * COMPUTE.capPerArchive
+    if (s.compute.attention > cap) s.compute.attention = cap
+  }
+
+  if (
+    s.marketingPosture !== 'neighborhood' &&
+    s.marketingPosture !== 'circular' &&
+    s.marketingPosture !== 'houseBrand'
+  ) {
+    s.marketingPosture = 'neighborhood'
+  }
+  s.priceLockUntil = Math.max(0, finite(s.priceLockUntil))
+  s.priceLockIndex = Math.max(0.01, finite(s.priceLockIndex, s.wholesale.index))
 
   s.empire.xp = Math.max(0, finite(s.empire.xp))
   s.empire.level = Math.max(1, Math.floor(finite(s.empire.level, 1)))
@@ -74,6 +101,7 @@ export function repair(s: GameState): GameState {
   s.wholesale.drift = Math.max(0.01, finite(s.wholesale.drift, 1))
   s.wholesale.phase = finite(s.wholesale.phase)
   s.wholesale.idleSec = Math.max(0, finite(s.wholesale.idleSec))
+  s.wholesale.tipIndex = Math.max(0.01, finite(s.wholesale.tipIndex, s.wholesale.index))
 
   repairBatches(s.shelf)
   repairBatches(s.backroom)
@@ -104,6 +132,32 @@ export function repair(s: GameState): GameState {
   s.rates.costPerSec = Math.max(0, finite(s.rates.costPerSec))
   s.rates.spoilPerSec = Math.max(0, finite(s.rates.spoilPerSec))
   s.rates.demandPerSec = Math.max(0, finite(s.rates.demandPerSec))
+  s.rates.venturePerSec = Math.max(0, finite(s.rates.venturePerSec))
+  s.rates.investYieldPerSec = Math.max(0, finite(s.rates.investYieldPerSec))
+
+  if (!s.rateAvg || typeof s.rateAvg !== 'object') {
+    s.rateAvg = {
+      t: 0,
+      curSold: 0,
+      curRev: 0,
+      curCost: 0,
+      curSpoil: 0,
+      sold: [],
+      rev: [],
+      cost: [],
+      spoil: [],
+    }
+  } else {
+    s.rateAvg.t = Math.max(0, finite(s.rateAvg.t))
+    s.rateAvg.curSold = Math.max(0, finite(s.rateAvg.curSold))
+    s.rateAvg.curRev = Math.max(0, finite(s.rateAvg.curRev))
+    s.rateAvg.curCost = Math.max(0, finite(s.rateAvg.curCost))
+    s.rateAvg.curSpoil = Math.max(0, finite(s.rateAvg.curSpoil))
+    if (!Array.isArray(s.rateAvg.sold)) s.rateAvg.sold = []
+    if (!Array.isArray(s.rateAvg.rev)) s.rateAvg.rev = []
+    if (!Array.isArray(s.rateAvg.cost)) s.rateAvg.cost = []
+    if (!Array.isArray(s.rateAvg.spoil)) s.rateAvg.spoil = []
+  }
 
   if (!Array.isArray(s.stores)) s.stores = []
   for (const st of s.stores) {
@@ -133,11 +187,27 @@ export function repair(s: GameState): GameState {
     s.invest.tickAcc = Math.max(0, finite(s.invest.tickAcc))
     if (s.invest.risk !== 'mid' && s.invest.risk !== 'high') s.invest.risk = 'low'
   }
-  if (!s.board) s.board = { seats: 3, nextMeetingAt: 0, lastResolvedAt: 0 }
-  else {
+  if (!s.board) {
+    s.board = {
+      seats: 3,
+      nextMeetingAt: 0,
+      lastResolvedAt: 0,
+      pendingAgenda: null,
+      expandDiscount: 1,
+      rndUntil: 0,
+      cutHoursUntil: 0,
+    }
+  } else {
     s.board.seats = Math.max(1, Math.floor(finite(s.board.seats, 3)))
     s.board.nextMeetingAt = Math.max(0, finite(s.board.nextMeetingAt))
     s.board.lastResolvedAt = Math.max(0, finite(s.board.lastResolvedAt))
+    s.board.pendingAgenda = s.board.pendingAgenda ?? null
+    s.board.expandDiscount = Math.max(0.5, Math.min(1, finite(s.board.expandDiscount, 1)))
+    s.board.rndUntil = Math.max(0, finite(s.board.rndUntil))
+    s.board.cutHoursUntil = Math.max(0, finite(s.board.cutHoursUntil))
+  }
+  for (const st of s.stores ?? []) {
+    st.drift = Math.max(0, Math.min(1, finite(st.drift, 0)))
   }
   if (!s.doctrines) s.doctrines = {}
 

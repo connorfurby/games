@@ -1,5 +1,6 @@
 import { CHARTER_AXES, CHARTER_OPENER } from '../../content/lateEras'
 import { FLEET, LOGISTICS } from '../balance'
+import { rebootFee, up } from '../formulas'
 import { clamp, log, round2, setEra, unlockMenu } from '../helpers'
 import { chance } from '../rng'
 import type { GameState } from '../state'
@@ -160,13 +161,13 @@ export function applyGuardianPreset(s: GameState) {
 
 export function canRebootFleet(s: GameState): string | null {
   if (!s.fleet.launched) return 'Fleet not launched.'
-  const fee = Math.max(1000, s.cash * FLEET.rebootCashFrac)
+  const fee = rebootFee(s)
   if (s.cash < fee) return `Need $${Math.ceil(fee)} reboot fee.`
   return null
 }
 
 export function rebootFleet(s: GameState) {
-  const fee = round2(Math.max(1000, s.cash * FLEET.rebootCashFrac))
+  const fee = round2(rebootFee(s))
   s.cash = round2(s.cash - fee)
   let refund = 0
   for (const a of CHARTER_AXES) {
@@ -189,7 +190,13 @@ export function tickLogistics(s: GameState, dt: number) {
 
   const cap = LOGISTICS.fuelCapBase + (s.memos['fuel-buffer'] ? LOGISTICS.fuelCapPerBuffer : 0)
   if (s.fleet.lanes > 0) {
-    const burn = LOGISTICS.fuelBurnPerLanePerSec * s.fleet.lanes * dt
+    const seal =
+      1 -
+      Math.min(
+        0.45,
+        up(s, 'sealant') * 0.04 + Math.min(0.3, (s.upgrades['berth-time'] ?? 0) * 0.012),
+      )
+    const burn = LOGISTICS.fuelBurnPerLanePerSec * s.fleet.lanes * dt * seal
     s.fuel = Math.max(0, s.fuel - burn)
     if (s.fuel <= 0) {
       // Dry lanes idle — no brick
@@ -205,8 +212,9 @@ export function tickLogistics(s: GameState, dt: number) {
   }
 
   if (s.fleet.franchises > 0) {
+    const resist = 1 + up(s, 'drift-resist') * 0.03
     s.brand = clamp(
-      s.brand - LOGISTICS.brandDriftPerFranchise * s.fleet.franchises * dt,
+      s.brand - (LOGISTICS.brandDriftPerFranchise * s.fleet.franchises * dt) / resist,
       0.05,
       1,
     )
@@ -220,9 +228,13 @@ export function tickFleet(s: GameState, dt: number) {
 
   refreshCharterCap(s)
 
-  const shell = s.fleet.charter.shell ?? 0
+  const thick = Math.min(0.45, (s.upgrades['thick-shell'] ?? 0) * 0.01)
+  const longChart = Math.min(0.5, (s.upgrades['long-chart'] ?? 0) * 0.011)
+  const chartRoom = Math.min(0.4, (s.upgrades['chart-room'] ?? 0) * 0.015)
+  const shell = (s.fleet.charter.shell ?? 0) * (1 + up(s, 'shell-eff') * 0.04 + thick)
   const replication = s.fleet.charter.replication ?? 0
-  const survey = s.fleet.charter.survey ?? 0
+  const survey =
+    (s.fleet.charter.survey ?? 0) * (1 + up(s, 'survey-yield') * 0.05 + chartRoom + longChart * 0.5)
   const brandSeal = s.fleet.charter['brand-seal'] ?? 0
 
   // Harvest biomass → cash/rations analogue
@@ -253,8 +265,9 @@ export function tickFleet(s: GameState, dt: number) {
   }
 
   if (s.fleet.warOn && s.fleet.barges > 0) {
-    const resist = 1 + shell * 0.1 + brandSeal * 0.12
-    s.fleet.legacy = round2(s.fleet.legacy + (FLEET.warLegacyGainPerSec / resist) * dt)
+    const resist = 1 + shell * 0.1 + brandSeal * 0.12 + up(s, 'soft-hull') * 0.03 + thick * 0.5
+    const legacyMul = 1 + up(s, 'legacy-gain') * 0.05 + longChart * 0.4
+    s.fleet.legacy = round2(s.fleet.legacy + (FLEET.warLegacyGainPerSec / resist) * legacyMul * dt)
     if (chance(s, (FLEET.warBargeLossChance / resist) * dt * 60)) {
       if (s.fleet.barges > FLEET.bargeSoftFloor || s.fleet.biomass <= 0) {
         s.fleet.barges = Math.max(

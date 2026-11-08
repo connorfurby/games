@@ -3,13 +3,13 @@
 **Plan (never edit):** chat master plan.  
 **Rule:** systems scaffold ≠ product-finished. Do not claim 100%.
 
-Updated: 2026-11-02 (Phase 2 story + visual overhaul).
+Updated: 2026-11-03 (Feel overhaul — dialogue, scenes, motion).
 
 ## Gates
 
 | Gate | Status |
 | --- | --- |
-| Vitest (65) | ✅ |
+| Vitest (70) | ✅ |
 | tsc + vite build | ✅ |
 | Playwright e2e | ⚠️ env (Chrome SIGABRT / arch) — not treated as sim regressions |
 | Live UI ticks | ✅ fixed 2026-10-28 — snapshot identity for useSyncExternalStore |
@@ -18,7 +18,7 @@ Updated: 2026-11-02 (Phase 2 story + visual overhaul).
 
 ## Verdict
 
-**~88% of plan systems exist in code.** Era 0–1 playable with character intro, SVG icons, portraits/plates. Not Paperclips-level craft or multi-day balance. Second game + combat canvas still deferred.
+**~88% of plan systems exist in code.** Presentation pass landed 2026-11-03: bottom dialogue strip, department SVG scenes, card rows, snapshot-delta motion. Still not Paperclips-level craft or multi-day balance. Second game + combat canvas still deferred.
 
 ### DONE
 - Library shell: routes, shelf, shop, achievements, tokens, packs, ornaments, pity, share, daily stamp  
@@ -33,14 +33,17 @@ Updated: 2026-11-02 (Phase 2 story + visual overhaul).
 - Phase 2 art: `public/ge-art/portraits|plates`, cast registry, SVG `Icon` on rail/Floor/top/Memos/Panel  
 - Phase 2 story chrome: shorter intro (5 beats + portraits/plates/typewriter), Chapter cutscene plates, Coach as Operations, StoryBanner speakers  
 - Phase 2 shell: Shelf GE cover plate, Guide illustrated headers, Shop pack plate thumbs, Ask Operations HelpCards, memo effect chips + stamp motion  
+- **Feel overhaul (2026-11-03):** `content/dialogue.ts` + `seenLines`/`dialogueQueue` save fields; bottom `DialogueStrip` (never over Floor); slower Era 0 after intro before coach; multi-beat chapter cards; SVG scenes on departments; role/build/venture/charter icons + `ge-card` rows; sale pops + spoil wilt + cold rail pulse + venture arc + barge birth + affordable memo breathe  
 
 ### PARTIAL
 - Texture/SFX depth still thinner than full cosmetic fantasy  
 - Late-era balance / coach density still thinner than Era 0–1  
-- Motion polish intentional but not exhaustive across every panel  
+- Venture loops still share one till pattern (not uniquely crafted loops)  
+- Motion polish intentional but not exhaustive across every control  
 
 ### MISSING
 - Second playable game, combat canvas (explicitly deferred)  
 - Claiming 100% of the old master plan  
+- Human multi-hour balance pass  
 
 See chat for line-level DONE/PARTIAL/MISSING if needed. Live source of truth for “what shipped” is this file + tests.

@@ -15,7 +15,7 @@ export const CAST: Record<SpeakerId, CastMember> = {
   operations: {
     id: 'operations',
     name: 'Operations',
-    role: 'Cannot-lose mentor',
+    role: 'Night supervisor',
     portrait: '/ge-art/portraits/operations.jpg',
   },
   clerk: {

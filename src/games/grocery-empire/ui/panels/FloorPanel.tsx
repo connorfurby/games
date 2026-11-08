@@ -2,42 +2,61 @@ import { useEffect, useRef, useState } from 'react'
 import { useMeta } from '@/shell/MetaContext'
 import { playUnpackFx } from '@/shared/audio'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
-import { PRICE } from '../../sim/balance'
+import { earlyFloorChromeDone } from '../../content/dialogue'
+import { INSPECTION, PRICE } from '../../sim/balance'
 import { can } from '../../sim/commands'
-import { bestPrice, crateCost, hasWeatherForecast, manualUnpackAmount, shelfCap, up } from '../../sim/formulas'
+import {
+  batchSpoilFrac,
+  bestPrice,
+  demandPerSec,
+  effectiveLife,
+  varietyMul,
+  crateCost,
+  featuredCategories,
+  hasWeatherForecast,
+  manualUnpackAmount,
+  rentPerSec,
+  reputationEtaSec,
+  salesBottleneck,
+  shelfCap,
+  unitCost,
+  up,
+} from '../../sim/formulas'
 import { sumQty } from '../../sim/helpers'
 import { useGame } from '../GameContext'
-import { money, qty, rate } from '../format'
+import { clock, money, qty, rate } from '../format'
 import { Btn } from '../components/Btn'
 import { HelpCard } from '../components/HelpCard'
-import { Line } from '../components/Line'
 import { Meter } from '../components/Meter'
 import { Panel } from '../components/Panel'
 import { Section } from '../components/Section'
+import { StatusBand, type StatusItem } from '../components/StatusBand'
 import { Icon } from '../icons/Icon'
 
-function spoilFrac(age: number | undefined, life: number | null): number {
-  if (life == null || age == null) return 0
-  return Math.min(1, Math.max(0, age / life))
-}
-
 export function FloorPanel() {
-  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion, setActiveMenu } = useGame()
   const { meta } = useMeta()
   const holdRef = useRef<number | null>(null)
   const canHold = up(s, 'hold-unpack') > 0
   const shelf = sumQty(s.shelf)
+  const back = sumQty(s.backroom)
   const cap = shelfCap(s)
   const tip = up(s, 'price-iq') > 0 ? bestPrice(s) : null
-  const wholesaleCost = crateCost(s, s.orderCat || 'cans', s.supplier)
+  const unlockedCats = CATEGORY_IDS.filter((c) => s.categories[c])
+  const orderCat = (
+    unlockedCats.includes((s.orderCat || 'cans') as CategoryId)
+      ? s.orderCat || 'cans'
+      : unlockedCats[0] || 'cans'
+  ) as CategoryId
+  const wholesaleCost = crateCost(s, orderCat, s.supplier)
   const starterCrate = can(s, { type: 'callStarterCrate' })
+  const orderName = CATEGORIES[orderCat]?.name ?? orderCat
   const presentation = meta.settings.presentation
   const weather = s.weather?.now ?? 'fair'
   const fill = Math.min(1, shelf / Math.max(1, cap))
   const [priceFlick, setPriceFlick] = useState(false)
   const pricePrev = useRef(s.price)
 
-  const unlockedCats = CATEGORY_IDS.filter((c) => s.categories[c])
   const showPlanogram = presentation !== 'dense' && unlockedCats.length >= 2
   const coldOn = !!s.menus.cold || (s.cold?.plants ?? 0) > 0
   const fleetOn = !!s.menus.fleet || (s.fleet?.barges ?? 0) > 0
@@ -77,7 +96,7 @@ export function FloorPanel() {
   }
 
   const nudge = (delta: number) => {
-    const next = Math.round((s.price + delta) * 100) / 100
+    const next = Math.round((s.price + delta) * 10) / 10
     dispatch({ type: 'setPrice', price: Math.max(PRICE.min, Math.min(PRICE.max, next)) })
   }
 
@@ -89,27 +108,200 @@ export function FloorPanel() {
   const celebUntil = s.campaigns?.celebrityUntil ?? 0
   const celebLeft = celebUntil > s.time ? Math.max(0, Math.ceil(celebUntil - s.time)) : 0
 
-  const early = s.era < 1 && s.baskets < 25
+  const early = s.era < 1 && !earlyFloorChromeDone(s)
+  const showPlanogramNow = showPlanogram && !early
+  const tight = shelf + back <= 0 || s.cash < 2
+  const backHeavy = back > Math.max(20, shelf * 2) && shelf >= cap * 0.85
+  const rent = rentPerSec(s)
+  const wx =
+    s.era < 1
+      ? '—'
+      : `${weather}${hasWeatherForecast(s) ? ` → ${s.weather?.next ?? 'fair'}` : ''}`
+  const suppliersOpen = !!s.menus.suppliers
+  const bottleneck = salesBottleneck(s)
+  const featured = featuredCategories(s)
+  const repEta = reputationEtaSec(s)
+  const orderDef = CATEGORIES[orderCat]
+  const unit = unitCost(s, orderCat)
+  const sell = s.price * (orderDef?.priceRatio ?? 1)
+  const margin = sell - unit
+  const eff = effectiveLife(s, orderCat)
+
+  const inspectCheck = can(s, { type: 'callInspector' })
+  const heat = s.inspection?.meter ?? 0
+  const heatHot = heat > 0.7
+
+  const orders = s.orders ?? []
+  const nextEta =
+    orders.length > 0 ? Math.max(0, Math.min(...orders.map((o) => o.eta)) - s.time) : null
+
+  const burnPerSec = Math.max(s.rates.costPerSec, rent) - s.rates.revenuePerSec
+  const runwayMin = burnPerSec > 1e-6 && s.cash > 0 ? s.cash / burnPerSec / 60 : null
+
+  const demandLow = demandPerSec(s, Math.max(PRICE.min, s.price - 0.1)) * varietyMul(s)
+  const demandHigh = demandPerSec(s, Math.min(PRICE.max, s.price + 0.1)) * varietyMul(s)
+
+  const unpackCheck = can(s, { type: 'unpack' })
+  const hireClerk = can(s, { type: 'hire', role: 'clerk' })
+  const hireCashier = can(s, { type: 'hire', role: 'cashier' })
+  const staffOpen = !!s.menus.staff
+  const marketingOpen = !!s.menus.marketing
+  const canBuyCrate = s.cash >= wholesaleCost
+
+  const bottleneckAction = (() => {
+    switch (bottleneck.kind) {
+      case 'shelf':
+        if (back > 0) {
+          return { label: `Unpack +${manualUnpackAmount(s)}`, onClick: unpack, disabled: !unpackCheck.ok }
+        }
+        if (canBuyCrate) {
+          return {
+            label: `Buy ${orderName} · ${money(wholesaleCost, numberFormat)}`,
+            onClick: () => dispatch({ type: 'buyWholesale', cat: orderCat, crates: 1 }),
+          }
+        }
+        if (suppliersOpen) return { label: 'Open Suppliers', onClick: () => setActiveMenu('suppliers') }
+        return { label: 'Starter crate', onClick: () => dispatch({ type: 'callStarterCrate' }), disabled: !starterCrate.ok }
+      case 'unpack':
+        if (staffOpen && hireClerk.ok) {
+          return { label: 'Hire clerk', onClick: () => setActiveMenu('staff') }
+        }
+        return { label: `Unpack +${manualUnpackAmount(s)}`, onClick: unpack, disabled: !unpackCheck.ok }
+      case 'checkout':
+        if (hireCashier.ok) {
+          return { label: 'Hire cashier', onClick: () => dispatch({ type: 'hire', role: 'cashier' }) }
+        }
+        if (staffOpen) return { label: 'Open Staff', onClick: () => setActiveMenu('staff') }
+        return null
+      case 'demand':
+      default:
+        if (marketingOpen) {
+          return s.cash >= s.adCost
+            ? { label: `Buy ad · ${money(s.adCost, numberFormat)}`, onClick: () => dispatch({ type: 'buyAd' }) }
+            : { label: 'Open Marketing', onClick: () => setActiveMenu('marketing') }
+        }
+        return { label: 'Lower price −10¢', onClick: () => nudge(-0.1), disabled: s.price <= PRICE.min }
+    }
+  })()
 
   return (
     <Panel
       title="Floor"
-      purpose="Unpack stock onto the shelf, set a price, and sell baskets."
+      purpose="Sell baskets. Unpack, price, buy crates."
       lore="floor"
     >
-      {early ? (
+      {early || (s.era < 1 && s.baskets < 25) ? (
         <div className="ge-goal" data-coach-id="floor-goal">
           <strong>Right now</strong>
-          <p>
-            Unpack → shelf. Sell baskets (score). Cash pays rent &amp; trucks.
-          </p>
+          <p>Unpack to the shelf. Baskets score. Cash pays rent &amp; trucks.</p>
         </div>
+      ) : featured.length > 0 || (Number.isFinite(repEta) && repEta > 0) ? (
+        <p className="ge-muted" style={{ marginTop: 0 }}>
+          {[
+            featured.length
+              ? `Featuring ${featured.map((c) => CATEGORIES[c].short).join(' + ')}`
+              : null,
+            Number.isFinite(repEta) && repEta > 0
+              ? `Rep ~${repEta < 60 ? `${Math.ceil(repEta)}s` : `${Math.ceil(repEta / 60)} min`}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
       ) : null}
       {celebLeft > 0 ? (
         <p className="ge-coupon-war" role="status">
           Celebrity endcap · +25% demand · {celebLeft}s left
         </p>
       ) : null}
+
+      <div data-coach-id="floor-weather">
+        <StatusBand
+          items={(
+            [
+              {
+                label: 'Shelf',
+                value: `${qty(shelf)} / ${qty(cap)}`,
+                fill,
+                tone: shelf <= 0 ? 'danger' : fill > 0.7 ? 'success' : 'accent',
+                hint: 'What shoppers can buy',
+              },
+              {
+                label: 'Back',
+                value: qty(back),
+                tone: back <= 0 ? 'muted' : 'accent',
+                hint: 'Waiting for Unpack',
+              },
+              ...(s.era >= 1
+                ? [
+                    {
+                      label: 'Wx',
+                      value: wx,
+                      tone: weather !== 'fair' ? 'accent' : 'muted',
+                      hint: 'Weather now (and tomorrow with the Weather Radio)',
+                    } satisfies StatusItem,
+                  ]
+                : []),
+              {
+                label: 'Heat',
+                value: `${Math.round(heat * 100)}%`,
+                fill: heat,
+                tone: heatHot ? 'danger' : 'muted',
+                hint: 'Inspection heat — call early when hot',
+              },
+            ] as StatusItem[]
+          )}
+        />
+      </div>
+
+      {!early ? (
+        <div className="ge-dept-callout" role="status" data-coach-id="floor-bottleneck">
+          <div className="ge-dept-callout__copy">
+            <h3>Limit · {bottleneck.kind}</h3>
+            <p>
+              {bottleneck.label}
+              {nextEta != null
+                ? ` · Truck ${clock(nextEta)}${orders.length > 1 ? ` (+${orders.length - 1})` : ''}`
+                : ''}
+              {runwayMin != null
+                ? ` · Runway ~${runwayMin < 1 ? '<1' : Math.floor(runwayMin)} min`
+                : ''}
+            </p>
+          </div>
+          {bottleneckAction ? (
+            <Btn
+              tone="primary"
+              disabled={bottleneckAction.disabled}
+              onClick={bottleneckAction.onClick}
+            >
+              {bottleneckAction.label}
+            </Btn>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!early && heatHot ? (
+        <div className="ge-dept-callout is-ready" data-coach-id="floor-inspection">
+          <div className="ge-dept-callout__copy">
+            <h3>Inspection heat</h3>
+            <p>
+              {inspectCheck.ok
+                ? `Call early to cut ${Math.round(INSPECTION.inspectorRelief * 100)} pts.`
+                : (inspectCheck.reason ?? 'Inspector unavailable.')}
+            </p>
+          </div>
+          <Btn
+            tone="primary"
+            coachId="call-inspector"
+            disabled={!inspectCheck.ok}
+            title={!inspectCheck.ok ? inspectCheck.reason : undefined}
+            onClick={() => dispatch({ type: 'callInspector' })}
+          >
+            Call inspector · {money(INSPECTION.inspectorCost, numberFormat)}
+          </Btn>
+        </div>
+      ) : null}
+
       <div
         className={`ge-floor ge-floor--${presentation} ge-floor--wx-${weather}${
           coldOn && presentation === 'map' ? ' ge-floor--cold-glow' : ''
@@ -117,37 +309,33 @@ export function FloorPanel() {
         style={{ ['--ge-shelf-fill' as string]: String(fill) }}
         aria-label={`Storefront · ${weather} · shelf ${Math.round(fill * 100)}%`}
       >
-        <div className="ge-floor__storefront" aria-hidden />
-        <div className="ge-floor__glow" aria-hidden />
-        <div className="ge-floor__aisle" aria-hidden>
-          {presentation === 'map' ? (
-            <>
-              <div className="ge-floor__bay">A1</div>
-              <div className="ge-floor__bay">A2</div>
-              <div className={`ge-floor__bay${coldOn ? ' ge-floor__bay--cold' : ''}`.trim()}>
-                {coldOn ? `Cold×${Math.max(1, plants)}` : 'Reg'}
+        {presentation === 'map' ? (
+          <div className="ge-floor__aisle" aria-hidden>
+            <div className="ge-floor__bay">A1</div>
+            <div className="ge-floor__bay">A2</div>
+            <div className={`ge-floor__bay${coldOn ? ' ge-floor__bay--cold' : ''}`.trim()}>
+              {coldOn ? `Cold×${Math.max(1, plants)}` : 'Reg'}
+            </div>
+            {fleetOn ? (
+              <div className="ge-floor__stars" aria-hidden>
+                {Array.from({ length: Math.max(3, barges || 3) }, (_, i) => (
+                  <i key={i} className="ge-floor__star" />
+                ))}
               </div>
-              {fleetOn ? (
-                <div className="ge-floor__stars" aria-hidden>
-                  {Array.from({ length: Math.max(3, barges || 3) }, (_, i) => (
-                    <i key={i} className="ge-floor__star" />
-                  ))}
-                </div>
-              ) : null}
-            </>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        ) : null}
 
-        {showPlanogram ? (
+        {showPlanogramNow ? (
           <div className="ge-planogram" aria-hidden>
             {unlockedCats.map((c) => {
               const def = CATEGORIES[c]
               const oldest = s.shelf.find((b) => b.cat === c)
-              const spoil = spoilFrac(oldest?.age, def.life)
+              const spoil = oldest ? batchSpoilFrac(s, oldest) : 0
               return (
                 <div
                   key={c}
-                  className={`ge-planogram__bar${spoil > 0.55 ? ' is-spoil' : ''}`.trim()}
+                  className={`ge-planogram__bar${spoil > 0.55 ? ' is-spoil ge-planogram__bar--wilt' : ''}`.trim()}
                   style={{
                     ['--ge-cat-fill' as string]: String(catFill(c)),
                     ['--ge-spoil' as string]: String(spoil),
@@ -161,246 +349,188 @@ export function FloorPanel() {
           </div>
         ) : null}
 
-        <Section className="ge-floor__hero">
-          <div className="ge-floor__control">
+        <div className="ge-floor__desk">
+          <div className="ge-floor__actions">
             <Btn
               tone="primary"
               coachId="floor-unpack"
               className="ge-unpack"
-              title="Move stock from backroom → shelf (free). Shoppers only buy shelf stock."
+              title="Backroom → shelf (free). Shoppers only buy shelf stock."
               onClick={unpack}
               onPointerDown={canHold ? startHold : undefined}
               onPointerUp={canHold ? stopHold : undefined}
               onPointerLeave={canHold ? stopHold : undefined}
               onPointerCancel={canHold ? stopHold : undefined}
             >
-              <Icon name="unpack" size={16} />
+              <Icon name="unpack" size={18} />
               Unpack
               <span className="ge-unpack__amt">+{manualUnpackAmount(s)}</span>
             </Btn>
-            {early ? (
-              <p className="ge-floor__hint">Backroom → shelf. Free. Empty shelf = no sales.</p>
-            ) : null}
-          </div>
-          <div
-            className={`ge-price${priceFlick ? ' ge-price--flick' : ''}`.trim()}
-            data-coach-id="floor-price"
-          >
-            <span className="ge-price__tag">
-              <Icon name="price" size={14} /> Shelf price
-            </span>
-            <div className="ge-price__row">
-              <Btn tone="ghost" onClick={() => nudge(-0.1)} aria-label="Lower price">
-                −
-              </Btn>
-              <input
-                className="ge-price__input"
-                type="number"
-                min={PRICE.min}
-                max={PRICE.max}
-                step={PRICE.step}
-                value={s.price}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isFinite(v)) dispatch({ type: 'setPrice', price: v })
-                }}
-              />
-              <Btn tone="ghost" onClick={() => nudge(0.1)} aria-label="Raise price">
-                +
-              </Btn>
-            </div>
-            {early ? (
-              <p className="ge-floor__hint">What shoppers pay. Start near $1.50.</p>
-            ) : null}
-            {tip != null ? (
-              <p className="ge-muted">Best profit ≈ {money(tip, numberFormat)}</p>
-            ) : null}
-          </div>
-        </Section>
 
-        <Section label="Buy stock (wholesale)">
-          <p className="ge-muted">
-            Cash → truck → backroom → Unpack to shelf.
-          </p>
-          <Btn
-            tone="primary"
-            coachId="floor-wholesale"
-            disabled={s.cash < wholesaleCost}
-            onClick={() => dispatch({ type: 'buyWholesale', cat: s.orderCat || 'cans', crates: 1 })}
-          >
-            <Icon name="wholesale" size={16} />
-            Buy wholesale · {money(wholesaleCost, numberFormat)}
-          </Btn>
-          <Btn
-            tone="ghost"
-            disabled={!starterCrate.ok}
-            aria-describedby={!starterCrate.ok ? 'ge-starter-crate-hint' : undefined}
-            title={
-              starterCrate.ok
-                ? 'Free starter crate to the backroom (once per hour)'
-                : (starterCrate.reason ?? 'Not eligible')
-            }
-            onClick={() => dispatch({ type: 'callStarterCrate' })}
-          >
-            Call starter crate
-          </Btn>
-          {!starterCrate.ok ? (
-            <p id="ge-starter-crate-hint" className="ge-muted ge-floor__cta-hint">
-              {starterCrate.reason ?? 'Not eligible'}
-            </p>
-          ) : null}
-          <p className="ge-muted" data-coach-id="floor-rent">
-            Rent ticks while you sell. Arrears cap — you cannot go bankrupt.
-          </p>
-        </Section>
-
-        <Section label="Shelf (what shoppers can buy)">
-          <div className="ge-floor__shelf-head">
-            <Icon name="shelf" size={16} tone="accent" />
-            <Meter value={shelf} max={Math.max(1, cap)} label={`${qty(shelf)} / ${qty(cap)} on shelf`} tone="accent" />
-          </div>
-          <div className="ge-cat-grid">
-            {unlockedCats.map((c) => {
-              const def = CATEGORIES[c]
-              const n = sumQty(s.shelf, c)
-              const oldest = s.shelf.find((b) => b.cat === c)
-              const spoil = spoilFrac(oldest?.age, def.life)
-              return (
-                <div
-                  key={c}
-                  className={`ge-cat-chip${spoil > 0.55 ? ' ge-cat-chip--spoil' : ''}`.trim()}
-                  style={spoil > 0 ? { ['--ge-spoil' as string]: String(spoil) } : undefined}
-                >
-                  <strong>{def.short}</strong>
-                  <span>{qty(n)}</span>
-                  {def.life != null && oldest ? (
-                    <span className="ge-muted">age {Math.floor(oldest.age)}s</span>
+            <div
+              className={`ge-price${priceFlick ? ' ge-price--flick' : ''}`.trim()}
+              data-coach-id="floor-price"
+              data-suggest-id="floor-price"
+            >
+              <span className="ge-price__tag">
+                <Icon name="price" size={14} /> Price
+              </span>
+              <div className="ge-price__row">
+                <Btn tone="ghost" onClick={() => nudge(-0.1)} aria-label="Lower price">
+                  −
+                </Btn>
+                <input
+                  className="ge-price__input"
+                  type="number"
+                  min={PRICE.min}
+                  max={PRICE.max}
+                  step={PRICE.step}
+                  value={s.price}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    if (Number.isFinite(v)) dispatch({ type: 'setPrice', price: v })
+                  }}
+                />
+                <Btn tone="ghost" onClick={() => nudge(0.1)} aria-label="Raise price">
+                  +
+                </Btn>
+              </div>
+              {tip != null ? (
+                <div className="ge-price__tip">
+                  <span className="ge-muted">Best ≈ {money(tip, numberFormat)}</span>
+                  {Math.abs(s.price - tip) >= 0.05 ? (
+                    <Btn
+                      tone="ghost"
+                      title="Set shelf price to Best"
+                      onClick={() => dispatch({ type: 'setPrice', price: tip })}
+                    >
+                      Match
+                    </Btn>
                   ) : (
-                    <span className="ge-muted">stable</span>
+                    <span className="ge-muted">On target</span>
                   )}
                 </div>
-              )
-            })}
-            {unlockedCats.length === 0 ? <p className="ge-empty">No categories unlocked.</p> : null}
-          </div>
-        </Section>
-
-        {unlockedCats.length >= 2 ? (
-          <Section label="Category mix">
-            <p className="ge-muted">
-              Clerks and auto-orders lean toward higher weights. Drag to steer the aisle.
-            </p>
-            <div className="ge-mix" data-coach-id="floor-mix">
-              {unlockedCats.map((c) => {
-                const def = CATEGORIES[c]
-                const w = Math.round((s.mix[c] ?? 0.5) * 100)
-                return (
-                  <label key={c} className="ge-mix__row">
-                    <span className="ge-mix__name" title={def.name}>
-                      {def.short}
-                    </span>
-                    <input
-                      className="ge-range ge-mix__slider"
-                      type="range"
-                      min={0}
-                      max={100}
-                      step={5}
-                      value={w}
-                      aria-label={`${def.name} restock mix`}
-                      onChange={(e) =>
-                        dispatch({ type: 'setMix', cat: c, weight: Number(e.target.value) / 100 })
-                      }
-                    />
-                    <span className="ge-mix__pct" aria-hidden>
-                      {w}
-                    </span>
-                  </label>
-                )
-              })}
+              ) : null}
+              {!early ? (
+                <p className="ge-muted" title="Projected demand if you nudge the price by 10¢">
+                  {money(Math.max(PRICE.min, s.price - 0.1), numberFormat)} → {rate(demandLow)} · {' '}
+                  {money(Math.min(PRICE.max, s.price + 0.1), numberFormat)} → {rate(demandHigh)}
+                </p>
+              ) : null}
             </div>
-            <div className="ge-chip-row">
+
+            <div className="ge-floor__buy" data-coach-id="floor-wholesale" data-suggest-id="floor-wholesale">
+              <span className="ge-price__tag">
+                <Icon name="wholesale" size={14} /> Stock
+              </span>
+              {unlockedCats.length > 1 ? (
+                <div className="ge-chip-row" role="group" aria-label="Aisle to buy">
+                  {unlockedCats.map((c) => (
+                    <Btn
+                      key={c}
+                      tone={orderCat === c ? 'primary' : 'ghost'}
+                      title={CATEGORIES[c].role}
+                      onClick={() => dispatch({ type: 'setOrderCat', cat: c })}
+                    >
+                      {CATEGORIES[c].short}
+                    </Btn>
+                  ))}
+                </div>
+              ) : null}
+              {orderDef ? (
+                <p className="ge-muted">
+                  {orderDef.role} · sell {money(sell, numberFormat)} · cost{' '}
+                  {money(unit, numberFormat)} · margin {money(margin, numberFormat)}
+                  {eff != null ? ` · life ~${Math.round(eff / 60)}m` : ' · no spoil'}
+                </p>
+              ) : null}
               <Btn
-                tone="ghost"
-                onClick={() => {
-                  for (const c of unlockedCats) dispatch({ type: 'setMix', cat: c, weight: 0.5 })
-                }}
+                tone="primary"
+                disabled={s.cash < wholesaleCost}
+                title={`Buy one ${orderName} crate into the backroom`}
+                onClick={() => dispatch({ type: 'buyWholesale', cat: orderCat, crates: 1 })}
               >
-                Even mix
+                Buy {orderName} · {money(wholesaleCost, numberFormat)}
               </Btn>
               <Btn
                 tone="ghost"
-                onClick={() => {
-                  for (const c of unlockedCats) {
-                    const perish = CATEGORIES[c].life != null
-                    dispatch({ type: 'setMix', cat: c, weight: perish ? 0.85 : 0.35 })
-                  }
-                }}
+                disabled={!starterCrate.ok}
+                title={starterCrate.ok ? 'Free cans crate' : (starterCrate.reason ?? 'Not eligible')}
+                onClick={() => dispatch({ type: 'callStarterCrate' })}
               >
-                Prefer fresh
+                Starter crate
               </Btn>
             </div>
-          </Section>
-        ) : null}
-
-        <Section label="Pace">
-          <Line left="Sold" right={rate(s.rates.soldPerSec)} />
-          <Line left="Revenue" right={rate(s.rates.revenuePerSec)} />
-          <Line left="Demand" right={rate(s.rates.demandPerSec)} />
-          <Line
-            left="Weather"
-            right={
-              s.era < 1
-                ? '—'
-                : `${s.weather?.now ?? 'fair'}${
-                    hasWeatherForecast(s) ? ` → ${s.weather?.next ?? 'fair'}` : ''
-                  }`
-            }
-            muted
-          />
-          <div data-coach-id="floor-inspection">
-            <Line left="Inspection" right={`${Math.round((s.inspection?.meter ?? 0) * 100)}%`} muted />
           </div>
-        </Section>
 
-        {sumQty(s.shelf) + sumQty(s.backroom) <= 0 || s.cash < 2 ? (
-          <Section label="Tight week — recovery">
-            <p className="ge-muted">Bad weeks only slow you. These rails never wipe the run.</p>
+          <div className="ge-floor__shelf-block">
+            <Section label="On the shelf">
+              <div className="ge-floor__shelf-head">
+                <Meter
+                  value={shelf}
+                  max={Math.max(1, cap)}
+                  label={`${qty(shelf)} / ${qty(cap)}`}
+                  tone={shelf <= 0 ? undefined : 'accent'}
+                />
+              </div>
+              <div className="ge-cat-grid">
+                {unlockedCats.map((c) => {
+                  const def = CATEGORIES[c]
+                  const n = sumQty(s.shelf, c)
+                  const oldest = s.shelf.find((b) => b.cat === c)
+                  const spoil = oldest ? batchSpoilFrac(s, oldest) : 0
+                  return (
+                    <div
+                      key={c}
+                      className={`ge-cat-chip${spoil > 0.55 ? ' ge-cat-chip--spoil ge-cat-chip--wilt' : ''}`.trim()}
+                      style={spoil > 0 ? { ['--ge-spoil' as string]: String(spoil) } : undefined}
+                    >
+                      <strong>{def.short}</strong>
+                      <span>{qty(n)}</span>
+                      <span className="ge-muted">
+                        {def.life != null && oldest ? `age ${Math.floor(oldest.age)}s` : 'stable'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+              {backHeavy ? (
+                <p className="ge-muted ge-floor__nudge">
+                  Shelf is full · {qty(back)} waiting in back. Sales free slots; then Unpack.
+                </p>
+              ) : (
+                <p className="ge-muted ge-floor__flow" data-coach-id="floor-rent">
+                  Cash → truck → backroom → Unpack. Rent {rate(rent)}.
+                </p>
+              )}
+            </Section>
+          </div>
+        </div>
+
+        {tight ? (
+          <Section label="Tight week">
             <div className="ge-chip-row">
               <Btn
                 tone="primary"
-                coachId="emergency-delivery"
-                disabled={!can(s, { type: 'emergencyDelivery' }).ok}
-                onClick={() => dispatch({ type: 'emergencyDelivery' })}
-              >
-                Emergency delivery
-              </Btn>
-              <Btn
                 disabled={!starterCrate.ok}
-                title={
-                  starterCrate.ok
-                    ? 'Free starter crate to the backroom'
-                    : (starterCrate.reason ?? 'Not eligible')
-                }
+                title={starterCrate.ok ? 'Free cans crate' : (starterCrate.reason ?? 'Not eligible')}
                 onClick={() => dispatch({ type: 'callStarterCrate' })}
               >
-                Call starter crate
+                Starter crate
               </Btn>
-              <Btn
-                disabled={!can(s, { type: 'mentorRestock' }).ok}
-                onClick={() => dispatch({ type: 'mentorRestock' })}
-              >
-                Mentor restock
-              </Btn>
-              <Btn disabled={!can(s, { type: 'bailout' }).ok} onClick={() => dispatch({ type: 'bailout' })}>
-                Bailout
-              </Btn>
+              {suppliersOpen ? (
+                <Btn tone="ghost" onClick={() => setActiveMenu('suppliers')}>
+                  Safety nets on Suppliers
+                </Btn>
+              ) : null}
             </div>
           </Section>
         ) : null}
 
         <HelpCard title="What am I doing?">
-          Heartbeat: buy wholesale → unpack to shelf → shoppers buy → baskets + cash. Keep the shelf from emptying.
-          Price near cost × 1.5–2 until Price IQ. You cannot lose — bad weeks only slow you.
+          Pick an aisle, buy a crate (backroom), then Unpack to the shelf. Restock priority only chooses
+          among aisles you already bought — it does not order for you. Price IQ shows a Best ≈ price
+          tuned to your demand curve and wholesale cost; without it, nudge price and watch the projected demand.
         </HelpCard>
       </div>
     </Panel>

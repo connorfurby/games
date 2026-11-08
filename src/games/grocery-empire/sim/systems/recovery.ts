@@ -1,7 +1,7 @@
-import { isPerishable } from '../../content/categories'
-import { RECOVERY } from '../balance'
-import { cheapestCrate, crateSize, up } from '../formulas'
-import { addBatch, log, sumQty } from '../helpers'
+import { isPerishable, type CategoryId } from '../../content/categories'
+import { INSPECTION, RECOVERY } from '../balance'
+import { bailoutCooldownSec, cheapestCrate, crateSize, inspectionGainMul, up } from '../formulas'
+import { addBatch, compact, log, sumQty } from '../helpers'
 import type { GameState } from '../state'
 
 export function progressMetric(s: GameState): number {
@@ -42,11 +42,18 @@ export function applyEmptyShelfHelper(s: GameState, opts?: { ignoreWait?: boolea
   return true
 }
 
+/** Why a bailout is refused right now (null = eligible). Single source for can() and apply. */
+export function canBailout(s: GameState): string | null {
+  const wait = bailoutCooldownSec(s) - (s.time - s.recovery.lastBailoutAt)
+  if (wait > 0) return `Bailout cooling down (${Math.ceil(wait)}s).`
+  const broke = s.cash < cheapestCrate(s) && sumQty(s.backroom) + sumQty(s.shelf) <= 0
+  if (!broke && s.cash > 2) return 'Not broke enough.'
+  return null
+}
+
 /** Tiny cash + crates when broke. */
 export function applyBailout(s: GameState): boolean {
-  if (s.time - s.recovery.lastBailoutAt < RECOVERY.bailoutCooldownSec) return false
-  const broke = s.cash < cheapestCrate(s) && sumQty(s.backroom) + sumQty(s.shelf) <= 0
-  if (!broke && s.cash > 2) return false
+  if (canBailout(s) != null) return false
   const cash = RECOVERY.bailoutCash + up(s, 'cash-drawer') * 5
   s.cash += cash
   addBatch(s.backroom, 'cans', RECOVERY.bailoutCrates, 0)
@@ -58,28 +65,46 @@ export function applyBailout(s: GameState): boolean {
   return true
 }
 
-/** Emergency truck: dump crates into backroom when dry. */
-export function applyEmergencyDelivery(s: GameState): boolean {
+/** Why an emergency delivery is refused right now (null = eligible). Single source for can() and apply. */
+export function canEmergencyDelivery(s: GameState): string | null {
   const stock = sumQty(s.shelf) + sumQty(s.backroom)
-  if (stock > crateSize(s)) return false
+  if (stock > crateSize(s)) return 'Stock is not critically low.'
+  return null
+}
+
+/**
+ * Emergency truck: free rush crates into the backroom when dry.
+ * It costs 1 Reputation once Compute is unlocked and you have some — never cash.
+ */
+export function applyEmergencyDelivery(s: GameState): boolean {
+  if (canEmergencyDelivery(s) != null) return false
   const cat = s.categories[s.orderCat] ? s.orderCat : 'cans'
   addBatch(s.backroom, cat, RECOVERY.emergencyCrates, 0)
   s.stats.emergencyDeliveries += 1
   if (s.compute.unlocked && s.compute.reputation >= 1) {
     s.compute.reputation -= 1
-    log(s, `Emergency delivery (${RECOVERY.emergencyCrates} units). −1 Reputation.`, 'recovery')
+    log(s, `Emergency delivery (${RECOVERY.emergencyCrates} units). Cost −1 Reputation, no cash.`, 'recovery')
   } else {
-    log(s, `Emergency delivery (${RECOVERY.emergencyCrates} units).`, 'recovery')
+    log(s, `Emergency delivery (${RECOVERY.emergencyCrates} units). On the house — no cash taken.`, 'recovery')
   }
   return true
 }
 
+/** Why a mentor restock is refused right now (null = eligible). */
+export function canMentorRestock(s: GameState): string | null {
+  if (s.era > 0 && s.stats.playSec > 1200) return 'Mentor has moved on.'
+  if (sumQty(s.shelf) + sumQty(s.backroom) > 0) return 'You still have stock.'
+  const wait = RECOVERY.mentorCooldownSec - (s.time - s.recovery.lastMentorAt)
+  if (wait > 0) return `Mentor is busy (${Math.ceil(wait)}s).`
+  return null
+}
+
 /** Early-run free crate while tutorials are still teaching the loop. */
 export function applyMentorRestock(s: GameState): boolean {
-  if (s.era > 0 && s.stats.playSec > 1200) return false
-  if (sumQty(s.shelf) + sumQty(s.backroom) > 0) return false
+  if (canMentorRestock(s) != null) return false
   addBatch(s.backroom, 'cans', crateSize(s), 0)
   s.stats.helperCrates += crateSize(s)
+  s.recovery.lastMentorAt = s.time
   log(s, 'Mentor restocked a crate. Unpack when you are ready.', 'recovery')
   return true
 }
@@ -128,22 +153,68 @@ export function tickRecovery(s: GameState, dt: number) {
   }
 }
 
-/** Dump perishables from shelf + backroom (spoil cleanup / panic button). */
-export function dumpCooler(s: GameState): number {
+export type DumpWhere = 'backroom' | 'shelf'
+
+/** Perishable units currently on the shelf / in the backroom (optionally one aisle). */
+export function perishableQty(s: GameState, where: DumpWhere, cat?: CategoryId): number {
+  const list = where === 'shelf' ? s.shelf : s.backroom
+  let n = 0
+  for (const b of list) if (b.qty > 0 && isPerishable(b.cat) && (!cat || b.cat === cat)) n += b.qty
+  return n
+}
+
+/**
+ * Bin up to `limit` perishable units from one list, oldest (closest to spoiling) first.
+ * Counts as spoilage and nudges the inspection meter a little.
+ */
+function dumpFrom(s: GameState, where: DumpWhere, limit: number, cat?: CategoryId): number {
+  const list = where === 'shelf' ? s.shelf : s.backroom
+  const picks = list
+    .filter((b) => b.qty > 0 && isPerishable(b.cat) && (!cat || b.cat === cat))
+    .sort((a, b) => b.age - a.age)
+  let need = Math.max(0, Math.floor(limit))
   let dumped = 0
-  for (const list of [s.shelf, s.backroom]) {
-    for (const b of list) {
-      if (!isPerishable(b.cat)) continue
-      dumped += b.qty
-      b.qty = 0
-    }
+  for (const b of picks) {
+    if (need <= 0) break
+    const n = Math.min(b.qty, need)
+    b.qty -= n
+    need -= n
+    dumped += n
+    s.stats.spoiledByCat[b.cat] += n
   }
-  s.shelf = s.shelf.filter((b) => b.qty > 0)
-  s.backroom = s.backroom.filter((b) => b.qty > 0)
+  compact(list)
   if (dumped > 0) {
     s.stats.dumps += 1
     s.stats.spoiled += dumped
-    log(s, `Dumped ${dumped} perishable unit${dumped === 1 ? '' : 's'} from coolers.`, 'warn')
+    s.inspection.meter = Math.min(
+      2,
+      s.inspection.meter + dumped * INSPECTION.inspectionPerUnit * inspectionGainMul(s) * RECOVERY.dumpInspectionFrac,
+    )
+    const label = where === 'shelf' ? 'shelf' : 'backroom'
+    log(s, `Dumped ${dumped} perishable unit${dumped === 1 ? '' : 's'} from the ${label}.`, 'warn')
   }
   return dumped
+}
+
+/** Dump every perishable in the backroom (default spoil cleanup — never touches the sales floor). */
+export function dumpBackroom(s: GameState): number {
+  return dumpFrom(s, 'backroom', Infinity)
+}
+
+/** Dump every perishable on the shelf. Only reachable via an explicit command flag. */
+export function dumpShelf(s: GameState): number {
+  return dumpFrom(s, 'shelf', Infinity)
+}
+
+/** Dump a few units of one aisle from the backroom or shelf. */
+export function dumpCoolerPartial(s: GameState, cat: CategoryId, n: number, where: DumpWhere = 'backroom'): number {
+  return dumpFrom(s, where, n, cat)
+}
+
+/**
+ * Dump perishables. Backroom only unless `includeShelf` is set — a shelf dump can empty the sales floor.
+ */
+export function dumpCooler(s: GameState, includeShelf = false): number {
+  const back = dumpBackroom(s)
+  return back + (includeShelf ? dumpShelf(s) : 0)
 }

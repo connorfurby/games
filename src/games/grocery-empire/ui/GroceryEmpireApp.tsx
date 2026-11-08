@@ -1,6 +1,12 @@
 import { AnimatePresence, LayoutGroup, motion, MotionConfig } from 'motion/react'
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react'
 import { applyAchievements } from '@/achievements/registry'
 import { onAchievementToast } from '@/achievements/toastBus'
 import { playAchievementFanfare } from '@/shared/audio'
@@ -12,24 +18,33 @@ import {
 import { useMeta } from '@/shell/MetaContext'
 import { MENUS, MENU_IDS, type MenuId } from '../content/menus'
 import { pendingTip } from '../content/tips'
-import { ERA_STORY } from '../content/lore'
 import { PRICE } from '../sim/balance'
 import type { Command } from '../sim/commands'
 import { enterDevSandbox, ensurePrimarySandbox, leaveDevSandbox } from '../sim/devMode'
 import { engine } from '../sim/engine'
+import {
+  getSuggestions,
+  suggestedChannels,
+  type Suggestion,
+} from '../sim/suggestions'
+import { sumQty } from '../sim/helpers'
 import { canUndo } from '../sim/undo'
 import { GameProvider } from './GameContext'
-import { money, qty } from './format'
 import { ChapterCard } from './components/ChapterCard'
 import { CoachOverlay } from './components/Coach'
 import { DevModeBar } from './components/DevModeBar'
+import { DialogueStrip } from './components/DialogueStrip'
 import { Ledger } from './components/Ledger'
 import { HungryLawsModal } from './components/HungryLaws'
 import { IntroCutscene } from './components/IntroCutscene'
 import { StoryBanner } from './components/StoryBanner'
 import { OfflineReceiptModal } from './components/OfflineReceipt'
-import { PopLayer, useSalePops } from './components/Pop'
+import { useSalePops } from './components/Pop'
 import { Btn } from './components/Btn'
+import { SuggestBadge } from './components/SuggestBadge'
+import { channelToMenu, SuggestTip } from './components/SuggestTip'
+import { TopBar } from './components/TopBar'
+import { useFxDeltas } from './hooks/useFxDeltas'
 import { Icon } from './icons/Icon'
 import { BackroomPanel } from './panels/BackroomPanel'
 import { BooksPanel } from './panels/BooksPanel'
@@ -101,12 +116,14 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const [menu, setMenu] = useState<MenuId>(() =>
     pinned && MENU_IDS.includes(pinned as MenuId) ? (pinned as MenuId) : 'floor',
   )
-  const [recentMenus, setRecentMenus] = useState<MenuId[]>([])
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([])
   const [photoMode, setPhotoMode] = useState(false)
+  const [focusNonce, setFocusNonce] = useState(0)
+  const [focusTarget, setFocusTarget] = useState<string | null>(null)
   const reducedMotion = meta.settings.reducedMotion
   const numberFormat = meta.settings.numberFormat
   const pops = useSalePops(state.baskets, reducedMotion, meta.settings.muted)
+  const fx = useFxDeltas(state, reducedMotion)
 
   const notifySig = useRef({ intervention: state.recovery?.lastInterventionAt ?? 0, brownouts: state.cold?.brownouts ?? 0 })
   const lastEraRef = useRef(state.era)
@@ -120,13 +137,25 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   menuRef.current = menu
 
   useEffect(() => {
-    if (devMode) enterDevSandbox()
-    else ensurePrimarySandbox()
+    if (devMode) {
+      enterDevSandbox()
+    } else {
+      ensurePrimarySandbox()
+      // Disk is source of truth when (re)entering Play from the shelf.
+      // Without this, the module singleton keeps the previous run in memory and
+      // New Game (localStorage wipe only) looks like it "never works".
+      engine.reloadFromDisk()
+    }
     engine.start()
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.classList.add('ge-playing')
     return () => {
       engine.setSoftPauseMul(1)
       engine.stop()
       if (devMode) leaveDevSandbox()
+      document.body.style.overflow = prevOverflow
+      document.documentElement.classList.remove('ge-playing')
     }
   }, [devMode])
 
@@ -145,14 +174,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     const next = maybeRecordDailyBest(metaRef.current, state.baskets, state.seed)
     if (next !== metaRef.current) replaceMeta(next)
   }, [state.baskets, state.seed, metaRef, replaceMeta, devMode])
-
-  // Keep last 3 menus for the Recent chip row (skip no-ops when already current).
-  useEffect(() => {
-    setRecentMenus((prev) => {
-      if (prev[0] === menu) return prev
-      return [menu, ...prev.filter((x) => x !== menu)].slice(0, 3)
-    })
-  }, [menu])
 
   // Finishing eras earns Shelf Tokens (plan C3) — never from DevMode.
   useEffect(() => {
@@ -262,12 +283,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   ])
 
   const dispatch = (cmd: Command) => {
-    engine.dispatch(cmd)
-  }
-
-  const menuPinned = meta.settings.pinnedMenu === menu
-  const togglePin = () => {
-    updateSettings({ pinnedMenu: menuPinned ? null : menu })
+    const check = engine.dispatch(cmd)
+    if (!check.ok && check.reason) {
+      const id = Date.now() + Math.random()
+      const text = check.reason
+      setToasts((t) => [...t.slice(-4), { id, text }])
+      window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2800)
+    }
   }
 
   const unlockedMenus = MENU_IDS.filter((id) => {
@@ -277,9 +299,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       return false
     }
   })
-
-  // Engine ticks re-render this tree; canUndo() is time-gated (5s).
-  const undoGate = canUndo()
 
   useEffect(() => {
     const typingTarget = (t: EventTarget | null) => {
@@ -431,6 +450,41 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const Active = PANEL[menu]!
   const tip = pendingTip(state)
 
+  const suggestOn = !!meta.settings.suggestNext
+  const suggestions = useMemo(
+    () => (suggestOn ? getSuggestions(state, 10) : []),
+    [snap.v, state, suggestOn],
+  )
+  const suggestChannels = useMemo(() => suggestedChannels(suggestions), [suggestions])
+  const topSuggest = suggestions[0] ?? null
+
+  const focusSuggestion = (s: Suggestion) => {
+    const dest = channelToMenu(s.channel)
+    if (dest && state.menus[dest]) setMenu(dest)
+    setFocusTarget(s.target ?? null)
+    setFocusNonce((n) => n + 1)
+    // Double rAF so tab panels can remount the target before we scroll.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const sel = s.target
+          ? `[data-suggest-id="${CSS.escape(s.target)}"], [data-coach-id="${CSS.escape(s.target)}"]`
+          : null
+        if (!sel) {
+          if (s.channel === 'memos') {
+            document.querySelector('.ge-memos-col')?.scrollIntoView({ block: 'nearest' })
+          }
+          return
+        }
+        const el = document.querySelector(sel)
+        if (el instanceof HTMLElement) {
+          el.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
+          el.classList.add('ge-suggest-flash')
+          window.setTimeout(() => el.classList.remove('ge-suggest-flash'), 1400)
+        }
+      })
+    })
+  }
+
   const setPhotoModeUi = (on: boolean) => {
     setPhotoMode(on)
     if (on) setMenu('floor')
@@ -438,6 +492,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
   const ctx = {
     state,
+    tick: snap.v,
     dispatch,
     reducedMotion,
     numberFormat,
@@ -445,6 +500,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     setActiveMenu: (id: string) => {
       if (MENU_IDS.includes(id as MenuId) && state.menus[id as MenuId]) setMenu(id as MenuId)
     },
+    suggestions,
+    focusSuggestion,
+    focusNonce,
+    focusTarget,
     photoMode,
     setPhotoMode: setPhotoModeUi,
   }
@@ -455,73 +514,25 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
         <div
           className={`ge-root ge-root--${meta.settings.presentation}${
             state.paused ? ' ge-root--paused' : ''
-          }${photoMode ? ' ge-root--photo' : ''}${devMode ? ' ge-root--dev' : ''}`.trim()}
+          }${photoMode ? ' ge-root--photo' : ''}${devMode ? ' ge-root--dev' : ''}${
+            fx.spoilWilt ? ' ge-root--spoil-wilt' : ''
+          }${fx.bargeBirth ? ' ge-root--barge-birth' : ''}`.trim()}
         >
           {devMode ? <DevModeBar /> : null}
-          <header className="ge-top">
-            <div className="ge-baskets" data-coach-id="floor-baskets">
-              <span className="ge-baskets__label">
-                <Icon name="baskets" size={14} /> Baskets
-              </span>
-              {qty(state.baskets, numberFormat)}
-              {state.era < 1 && state.baskets < 40 ? (
-                <span className="ge-baskets__hint">Score · never spends</span>
-              ) : null}
-              <PopLayer pops={pops} />
-            </div>
-            <div className="ge-top__cash">
-              <span className="ge-top__cash-label">
-                <Icon name="cash" size={14} /> Cash
-              </span>
-              {money(state.cash, numberFormat)}
-            </div>
-            <span
-              className="ge-top__era"
-              title={ERA_STORY[state.era]?.epigraph ?? `Era ${state.era}`}
-            >
-              {ERA_STORY[state.era]?.title ?? `Era ${state.era}`}
-            </span>
-            <span
-              className={`ge-live${state.paused ? ' is-paused' : ''}`}
-              title={state.paused ? 'Paused' : `Live · tick ${snap.v}`}
-              aria-label={state.paused ? 'Paused' : 'Live'}
-            >
-              {state.paused ? 'Paused' : 'Live'}
-            </span>
-            <Btn
-              tone={state.paused ? 'primary' : 'ghost'}
-              onClick={() => dispatch({ type: 'setPaused', paused: !state.paused })}
-            >
-              {state.paused ? 'Resume' : 'Pause'}
-            </Btn>
-            <Btn
-              tone="ghost"
-              disabled={!engine.canUndo()}
-              title={
-                undoGate.ok
-                  ? `Undo ${undoGate.label ?? 'last action'} (Ctrl+Z · 5s)`
-                  : 'Nothing to undo (Ctrl+Z · 5s)'
-              }
-              onClick={() => engine.undo()}
-            >
-              Undo
-            </Btn>
-            <div className="ge-chip-row" style={{ margin: 0 }}>
-              {speeds.map((sp) => (
-                <Btn
-                  key={sp}
-                  tone={state.speed === sp ? 'primary' : 'ghost'}
-                  onClick={() => dispatch({ type: 'setSpeed', speed: sp })}
-                >
-                  {sp}×
-                </Btn>
-              ))}
-            </div>
-            <div className="ge-top__spacer" />
-            <Link className="ge-top__link" to="/" data-coach-id="meta-shelf">
-              ← Shelf
-            </Link>
-          </header>
+          <TopBar
+            state={state}
+            snapV={snap.v}
+            pops={pops}
+            speeds={speeds}
+            numberFormat={numberFormat}
+            onPause={() => dispatch({ type: 'setPaused', paused: !state.paused })}
+            onSpeed={(n) => dispatch({ type: 'setSpeed', speed: n })}
+            fxVenture={fx.ventureArc}
+            ventureAmt={fx.ventureAmt}
+            onJumpMenu={(id) => {
+              if (MENU_IDS.includes(id as MenuId) && state.menus[id as MenuId]) setMenu(id as MenuId)
+            }}
+          />
 
           <nav className="ge-rail" aria-label="Departments">
             <LayoutGroup>
@@ -530,11 +541,20 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 if (!def) return null
                 const active = menu === id
                 const isPinned = meta.settings.pinnedMenu === id
+                const coldFresh = id === 'cold' && (state.cold?.freshness ?? 0) >= 1
+                const coldPulse =
+                  id === 'cold' && (fx.coldDrop || (state.cold?.freshness ?? 1) < 0.85)
+                const hit = suggestChannels.has(id)
+                const topHere = suggestions.find((g) => g.channel === id)
                 return (
                   <button
                     key={id}
                     type="button"
-                    className={`ge-rail__btn ${active ? 'is-active' : ''} ${isPinned ? 'is-pinned' : ''}`.trim()}
+                    className={`ge-rail__btn ${active ? 'is-active' : ''} ${isPinned ? 'is-pinned' : ''} ${
+                      coldFresh ? 'ge-rail__btn--cold-glow' : ''
+                    } ${coldPulse ? 'ge-rail__btn--cold-pulse' : ''} ${
+                      hit ? 'ge-rail__btn--suggest' : ''
+                    }`.trim()}
                     data-coach-id={MENU_COACH[id]}
                     onClick={() => setMenu(id)}
                     onContextMenu={(e) => {
@@ -543,7 +563,11 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                         pinnedMenu: isPinned ? null : id,
                       })
                     }}
-                    title={`${def.purpose}${isPinned ? ' · pinned' : ''}`}
+                    title={
+                      topHere
+                        ? `Suggested: ${topHere.title} — ${topHere.blurb}`
+                        : `${def.purpose}${isPinned ? ' · pinned' : ''}`
+                    }
                     aria-current={active ? 'page' : undefined}
                   >
                     {active ? (
@@ -562,6 +586,12 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                       <Icon name={def.id} size={18} />
                     </span>
                     <span>{def.name}</span>
+                    {hit ? (
+                      <SuggestBadge
+                        title={topHere ? `Suggested: ${topHere.title}` : 'Suggested'}
+                        className="ge-rail__suggest"
+                      />
+                    ) : null}
                   </button>
                 )
               })}
@@ -569,61 +599,92 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           </nav>
 
           <main className="ge-main">
-            <div className="ge-main__chrome">
-              <Btn
-                tone={menuPinned ? 'primary' : 'ghost'}
-                onClick={togglePin}
-                title={menuPinned ? 'Unpin this panel' : 'Pin this panel (restore on load)'}
-              >
-                {menuPinned ? 'Pinned' : 'Pin'}
-              </Btn>
-              {recentMenus.length > 0 ? (
-                <div className="ge-recent" aria-label="Recently used menus">
-                  <span className="ge-recent__label">Recent</span>
-                  {recentMenus.map((id) => {
-                    const def = MENUS[id]
-                    if (!def || !state.menus[id]) return null
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={`ge-recent__chip ${menu === id ? 'is-active' : ''}`.trim()}
-                        onClick={() => setMenu(id)}
-                      >
-                        {def.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              ) : null}
-            </div>
-            <AnimatePresence mode="wait">
+            {suggestOn && !photoMode && !state.offlineReceipt && state.introSeen ? (
+              <SuggestTip
+                tip={topSuggest}
+                reducedMotion={reducedMotion}
+                onGo={(s) => focusSuggestion(s)}
+                onDo={(cmd) => {
+                  dispatch(cmd)
+                }}
+              />
+            ) : null}
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={menu}
-                initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+                className="ge-main__panel"
+                initial={reducedMotion ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={reducedMotion ? undefined : { opacity: 0.4, scale: 0.98 }}
-                transition={{ duration: reducedMotion ? 0 : 0.22, ease: 'easeOut' }}
+                exit={reducedMotion ? undefined : { opacity: 0, y: -4 }}
+                transition={{ duration: reducedMotion ? 0 : 0.16, ease: 'easeOut' }}
               >
                 {Active()}
               </motion.div>
             </AnimatePresence>
           </main>
 
-          <aside className="ge-memos-col">
+          <aside
+            className={`ge-memos-col${suggestChannels.has('memos') ? ' ge-memos-col--suggest' : ''}`.trim()}
+          >
             <MemosPanel compact />
           </aside>
 
-          <footer className="ge-ledger-strip">
-            <StoryBanner state={state} />
-            <Ledger state={state} />
-          </footer>
+          {(() => {
+            const showDialogue =
+              !state.offlineReceipt &&
+              state.introSeen &&
+              !state.pendingAccept &&
+              !chapterEra &&
+              !state.tutorials.active &&
+              !!state.dialogueQueue[0]
+            const showStory =
+              !showDialogue &&
+              (!state.introSeen || state.era < 2 || state.baskets < 120)
+            const dockMode = showDialogue ? 'talk' : showStory ? 'story' : 'ledger'
+            return (
+              <footer
+                className={`ge-ledger-strip ge-dock ge-dock--${dockMode}`.trim()}
+              >
+                {showDialogue ? (
+                  <DialogueStrip
+                    lineId={state.dialogueQueue[0]!}
+                    reducedMotion={reducedMotion}
+                    onNext={() => dispatch({ type: 'advanceDialogue' })}
+                    onSkip={() => dispatch({ type: 'advanceDialogue' })}
+                  />
+                ) : showStory ? (
+                  <StoryBanner state={state} />
+                ) : (
+                  <Ledger state={state} limit={12} />
+                )}
+              </footer>
+            )
+          })()}
 
           {state.offlineReceipt ? (
             <OfflineReceiptModal
               receipt={state.offlineReceipt}
               reducedMotion={reducedMotion}
               onDismiss={() => dispatch({ type: 'dismissOfflineReceipt' })}
+              followUp={topSuggest}
+              onFollowUp={focusSuggestion}
+              nudge={(() => {
+                const r = state.offlineReceipt
+                const back = sumQty(state.backroom)
+                if (r.spoiled > 0 && state.menus.backroom) {
+                  return { menu: 'backroom' as const, label: 'Check Backroom', hint: 'Spoilage hit while you were away.' }
+                }
+                if (back > 0) {
+                  return { menu: 'floor' as const, label: 'Unpack on Floor', hint: `${Math.floor(back)} waiting in the back.` }
+                }
+                if (state.menus.suppliers) {
+                  return { menu: 'suppliers' as const, label: 'Restock via Suppliers', hint: 'The shelf may be thin.' }
+                }
+                return null
+              })()}
+              onNudge={(id) => {
+                if (state.menus[id]) setMenu(id)
+              }}
             />
           ) : null}
 
@@ -667,12 +728,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
             <CoachOverlay active={state.tutorials.active} />
           ) : null}
 
-          {/* Tips wait until intro/chapter clear so overlays do not stack into a wall. */}
+          {/* Tips wait until intro/chapter/dialogue clear so overlays do not stack into a wall. */}
           {tip &&
           state.introSeen &&
           !state.offlineReceipt &&
           !state.pendingAccept &&
-          !chapterEra ? (
+          !chapterEra &&
+          !state.dialogueQueue[0] ? (
             <div className="ge-tip-whisper" role="status" aria-live="polite">
               <p className="ge-tip-whisper__text">{tip.text}</p>
               <Btn tone="ghost" onClick={() => dispatch({ type: 'dismissTip', id: tip.id })}>

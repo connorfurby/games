@@ -27,7 +27,7 @@ export const DOCTRINES: DoctrineDef[] = [
   { id: 'premium-bodega', name: 'Premium Bodega', blurb: 'Fewer trips, richer tickets.', order: 4 },
   { id: 'route-density', name: 'Route Density', blurb: 'Depot legs before vanity stores.', order: 5 },
   { id: 'float-discipline', name: 'Float Discipline', blurb: 'Equity is expansion fuel.', order: 6 },
-  { id: 'read-bank', name: 'Bank the Read', blurb: 'Tournaments fund later eras.', order: 7 },
+  { id: 'read-bank', name: 'Bank the Read', blurb: 'Tournaments bank Read for the next fight.', order: 7 },
 ]
 
 export const DOCTRINE_BY_ID: Record<string, DoctrineDef> = Object.fromEntries(
@@ -47,7 +47,7 @@ export const ERA2_EXPANSIONS: ExpansionDef[] = [
   {
     id: 'parking',
     name: 'Parking Strip',
-    blurb: 'A few stalls. Shoppers stop who would have driven past.',
+    blurb: '+10% demand · +1 staff seat · higher rent.',
     cost: 6000,
     era: 2,
     requires: (s) => s.era >= 2 && !!s.expansions['side-yard'],
@@ -55,7 +55,7 @@ export const ERA2_EXPANSIONS: ExpansionDef[] = [
   {
     id: 'corner-parcel',
     name: 'Corner Parcel',
-    blurb: 'Hard corner with signage rights. Helps store 2+.',
+    blurb: 'Next store −15% cost · opens one level higher.',
     cost: 14_000,
     era: 2,
     requires: (s) => s.era >= 2 && s.stores.length >= 1,
@@ -63,7 +63,7 @@ export const ERA2_EXPANSIONS: ExpansionDef[] = [
   {
     id: 'metro-slot',
     name: 'Metro Slot',
-    blurb: 'A district deed. Unlocks denser chain growth.',
+    blurb: '+0.08 demand per extra store · −10% Attention drain. Needs depot + incorporate.',
     cost: 45_000,
     era: 2,
     requires: (s) => s.era >= 2 && s.depot && s.incorporated,

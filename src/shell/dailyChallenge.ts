@@ -1,4 +1,6 @@
-import { clearGameSave, deserializeState, loadGame, saveGame } from '@/shared/save'
+import { engine } from '@/games/grocery-empire/sim/engine'
+import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
+import { deserializeState, loadGame, saveGame } from '@/shared/save'
 import type { MetaSave } from '@/shared/types'
 import { localDayKey } from './dailyStamp'
 
@@ -76,6 +78,15 @@ export function consumeDailyPending(): boolean {
   }
 }
 
+/** Drop a pending daily boot so New Game / hard reset cannot be overridden. */
+export function clearDailyPending() {
+  try {
+    sessionStorage.removeItem(PENDING_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Copy primary grocery save into slot 3 (localStorage only — no engine needed). */
 export function stashPrimaryToSlot3(): boolean {
   try {
@@ -98,7 +109,7 @@ export function hasPrimaryGrocerySave(): boolean {
 
 /**
  * Prepare a fresh daily run: optionally stash current save to slot 3,
- * wipe primary, mark challenge active, and set a pending seed for Play boot.
+ * wipe primary + live engine, mark challenge active, and set a pending seed for Play boot.
  */
 export function prepareDailyChallengeStart(opts: {
   stashToSlot3: boolean
@@ -106,7 +117,8 @@ export function prepareDailyChallengeStart(opts: {
 }): { day: string; seed: number } {
   const today = todaysChallenge(opts.now)
   if (opts.stashToSlot3) stashPrimaryToSlot3()
-  clearGameSave('grocery-empire')
+  setActiveSaveId(PRIMARY_SAVE_ID)
+  engine.newGame(today.seed)
   saveDailyChallenge({ day: today.day, seed: today.seed, active: true })
   markDailyPending()
   return { day: today.day, seed: today.seed }

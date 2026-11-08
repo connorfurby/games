@@ -14,6 +14,8 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'floor-rent': 'floor',
   'floor-inspection': 'floor',
   'floor-memos': null,
+  'floor-weather': 'floor',
+  'marketing-rival': 'marketing',
   'menu-staff': null,
   'menu-build': null,
   'menu-upgrades': null,
@@ -24,6 +26,7 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'staff-hire-clerk': 'staff',
   'staff-security': 'staff',
   'staff-night': 'staff',
+  hours: 'staff',
   'backroom-categories': 'backroom',
   'backroom-fifo': 'backroom',
   'backroom-dairy': 'backroom',
@@ -37,6 +40,7 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'invest-book': 'invest',
   'upgrades-floor': 'upgrades',
   'ventures-coffee': 'ventures',
+  'venture-collect-coffee': 'ventures',
   'land-side-yard': 'land',
   'land-open-store': 'land',
   'land-policy': 'land',
@@ -75,7 +79,8 @@ export function menuForCoachId(coachId: string): string | null {
   if (coachId.startsWith('floor-') && coachId !== 'floor-memos') return 'floor'
   if (coachId.startsWith('backroom-')) return 'backroom'
   if (coachId.startsWith('staff-') || coachId === 'hours' || coachId.startsWith('hire-')) return 'staff'
-  if (coachId.startsWith('marketing-') || coachId === 'call-inspector') return 'marketing'
+  if (coachId === 'call-inspector') return 'floor'
+  if (coachId.startsWith('marketing-')) return 'marketing'
   if (coachId.startsWith('invest-')) return 'invest'
   if (coachId.startsWith('upgrades-') || coachId.startsWith('upgrade-')) return 'upgrades'
   if (coachId.startsWith('ventures-') || coachId.startsWith('venture-')) return 'ventures'

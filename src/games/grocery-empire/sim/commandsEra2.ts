@@ -1,5 +1,6 @@
 import { DOCTRINE_BY_ID, DOCTRINES } from '../content/era2'
 import { CAPITAL, CHAIN, INVEST } from './balance'
+import { perk } from './formulas'
 import { clamp, log, round2, unlockMenu } from './helpers'
 import type { Command, Check } from './commands'
 import type { GameState, InvestRisk } from './state'
@@ -9,16 +10,25 @@ import {
   normalizeAttentionShares,
   openStoreCost,
   setStorePolicy,
+  canTrainStore,
+  canWalkStore,
+  trainStore,
+  walkStore,
 } from './systems/chain'
 import {
   applyAutonomous,
   canReleaseAutonomous,
+  canResolveBoard,
   debtCovenantBreached,
   doctrineCost,
   investEngineCost,
   resolveBoardMeeting,
+  setAutonomousHabit,
   tournamentReadPayout,
 } from './systems/capital'
+import type { AutonomousHabit, BoardAgenda } from './state'
+
+const INVEST_RISK_GATE = INVEST.riskGate
 
 const ok: Check = { ok: true }
 const no = (reason: string): Check => ({ ok: false, reason })
@@ -37,7 +47,10 @@ type Era2Cmd =
   | Extract<Command, { type: 'buyDoctrine' }>
   | Extract<Command, { type: 'buildDepot' }>
   | Extract<Command, { type: 'releaseAutonomous' }>
+  | Extract<Command, { type: 'setAutonomousHabit' }>
   | Extract<Command, { type: 'resolveBoard' }>
+  | Extract<Command, { type: 'walkStore' }>
+  | Extract<Command, { type: 'trainStore' }>
 
 type Era2Handler<C extends Era2Cmd = Era2Cmd> = {
   can: (s: GameState, cmd: C) => Check
@@ -52,25 +65,39 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.stores.length >= CHAIN.maxStores) return no('Chain at capacity.')
       if (debtCovenantBreached(s)) return no('Debt covenant blocks new stores.')
       const cost = openStoreCost(s)
-      if (s.cash < cost) return no(`Need $${cost}.`)
+      const equityCover =
+        (s.doctrines['float-discipline'] ?? 0) > 0 ? Math.min(s.equity, cost * 0.5) : 0
+      if (s.cash + equityCover < cost) return no(`Need $${cost}.`)
       return ok
     },
     run: (s, cmd) => {
       ensureFlagshipStore(s)
       const cost = openStoreCost(s)
-      s.cash -= cost
+      let fromEquity = 0
+      if ((s.doctrines['float-discipline'] ?? 0) > 0 && s.equity > 0) {
+        fromEquity = Math.min(s.equity, cost * 0.5)
+        s.equity = round2(s.equity - fromEquity)
+      }
+      s.cash -= cost - fromEquity
       const n = s.stores.length + 1
       const name = cmd.name?.trim() || `Store ${n}`
       const fair = 1 / n
       for (const st of s.stores) st.attentionShare = fair
+      const startLevel = s.expansions['corner-parcel']
+        ? 1 + CHAIN.cornerParcelStartLevelBonus
+        : 1
+      // Policy Template perk: new doors copy the flagship's policy for free.
+      const policy = perk(s, 'free-policy-preset') > 0 ? (s.stores[0]?.policy ?? 'standard') : 'standard'
       s.stores.push({
         id: `s${s.nextStoreId++}`,
         name,
-        level: 1,
+        level: startLevel,
         xp: 0,
-        policy: 'standard',
+        policy,
         attentionShare: fair,
+        drift: 0,
       })
+      if (s.board.expandDiscount < 1) s.board.expandDiscount = 1
       s.stats.storesOpened += 1
       unlockMenu(s, 'land')
       log(s, `${name} opened. Split Attention or accept drift.`, 'era')
@@ -166,6 +193,12 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
     can: (s, cmd) => {
       if (!s.invest.unlocked) return no('Book locked.')
       if (!['low', 'mid', 'high'].includes(cmd.risk)) return no('Bad risk.')
+      if (cmd.risk === 'mid' && s.invest.engineLevel < INVEST_RISK_GATE.mid) {
+        return no(`Mid risk needs Engine L${INVEST_RISK_GATE.mid}.`)
+      }
+      if (cmd.risk === 'high' && s.invest.engineLevel < INVEST_RISK_GATE.high) {
+        return no(`High risk needs Engine L${INVEST_RISK_GATE.high}.`)
+      }
       if (cmd.risk === 'high' && debtCovenantBreached(s)) return no('Debt covenant blocks High risk.')
       return ok
     },
@@ -270,11 +303,45 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
     },
     run: (s) => applyAutonomous(s),
   },
-  resolveBoard: {
-    can: (s) => {
-      if (!s.incorporated) return no('Incorporate first.')
+  setAutonomousHabit: {
+    can: (s, cmd) => {
+      if (!s.autonomous) return no('Release Autonomous first.')
+      const h = cmd.habit
+      if (h !== 'balanced' && h !== 'price' && h !== 'attention' && h !== 'collect') {
+        return no('Unknown habit.')
+      }
       return ok
     },
-    run: (s) => resolveBoardMeeting(s),
+    run: (s, cmd) => setAutonomousHabit(s, cmd.habit as AutonomousHabit),
+  },
+  resolveBoard: {
+    can: (s) => {
+      const r = canResolveBoard(s)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => {
+      const agenda = (cmd as { agenda?: BoardAgenda }).agenda
+      resolveBoardMeeting(s, agenda)
+    },
+  },
+  walkStore: {
+    can: (s, cmd) => {
+      if (s.era < 2) return no('Need Era 2.')
+      const r = canWalkStore(s, cmd.storeId)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => {
+      walkStore(s, cmd.storeId)
+    },
+  },
+  trainStore: {
+    can: (s, cmd) => {
+      if (s.era < 2) return no('Need Era 2.')
+      const r = canTrainStore(s, cmd.storeId)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => {
+      trainStore(s, cmd.storeId)
+    },
   },
 }

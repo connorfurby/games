@@ -1,8 +1,15 @@
-import { COMPUTE, SCANNER_PULSE } from '../balance'
+import { COMPUTE, OFFICE_REBALANCE, SCANNER_PULSE } from '../balance'
 import { attentionCap, attentionPerSec, ideasPerSec } from '../formulas'
 import { log } from '../helpers'
+import { basketRepEarned, nextRepThreshold } from '../reputation'
 import { nextRng } from '../rng'
 import type { GameState } from '../state'
+
+export type OfficeRebalanceToward = 'archive' | 'analyst'
+
+export function officeRebalanceCost(s: GameState) {
+  return Math.ceil(OFFICE_REBALANCE.baseCash * Math.pow(OFFICE_REBALANCE.growth, s.compute.officeMoves ?? 0))
+}
 
 /** Fill Attention, spill into Ideas when full, climb the Reputation fib ladder off baskets. */
 export function tickOffice(s: GameState, dt: number) {
@@ -24,10 +31,11 @@ export function tickOffice(s: GameState, dt: number) {
   while (s.baskets >= c.nextRepAt) {
     c.reputation += 1
     c.repEarned += 1
+    // Keep fib fields in sync for old UI/tests; ladder itself uses geometric gaps.
     const next = c.fibA + c.fibB
     c.fibA = c.fibB
     c.fibB = next
-    c.nextRepAt += c.fibA * 1000
+    c.nextRepAt = nextRepThreshold(basketRepEarned(c.repEarned))
     log(s, `Reputation +1. Next at ${Math.floor(c.nextRepAt)} baskets.`, 'good')
   }
 }
@@ -61,6 +69,46 @@ export function buyArchive(s: GameState) {
 export function toggleIdeas(s: GameState) {
   if (!s.compute.ideasUnlocked) return
   s.compute.ideasOn = !s.compute.ideasOn
+}
+
+/** Move one spent Reputation between Analyst and Archive for cash. Keeps ≥1 of each. */
+export function canRebalanceOffice(s: GameState, toward: OfficeRebalanceToward): string | null {
+  if (!s.compute.unlocked) return 'Back office is not open yet.'
+  const cost = officeRebalanceCost(s)
+  if (s.cash < cost) return `Need $${cost.toFixed(0)}.`
+  if (toward === 'archive') {
+    if (s.compute.analysts < 2) return 'Need a spare Analyst (keep at least one).'
+  } else if (s.compute.archives < 2) {
+    return 'Need a spare Archive (keep at least one).'
+  }
+  return null
+}
+
+export function rebalanceOffice(s: GameState, toward: OfficeRebalanceToward) {
+  const blocked = canRebalanceOffice(s, toward)
+  if (blocked) return
+  const cost = officeRebalanceCost(s)
+  s.cash -= cost
+  s.compute.officeMoves = (s.compute.officeMoves ?? 0) + 1
+  if (toward === 'archive') {
+    s.compute.analysts -= 1
+    s.compute.archives += 1
+    log(
+      s,
+      `Rebalanced office (−$${cost.toFixed(0)}): Analyst → Archive. Cap now ${attentionCap(s)}.`,
+      'memo',
+    )
+  } else {
+    s.compute.archives -= 1
+    s.compute.analysts += 1
+    const cap = attentionCap(s)
+    if (s.compute.attention > cap) s.compute.attention = cap
+    log(
+      s,
+      `Rebalanced office (−$${cost.toFixed(0)}): Archive → Analyst. Cap now ${cap}.`,
+      'memo',
+    )
+  }
 }
 
 export function canPulseScanner(s: GameState): string | null {

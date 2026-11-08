@@ -1,7 +1,8 @@
 import { clearGameSave, loadGame } from '@/shared/save'
+import { TUTORIALS } from '../content/tutorials'
 import { buildDevStage, unlockAllMenus } from './devStages'
 import { engine } from './engine'
-import { log } from './helpers'
+import { log, skipOpeningDialogue } from './helpers'
 import { migrate } from './migrate'
 import {
   DEV_SAVE_ID,
@@ -12,30 +13,46 @@ import {
 } from './saveKey'
 import { createInitialState, type GameState } from './state'
 
+/** Fresh DevMode starts past coach spam so stage jumps are usable. */
+function quietSandbox(s: GameState) {
+  s.introSeen = true
+  skipOpeningDialogue(s)
+  s.dialogueQueue = []
+  for (const t of TUTORIALS) s.tutorials.done[t.id] = true
+  s.tutorials.queue = []
+  s.tutorials.active = null
+  s.offlineReceipt = null
+  s.chapterQueue = []
+}
+
 /**
  * Enter the isolated DevMode sandbox.
  * Flushes the real campaign to PRIMARY_SAVE_ID first, then loads/creates DEV_SAVE_ID.
  * Meta / Shelf Tokens / achievements are not written while isDevSave().
  */
+function loadOrCreateDevSandbox() {
+  const raw = loadGame<unknown>(DEV_SAVE_ID)
+  if (raw == null) {
+    const s = createInitialState(90_001)
+    quietSandbox(s)
+    log(s, 'DevMode sandbox — separate from your real campaign save.', 'story')
+    log(s, 'Jump stages from More → DevMode. Wipe DevMode anytime.', 'story')
+    engine.replaceState(s)
+    return
+  }
+  engine.replaceState(migrate(raw))
+}
+
 export function enterDevSandbox() {
   if (isDevSave()) {
-    engine.reloadFromDisk()
+    loadOrCreateDevSandbox()
     return
   }
   setActiveSaveId(PRIMARY_SAVE_ID)
   engine.save()
 
   setActiveSaveId(DEV_SAVE_ID)
-  const raw = loadGame<unknown>(DEV_SAVE_ID)
-  if (raw == null) {
-    const s = createInitialState(90_001)
-    s.introSeen = true
-    log(s, 'DevMode sandbox — separate from your real campaign save.', 'story')
-    log(s, 'Jump stages from More → DevMode. Wipe DevMode anytime.', 'story')
-    engine.replaceState(s)
-  } else {
-    engine.replaceState(migrate(raw))
-  }
+  loadOrCreateDevSandbox()
 }
 
 /** Leave DevMode: flush sandbox, reload the real campaign into the engine. */
@@ -65,7 +82,7 @@ export function wipeDevSandbox() {
   if (!isDevSave()) return
   clearGameSave(DEV_SAVE_ID)
   const s = createInitialState(90_002)
-  s.introSeen = true
+  quietSandbox(s)
   log(s, 'DevMode wiped. Real campaign untouched.', 'story')
   engine.replaceState(s)
 }
@@ -103,6 +120,8 @@ export function devUnlockAllMenus() {
 export function devSkipIntroAndCoach() {
   devMutate((s) => {
     s.introSeen = true
+    skipOpeningDialogue(s)
+    s.dialogueQueue = []
     s.tutorials.active = null
     s.tutorials.queue = []
     log(s, 'DevMode — intro + coach cleared.', 'story')

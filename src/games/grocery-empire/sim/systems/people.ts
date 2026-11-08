@@ -7,8 +7,10 @@ import {
   restockWeight,
   shelfCap,
   staffLevelCap,
+  standingOrderMagnitude,
   unpackPerSec,
   up,
+  upgradeMagnitude,
   xpToLevel,
 } from '../formulas'
 import { addBatch, log, sumQty, takeUnits } from '../helpers'
@@ -67,7 +69,12 @@ export function tickStaffUnpack(s: GameState, dt: number) {
 export function tickStaffXp(s: GameState, dt: number) {
   if (!s.staff.length) return
   const cap = staffLevelCap(s)
-  const gain = STAFF_XP.perSec * dt * (1 + up(s, 'xp-gain') * STAFF_XP.trainingBonusPerLevel)
+  const nightXp =
+    s.hours > 1 ? upgradeMagnitude(s, 'closer') + upgradeMagnitude(s, 'traveling-team') * 0.5 : 0
+  const gain =
+    STAFF_XP.perSec *
+    dt *
+    (1 + up(s, 'xp-gain') * STAFF_XP.trainingBonusPerLevel + nightXp)
   for (const m of s.staff) {
     if (m.level >= cap) continue
     m.xp += gain
@@ -86,7 +93,12 @@ export function tickMorale(s: GameState, dt: number) {
     return
   }
   const target = moraleTarget(s)
-  const regen = MORALE.regenPerSec * (1 + up(s, 'morale-regen') * 0.2) * (memo(s, 'staff-room') ? 1.5 : 1)
+  const travelingCut = up(s, 'traveling-team') > 0 ? 0.7 : 1
+  const regen =
+    MORALE.regenPerSec *
+    (1 + up(s, 'morale-regen') * 0.2 + standingOrderMagnitude(s, 'break-extension', 0.35)) *
+    travelingCut *
+    (memo(s, 'staff-room') ? 1.5 : 1)
   if (s.morale < target) s.morale = Math.min(target, s.morale + regen * dt)
   else s.morale = Math.max(target, s.morale - regen * 0.5 * dt)
 }

@@ -1,137 +1,212 @@
+import { useState } from 'react'
 import { CHARTER_AXES } from '../../content/lateEras'
 import { can } from '../../sim/commands'
 import { endingOpen } from '../../sim/systems/endings'
 import { useGame } from '../GameContext'
 import { Btn } from '../components/Btn'
+import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { HelpCard } from '../components/HelpCard'
-import { Line } from '../components/Line'
-import { Meter } from '../components/Meter'
 import { Panel } from '../components/Panel'
-import { Section } from '../components/Section'
+import { Icon } from '../icons/Icon'
+import { FleetBand } from '../scenes/DepartmentBands'
 
 export function FleetPanel() {
-  const { state: s, dispatch } = useGame()
+  const { state: s, dispatch, reducedMotion } = useGame()
   const f = s.fleet
   const showEnding = endingOpen(s) || !!s.memos['universal-ration'] || s.era >= 6
+  const launchCheck = can(s, { type: 'launchBarge' })
+  const driftCheck = can(s, { type: 'startDriftWar' })
+  const charterCheck = can(s, { type: 'buyCharter' })
+  const guardianCheck = can(s, { type: 'applyGuardian' })
+  const rebootCheck = can(s, { type: 'rebootFleet' })
+  const acceptCheck = can(s, { type: 'acceptEnding' })
+  const rejectCheck = can(s, { type: 'rejectEnding' })
+  const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
 
   return (
-    <Panel title="Fleet" purpose="Barges, Charter, Guardian, and Legacy." lore="fleet">
-      <Section label="Barges">
-        <Line left="Barges" right={String(f.barges)} />
-        <Line left="Legacy" right={f.legacy.toFixed(1)} />
-        <Line left="War" right={f.warOn ? 'Drift war live' : 'Quiet'} />
-        <Line
-          left="Biomass"
-          right={`${Math.floor(f.biomass).toLocaleString()} / ${Math.floor(f.biomassMax).toLocaleString()}`}
-        />
-        <Meter value={f.biomass} max={Math.max(1, f.biomassMax)} label="Universe matter" />
-        <div className="ge-chip-row">
-          <Btn
-            tone="primary"
-            coachId="fleet-launch"
-            disabled={!can(s, { type: 'launchBarge' }).ok}
-            onClick={() => dispatch({ type: 'launchBarge' })}
-          >
-            Launch barge
-          </Btn>
-          <Btn
-            tone="ghost"
-            coachId="fleet-drift"
-            disabled={!can(s, { type: 'startDriftWar' }).ok}
-            onClick={() => dispatch({ type: 'startDriftWar' })}
-          >
-            Start drift war
-          </Btn>
+    <Panel
+      title="Fleet"
+      purpose="Launch barges. Spend Read and Charter."
+      lore="fleet"
+      scene={<FleetBand state={s} />}
+    >
+      {f.warOn ? (
+        <div className="ge-war-strip" role="status">
+          Drift war live — losses cost time and Legacy. Guardian preset available under pressure.
         </div>
-      </Section>
+      ) : null}
 
-      <Section label="Charter">
-        <Line left="Pool" right={String(f.charterPool)} />
-        <Line left="Cap" right={String(f.charterCap)} />
-        <Btn
-          tone="ghost"
-          disabled={!can(s, { type: 'buyCharter' }).ok}
-          onClick={() => dispatch({ type: 'buyCharter' })}
-        >
-          Buy point (Read)
-        </Btn>
-        {CHARTER_AXES.map((a) => (
-          <div key={a.id} className="ge-hire">
-            <div>
-              <strong>{a.name}</strong>
-              <p className="ge-muted">
-                {a.blurb} · {f.charter[a.id] ?? 0}
-              </p>
-            </div>
-            <div className="ge-chip-row">
-              <Btn
-                tone="ghost"
-                disabled={!can(s, { type: 'setCharterAxis', axis: a.id, delta: -1 }).ok}
-                onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: -1 })}
-              >
-                −
-              </Btn>
-              <Btn
-                tone="primary"
-                disabled={!can(s, { type: 'setCharterAxis', axis: a.id, delta: 1 }).ok}
-                onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: 1 })}
-              >
-                +
-              </Btn>
-            </div>
+      <div className="ge-dept-split">
+        <article className="ge-card ge-card--owned">
+          <header className="ge-empire-block__head">
+            <h3>Barges</h3>
+            <p>
+              {f.barges} barge{f.barges === 1 ? '' : 's'} · {f.warOn ? 'war live' : 'quiet waters'}
+            </p>
+          </header>
+          <div className="ge-card__actions">
+            <Btn
+              tone="primary"
+              coachId="fleet-launch"
+              disabled={!launchCheck.ok}
+              title={!launchCheck.ok ? launchCheck.reason : undefined}
+              onClick={() => dispatch({ type: 'launchBarge' })}
+            >
+              <Icon name="barge" size={14} />
+              Launch barge
+            </Btn>
+            <Btn
+              tone="ghost"
+              coachId="fleet-drift"
+              disabled={!driftCheck.ok}
+              title={!driftCheck.ok ? driftCheck.reason : undefined}
+              onClick={() => dispatch({ type: 'startDriftWar' })}
+            >
+              Drift war
+            </Btn>
           </div>
-        ))}
-        <div className="ge-chip-row">
-          <Btn
-            tone="primary"
-            coachId="fleet-guardian"
-            disabled={!can(s, { type: 'applyGuardian' }).ok}
-            onClick={() => dispatch({ type: 'applyGuardian' })}
-          >
-            Guardian preset
-          </Btn>
-          <Btn
-            tone="ghost"
-            disabled={!can(s, { type: 'rebootFleet' }).ok}
-            onClick={() => dispatch({ type: 'rebootFleet' })}
-          >
-            Reboot Fleet
-          </Btn>
-        </div>
-      </Section>
+        </article>
 
-      <Section label="Ending">
-        <p className="ge-muted">
-          {s.endingChoice
-            ? `Chose: ${s.endingChoice}`
-            : showEnding
-              ? 'Biomass cleared. Accept carries cosmetics into a hungry new universe. Reject ends in gallery silence.'
-              : 'Endings unlock when biomass clears (or Universal Ration).'}
-        </p>
-        <div className="ge-chip-row">
-          <Btn
-            tone="primary"
-            coachId="ending-accept"
-            disabled={!can(s, { type: 'acceptEnding' }).ok}
-            onClick={() => dispatch({ type: 'acceptEnding' })}
-          >
-            Accept
-          </Btn>
+        <article className="ge-card">
+          <header className="ge-empire-block__head">
+            <h3>Charter</h3>
+            <p>
+              Pool {f.charterPool} · Cap {f.charterCap}
+            </p>
+          </header>
           <Btn
             tone="ghost"
-            coachId="ending-reject"
-            disabled={!can(s, { type: 'rejectEnding' }).ok}
-            onClick={() => dispatch({ type: 'rejectEnding' })}
+            disabled={!charterCheck.ok}
+            title={!charterCheck.ok ? charterCheck.reason : undefined}
+            onClick={() => dispatch({ type: 'buyCharter' })}
           >
-            Reject
+            <Icon name="charter" size={14} />
+            Buy point (Read)
           </Btn>
+          <div className="ge-chip-row">
+            <Btn
+              tone="primary"
+              coachId="fleet-guardian"
+              disabled={!guardianCheck.ok}
+              title={!guardianCheck.ok ? guardianCheck.reason : undefined}
+              onClick={() => dispatch({ type: 'applyGuardian' })}
+            >
+              Guardian
+            </Btn>
+            <Btn
+              tone="ghost"
+              disabled={!rebootCheck.ok}
+              title={!rebootCheck.ok ? rebootCheck.reason : undefined}
+              onClick={() => dispatch({ type: 'rebootFleet' })}
+            >
+              Reboot
+            </Btn>
+          </div>
+        </article>
+      </div>
+
+      <section className="ge-empire-block">
+        <header className="ge-empire-block__head">
+          <h3>Charter axes</h3>
+          <p>Spend pool points across the doctrines of orbit.</p>
+        </header>
+        <div className="ge-card-grid">
+          {CHARTER_AXES.map((a) => {
+            const minusCheck = can(s, { type: 'setCharterAxis', axis: a.id, delta: -1 })
+            const plusCheck = can(s, { type: 'setCharterAxis', axis: a.id, delta: 1 })
+            return (
+              <article key={a.id} className="ge-card">
+                <div className="ge-card__head">
+                  <Icon name="charter" size={18} tone="accent" />
+                  <div>
+                    <strong>{a.name}</strong>
+                    <p className="ge-muted">{f.charter[a.id] ?? 0}</p>
+                  </div>
+                </div>
+                <p className="ge-card__blurb">{a.blurb}</p>
+                <div className="ge-card__actions">
+                  <Btn
+                    tone="ghost"
+                    disabled={!minusCheck.ok}
+                    title={!minusCheck.ok ? minusCheck.reason : undefined}
+                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: -1 })}
+                  >
+                    −
+                  </Btn>
+                  <Btn
+                    tone="primary"
+                    disabled={!plusCheck.ok}
+                    title={!plusCheck.ok ? plusCheck.reason : undefined}
+                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: 1 })}
+                  >
+                    +
+                  </Btn>
+                </div>
+              </article>
+            )
+          })}
         </div>
-      </Section>
+      </section>
+
+      {showEnding || s.endingChoice ? (
+        <section className="ge-empire-block">
+          <header className="ge-empire-block__head">
+            <h3>Ending</h3>
+            <p>
+              {s.endingChoice
+                ? `Chose: ${s.endingChoice}`
+                : 'Biomass cleared. Accept carries cosmetics; Reject ends in gallery silence.'}
+            </p>
+          </header>
+          <div className="ge-chip-row">
+            <Btn
+              tone="primary"
+              coachId="ending-accept"
+              disabled={!acceptCheck.ok}
+              title={!acceptCheck.ok ? acceptCheck.reason : undefined}
+              onClick={() =>
+                setConfirm({
+                  title: 'Accept the ending?',
+                  body: 'Accept carries cosmetics into the next universe. The hungry laws still apply.',
+                  confirmLabel: 'Accept',
+                  onConfirm: () => dispatch({ type: 'acceptEnding' }),
+                })
+              }
+            >
+              Accept
+            </Btn>
+            <Btn
+              tone="ghost"
+              coachId="ending-reject"
+              disabled={!rejectCheck.ok}
+              title={!rejectCheck.ok ? rejectCheck.reason : undefined}
+              onClick={() =>
+                setConfirm({
+                  title: 'Reject the ending?',
+                  body: 'Reject ends in gallery silence. This choice sticks for the run.',
+                  confirmLabel: 'Reject',
+                  tone: 'danger',
+                  onConfirm: () => dispatch({ type: 'rejectEnding' }),
+                })
+              }
+            >
+              Reject
+            </Btn>
+          </div>
+        </section>
+      ) : null}
 
       <HelpCard title="Orbit is still a shelf">
         Barges stock the void the way clerks stock aisles. Charter points are doctrines. Legacy is the
-        score when Off-Brand copies your fonts. Accept or Reject is a law — not a high-score wipe.
+        score when Off-Brand copies your fonts.
       </HelpCard>
+
+      <ConfirmModal
+        open={!!confirm}
+        spec={confirm}
+        reducedMotion={reducedMotion}
+        onClose={() => setConfirm(null)}
+      />
     </Panel>
   )
 }

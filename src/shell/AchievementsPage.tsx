@@ -46,9 +46,13 @@ export function AchievementsPage() {
   }
 
   return (
-    <div className="ach-page">
-      <Link to="/">← Shelf</Link>
-      <h1 className="brand">Achievements</h1>
+    <div className="ach-page shell-subpage">
+      <p className="shell-subpage__nav">
+        <Link to="/">Home</Link>
+        <Link to="/play/grocery-empire">Play</Link>
+        <Link to="/shop">Shop</Link>
+      </p>
+      <h1 className="brand brand--page">Achievements</h1>
       <p className="tokens">
         {unlocked} / {ACHIEVEMENTS.length} unlocked · {tokenEarned} tokens earned · {meta.shelfTokens}{' '}
         held · {tokenPossible} possible

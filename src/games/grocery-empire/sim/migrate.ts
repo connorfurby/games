@@ -1,15 +1,18 @@
 import { CATEGORY_IDS } from '../content/categories'
 import { MENU_IDS } from '../content/menus'
-import { SAVE_VERSION } from './balance'
-import { log } from './helpers'
+import { COMPUTE, HISTORY, SAVE_VERSION } from './balance'
+import { log, skipOpeningDialogue } from './helpers'
 import { repair } from './invariants'
+import { basketRepEarned, deservedRepEarned, nextRepThreshold } from './reputation'
 import {
   createInitialState,
   emptyCold,
   emptyFleet,
   emptyPolitics,
   emptyPrestigeCarry,
+  emptyRateAvg,
   emptyStats,
+  isRivalKind,
   type GameState,
   type OfflineReceipt,
   type PrestigeMutatorId,
@@ -86,7 +89,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       base.createdAt = num(raw.createdAt, now)
       base.lastSavedAt = num(raw.lastSavedAt, now)
       base.paused = bool(raw.paused, false)
-      base.speed = [1, 2, 4].includes(num(raw.speed, 1)) ? num(raw.speed, 1) : 1
+      base.speed = [1, 2, 4, 8].includes(num(raw.speed, 1)) ? num(raw.speed, 1) : 1
       base.era = Math.max(0, Math.floor(num(raw.era, 0)))
 
       base.baskets = Math.max(0, num(raw.baskets, 0))
@@ -121,7 +124,12 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           phase: num(raw.wholesale.phase, 0),
           drift: num(raw.wholesale.drift, 1),
           idleSec: num(raw.wholesale.idleSec, 0),
-          history: Array.isArray(raw.wholesale.history) ? (raw.wholesale.history as number[]) : [],
+          history: Array.isArray(raw.wholesale.history)
+            ? (raw.wholesale.history as unknown[])
+                .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
+                .slice(-HISTORY.keep)
+            : [],
+          tipIndex: num(raw.wholesale.tipIndex, num(raw.wholesale.index, base.wholesale.index)),
         }
       }
       base.supplier = raw.supplier === 'b' ? 'b' : 'a'
@@ -135,6 +143,15 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       base.adCost = Math.max(1, num(raw.adCost, 20))
       base.lastAdAt = num(raw.lastAdAt, -1)
       base.lastAdSpend = num(raw.lastAdSpend, 0)
+      {
+        const posture = raw.marketingPosture
+        base.marketingPosture =
+          posture === 'circular' || posture === 'houseBrand' || posture === 'neighborhood'
+            ? posture
+            : 'neighborhood'
+      }
+      base.priceLockUntil = Math.max(0, num(raw.priceLockUntil, 0))
+      base.priceLockIndex = Math.max(0.01, num(raw.priceLockIndex, base.wholesale.index))
       base.hours = num(raw.hours, 1)
       if (isObject(raw.weather)) {
         const nowW = raw.weather.now
@@ -163,15 +180,25 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       }
       if (isObject(raw.events) && isObject(raw.events.couponWar)) {
         const cw = raw.events.couponWar
+        const rv = isObject(raw.events.rival) ? raw.events.rival : null
+        const kind = rv?.kind
         base.events = {
           couponWar: {
             active: bool(cw.active, false),
             endsAt: num(cw.endsAt, 0),
             lastAt: num(cw.lastAt, -1e9),
           },
+          rival: {
+            kind: isRivalKind(kind) ? kind : null,
+            endsAt: Math.max(0, num(rv?.endsAt, 0)),
+            lastAt: num(rv?.lastAt, -1e9),
+          },
         }
       } else {
-        base.events = { couponWar: { active: false, endsAt: 0, lastAt: -1e9 } }
+        base.events = {
+          couponWar: { active: false, endsAt: 0, lastAt: -1e9 },
+          rival: { kind: null, endsAt: 0, lastAt: -1e9 },
+        }
       }
       if (isObject(raw.campaigns)) {
         base.campaigns = {
@@ -197,6 +224,8 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           fibA: Math.max(1, Math.floor(num(c.fibA, 2))),
           fibB: Math.max(1, Math.floor(num(c.fibB, 3))),
           retrains: Math.max(0, Math.floor(num(c.retrains, 0))),
+          perkRespecs: Math.max(0, Math.floor(num(c.perkRespecs, 0))),
+          officeMoves: Math.max(0, Math.floor(num(c.officeMoves, 0))),
           scanner: bool(c.scanner, false) || Boolean(raw.memos && (raw.memos as Record<string, number>)['scanner-array']),
           scannerReadyAt: Math.max(0, num(c.scannerReadyAt, 0)),
         }
@@ -242,6 +271,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
               ? st.policy
               : 'standard',
           attentionShare: Math.max(0, Math.min(1, num(st?.attentionShare, 0))),
+          drift: Math.max(0, Math.min(1, num((st as { drift?: number })?.drift, 0))),
         }))
       }
       base.nextStoreId = Math.max(1, Math.floor(num(raw.nextStoreId, base.stores.length + 1)))
@@ -263,10 +293,19 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       if (isObject(raw.doctrines)) base.doctrines = raw.doctrines as Record<string, number>
       base.depot = bool(raw.depot, false)
       base.autonomous = bool(raw.autonomous, false)
+      {
+        const h = typeof raw.autonomousHabit === 'string' ? raw.autonomousHabit : 'balanced'
+        base.autonomousHabit =
+          h === 'price' || h === 'attention' || h === 'collect' || h === 'balanced' ? h : 'balanced'
+      }
       if (isObject(raw.board)) {
         base.board.seats = Math.max(1, Math.floor(num(raw.board.seats, 3)))
         base.board.nextMeetingAt = Math.max(0, num(raw.board.nextMeetingAt, 0))
         base.board.lastResolvedAt = Math.max(0, num(raw.board.lastResolvedAt, 0))
+        base.board.pendingAgenda = null
+        base.board.expandDiscount = Math.max(0.5, Math.min(1, num(raw.board.expandDiscount, 1)))
+        base.board.rndUntil = Math.max(0, num(raw.board.rndUntil, 0))
+        base.board.cutHoursUntil = Math.max(0, num(raw.board.cutHoursUntil, 0))
       }
       base.repSpent = Math.max(0, Math.floor(num(raw.repSpent, 0)))
 
@@ -378,6 +417,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           stallSec: num(raw.recovery.stallSec, 0),
           lastEmptyShelfAt: legacyHelper,
           lastBailoutAt: num(raw.recovery.lastBailoutAt, -1e9),
+          lastMentorAt: num(raw.recovery.lastMentorAt, -1e9),
           lastInterventionAt: num(raw.recovery.lastInterventionAt, -1e9),
           watchdogTimer: num(raw.recovery.watchdogTimer, 0),
           lastProgress: num(raw.recovery.lastProgress, 0),
@@ -392,8 +432,23 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         base.tipsSeen = seen
       }
 
+      if (isObject(raw.seenLines)) {
+        const lines: Record<string, true> = {}
+        for (const [k, v] of Object.entries(raw.seenLines)) {
+          if (v) lines[k] = true
+        }
+        base.seenLines = lines
+      }
+      if (Array.isArray(raw.dialogueQueue)) {
+        base.dialogueQueue = (raw.dialogueQueue as unknown[])
+          .filter((id): id is string => typeof id === 'string')
+          .slice(0, 40)
+      }
+
       // Existing saves skip the opening cutscene; brand-new runs keep introSeen false.
       base.introSeen = bool(raw.introSeen, raw != null)
+      // Migrated / resumed runs already past the strip opener — do not block coach.
+      if (base.introSeen) skipOpeningDialogue(base)
 
       if (isObject(raw.museum) && Array.isArray(raw.museum.exhibits)) {
         base.museum = {
@@ -418,6 +473,8 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         base.rates.costPerSec = num(raw.rates.costPerSec, 0)
         base.rates.spoilPerSec = num(raw.rates.spoilPerSec, 0)
         base.rates.demandPerSec = num(raw.rates.demandPerSec, 0)
+        base.rates.venturePerSec = num(raw.rates.venturePerSec, 0)
+        base.rates.investYieldPerSec = num(raw.rates.investYieldPerSec, 0)
       }
       if (isObject(raw.history)) {
         base.history.cash = Array.isArray(raw.history.cash) ? (raw.history.cash as number[]) : []
@@ -442,12 +499,68 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         base.acc.lastSpoilLogAt = num(raw.acc.lastSpoilLogAt, -1e9)
         base.acc.lastShrinkLogAt = num(raw.acc.lastShrinkLogAt, -1e9)
         base.acc.lastPoetryAt = num(raw.acc.lastPoetryAt, -1e9)
+        base.acc.lastDipLogAt = num(raw.acc.lastDipLogAt, -1e9)
+        base.acc.lastCloneAt = num(raw.acc.lastCloneAt, -1e9)
+      }
+      if (isObject(raw.rateAvg)) {
+        const ra = emptyRateAvg()
+        ra.t = num(raw.rateAvg.t, 0)
+        ra.curSold = num(raw.rateAvg.curSold, 0)
+        ra.curRev = num(raw.rateAvg.curRev, 0)
+        ra.curCost = num(raw.rateAvg.curCost, 0)
+        ra.curSpoil = num(raw.rateAvg.curSpoil, 0)
+        ra.sold = Array.isArray(raw.rateAvg.sold)
+          ? (raw.rateAvg.sold as unknown[]).map((v) => num(v, 0)).filter((v) => v >= 0)
+          : []
+        ra.rev = Array.isArray(raw.rateAvg.rev)
+          ? (raw.rateAvg.rev as unknown[]).map((v) => num(v, 0)).filter((v) => v >= 0)
+          : []
+        ra.cost = Array.isArray(raw.rateAvg.cost)
+          ? (raw.rateAvg.cost as unknown[]).map((v) => num(v, 0)).filter((v) => v >= 0)
+          : []
+        ra.spoil = Array.isArray(raw.rateAvg.spoil)
+          ? (raw.rateAvg.spoil as unknown[]).map((v) => num(v, 0)).filter((v) => v >= 0)
+          : []
+        base.rateAvg = ra
+      } else {
+        base.rateAvg = emptyRateAvg()
       }
       if (raw.offlineReceipt === null) base.offlineReceipt = null
       else if (isObject(raw.offlineReceipt)) base.offlineReceipt = raw.offlineReceipt as unknown as OfflineReceipt
 
       base.version = SAVE_VERSION
-      if (version < SAVE_VERSION) {
+      if (version < 3) {
+        // Balanced aisle economy: recompute Reputation from baskets; leave cash piles.
+        const deserved = deservedRepEarned(base.baskets)
+        if (deserved > base.compute.repEarned) {
+          const gain = deserved - base.compute.repEarned
+          base.compute.reputation += gain
+          base.compute.repEarned = deserved
+        }
+        base.compute.nextRepAt = nextRepThreshold(basketRepEarned(base.compute.repEarned))
+        // Starter free Rep still counts even before first basket milestone.
+        if (base.compute.repEarned < COMPUTE.freeRep) {
+          base.compute.repEarned = COMPUTE.freeRep
+          base.compute.reputation = Math.max(base.compute.reputation, COMPUTE.freeRep)
+        }
+        if (!base.marketingPosture) base.marketingPosture = 'neighborhood'
+        log(
+          base,
+          'Save migrated to v3 — the book no longer compounds a fortune; Reputation was brought in line with baskets.',
+          'era',
+        )
+      }
+      if (version < 4) {
+        // v4 (Grocery Empire 2.0): Board, per-store drift, Brand demand. All additive — never wipes progress.
+        for (const st of base.stores) st.drift = Math.max(0, Math.min(1, num(st.drift, 0)))
+        base.board.expandDiscount = Math.max(0.5, Math.min(1, num(base.board.expandDiscount, 1)))
+        base.board.rndUntil = Math.max(0, num(base.board.rndUntil, 0))
+        base.board.cutHoursUntil = Math.max(0, num(base.board.cutHoursUntil, 0))
+        base.board.seats = Math.max(1, Math.floor(num(base.board.seats, 3)))
+        base.brand = Math.max(0.05, Math.min(1, num(raw.brand, num(base.brand, 1))))
+        base.repSpent = Math.max(0, Math.floor(num(base.repSpent, 0)))
+        if (version >= 3) log(base, `Save migrated to v${SAVE_VERSION}.`, 'info')
+      } else if (version < SAVE_VERSION) {
         log(base, `Save migrated to v${SAVE_VERSION}.`, 'info')
       }
       return repair(base)

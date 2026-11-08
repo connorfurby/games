@@ -97,6 +97,12 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     test: (s) => !!s.menus.invest || (s.memos['passbook'] ?? 0) > 0,
   },
   {
+    id: 'e1-weather',
+    era: 1,
+    label: 'Live through a weather day',
+    test: (s) => s.stats.weatherDays >= 1,
+  },
+  {
     id: 'e1-lot',
     era: 1,
     label: 'Buy the lot expansion',
@@ -164,6 +170,24 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     label: 'Release Autonomous fulfillment',
     test: (s) => s.autonomous,
   },
+  {
+    id: 'e2-board-meeting',
+    era: 2,
+    label: 'Resolve a board meeting',
+    test: (s) => s.stats.boardMeetings >= 1,
+  },
+  {
+    id: 'e2-rival-answer',
+    era: 2,
+    label: 'Answer a rival move or match a coupon war',
+    test: (s) => s.stats.rivalAnswers + s.stats.couponMatches >= 1,
+  },
+  {
+    id: 'e2-doctrine',
+    era: 2,
+    label: 'Buy a doctrine',
+    test: (s) => s.stats.doctrinesBought >= 1,
+  },
 
   // ── Era 3 ────────────────────────────────────────────────────────────────
   {
@@ -202,13 +226,99 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     label: 'Leave region',
     test: (s) => s.politics.leftRegion || s.era >= 4,
   },
+  {
+    id: 'e3-lobby',
+    era: 3,
+    label: 'Sign the Lobby Retainer',
+    test: (s) => (s.memos['lobby-office'] ?? 0) > 0 || (s.politics?.lobby ?? 0) > 0,
+  },
+  {
+    id: 'e3-acquisition',
+    era: 3,
+    label: 'Make one acquisition',
+    test: (s) => (s.politics?.acquisitions ?? 0) >= 1,
+  },
+  {
+    id: 'e3-brownout-survive',
+    era: 3,
+    label: 'Weather a brownout (tanks help)',
+    test: (s) => (s.cold?.brownouts ?? 0) >= 1,
+  },
 
-  // ── Era 4–6 ──────────────────────────────────────────────────────────────
+  // ── Era 4 · Autonomous Globe ─────────────────────────────────────────────
+  {
+    id: 'e4-logistics-menu',
+    era: 4,
+    label: 'Open Logistics',
+    test: (s) => !!s.menus.logistics,
+  },
   {
     id: 'e4-ocean-lane',
     era: 4,
     label: 'Open first ocean lane with fuel buffer',
     test: (s) => s.fleet.lanes >= 1 || !!s.memos['ocean-lane'],
+  },
+  {
+    id: 'e4-fuel-buffer',
+    era: 4,
+    label: 'Take the Fuel Buffer Policy',
+    test: (s) => (s.memos['fuel-buffer'] ?? 0) > 0,
+  },
+  {
+    id: 'e4-lanes-3',
+    era: 4,
+    label: 'Run three ocean lanes',
+    test: (s) => s.fleet.lanes >= 3,
+  },
+  {
+    id: 'e4-control-tower',
+    era: 4,
+    label: 'Staff the Control Tower',
+    test: (s) => (s.memos['control-tower'] ?? 0) > 0,
+  },
+  {
+    id: 'e4-control-10',
+    era: 4,
+    label: 'Bank 10 Control',
+    test: (s) => s.control >= 10,
+  },
+  {
+    id: 'e4-franchise',
+    era: 4,
+    label: 'Open a franchise (Brand will drift)',
+    test: (s) => s.fleet.franchises >= 1 || (s.memos['franchise-kit'] ?? 0) > 0,
+  },
+  {
+    id: 'e4-brand-steady',
+    era: 4,
+    label: 'Hold Brand above 80%',
+    test: (s) => s.brand >= 0.8,
+  },
+
+  // ── Era 5 ────────────────────────────────────────────────────────────────
+  {
+    id: 'e5-berth',
+    era: 5,
+    label: 'Build the Seed Barge Berth',
+    test: (s) => (s.memos['barge-berth'] ?? 0) > 0,
+  },
+  {
+    id: 'e5-fleet-menu',
+    era: 5,
+    label: 'Open Fleet',
+    test: (s) => !!s.menus.fleet,
+  },
+  {
+    id: 'e5-charter-opener',
+    era: 5,
+    label: 'Fund the Charter opener',
+    test: (s) => (s.memos['charter-opener'] ?? 0) > 0,
+  },
+  {
+    id: 'e5-allocate',
+    era: 5,
+    label: 'Allocate six Charter points',
+    test: (s) => Object.values(s.fleet.charter).reduce((a, n) => a + Math.max(0, n), 0) >= 6,
   },
   {
     id: 'e5-charter',
@@ -217,16 +327,66 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     test: (s) => s.fleet.launched || s.fleet.barges >= 1,
   },
   {
+    id: 'e5-barges-3',
+    era: 5,
+    label: 'Field three barges',
+    test: (s) => s.fleet.barges >= 3,
+  },
+  {
+    id: 'e5-drift-war',
+    era: 5,
+    label: 'Meet Off-Brand in a drift war',
+    test: (s) => s.fleet.warOn || s.fleet.legacy > 0 || (s.memos['off-brand-war'] ?? 0) > 0,
+  },
+  {
+    id: 'e5-barges-10',
+    era: 5,
+    label: 'Field ten barges',
+    test: (s) => s.fleet.barges >= 10,
+  },
+  {
     id: 'e5-guardian',
     era: 5,
     label: 'Use Guardian preset or win a drift battle',
     test: (s) => s.fleet.guardianUsed || (s.fleet.warOn && s.fleet.legacy > 0) || s.fleet.biomass <= 0,
+  },
+
+  // ── Era 6 ────────────────────────────────────────────────────────────────
+  {
+    id: 'e6-era',
+    era: 6,
+    label: 'Reach the Hungry Universe',
+    test: (s) => s.era >= 6,
+  },
+  {
+    id: 'e6-legacy-5',
+    era: 6,
+    label: 'Bank 5 Legacy',
+    test: (s) => s.fleet.legacy >= 5,
+  },
+  {
+    id: 'e6-read-25',
+    era: 6,
+    label: 'Hold 25 Read',
+    test: (s) => s.read >= 25,
   },
   {
     id: 'e6-biomass',
     era: 6,
     label: 'Clear universe biomass',
     test: (s) => s.fleet.launched && s.fleet.biomass <= 0,
+  },
+  {
+    id: 'e6-ration',
+    era: 6,
+    label: 'Stamp the Universal Ration',
+    test: (s) => (s.memos['universal-ration'] ?? 0) > 0,
+  },
+  {
+    id: 'e6-hungry-law',
+    era: 6,
+    label: 'Pick a Hungry law for the next universe',
+    test: (s) => (s.prestigeCarry?.mutators?.length ?? 0) >= 1,
   },
   {
     id: 'e6-ending',

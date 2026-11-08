@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { subscribeHotkeyOpen } from './AppMenu'
 
 const ROWS: { keys: string; action: string }[] = [
   { keys: 'U', action: 'Unpack (in-game)' },
   { keys: '[ ] or − +', action: 'Nudge price' },
   { keys: 'Space', action: 'Pause / resume' },
+  { keys: 'Ctrl/Cmd+Z', action: 'Undo last action (5s window)' },
   { keys: '1–9', action: 'Jump unlocked menus (skipped during coach)' },
   {
     keys: 'Esc',
@@ -17,6 +19,8 @@ const ROWS: { keys: string; action: string }[] = [
 
 export function HotkeyOverlay() {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => subscribeHotkeyOpen(() => setOpen(true)), [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
