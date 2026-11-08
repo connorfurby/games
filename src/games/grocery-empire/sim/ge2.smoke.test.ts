@@ -97,8 +97,8 @@ describe('Grocery Empire 2.0 smoke', () => {
     expect(canReleaseAutonomous(s)).toBeNull()
   })
 
-  it('SAVE_VERSION is 4 and migrate sets it', () => {
-    expect(SAVE_VERSION).toBe(4)
+  it('SAVE_VERSION is 5 and migrate sets it', () => {
+    expect(SAVE_VERSION).toBe(5)
     const m = migrate({ version: 3, cash: 10, baskets: 1 })
     expect(m.version).toBe(SAVE_VERSION)
     expect(m.board.expandDiscount).toBeDefined()
@@ -209,7 +209,7 @@ describe('Grocery Empire 2.0 smoke', () => {
     const raw = JSON.parse(JSON.stringify(src))
     raw.version = 3
     const m = migrate(raw)
-    expect(m.version).toBe(4)
+    expect(m.version).toBe(SAVE_VERSION)
     expect(m.stores[0]!.drift).toBeCloseTo(0.4, 5)
     expect(m.board.expandDiscount).toBeCloseTo(0.9, 5)
   })

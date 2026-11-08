@@ -65,6 +65,18 @@ export function applyEvenAttentionFloor(s: GameState) {
   }
 }
 
+/** Attention the chain consumes per second (charged against regen in tickOffice). */
+export function chainAttentionDrainPerSec(s: GameState): number {
+  if (s.era < 2 || s.stores.length === 0 || !s.compute.unlocked) return 0
+  const allocated = s.stores.reduce((a, st) => a + st.attentionShare, 0)
+  if (allocated <= 0) return 0
+  const metroMul = s.expansions['metro-slot'] ? CHAIN.metroAttDrainMul : 1
+  const softcap = !s.depot && s.stores.length >= 5 ? 1.5 : 1
+  return (
+    CHAIN.attentionDrainPerSec * allocated * Math.min(1.5, 0.6 + s.stores.length * 0.15) * metroMul * softcap
+  )
+}
+
 /** Weighted chain demand multiplier from store count, policies, attention, depot. */
 export function chainDemandMul(s: GameState): number {
   if (s.era < 2 || s.stores.length === 0) return 1
@@ -97,7 +109,9 @@ export function chainDemandMul(s: GameState): number {
     const half = !s.depot && i >= 4
     countBonus += half ? perStore * 0.5 : perStore
   }
-  const countMul = 1 + countBonus
+  // 2.0: extra stores no longer pour demand into the flagship — they run as engines
+  // (see systems/network.ts). Keep a light 'foot traffic' echo.
+  const countMul = 1 + countBonus * 0.15
   const depotMul = s.depot ? CHAIN.depotDemandMul : 1
   // Drift (0..1) softens demand when a store hasn't been walked.
   let driftPenalty = 0
@@ -179,19 +193,8 @@ export function tickChain(s: GameState, dt: number, soldThisTick = 0) {
   normalizeAttentionShares(s)
   if ((s.upgrades['even-att'] ?? 0) >= 1) applyEvenAttentionFloor(s)
 
-  const allocated = s.stores.reduce((a, st) => a + st.attentionShare, 0)
-  if (allocated > 0 && s.compute.unlocked) {
-    const metroMul = s.expansions['metro-slot'] ? CHAIN.metroAttDrainMul : 1
-    const softcap = !s.depot && s.stores.length >= 5 ? 1.5 : 1
-    const drain =
-      CHAIN.attentionDrainPerSec *
-      allocated *
-      dt *
-      Math.min(1.5, 0.6 + s.stores.length * 0.15) *
-      metroMul *
-      softcap
-    s.compute.attention = Math.max(0, s.compute.attention - drain)
-  }
+  // Attention upkeep is charged inside tickOffice (see chainAttentionDrainPerSec) so a
+  // full bar can still sit at cap and pay for cap-sized memos.
 
   if (soldThisTick > 0 && s.stores.length > 0) {
     const fair = 1 / s.stores.length
@@ -236,19 +239,26 @@ export function walkStore(s: GameState, id: string, attCost = 40): string | null
   return null
 }
 
-export function canTrainStore(s: GameState, id: string, attCost = 60): string | null {
+/** Attention cost to train this store once more. */
+export function trainStoreCost(st: StoreState): number {
+  return Math.ceil(CHAIN.trainAttBase * Math.pow(CHAIN.trainAttGrowth, Math.max(0, st.level - 1)))
+}
+
+export function canTrainStore(s: GameState, id: string, attCost?: number): string | null {
   const st = findStore(s, id)
   if (!st) return 'Store not found.'
+  attCost = attCost ?? trainStoreCost(st)
   if (st.level >= CHAIN.maxStoreLevel) return 'Store already at max level.'
   if (s.compute.attention < attCost) return `Need ${attCost} Attention.`
   return null
 }
 
 /** Spend Attention to train a store (XP). */
-export function trainStore(s: GameState, id: string, attCost = 60): string | null {
+export function trainStore(s: GameState, id: string, attCost?: number): string | null {
   const blocked = canTrainStore(s, id, attCost)
   if (blocked) return blocked
   const st = findStore(s, id)!
+  attCost = attCost ?? trainStoreCost(st)
   s.compute.attention -= attCost
   st.xp += CHAIN.xpPerLevel * st.level * 0.55
   levelStore(st)

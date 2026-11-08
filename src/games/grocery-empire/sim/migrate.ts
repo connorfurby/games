@@ -325,6 +325,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           browned: bool(c.browned, d.browned),
           brownouts: Math.max(0, Math.floor(num(c.brownouts, d.brownouts))),
           autoSheds: Math.max(0, Math.floor(num(c.autoSheds, d.autoSheds))),
+          offline: Math.max(0, Math.floor(num(c.offline, d.offline))),
           momentumHoldSec: Math.max(0, num(c.momentumHoldSec, d.momentumHoldSec)),
           quadratic: bool(c.quadratic, d.quadratic),
           lastBrownoutLogAt: num(c.lastBrownoutLogAt, d.lastBrownoutLogAt),

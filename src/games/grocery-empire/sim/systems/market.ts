@@ -1,3 +1,4 @@
+import { bookNetworkSales } from './network'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
 import { DEMAND, EMPIRE, INSPECTION, SHRINK, WEATHER_SEC, WHOLESALE } from '../balance'
 import {
@@ -172,7 +173,9 @@ export function tickSales(s: GameState, dt: number): { sold: number; revenue: nu
     const wc = wantBy[c]
     if (wc === undefined) continue
     const onShelf = sumQty(s.shelf, c)
-    s.acc.cat[c] = Math.min(2, s.acc.cat[c] + wc)
+    // Carry at most ~2 ticks of unmet want, so empty shelves never bank a burst —
+    // scaled by this tick's want so the cap is the same at 10 Hz and at 1 s steps.
+    s.acc.cat[c] = Math.min(Math.max(2, wc * 2), s.acc.cat[c] + wc)
     const n = Math.min(onShelf, Math.floor(s.acc.cat[c]))
     if (n <= 0) continue
     s.acc.cat[c] -= n
@@ -202,7 +205,8 @@ export function tickSales(s: GameState, dt: number): { sold: number; revenue: nu
     }
   }
   if (sumQty(s.shelf) === 0) s.stats.stockoutSec += dt
-  return { sold, revenue }
+  const network = bookNetworkSales(s, sold, revenue)
+  return { sold, revenue: revenue + network }
 }
 
 export function tickShrink(s: GameState, dt: number) {

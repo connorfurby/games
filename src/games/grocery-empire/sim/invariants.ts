@@ -220,6 +220,7 @@ export function repair(s: GameState): GameState {
     s.cold.yieldLeft = Math.max(0, finite(s.cold.yieldLeft))
     s.cold.yieldMax = Math.max(0, finite(s.cold.yieldMax))
     s.cold.autoSheds = Math.max(0, Math.floor(finite(s.cold.autoSheds)))
+    s.cold.offline = Math.max(0, Math.floor(finite(s.cold.offline ?? 0)))
     s.cold.brownouts = Math.max(0, Math.floor(finite(s.cold.brownouts)))
     s.cold.momentumHoldSec = Math.max(0, finite(s.cold.momentumHoldSec))
   }

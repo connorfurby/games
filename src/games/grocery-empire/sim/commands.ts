@@ -1,8 +1,9 @@
+import { valueMul } from './systems/network'
 import { TRACK_BY_ID, type BuildFilter, refundFrac } from '../content/builds'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ERA2_EXPANSION_BY_ID } from '../content/era2'
 import { INTRO_BEATS } from '../content/intro'
-import { MEMO_BY_ID } from '../content/memos'
+import { MEMO_BY_ID, MEMOS } from '../content/memos'
 import { PERK_BY_ID } from '../content/perks'
 import { ROLE_IDS, traitForStaffId, type RoleId } from '../content/staff'
 import { TIP_BY_ID } from '../content/tips'
@@ -14,6 +15,7 @@ import {
 } from '../content/upgrades'
 import { VENTURE_BY_ID, ventureLevelCost } from '../content/ventures'
 import {
+  CAPITAL,
   DEMAND,
   EMPIRE,
   ENDCAP,
@@ -1338,7 +1340,8 @@ export function tickAutoRestock(s: GameState) {
   if (!order.length && s.categories[s.orderCat]) order.push(s.orderCat)
   const crates = s.supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
   for (const cat of order) {
-    if (unitCost(s, cat) > s.autoRestock.maxCost) continue
+    // maxCost is in base (stall-tier) dollars so the cap survives the 2.0 value ladder.
+    if (unitCost(s, cat) / valueMul(s) > s.autoRestock.maxCost) continue
     if (!can(s, { type: 'buyWholesale', cat, crates }).ok) continue
     run(s, { type: 'buyWholesale', cat, crates })
     return
@@ -1351,6 +1354,18 @@ export function tickAutoTournament(s: GameState) {
   if (s.era < 2 || !s.compute.unlocked) return
   const cap = attentionCap(s)
   if (cap <= 0 || s.compute.attention < cap * 0.98) return
+  // Never eat Attention that a memo on the desk is waiting for.
+  const after = s.compute.attention - CAPITAL.tournamentAttention
+  for (const m of MEMOS) {
+    if (!s.memoSeen[m.id]) continue
+    if ((s.memos[m.id] ?? 0) > 0 && !m.repeatable) continue
+    try {
+      const need = m.cost(s).attention ?? 0
+      if (need > after && need <= cap) return
+    } catch {
+      /* ignore */
+    }
+  }
   const cmd: Command = { type: 'runTournament' }
   if (can(s, cmd).ok) run(s, cmd)
 }

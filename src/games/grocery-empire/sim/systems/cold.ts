@@ -4,7 +4,7 @@ import { log, round2, unlockMenu } from '../helpers'
 import type { GameState } from '../state'
 
 export function plantCost(s: GameState): number {
-  return Math.ceil(COLD.plantCost * Math.pow(COLD.plantGrowth, s.cold.plants))
+  return Math.ceil(COLD.plantCost * Math.pow(COLD.plantGrowth, s.cold.plants + (s.cold.offline ?? 0)))
 }
 
 export function tankCost(s: GameState): number {
@@ -70,16 +70,24 @@ export function decommissionPlant(s: GameState) {
 
 function autoShedNewestPlant(s: GameState) {
   if (s.cold.plants <= 0) return false
-  // Never wipe all plants if tanks still hold the line — keep at least 0 is ok
-  // when browned; rule is never wipe *all* in one shed if multiple exist.
-  if (s.cold.plants === 1 && s.cold.tanks > 0) {
-    // Shed is allowed down to 0 plants but leave tanks — "never wipe all" means
-    // don't zero plants and tanks together. Keep tanks.
-  }
+  // Delay, not doom: the plant waits offline and returns when the line can carry it.
   s.cold.plants -= 1
+  s.cold.offline = (s.cold.offline ?? 0) + 1
   s.cold.autoSheds += 1
   log(s, 'Auto-shed: newest cold plant taken offline until surplus returns.', 'warn')
   return true
+}
+
+/** Bring one shed plant back when the line has room for it (with a 5% margin). */
+function restoreOfflinePlant(s: GameState) {
+  if ((s.cold.offline ?? 0) <= 0) return
+  s.cold.plants += 1
+  const ok = coldSupply(s) >= coldDemand(s) * 1.05
+  s.cold.plants -= 1
+  if (!ok) return
+  s.cold.plants += 1
+  s.cold.offline -= 1
+  log(s, 'Cold plant back online.', 'good')
 }
 
 /** Freshness, Momentum, brownout floor, yield drain, mild plant income. */
@@ -115,6 +123,7 @@ export function tickCold(s: GameState, dt: number) {
     // Momentum pauses — do not erase permanently
     autoShedNewestPlant(s)
   } else {
+    restoreOfflinePlant(s)
     if (s.cold.browned && ratio >= 1) {
       s.cold.browned = false
       log(s, 'Cold line recovered. Freshness climbing; Momentum may resume.', 'good')

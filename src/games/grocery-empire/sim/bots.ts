@@ -1,9 +1,12 @@
+import { goalCash, goalNeeds, nextGoal } from '../content/goals'
 import { MEMOS } from '../content/memos'
+import { PERK_BY_ID } from '../content/perks'
 import { ROLE_IDS, type RoleId } from '../content/staff'
 import { UPGRADE_BY_ID } from '../content/upgrades'
 import { BUILD_FILTERS } from '../content/builds'
 import { can, run, type Command } from './commands'
-import { attentionCap, bestPrice, crateCost, hireCost, roleCount } from './formulas'
+import { attentionCap, bestPrice, crateCost, hireCost, roleCount, unpackPerSec } from './formulas'
+import { valueMul } from './systems/network'
 import { sumQty } from './helpers'
 import { repair } from './invariants'
 import { nextRng } from './rng'
@@ -183,9 +186,11 @@ export function attentiveCommands(s: GameState): Command[] {
   const pending = s.orders.reduce((n, o) => n + o.qty, 0)
   const crate = crateCost(s, s.orderCat)
 
+  const vm = valueMul(s)
+  const buyBelow = Math.max(BACKROOM_BUY_BELOW, Math.ceil(unpackPerSec(s) * 45))
   if (
-    back + pending <= BACKROOM_BUY_BELOW &&
-    crate <= MAX_REASONABLE_CRATE &&
+    back + pending <= buyBelow &&
+    crate <= MAX_REASONABLE_CRATE * vm &&
     spendable >= crate &&
     can(s, { type: 'buyWholesale' }).ok
   ) {
@@ -441,7 +446,7 @@ export function fuzzBot(seed: number, ticks: number, dt = 1): FuzzResult {
   }
 }
 
-// ── Greedy bot (2.0 pacing gate) ─────────────────────────────────────────────
+// ── Campaign bot (2.0 pacing gate) ───────────────────────────────────────────
 
 /** Era → first sim-second reached. Used by pacing.test.ts. */
 export type EraTimes = Record<number, number>
@@ -449,37 +454,115 @@ export type EraTimes = Record<number, number>
 export interface PacingResult {
   eraAt: EraTimes
   final: GameState
-  samples: { t: number; era: number; empire: number; cash: number; revPerSec: number }[]
+  samples: { t: number; era: number; empire: number; cash: number; revPerSec: number; goal: string }[]
 }
 
+/** True if cmd is affordable while keeping `reserve` cash untouched. */
+function canWithin(s: GameState, cmd: Command, reserve: number): boolean {
+  if (reserve <= 0) return can(s, cmd).ok
+  const cash = s.cash
+  s.cash = Math.max(0, cash - reserve)
+  const ok = can(s, cmd).ok
+  s.cash = cash
+  return ok
+}
+
+const LATE_VERBS: Command[] = [
+  { type: 'buildDepot' },
+  { type: 'incorporate' },
+  { type: 'openStore' },
+  { type: 'buyPlant' },
+  { type: 'buyTank' },
+  { type: 'hireLobby' },
+  { type: 'acquireRegion' },
+  { type: 'openLane' },
+  { type: 'openFranchise' },
+  { type: 'launchBarge' },
+  { type: 'buyEndcap' },
+]
+
 /**
- * Buys whatever it can afford every few seconds — memos, builds, lots, stores,
- * the cheapest upgrade rank, staff — on top of the attentive habits. A pessimistic
- * stand-in for a casual player; pacing targets are asserted against it.
+ * Plays like a steady casual player: keeps the floor stocked, saves for the next
+ * campaign goal, and spends the surplus on whatever is affordable.
  */
-export function greedyCommands(s: GameState, step: number): Command[] {
-  const cmds: Command[] = [...recoveryCommands(s), ...attentiveCommands(s)]
+export function campaignCommands(s: GameState, step: number): Command[] {
+  const goal = nextGoal(s)
+  const holdAtt = goalNeeds(s, goal).attention > 0
+  const cmds: Command[] = [...recoveryCommands(s), ...attentiveCommands(s)].filter(
+    (c) => !holdAtt || !(c.type === 'buyMemo' || c.type === 'pulseScanner' || c.type === 'runTournament'),
+  )
   if (step % 5 !== 0) return cmds
   cmds.push({ type: 'acceptChapter' })
-  for (const m of MEMOS) cmds.push({ type: 'buyMemo', id: m.id })
-  for (const tr of BUILD_FILTERS) cmds.push({ type: 'buyBuild', track: tr })
-  cmds.push(
-    { type: 'expandLot', id: 'side-yard' },
-    { type: 'incorporate' },
-    { type: 'openStore' },
-    { type: 'buyEndcap' },
-  )
-  let best: { id: string; cost: number } | null = null
-  for (const id of Object.keys(UPGRADE_BY_ID)) {
-    const cmd: Command = { type: 'buyUpgrade', id }
-    if (!can(s, cmd).ok) continue
-    const def = UPGRADE_BY_ID[id]!
-    const cost = Math.ceil(def.base * Math.pow(def.growth, s.upgrades[id] ?? 0))
-    if (!best || cost < best.cost) best = { id, cost }
+  const act = goal?.action?.(s) ?? null
+  if (act && can(s, act).ok) {
+    run(s, act)
   }
-  if (best && best.cost < s.cash * 0.7) cmds.push({ type: 'buyUpgrade', id: best.id })
+  // Grow Attention capacity / Ideas when the goal needs more than we can hold.
+  const needs = goalNeeds(s, goal)
+  if (needs.attention > attentionCap(s)) cmds.push({ type: 'spendRep', on: 'archive' })
+  if (needs.ideas > s.compute.ideas && s.compute.ideasUnlocked && !s.compute.ideasOn) {
+    cmds.push({ type: 'toggleIdeas' })
+  }
+  // Keep a reserve for the goal; buy small things freely.
+  const reserve = goalCash(s, goal)
+  if (s.fuel < 20 && s.fleet.lanes > 0) cmds.push({ type: 'buyFuel' })
+  const saveCapital = goal?.id === 'leave-region'
+  for (const v of LATE_VERBS) {
+    if (saveCapital && (v.type === 'acquireRegion' || v.type === 'hireLobby')) {
+      if (v.type === 'hireLobby' && canWithin(s, v, reserve)) run(s, v)
+      continue
+    }
+    if (canWithin(s, v, reserve)) run(s, v)
+  }
+  const holdAttention = needs.attention > 0
+  if (!holdAttention) cmds.push({ type: 'runTournament' })
+  if (!holdAttention) {
+    for (const st of s.stores) {
+      if (st.drift > 0.4) cmds.push({ type: 'walkStore', storeId: st.id })
+      else cmds.push({ type: 'trainStore', storeId: st.id })
+    }
+  }
+  if (s.board.pendingAgenda !== null || (s.board.nextMeetingAt > 0 && s.time >= s.board.nextMeetingAt)) {
+    cmds.push({ type: 'resolveBoard', agenda: 'expand' })
+  }
+  for (const tr of BUILD_FILTERS) {
+    const c: Command = { type: 'buyBuild', track: tr }
+    if (canWithin(s, c, reserve)) run(s, c)
+  }
+  for (const m of MEMOS) {
+    const c: Command = { type: 'buyMemo', id: m.id }
+    if (holdAttention) {
+      try {
+        if ((m.cost(s).attention ?? 0) > 0) continue
+      } catch {
+        continue
+      }
+    }
+    if (canWithin(s, c, reserve)) run(s, c)
+  }
+  for (const d of ['throughput', 'edlp', 'hi-lo', 'loss-leader', 'premium-bodega', 'route-density', 'float-discipline', 'read-bank']) {
+    cmds.push({ type: 'buyDoctrine', id: d })
+  }
+  // Two cheapest affordable upgrade ranks.
+  for (let k = 0; k < 2; k++) {
+    let best: { id: string; cost: number } | null = null
+    for (const id of Object.keys(UPGRADE_BY_ID)) {
+      const c: Command = { type: 'buyUpgrade', id }
+      if (!canWithin(s, c, reserve)) continue
+      const def = UPGRADE_BY_ID[id]!
+      const cost = Math.ceil(def.base * Math.pow(def.growth, s.upgrades[id] ?? 0))
+      if (!best || cost < best.cost) best = { id, cost }
+    }
+    if (best) run(s, { type: 'buyUpgrade', id: best.id })
+  }
   for (const role of ['clerk', 'cashier', 'stocker'] as RoleId[]) {
-    if (s.cash > 300) cmds.push({ type: 'hire', role })
+    const c: Command = { type: 'hire', role }
+    if (canWithin(s, c, reserve + 200)) cmds.push(c)
+  }
+  for (const p of Object.keys(PERK_BY_ID)) cmds.push({ type: 'buyPerk', id: p })
+  if (s.fleet.launched) {
+    cmds.push({ type: 'buyCharter' })
+    for (const axis of ['replication', 'survey', 'transit', 'shell']) cmds.push({ type: 'setCharterAxis', axis, delta: 1 })
   }
   return cmds
 }
@@ -490,14 +573,21 @@ export function runPacing(seed: number, seconds: number, sampleEvery = 600): Pac
   const eraAt: EraTimes = { 0: 0 }
   const samples: PacingResult['samples'] = []
   for (let t = 1; t <= seconds; t++) {
-    for (const cmd of greedyCommands(s, t)) {
+    for (const cmd of campaignCommands(s, t)) {
       if (can(s, cmd).ok) run(s, cmd)
     }
     applyTick(s, 1)
     repair(s)
     if (eraAt[s.era] === undefined) eraAt[s.era] = t
     if (t % sampleEvery === 0) {
-      samples.push({ t, era: s.era, empire: s.empire.level, cash: s.cash, revPerSec: s.rates.revenuePerSec })
+      samples.push({
+        t,
+        era: s.era,
+        empire: s.empire.level,
+        cash: s.cash,
+        revPerSec: s.rates.revenuePerSec,
+        goal: nextGoal(s)?.id ?? 'done',
+      })
     }
   }
   return { eraAt, final: s, samples }

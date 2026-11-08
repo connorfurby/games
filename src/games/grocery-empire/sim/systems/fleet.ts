@@ -6,9 +6,22 @@ import { clamp, log, round2, setEra, unlockMenu } from '../helpers'
 import { chance } from '../rng'
 import type { GameState } from '../state'
 
+/** 2.0: each franchise costs more than the last (network scale must be earned). */
+export function franchiseCost(s: GameState): number {
+  return Math.ceil(LOGISTICS.franchiseCash * Math.pow(LOGISTICS.franchiseGrowth, s.fleet.franchises))
+}
+
+export function bargeCost(s: GameState): number {
+  return Math.ceil(FLEET.bargeLaunchCash * Math.pow(FLEET.bargeGrowth, s.fleet.barges))
+}
+
+export function laneCost(s: GameState): number {
+  return Math.ceil(LOGISTICS.laneCash * Math.pow(LOGISTICS.laneGrowth, s.fleet.lanes))
+}
+
 export function canOpenLane(s: GameState): string | null {
   if (s.era < 4 && !s.politics.leftRegion) return 'Leave the region first (Era 4).'
-  const cash = LOGISTICS.laneCash * Math.pow(1.35, s.fleet.lanes)
+  const cash = LOGISTICS.laneCash * Math.pow(LOGISTICS.laneGrowth, s.fleet.lanes)
   const ctl = LOGISTICS.laneControl * (1 + s.fleet.lanes)
   if (s.cash < cash && s.control < ctl) return `Need $${Math.ceil(cash)} or ${Math.ceil(ctl)} Control.`
   if (s.fuel < LOGISTICS.laneFuel * 0.5) return 'Fuel buffer too low to launch a lane.'
@@ -16,7 +29,7 @@ export function canOpenLane(s: GameState): string | null {
 }
 
 export function openLane(s: GameState) {
-  const cash = Math.ceil(LOGISTICS.laneCash * Math.pow(1.35, s.fleet.lanes))
+  const cash = Math.ceil(LOGISTICS.laneCash * Math.pow(LOGISTICS.laneGrowth, s.fleet.lanes))
   const ctl = Math.ceil(LOGISTICS.laneControl * (1 + s.fleet.lanes))
   if (s.control >= ctl) s.control = round2(s.control - ctl)
   else s.cash = round2(s.cash - cash)
@@ -40,12 +53,13 @@ export function buyFuel(s: GameState) {
 
 export function canFranchise(s: GameState): string | null {
   if (s.fleet.lanes < 1) return 'Open a lane first.'
-  if (s.cash < LOGISTICS.franchiseCash) return `Need $${LOGISTICS.franchiseCash}.`
+  const fc = franchiseCost(s)
+  if (s.cash < fc) return `Need $${fc}.`
   return null
 }
 
 export function openFranchise(s: GameState) {
-  s.cash = round2(s.cash - LOGISTICS.franchiseCash)
+  s.cash = round2(s.cash - franchiseCost(s))
   s.fleet.franchises += 1
   s.brand = clamp(s.brand - LOGISTICS.franchiseBrandHit, 0.05, 1)
   log(s, `Franchise #${s.fleet.franchises} signed. Brand drifts unless sealed.`, 'warn')
@@ -53,7 +67,8 @@ export function openFranchise(s: GameState) {
 
 export function canLaunchBarge(s: GameState): string | null {
   if (s.era < 5 && !(s.memos['barge-berth'] > 0)) return 'Seed Barge Berth required.'
-  if (s.cash < FLEET.bargeLaunchCash) return `Need $${FLEET.bargeLaunchCash}.`
+  const bc = bargeCost(s)
+  if (s.cash < bc) return `Need $${bc}.`
   if (s.read < FLEET.bargeLaunchRead && !s.fleet.launched) {
     return `Need ${FLEET.bargeLaunchRead} Read to launch the first barge.`
   }
@@ -61,7 +76,7 @@ export function canLaunchBarge(s: GameState): string | null {
 }
 
 export function launchBarge(s: GameState) {
-  s.cash = round2(s.cash - FLEET.bargeLaunchCash)
+  s.cash = round2(s.cash - bargeCost(s))
   if (!s.fleet.launched) {
     s.read = Math.max(0, s.read - FLEET.bargeLaunchRead)
     s.fleet.launched = true
@@ -209,7 +224,8 @@ export function tickLogistics(s: GameState, dt: number) {
 
   // Control trickle from empire cash (very mild)
   if (s.era >= 4) {
-    s.control = round2(s.control + s.cash * LOGISTICS.controlFromCash * dt)
+    // Log-scaled so a big bank speeds Control up without making lanes free.
+    s.control = round2(s.control + Math.log10(1 + Math.max(0, s.cash)) * LOGISTICS.controlPerLogCash * dt)
   }
 
   if (s.fleet.franchises > 0) {

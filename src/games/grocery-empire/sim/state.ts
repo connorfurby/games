@@ -157,6 +157,8 @@ export interface ColdState {
   browned: boolean
   brownouts: number
   autoSheds: number
+  /** 2.0: plants auto-shed during a brownout wait here and come back when surplus returns. */
+  offline: number
   momentumHoldSec: number
   quadratic: boolean
   lastBrownoutLogAt: number
@@ -256,6 +258,8 @@ export interface Stats {
   rivalAnswers: number
   walks: number
   trains: number
+  /** 2.0: revenue booked by the store network (copies of flagship sales). */
+  networkRevenue: number
 }
 
 export interface GameState {
@@ -509,6 +513,7 @@ export function emptyCold(): ColdState {
     browned: false,
     brownouts: 0,
     autoSheds: 0,
+    offline: 0,
     momentumHoldSec: 0,
     quadratic: false,
     lastBrownoutLogAt: -1e9,
@@ -603,6 +608,7 @@ export function emptyStats(): Stats {
     rivalAnswers: 0,
     walks: 0,
     trains: 0,
+    networkRevenue: 0,
   }
 }
 

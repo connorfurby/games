@@ -1,3 +1,4 @@
+import { valueMul } from './systems/network'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ROLES, STAFF_TRAITS, type RoleId, type StaffTraitId } from '../content/staff'
 import {
@@ -45,6 +46,7 @@ import {
   VARIETY,
   VENTURE_TRAFFIC,
   WHOLESALE,
+  WORD_OF_MOUTH,
 } from './balance'
 import type {
   GameState,
@@ -219,7 +221,8 @@ export function wholesaleMul(s: GameState) {
 }
 
 export function unitCost(s: GameState, cat: CategoryId, supplier: SupplierId = s.supplier) {
-  const base = WHOLESALE.baseCanCost * s.wholesale.index * CATEGORIES[cat].costMul * wholesaleMul(s)
+  const base =
+    WHOLESALE.baseCanCost * s.wholesale.index * CATEGORIES[cat].costMul * wholesaleMul(s) * valueMul(s)
   return supplier === 'b' ? base * WHOLESALE.supplierB.discount : base
 }
 
@@ -382,6 +385,10 @@ export function ventureTrafficMul(s: GameState) {
   return 1 + Math.min(VENTURE_TRAFFIC.cap, open * VENTURE_TRAFFIC.perOpen)
 }
 
+export function wordOfMouthMul(s: GameState) {
+  return 1 + WORD_OF_MOUTH.perDecade * Math.log10(1 + Math.max(0, s.baskets) / WORD_OF_MOUTH.scale)
+}
+
 /** Every multiplier except price, broken out for the Books explainer. */
 export function demandBreakdown(s: GameState) {
   const parts = {
@@ -433,6 +440,8 @@ export function demandBreakdown(s: GameState) {
     expansions: expansionDemandMul(s),
     marketing: marketingDemandMul(s),
     ventures: ventureTrafficMul(s),
+    /** 2.0: lifetime baskets bring shoppers back. */
+    wordOfMouth: wordOfMouthMul(s),
   }
   let total = 1
   for (const v of Object.values(parts)) total *= v
@@ -605,7 +614,8 @@ export function revenueMul(s: GameState) {
     (1 + up(s, 'label-gun') * 0.01) *
     (memo(s, 'price-gun') ? 1.01 : 1) *
     chainRevenueMul(s) *
-    marketingRevenueMul(s)
+    marketingRevenueMul(s) *
+    valueMul(s)
   )
 }
 

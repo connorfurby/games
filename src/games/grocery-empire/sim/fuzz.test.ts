@@ -57,7 +57,7 @@ describe('softlock fuzz + save/offline (H4 / Q3)', () => {
     s.categories.produce = true
     s.backroom = []
     s.shelf = []
-    addBatch(s.shelf, 'produce', 40, 0)
+    addBatch(s.backroom, 'produce', 40, 0)
     addBatch(s.shelf, 'cans', 40, 0)
     const produceBefore = sumQty(s.shelf, 'produce') + sumQty(s.backroom, 'produce')
     const cansBefore = sumQty(s.shelf, 'cans') + sumQty(s.backroom, 'cans')
@@ -70,8 +70,10 @@ describe('softlock fuzz + save/offline (H4 / Q3)', () => {
     const produceAfter = sumQty(s.shelf, 'produce') + sumQty(s.backroom, 'produce')
     const cansAfter = sumQty(s.shelf, 'cans') + sumQty(s.backroom, 'cans')
     expect(produceAfter).toBe(0)
-    expect(cansAfter).toBeGreaterThan(0)
-    expect(s.stats.spoiled).toBeGreaterThan(0)
+    // Cans may sell out over 8h, but they never spoil.
+    expect(cansAfter).toBeGreaterThanOrEqual(0)
+    expect(s.stats.spoiledByCat.cans).toBe(0)
+    expect(s.stats.spoiledByCat.produce).toBeGreaterThan(0)
   })
 
   it('legalCommands includes unpack on fresh state', () => {

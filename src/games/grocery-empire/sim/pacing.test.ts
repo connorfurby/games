@@ -2,19 +2,37 @@ import { describe, expect, it } from 'vitest'
 import { runPacing } from './bots'
 
 /**
- * Pacing gate. Every balance change must keep these. Targets tighten as 2.0 lands
- * (see docs/2.0-plan.md → Economy). Seeds keep it deterministic.
+ * Pacing gate (docs/2.0-plan.md → Pacing targets). The campaign bot is a steady,
+ * unhurried player; real players beat it. Every balance change must keep these.
+ *
+ * Measured 2026-11-08 (seeds 1, 42): Era 1 ≈ 9 min · Era 2 ≈ 90 min · Era 3 ≈ 3.1 h ·
+ * Era 4 ≈ 4.6 h · Era 5 ≈ 6.5 h · Era 6 ≈ 12 h.
  */
 const SEEDS = [1, 42]
 const MIN = 60
+const H = 3600
 
-describe('pacing (greedy bot)', () => {
+describe('pacing (campaign bot)', () => {
   for (const seed of SEEDS) {
-    it(`seed ${seed}: reaches Era 1 within 20 min`, () => {
-      const r = runPacing(seed, 25 * MIN)
+    it(`seed ${seed}: Era 1 ≤ 20 min, Era 2 ≤ 2 h, Era 3 ≤ 4.5 h — and not trivially fast`, () => {
+      const r = runPacing(seed, 4.5 * H)
       expect(r.eraAt[1]).toBeDefined()
       expect(r.eraAt[1]!).toBeLessThan(20 * MIN)
+      expect(r.eraAt[2]).toBeDefined()
+      expect(r.eraAt[2]!).toBeLessThan(2 * H)
+      expect(r.eraAt[2]!).toBeGreaterThan(45 * MIN)
+      expect(r.eraAt[3]).toBeDefined()
+      expect(r.eraAt[3]!).toBeLessThan(4.5 * H)
+      expect(r.eraAt[3]!).toBeGreaterThan(2 * H)
       expect(Number.isFinite(r.final.cash)).toBe(true)
-    }, 120_000)
+    }, 300_000)
   }
+
+  // Full campaign (~2 min per seed). Run with LONG=1 npm test.
+  it.runIf(!!import.meta.env.VITE_LONG || !!(globalThis as { process?: { env?: Record<string, string> } }).process?.env?.LONG)('seed 1: whole campaign reaches Era 6 in 8–18 h', () => {
+    const r = runPacing(1, 18 * H, 3600)
+    expect(r.eraAt[6]).toBeDefined()
+    expect(r.eraAt[6]!).toBeGreaterThan(8 * H)
+    for (let e = 1; e <= 6; e++) expect(r.eraAt[e]).toBeDefined()
+  }, 900_000)
 })
