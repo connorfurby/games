@@ -331,9 +331,20 @@ export const TIPS: TipDef[] = [
 export const TIP_BY_ID: Record<string, TipDef> = Object.fromEntries(TIPS.map((t) => [t.id, t]))
 
 /** Next unseen tip ready to whisper, or null. */
+/** The era a tip belongs to: e2-… → 2, the first-… basics → 0, everything else → 1 unless noted. */
+const TIP_ERA: Record<string, number> = { cold: 3, fleet: 5 }
+function tipEra(tip: TipDef): number {
+  const m = /^e(\d)-/.exec(tip.id)
+  if (m) return Number(m[1])
+  if (tip.id in TIP_ERA) return TIP_ERA[tip.id]!
+  return tip.id.startsWith('first-') || tip.id === 'produce' ? 0 : 1
+}
+
 export function pendingTip(s: GameState): TipDef | null {
   for (const tip of TIPS) {
     if (s.tipsSeen[tip.id]) continue
+    // A tip from two eras back is noise, not help.
+    if (tipEra(tip) < s.era - 1) continue
     try {
       if (tip.when(s)) return tip
     } catch {

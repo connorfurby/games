@@ -528,6 +528,14 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const chapterEra = state.chapterQueue[0]
   const Active = PANEL[menu]!
   const tip = pendingTip(state)
+  const tipShown =
+    !!tip && state.introSeen && !state.offlineReceipt && !state.pendingAccept && state.chapterQueue[0] == null
+  // Tips file themselves after a while; nobody should have to click "Got it" to see the next one.
+  useEffect(() => {
+    if (!tip || !tipShown) return
+    const t = window.setTimeout(() => engine.dispatch({ type: 'dismissTip', id: tip.id }), 20_000)
+    return () => window.clearTimeout(t)
+  }, [tip?.id, tipShown])
 
   const suggestOn = !!meta.settings.suggestNext
   const suggestionsRaw = useMemo(

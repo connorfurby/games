@@ -910,6 +910,11 @@ export function passbookRate(s: GameState) {
   return PASSBOOK.ratePerSec * (1 + up(s, 'passbook-rate') * PASSBOOK.rateBonusPerLevel)
 }
 
+/** The passbook at full cap earns under 0.5% of sales: not worth a nudge. */
+export function investOutgrown(s: GameState): boolean {
+  return passbookCap(s) * passbookRate(s) < Math.max(0, s.rates.revenuePerSec) * 0.005
+}
+
 /** Max yielding passbook balance — scales with Empire level. */
 export function passbookCap(s: GameState) {
   let cap = PASSBOOK.capBase * Math.pow(PASSBOOK.capGrowth, Math.max(0, s.empire.level - 1))

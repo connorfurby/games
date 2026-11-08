@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { VENTURES, ventureIncome, ventureLevelCost } from '../../content/ventures'
+import { ventureOutgrownBelow } from '../../sim/systems/growth'
 import { VENTURE_TRAFFIC } from '../../sim/balance'
 import { sumQty } from '../../sim/helpers'
 import { useGame, useIsSuggested } from '../GameContext'
@@ -55,7 +56,12 @@ export function VenturesPanel() {
     return { def, available, vs }
   })
 
-  const open = rows.filter((r) => r.available || (r.vs && r.vs.level > 0))
+  const listed = rows.filter((r) => r.available || (r.vs && r.vs.level > 0))
+  // Tills the store has outgrown (under 0.5% of income) collect themselves and fold into one row.
+  const floor = ventureOutgrownBelow(s)
+  const isSmall = ({ def, vs }: (typeof rows)[number]) => ventureIncome(def, Math.max(1, vs?.level ?? 0)) < floor
+  const small = listed.filter(isSmall)
+  const open = listed.filter((r) => !isSmall(r))
   const claimable = open.filter(({ vs }) => (vs?.stored ?? 0) > 0)
   const shown = open.filter(({ def, vs }) => {
     if (!readyOnly) return true
@@ -108,7 +114,19 @@ export function VenturesPanel() {
         </p>
       ) : null}
 
-      {open.length === 0 ? <p className="ge-empty">No ventures open. Watch the memos.</p> : null}
+      {open.length === 0 && small.length === 0 ? <p className="ge-empty">No ventures open. Watch the memos.</p> : null}
+
+      {small.length > 0 ? (
+        <div className="vt-small" title="These tills earn under 0.5% of your income now. They collect themselves.">
+          <span className="vt-small__label">Small change · collects itself</span>
+          {small.map(({ def, vs }) => (
+            <span key={def.id} className="vt-small__item">
+              {def.name}
+              {(vs?.level ?? 0) > 0 ? ` L${vs!.level} · ${money(ventureIncome(def, vs!.level), numberFormat)}/s` : ' · not opened'}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       {open.length > 0 ? (
         <div className="ge-dept-toolbar">

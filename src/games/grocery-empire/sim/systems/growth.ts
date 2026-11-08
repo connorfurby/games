@@ -70,11 +70,18 @@ export function tickVentures(s: GameState, dt: number) {
     // Only count filling rate (not when capped).
     if (vs.stored > before) ventureRate += income
 
-    if ((up(s, 'auto-collect') >= 1 || perk(s, 'venture-auto') > 0) && vs.stored >= cap * 0.95) {
+    // Outgrown tills (under 0.5% of income) collect themselves: small change shouldn't be a chore.
+    const outgrown = income < ventureOutgrownBelow(s)
+    if ((outgrown || up(s, 'auto-collect') >= 1 || perk(s, 'venture-auto') > 0) && vs.stored >= cap * 0.95) {
       collectVenture(s, id)
     }
   }
   s.rates.venturePerSec = ventureRate
+}
+
+/** A venture earning less than this per second has been outgrown by the store. */
+export function ventureOutgrownBelow(s: GameState): number {
+  return Math.max(0, s.rates.revenuePerSec) * 0.005
 }
 
 export function collectVenture(s: GameState, id: string): number {
