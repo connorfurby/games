@@ -660,6 +660,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
             inboxOpen={inboxOpen}
             onInbox={() => setInboxOpen((v) => !v)}
             toolsOpen={toolsOpen}
+            reducedMotion={reducedMotion}
             onTools={() => {
               if (!toolsTabPicked.current) setToolsTab(isDevSave() ? 'dev' : 'run')
               setToolsOpen((v) => !v)
@@ -708,8 +709,8 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           </nav>
 
           <main className="g2-main" ref={mainRef}>
-            {hub === 'store' && !photoMode ? <StoreScene state={state} /> : null}
-            {photoMode ? <StoreScene state={state} /> : null}
+            {hub === 'store' && !photoMode ? <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} /> : null}
+            {photoMode ? <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} /> : null}
             {hub ? (
               <div className="g2-hubhead">
                 <div className="g2-hubhead__title">
@@ -733,6 +734,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                       >
                         <Icon name={id} size={15} />
                         {MENUS[id].name}
+                        {menu === id ? (
+                          <motion.span
+                            className="g2-subtab__ink"
+                            layoutId={`g2-subtab-ink-${hub}`}
+                            transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 38 }}
+                          />
+                        ) : null}
                       </button>
                     ))}
                   </div>

@@ -13,6 +13,7 @@ import { PopLayer, type PopItem } from '../components/Pop'
 import { money, qty } from '../format'
 import { Icon } from '../icons/Icon'
 import { NextGoal } from './NextGoal'
+import { RollingNumber } from '../components/RollingNumber'
 
 function perSec(n: number, fmt: NumberFormat) {
   const sign = n < 0 ? '−' : '+'
@@ -38,6 +39,7 @@ export function Hud({
   onInbox,
   toolsOpen,
   onTools,
+  reducedMotion = false,
 }: {
   state: GameState
   pops: PopItem[]
@@ -50,6 +52,7 @@ export function Hud({
   onInbox: () => void
   toolsOpen: boolean
   onTools: () => void
+  reducedMotion?: boolean
 }) {
   const net = s.rates.revenuePerSec - s.rates.costPerSec
   const era = ERA_STORY[s.era]
@@ -88,7 +91,7 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="cash" size={13} /> Cash
           </span>
-          <span className="g2-stat__value">{money(s.cash, numberFormat)}</span>
+          <RollingNumber className="g2-stat__value" value={s.cash} format={(n) => money(n, numberFormat)} reducedMotion={reducedMotion} />
           <span className={`g2-stat__rate${net < 0 ? ' is-neg' : ''}`} title="Net income, smoothed over 45 s">
             {perSec(net, numberFormat)}
           </span>

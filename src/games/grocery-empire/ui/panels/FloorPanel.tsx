@@ -33,6 +33,32 @@ import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { Icon } from '../icons/Icon'
 
+/** Tiny weather icons for the status chip. */
+function WeatherGlyph({ kind }: { kind: string }) {
+  return (
+    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden className="fl-ico">
+      {kind === 'rain' ? (
+        <g fill="currentColor">
+          <ellipse cx="6" cy="4.5" rx="4.5" ry="2.5" />
+          <path d="M3.5 8l-1 2.5M6 8l-1 2.5M8.5 8l-1 2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+        </g>
+      ) : kind === 'cold' ? (
+        <path d="M6 1v10M1.7 3.5l8.6 5M1.7 8.5l8.6-5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      ) : kind === 'heat' ? (
+        <g fill="currentColor">
+          <circle cx="6" cy="6" r="2.6" />
+          <path d="M6 .5v2M6 9.5v2M.5 6h2M9.5 6h2M2 2l1.4 1.4M8.6 8.6L10 10M2 10l1.4-1.4M8.6 3.4L10 2" stroke="currentColor" strokeWidth="1" />
+        </g>
+      ) : (
+        <g fill="currentColor">
+          <circle cx="4.5" cy="5" r="2.2" opacity=".85" />
+          <ellipse cx="7" cy="7.5" rx="4" ry="2.2" />
+        </g>
+      )}
+    </svg>
+  )
+}
+
 export function FloorPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion, setActiveMenu } = useGame()
   const { meta } = useMeta()
@@ -219,6 +245,7 @@ export function FloorPanel() {
 
       <div className="fl-strip" data-coach-id="floor-weather">
         <span className={`fl-chip fl-chip--meter${shelf <= 0 ? ' is-bad' : ''}`} title="What shoppers can buy">
+          <Icon name="floor" size={12} />
           <span>Shelf</span>
           <strong>
             {qty(shelf)}/{qty(cap)}
@@ -226,16 +253,21 @@ export function FloorPanel() {
           <i style={{ transform: `scaleX(${fill})` }} />
         </span>
         <span className="fl-chip" title="Waiting for Unpack">
+          <Icon name="backroom" size={12} />
           <span>Back</span>
           <strong>{qty(back)}</strong>
         </span>
         {s.era >= 1 ? (
-          <span className="fl-chip" title="Weather now (and tomorrow with the Weather Radio)">
+          <span className={`fl-chip fl-chip--wx-${weather}`} title="Weather now (and tomorrow with the Weather Radio)">
+            <WeatherGlyph kind={weather} />
             <span>Weather</span>
             <strong>{wx}</strong>
           </span>
         ) : null}
         <span className={`fl-chip${heatHot ? ' is-bad' : ''}`} title="Inspection heat. Call the inspector early when it runs hot.">
+          <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden className="fl-ico">
+            <path d="M6 1c1 2 4 3 4 6a4 4 0 0 1-8 0c0-2 1-3 2-4 .5 1 .5 2 1.5 2.5C6 4 5.5 2.5 6 1z" fill="currentColor" />
+          </svg>
           <span>Heat</span>
           <strong>{Math.round(heat * 100)}%</strong>
         </span>
