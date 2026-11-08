@@ -1,3 +1,4 @@
+import { valueMul } from '../../sim/systems/network'
 import { useEffect, useRef, useState } from 'react'
 import { useMeta } from '@/shell/MetaContext'
 import { playUnpackFx } from '@/shared/audio'
@@ -20,6 +21,7 @@ import {
   salesBottleneck,
   shelfCap,
   unitCost,
+  shelfPrice,
   up,
 } from '../../sim/formulas'
 import { sumQty } from '../../sim/helpers'
@@ -123,7 +125,8 @@ export function FloorPanel() {
   const repEta = reputationEtaSec(s)
   const orderDef = CATEGORIES[orderCat]
   const unit = unitCost(s, orderCat)
-  const sell = s.price * (orderDef?.priceRatio ?? 1)
+  const sell = shelfPrice(s, orderCat)
+  const premium = valueMul(s)
   const margin = sell - unit
   const eff = effectiveLife(s, orderCat)
 
@@ -395,6 +398,12 @@ export function FloorPanel() {
                   +
                 </Btn>
               </div>
+              {premium > 1.001 ? (
+                <p className="ge-muted" title="Better stores carry premium stock: it costs more and rings up for more.">
+                  Premium stock ×{premium.toFixed(premium < 10 ? 1 : 0)} — a can rings up at{' '}
+                  {money(shelfPrice(s, 'cans'), numberFormat)}
+                </p>
+              ) : null}
               {tip != null ? (
                 <div className="ge-price__tip">
                   <span className="ge-muted">Best ≈ {money(tip, numberFormat)}</span>

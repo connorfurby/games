@@ -18,7 +18,9 @@ export interface AchievementDef {
 const sold = (s: GameState) => s.stats.sold
 const baskets = (s: GameState) => s.baskets
 const staffRole = (s: GameState, role: string) => s.staff.some((x) => x.role === role)
-const packsOwned = (meta: MetaSave) => meta.unlockedPacks.length
+/** Free default packs don't count toward pack achievements. */
+const FREE_PACKS = new Set(['receipt-classic', 'receipt-1'])
+const packsOwned = (meta: MetaSave) => 1 + meta.unlockedPacks.filter((id) => !FREE_PACKS.has(id)).length
 const achCount = (meta: MetaSave) => Object.keys(meta.achievements).length
 const charterSpent = (s: GameState) => Object.values(s.fleet.charter).reduce((a, n) => a + (n ?? 0), 0)
 
@@ -127,7 +129,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hidden: true,
     tokens: 2,
     test: (_s, m) =>
-      m.unlockedPacks.some((id) => id !== 'receipt-classic') && m.shelfTokens >= 0 && Object.keys(m.achievements).length >= 5,
+      m.unlockedPacks.some((id) => !FREE_PACKS.has(id)) && m.shelfTokens >= 0 && Object.keys(m.achievements).length >= 5,
   },
 
   // ── Era 2 — chain & capital ──────────────────────────────────────────────

@@ -1,0 +1,1068 @@
+/*
+ * Grocery Empire 2.0 shell.
+ * Palette comes from the active texture pack (--ge-*), plus --tag (shelf-tag yellow)
+ * for every price and buy action. Display: Fraunces. UI: Space Grotesk.
+ */
+
+.ge-root.g2-root {
+  --g2-tag: var(--tag, #f2c14e);
+  --g2-tag-ink: #2b2208;
+  --g2-surface: color-mix(in srgb, var(--ge-bg2) 100%, transparent);
+  --g2-raised: color-mix(in srgb, var(--ge-bg2) 82%, var(--ge-ink) 6%);
+  --g2-line: color-mix(in srgb, var(--ge-ink) 10%, transparent);
+  --g2-line-strong: color-mix(in srgb, var(--ge-ink) 20%, transparent);
+  --g2-display: var(--ge-font-display);
+  --g2-ui: 'Space Grotesk', system-ui, sans-serif;
+  --g2-r-lg: 16px;
+  --g2-r-md: 10px;
+  --g2-r-sm: 7px;
+  --g2-hud-h: 76px;
+
+  /* scene palette */
+  --sc-cans: #c9a15a;
+  --sc-household: #7fa3c9;
+  --sc-produce: #7cc47f;
+  --sc-dairy: #eef0f2;
+  --sc-meat: #d9665b;
+  --sc-label: #b58ad1;
+  --sc-tag: var(--g2-tag);
+  --sc-tomato: #ff5a43;
+  --sc-receipt: #efe9dc;
+  --sc-brick: #5b3a33;
+  --sc-sign: #1e2a2b;
+  --sc-glass: #f6dfa8;
+  --sc-shelf: #6c5b47;
+  --sc-door: #2c201c;
+  --sc-window: #ffd98c;
+  --sc-building: #1d2533;
+  --sc-street: #1e2224;
+  --sc-curb: #3a4043;
+  --sc-hill: #18223b;
+  --sc-plant: #3b4a5c;
+  --sc-water: #142a45;
+  --sc-hull: #c8ccd2;
+  --sc-barge: #9aa7c7;
+
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'hud hud'
+    'hubs main';
+  font-family: var(--g2-ui);
+}
+
+.ge-root.g2-root.g2-root--dev {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    'devbar devbar'
+    'hud hud'
+    'hubs main';
+}
+
+.g2-root .ge-devbar {
+  grid-area: devbar;
+}
+
+/* ── HUD ─────────────────────────────────────────────────────────────── */
+
+.g2-hud {
+  grid-area: hud;
+  display: grid;
+  grid-template-columns: auto auto minmax(280px, 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.6rem 1rem 0.6rem 1.1rem;
+  min-height: var(--g2-hud-h);
+  border-bottom: 1px solid var(--g2-line);
+  background: color-mix(in srgb, var(--ge-bg) 88%, #000);
+  position: relative;
+  z-index: 20;
+}
+
+.g2-hud__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 9.5rem;
+}
+
+.g2-hud__home {
+  font-family: var(--g2-display);
+  font-size: 1.15rem;
+  font-weight: 650;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  color: var(--ge-ink);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.g2-hud__home:hover {
+  color: var(--g2-tag);
+}
+
+.g2-hud__era {
+  font-size: 0.78rem;
+  color: var(--ge-muted);
+}
+
+.g2-hud__money {
+  display: flex;
+  gap: 1.4rem;
+  align-items: flex-end;
+}
+
+.g2-stat {
+  display: grid;
+  gap: 0.05rem;
+}
+
+.g2-stat__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--ge-muted);
+}
+
+.g2-stat__value {
+  position: relative;
+  font-family: var(--g2-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.015em;
+  min-width: 7.5ch;
+}
+
+.g2-stat__value--small {
+  font-size: 1.2rem;
+  min-width: 5ch;
+}
+
+.g2-stat__rate {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ge-success);
+}
+
+.g2-stat__rate.is-neg {
+  color: var(--ge-danger);
+}
+
+/* ── Next goal: a shelf tag ─────────────────────────────────────────── */
+
+.g2-goal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.9rem;
+  row-gap: 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0.55rem 0.5rem 0.9rem;
+  border-radius: var(--g2-r-md);
+  background: color-mix(in srgb, var(--ge-bg2) 90%, var(--g2-tag) 4%);
+  border: 1px solid color-mix(in srgb, var(--g2-tag) 22%, transparent);
+  min-width: 0;
+}
+
+.g2-goal.is-ready {
+  border-color: color-mix(in srgb, var(--g2-tag) 65%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--g2-tag) 14%, transparent);
+}
+
+.g2-goal.is-done {
+  display: flex;
+}
+
+.g2-goal__copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.g2-goal__title {
+  font-family: var(--g2-display);
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g2-goal__hint {
+  font-size: 0.78rem;
+  color: var(--ge-muted);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g2-goal__eta {
+  color: var(--ge-ink);
+}
+
+.g2-goal__meter {
+  grid-column: 1 / 2;
+  height: 5px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
+  overflow: hidden;
+}
+
+.g2-goal__meter span {
+  display: block;
+  height: 100%;
+  background: var(--g2-tag);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+.g2-goal .g2-tag {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+
+/* Shelf-tag button: yellow tag, punched hole, price first. */
+.g2-tag,
+.g2-root .ge-btn--primary {
+  position: relative;
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  background: var(--g2-tag);
+  color: var(--g2-tag-ink);
+  border-radius: 6px 10px 10px 6px;
+  font-family: var(--g2-ui);
+  font-weight: 650;
+  box-shadow:
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(0, 0, 0, 0.35);
+  transition:
+    transform 0.08s ease,
+    filter 0.12s ease;
+}
+
+.g2-tag {
+  display: grid;
+  justify-items: start;
+  padding: 0.38rem 0.85rem 0.38rem 1.35rem;
+  min-width: 7.5rem;
+}
+
+.g2-tag::before,
+.g2-root .ge-btn--primary::before {
+  content: '';
+  position: absolute;
+  left: 0.48rem;
+  top: 50%;
+  width: 0.38rem;
+  height: 0.38rem;
+  margin-top: -0.19rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ge-bg) 85%, #000);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.g2-root .ge-btn--primary {
+  padding-left: 1.25rem;
+}
+
+.g2-tag:hover:not(:disabled),
+.g2-root .ge-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.07);
+  background: var(--g2-tag);
+  color: var(--g2-tag-ink);
+}
+
+.g2-tag:active:not(:disabled),
+.g2-root .ge-btn--primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.g2-tag:disabled,
+.g2-root .ge-btn--primary:disabled {
+  background: color-mix(in srgb, var(--g2-tag) 28%, var(--ge-bg2));
+  color: color-mix(in srgb, var(--ge-ink) 70%, transparent);
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
+}
+
+.g2-tag__price {
+  font-family: var(--g2-display);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.g2-tag__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* ── HUD controls ───────────────────────────────────────────────────── */
+
+.g2-hud__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.g2-transport {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--g2-r-sm);
+  background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
+}
+
+.g2-icon-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ge-ink);
+  min-width: 2.1rem;
+  height: 2.1rem;
+  padding: 0 0.45rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-family: var(--g2-ui);
+}
+
+.g2-icon-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
+}
+
+.g2-icon-btn.is-on {
+  background: var(--ge-ink);
+  color: var(--ge-bg);
+}
+
+.g2-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.g2-icon-btn--text {
+  font-variant-numeric: tabular-nums;
+}
+
+.g2-inbox-btn {
+  position: relative;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2.3rem;
+  padding: 0 0.8rem;
+  border-radius: var(--g2-r-sm);
+  border: 1px solid var(--g2-line-strong);
+  background: transparent;
+  color: var(--ge-ink);
+  cursor: pointer;
+  font-family: var(--g2-ui);
+  font-size: 0.85rem;
+}
+
+.g2-inbox-btn:hover,
+.g2-inbox-btn.is-on {
+  background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+}
+
+.g2-badge {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 99px;
+  background: var(--g2-tag);
+  color: var(--g2-tag-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.g2-alert {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--g2-ui);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--g2-tag) 16%, transparent);
+  color: var(--g2-tag);
+  max-width: 15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g2-alert.is-danger {
+  background: color-mix(in srgb, var(--ge-danger) 18%, transparent);
+  color: color-mix(in srgb, var(--ge-danger) 85%, #fff);
+}
+
+/* ── Hubs ───────────────────────────────────────────────────────────── */
+
+.g2-hubs {
+  grid-area: hubs;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.8rem 0.5rem;
+  border-right: 1px solid var(--g2-line);
+  background: color-mix(in srgb, var(--ge-bg) 94%, #000);
+}
+
+.g2-hub {
+  position: relative;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ge-muted);
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 0.25rem 0.65rem;
+  border-radius: var(--g2-r-md);
+  cursor: pointer;
+  font-family: var(--g2-ui);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.g2-hub:hover {
+  color: var(--ge-ink);
+  background: color-mix(in srgb, var(--ge-ink) 5%, transparent);
+}
+
+.g2-hub.is-active {
+  color: var(--ge-ink);
+}
+
+.g2-hub__indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--g2-r-md);
+  background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--g2-tag);
+  z-index: -1;
+}
+
+.g2-hub > * {
+  position: relative;
+}
+
+.g2-hub__dot {
+  position: absolute;
+  top: 0.55rem;
+  right: 1.2rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--g2-tag);
+}
+
+/* ── Main ───────────────────────────────────────────────────────────── */
+
+.g2-main {
+  grid-area: main;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.25rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  scrollbar-gutter: stable;
+}
+
+.g2-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.g2-subtab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--g2-line);
+  background: transparent;
+  color: var(--ge-muted);
+  padding: 0.42rem 0.85rem;
+  border-radius: 99px;
+  font-family: var(--g2-ui);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.g2-subtab:hover {
+  color: var(--ge-ink);
+  border-color: var(--g2-line-strong);
+}
+
+.g2-subtab.is-active {
+  background: var(--ge-ink);
+  border-color: var(--ge-ink);
+  color: var(--ge-bg);
+}
+
+.g2-subtab.is-suggest:not(.is-active)::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--g2-tag);
+}
+
+/* Existing department panels, re-skinned. */
+.g2-root .ge-panel {
+  border: none;
+  border-radius: var(--g2-r-lg);
+  background: var(--g2-surface);
+  padding: 1.1rem 1.2rem 1.3rem;
+}
+
+.g2-root .ge-panel__title {
+  font-family: var(--g2-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.g2-root .ge-panel__purpose {
+  font-size: 0.85rem;
+}
+
+.g2-root .ge-btn {
+  border-radius: var(--g2-r-sm);
+  font-family: var(--g2-ui);
+}
+
+/* ── Scene ──────────────────────────────────────────────────────────── */
+
+.sc-scene {
+  position: relative;
+  height: clamp(160px, 29vh, 280px);
+  border-radius: var(--g2-r-lg);
+  overflow: hidden;
+  flex: 0 0 auto;
+  background: #101523;
+  box-shadow: inset 0 0 0 1px var(--g2-line);
+}
+
+.sc-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sc-sign-text {
+  font-family: var(--g2-display);
+  font-weight: 650;
+  font-size: 15px;
+  fill: var(--sc-window);
+  letter-spacing: 0.02em;
+}
+
+.sc-neon-text {
+  font-family: var(--g2-ui);
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--sc-tomato);
+}
+
+.sc-neon {
+  filter: drop-shadow(0 0 4px rgba(255, 90, 67, 0.85));
+  animation: sc-flicker 6s steps(1) infinite;
+}
+
+.sc-neon.is-off {
+  filter: none;
+  opacity: 0.35;
+  animation: none;
+}
+
+@keyframes sc-flicker {
+  0%,
+  92%,
+  100% {
+    opacity: 1;
+  }
+  93% {
+    opacity: 0.4;
+  }
+  95% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 0.55;
+  }
+}
+
+.sc-tier {
+  font-family: var(--g2-ui);
+  font-size: 11px;
+  fill: rgba(239, 233, 220, 0.55);
+}
+
+.sc-shopper--in {
+  animation-name: sc-walk-in;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.sc-shopper--out {
+  animation-name: sc-walk-out;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes sc-walk-in {
+  0% {
+    transform: translateX(-30px);
+    opacity: 1;
+  }
+  88% {
+    transform: translateX(var(--door));
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(var(--door));
+    opacity: 0;
+  }
+}
+
+@keyframes sc-walk-out {
+  0% {
+    transform: translateX(var(--door));
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(1230px);
+    opacity: 1;
+  }
+}
+
+.sc-steam {
+  fill: rgba(220, 230, 240, 0.35);
+  animation: sc-steam 3.5s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes sc-steam {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-26px) scale(1.8);
+    opacity: 0;
+  }
+}
+
+.sc-ship {
+  animation-name: sc-sail;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes sc-sail {
+  0% {
+    transform: translateX(1240px);
+  }
+  100% {
+    transform: translateX(800px);
+  }
+}
+
+.sc-barge {
+  animation-name: sc-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  filter: drop-shadow(0 0 6px rgba(154, 167, 199, 0.6));
+}
+
+@keyframes sc-drift {
+  0% {
+    transform: translateX(-60px);
+  }
+  100% {
+    transform: translateX(1260px);
+  }
+}
+
+.sc-rain line {
+  animation: sc-rain 0.8s linear infinite;
+}
+
+@keyframes sc-rain {
+  0% {
+    transform: translate(0, -40px);
+  }
+  100% {
+    transform: translate(-10px, 40px);
+  }
+}
+
+/* ── Inbox drawer ───────────────────────────────────────────────────── */
+
+.ge-root.g2-root .g2-inbox {
+  position: fixed;
+  top: var(--g2-hud-h);
+  right: 0;
+  bottom: 0;
+  width: min(420px, 100vw);
+  max-height: none;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--ge-bg) 96%, #000);
+  border-left: 1px solid var(--g2-line-strong);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.35);
+  padding: 0;
+}
+
+.g2-root--dev .g2-inbox {
+  top: calc(var(--g2-hud-h) + 2rem);
+}
+
+.g2-inbox__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.8rem 0.5rem;
+  border-bottom: 1px solid var(--g2-line);
+}
+
+.g2-inbox__tabs {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.g2-inbox__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.6rem 0.8rem 2rem;
+}
+
+/* ── Floating story line, toasts, whispers ──────────────────────────── */
+
+.g2-dialogue {
+  position: fixed;
+  left: calc(96px + 1.25rem);
+  bottom: 1rem;
+  z-index: 25;
+  width: min(560px, calc(100vw - 96px - 2.5rem));
+}
+
+.g2-dialogue .ge-dialogue {
+  border-radius: var(--g2-r-lg);
+  background: color-mix(in srgb, var(--ge-bg2) 94%, #000);
+  border: 1px solid var(--g2-line-strong);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.g2-dialogue .ge-dialogue__label {
+  display: none;
+}
+
+.g2-root .g2-whisper {
+  top: auto;
+  left: auto;
+  right: 1rem;
+  bottom: 1rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  border-radius: var(--g2-r-md);
+  border: 1px solid var(--g2-line-strong);
+  border-left: 3px solid var(--g2-tag);
+  background: color-mix(in srgb, var(--ge-bg2) 96%, #000);
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.g2-root .g2-whisper .ge-tip-whisper__text {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.g2-root .g2-toasts {
+  right: 1rem;
+  bottom: 5rem;
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────── */
+
+.g2-root :focus-visible {
+  outline: 2px solid var(--g2-tag);
+  outline-offset: 2px;
+}
+
+/* ── Medium screens ─────────────────────────────────────────────────── */
+
+@media (max-width: 1180px) {
+  .g2-hud {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+  .g2-hud__controls {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-end;
+  }
+  .ge-root.g2-root {
+    --g2-hud-h: 128px;
+  }
+}
+
+/* ── Phones ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .ge-root.g2-root,
+  .ge-root.g2-root.g2-root--dev {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'hud'
+      'main'
+      'hubs';
+  }
+
+  .ge-root.g2-root.g2-root--dev {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'devbar'
+      'hud'
+      'main'
+      'hubs';
+  }
+
+  .g2-hud {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    gap: 0.5rem 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .g2-hud__brand {
+    display: none;
+  }
+
+  .g2-hud__money {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 1rem;
+  }
+
+  .g2-hud__controls {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 0.25rem;
+  }
+
+  .g2-hud__controls .g2-alert,
+  .g2-hud__controls .g2-icon-btn--text,
+  .g2-inbox-btn span:not(.g2-badge) {
+    display: none;
+  }
+
+  .g2-goal {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .g2-stat__value {
+    font-size: 1.35rem;
+    min-width: 0;
+  }
+
+  .g2-hubs {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0.25rem 0.25rem calc(0.25rem + env(safe-area-inset-bottom));
+    border-right: none;
+    border-top: 1px solid var(--g2-line);
+  }
+
+  .g2-hub {
+    flex: 1;
+    padding: 0.45rem 0.1rem 0.35rem;
+    font-size: 0.72rem;
+  }
+
+  .g2-hub__indicator {
+    box-shadow: inset 0 3px 0 var(--g2-tag);
+  }
+
+  .g2-main {
+    padding: 0.75rem 0.75rem 5rem;
+  }
+
+  .sc-scene {
+    height: 150px;
+  }
+
+  .ge-root.g2-root .g2-inbox {
+    top: 0;
+    width: 100vw;
+  }
+
+  .g2-dialogue {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 4.5rem;
+    width: auto;
+  }
+
+  .g2-subtabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-shopper--in,
+  .sc-shopper--out,
+  .sc-ship,
+  .sc-barge,
+  .sc-steam,
+  .sc-rain line,
+  .sc-neon {
+    animation: none !important;
+  }
+}
+
+/* ── Floor, re-laid as three cards ──────────────────────────────────── */
+
+.g2-root .ge-floor {
+  border: none;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.g2-root .ge-floor::before,
+.g2-root .ge-floor::after {
+  display: none;
+}
+
+.g2-root .ge-floor__desk {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+.g2-root .ge-floor__actions,
+.g2-root .ge-floor__buy,
+.g2-root .ge-floor__shelf-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  min-width: 0;
+}
+
+.g2-root .ge-floor__actions {
+  grid-template-columns: none;
+}
+
+/* Unpack: the store's main verb — big, tactile, not a purchase. */
+.g2-root .ge-btn--primary.ge-unpack {
+  background: var(--sc-tomato, #ff5a43);
+  color: #fff8ee;
+  border-radius: var(--g2-r-md);
+  min-height: 5.25rem;
+  padding: 0.6rem 1rem;
+  font-family: var(--g2-display);
+  font-size: 1.6rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  gap: 0.6rem;
+  box-shadow:
+    inset 0 -5px 0 rgba(0, 0, 0, 0.22),
+    0 2px 0 rgba(0, 0, 0, 0.35);
+  width: 100%;
+}
+
+.g2-root .ge-btn--primary.ge-unpack::before {
+  display: none;
+}
+
+.g2-root .ge-btn--primary.ge-unpack:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 -2px 0 rgba(0, 0, 0, 0.22),
+    0 0 0 rgba(0, 0, 0, 0.35);
+}
+
+.g2-root .ge-btn--primary.ge-unpack:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sc-tomato, #ff5a43) 92%, #fff);
+  color: #fff;
+}
+
+.g2-root .ge-unpack__amt {
+  font-family: var(--g2-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.g2-root .ge-floor__buy .ge-btn--primary {
+  min-height: 2.7rem;
+  font-size: 0.95rem;
+}
+
+.g2-root .ge-dept-callout {
+  border-radius: var(--g2-r-md);
+  background: color-mix(in srgb, var(--g2-tag) 7%, var(--g2-surface));
+  border: 1px solid color-mix(in srgb, var(--g2-tag) 22%, transparent);
+}
+
+.g2-root .ge-dept-callout h3 {
+  font-family: var(--g2-display);
+  font-weight: 600;
+}
+
+.g2-root .ge-goal {
+  border-radius: var(--g2-r-md);
+}
+
+@media (max-width: 960px) {
+  .g2-root .ge-floor__desk {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .g2-root .ge-floor__desk {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .g2-root .ge-btn--primary.ge-unpack {
+    min-height: 4.25rem;
+    font-size: 1.35rem;
+  }
+}

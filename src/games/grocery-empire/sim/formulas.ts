@@ -41,7 +41,6 @@ import {
   STAFF_SEATS,
   STAFF_XP,
   UNPACK,
-  UPGRADE_RANKS,
   STANDING_ORDERS,
   VARIETY,
   VENTURE_TRAFFIC,
@@ -607,6 +606,11 @@ export function checkoutCap(s: GameState) {
   cap *= 1 + up(s, 'two-way-radio') * 0.03 + upgradeMagnitude(s, 'register-glance')
   if (memo(s, 'two-way-radio-memo')) cap *= 1.03
   return cap * Math.min(1, s.morale + 0.1)
+}
+
+/** What one unit of `cat` actually rings up for at the register (value ladder included). */
+export function shelfPrice(s: GameState, cat: CategoryId, price = s.price) {
+  return price * CATEGORIES[cat].priceRatio * valueMul(s)
 }
 
 export function revenueMul(s: GameState) {

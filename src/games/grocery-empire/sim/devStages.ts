@@ -1,4 +1,10 @@
 import { CATEGORY_IDS } from '../content/categories'
+import { migrate } from './migrate'
+import era1Snap from './devSnapshots/era1.json'
+import era2Snap from './devSnapshots/era2.json'
+import era3Snap from './devSnapshots/era3.json'
+import era4Snap from './devSnapshots/era4.json'
+import era5Snap from './devSnapshots/era5.json'
 import { MENU_IDS, type MenuId } from '../content/menus'
 import { TUTORIALS } from '../content/tutorials'
 import {
@@ -8,6 +14,20 @@ import {
   emptyPolitics,
   type GameState,
 } from './state'
+
+/**
+ * Real campaign snapshots: the pacing bot played to each era (+10 min) on seed 7.
+ * Regenerate after balance changes: SNAPSHOTS=1 npx vitest run sim/devSnapshots
+ */
+function fromSnapshot(raw: unknown, era: number): GameState {
+  const s = migrate(JSON.parse(JSON.stringify(raw)))
+  markTutorialsDone(s, era)
+  s.introSeen = true
+  s.paused = false
+  s.lastSavedAt = Date.now()
+  s.offlineReceipt = null
+  return s
+}
 
 export interface DevStageDef {
   id: string
@@ -268,37 +288,37 @@ export const DEV_STAGES: DevStageDef[] = [
   {
     id: 'era1-corner',
     label: 'Era 1 · Corner store',
-    blurb: 'Staff, produce, ads, back office Attention.',
+    blurb: 'Real campaign save, 10 minutes into the Corner Store era.',
     era: 1,
-    build: era1Corner,
+    build: () => fromSnapshot(era1Snap, 1),
   },
   {
     id: 'era2-chain',
     label: 'Era 2 · Chain',
-    blurb: 'Second door energy — stores, invest, strategy unlocked.',
+    blurb: 'Real campaign save, 10 minutes after the side yard.',
     era: 2,
-    build: era2Chain,
+    build: () => fromSnapshot(era2Snap, 2),
   },
   {
     id: 'era3-cold',
     label: 'Era 3 · Cold chain',
-    blurb: 'Plants, tanks, politics desk.',
+    blurb: 'Real campaign save, 10 minutes after the Cold Plant Permit.',
     era: 3,
-    build: era3Cold,
+    build: () => fromSnapshot(era3Snap, 3),
   },
   {
     id: 'era4-globe',
     label: 'Era 4 · Globe',
-    blurb: 'Lanes, fuel, Control — autonomous pressure.',
+    blurb: 'Real campaign save, 10 minutes after leaving the region.',
     era: 4,
-    build: era4Globe,
+    build: () => fromSnapshot(era4Snap, 4),
   },
   {
     id: 'era5-fleet',
     label: 'Era 5 · Seed barges',
-    blurb: 'Fleet live with Charter points and Legacy.',
+    blurb: 'Real campaign save, 10 minutes after the first barge.',
     era: 5,
-    build: era5Fleet,
+    build: () => fromSnapshot(era5Snap, 5),
   },
   {
     id: 'era6-ending',
