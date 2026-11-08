@@ -18,6 +18,7 @@ export const MENU_IDS = [
   'fleet',
   'empire',
   'map',
+  'relics',
   'coach',
   'more',
 ] as const
@@ -145,6 +146,12 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Map',
     glyph: 'MP',
     purpose: 'Everything you own, in rings around the flagship.',
+  },
+  relics: {
+    id: 'relics',
+    name: 'Relics',
+    glyph: 'RL',
+    purpose: 'A wall of relics that outlives every run.',
   },
   coach: {
     id: 'coach',

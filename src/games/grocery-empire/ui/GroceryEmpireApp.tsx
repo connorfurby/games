@@ -70,6 +70,9 @@ import { MorePanel } from './panels/MorePanel'
 import { PoliticsPanel } from './panels/PoliticsPanel'
 import { RivalsPanel } from './panels/RivalsPanel'
 import { EmpireMap } from './panels/EmpireMap'
+import { MuseumPanel } from './museum/MuseumPanel'
+import { useMuseumEarning } from './museum/useMuseumEarning'
+import { useMuseum } from './museum/store'
 import { StaffPanel } from './panels/StaffPanel'
 import { StrategyPanel } from './panels/StrategyPanel'
 import { SuppliersPanel } from './panels/SuppliersPanel'
@@ -86,6 +89,7 @@ const PANEL: Record<MenuId, () => ReactNode> = {
   marketing: () => <MarketingPanel />,
   rivals: () => <RivalsPanel />,
   map: () => <EmpireMap />,
+  relics: () => <MuseumPanel />,
   books: () => <BooksPanel />,
   invest: () => <InvestPanel />,
   build: () => <BuildPanel />,
@@ -322,6 +326,14 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     meta.settings.notifyEnabled,
   ])
 
+  const pushToast = (text: string, ms = 3600) => {
+    const id = Date.now() + Math.random()
+    setToasts((t) => [...t.slice(-4), { id, text }])
+    window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ms)
+  }
+  useMuseumEarning(pushToast)
+  const museum = useMuseum()
+
   const dispatch = (cmd: Command) => {
     const check = engine.dispatch(cmd)
     if (!check.ok && check.reason) {
@@ -423,7 +435,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       }
 
       // Digits 1–5 → hubs; skip while a coach tour is active.
-      if (!engine.getState().tutorials.active && e.key >= '1' && e.key <= '5') {
+      if (!engine.getState().tutorials.active && e.key >= '1' && e.key <= '6') {
         const h = HUBS[Number(e.key) - 1]
         const live = engine.getState()
         const ms = h ? h.menus.filter((id) => !!live.menus[id]) : []
@@ -682,7 +694,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                     ) : null}
                     <Icon name={h.icon} size={20} />
                     <span className="g2-hub__name">{h.name}</span>
-                    {hit ? <span className="g2-hub__dot" aria-label="Suggested" /> : null}
+                    {h.id === 'museum' && museum.chests.length > 0 ? (
+                      <span className="g2-hub__badge" aria-label={`${museum.chests.length} chests to open`}>
+                        {museum.chests.length}
+                      </span>
+                    ) : hit ? (
+                      <span className="g2-hub__dot" aria-label="Suggested" />
+                    ) : null}
                   </button>
                 )
               })}
@@ -782,7 +800,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                   </button>
                 </div>
                 <div className="g2-inbox__body">
-                  {inboxTab === 'memos' ? <MemosPanel compact /> : <Ledger state={state} limit={60} />}
+                  {inboxTab === 'memos' ? <MemosPanel compact /> : <Ledger state={state} limit={120} inline />}
                 </div>
               </motion.aside>
             ) : null}

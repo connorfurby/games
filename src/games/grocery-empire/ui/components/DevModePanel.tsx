@@ -11,6 +11,9 @@ import {
   wipeDevSandbox,
 } from '../../sim/devMode'
 import { listDevStages } from '../../sim/devStages'
+import { emptyMuseum } from '../../sim/museum'
+import { RARITIES, RELICS } from '../../content/relics'
+import { museumStore } from '../museum/store'
 import { useGame } from '../GameContext'
 import { money } from '../format'
 
@@ -89,6 +92,54 @@ export function DevModePanel() {
           </button>
           <button type="button" className="dv-btn" onClick={act('Attention filled', devGrantAttention)}>
             Fill Attention
+          </button>
+        </div>
+      </section>
+
+      <section className="dv-block">
+        <h4>Museum (sandbox copy)</h4>
+        <div className="dv-row">
+          <button
+            type="button"
+            className="dv-btn"
+            onClick={act('One chest of each rarity', () =>
+              museumStore.update((m) => {
+                m.unlocked = true
+                for (const r of RARITIES) m.chests.push({ id: `c${m.nextChestId++}`, rarity: r, wing: null, source: 'DevMode', at: Date.now() })
+              }),
+            )}
+          >
+            +1 chest each rarity
+          </button>
+          <button
+            type="button"
+            className="dv-btn"
+            onClick={act('+10 rare chests', () =>
+              museumStore.update((m) => {
+                m.unlocked = true
+                for (let i = 0; i < 10; i++) m.chests.push({ id: `c${m.nextChestId++}`, rarity: 'rare', wing: null, source: 'DevMode', at: Date.now() })
+              }),
+            )}
+          >
+            +10 rare chests
+          </button>
+          <button
+            type="button"
+            className="dv-btn"
+            onClick={act('Every relic revealed (sandbox only)', () =>
+              museumStore.update((m) => {
+                m.unlocked = true
+                for (const r of RELICS) m.relics[r.id] ??= { at: Date.now(), n: 1 }
+              }),
+            )}
+          >
+            Reveal all relics
+          </button>
+          <button type="button" className="dv-btn" onClick={act('+500 dust', () => museumStore.update((m) => void (m.dust += 500)))}>
+            +500 dust
+          </button>
+          <button type="button" className="dv-btn dv-btn--danger" onClick={act('Museum reset', () => museumStore.update((m) => void Object.assign(m, emptyMuseum())))}>
+            Reset museum
           </button>
         </div>
       </section>

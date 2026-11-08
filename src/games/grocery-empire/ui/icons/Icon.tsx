@@ -60,6 +60,8 @@ const PATHS: Record<IconName, string> = {
   logistics: 'M3 13h11V8H3v5zm11 0h4l3 3v3h-2M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
   fleet: 'M4 15c2-4 5-6 8-6s6 2 8 6M6 15l2 4h8l2-4M12 5v4M9 7h6',
   empire: 'M4 20h16M6 20V10l6-5 6 5v10M10 20v-5h4v5',
+  // A pedestal with a gem on it.
+  relics: 'M12 3l4 4-4 6-4-6 4-4zM8 7h8M6 21h12M8 21v-4h8v4M10 17v-2h4v2',
   map: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01',
   coach:
     'M12 4a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V8a4 4 0 0 1 4-4z',

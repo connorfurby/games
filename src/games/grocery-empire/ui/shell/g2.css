@@ -3451,3 +3451,61 @@
     font-size: 0.62rem;
   }
 }
+
+/* Ledger as its own drawer tab: flat list, no floating tab chrome. */
+.g2-inbox .ge-ledger.is-open {
+  position: static;
+  width: auto;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.g2-inbox .ge-ledger__drawer {
+  position: static;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.g2-inbox .ge-ledger__list {
+  max-height: none;
+  overflow: visible;
+}
+
+/* Toasts: bottom-right stack, solid cards (base styles pinned them to the top too). */
+.g2-root .g2-toasts {
+  top: auto;
+  left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.g2-root .g2-toasts .ge-toast {
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.5rem 0.8rem;
+  border-radius: var(--g2-r-md);
+  background: color-mix(in srgb, var(--ge-bg2) 96%, #000);
+  border: 1px solid var(--g2-line-strong);
+  border-left: 3px solid var(--g2-tag);
+  color: var(--ge-ink);
+  font-size: 0.82rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  opacity: 1;
+}
+
+@media (max-width: 720px) {
+  .g2-root .g2-toasts {
+    right: 0.75rem;
+    left: 0.75rem;
+    align-items: stretch;
+  }
+}

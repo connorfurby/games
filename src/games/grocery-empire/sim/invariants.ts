@@ -254,6 +254,7 @@ export function repair(s: GameState): GameState {
   if (!Array.isArray(s.projects.active)) s.projects.active = []
   if (!s.projects.done || typeof s.projects.done !== 'object') s.projects.done = {}
   if (!s.rivals || typeof s.rivals !== 'object') s.rivals = {}
+  if (!s.relics || !Array.isArray(s.relics.wings)) s.relics = { wings: [], count: 0 }
   if (s.prestigeCarry) {
     s.prestigeCarry.appetite = Math.max(0, finite(s.prestigeCarry.appetite))
     s.prestigeCarry.tipSharpness = Math.max(0, finite(s.prestigeCarry.tipSharpness))

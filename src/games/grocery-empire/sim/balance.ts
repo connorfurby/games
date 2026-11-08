@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 6
+export const SAVE_VERSION = 7
 
 /** Lifetime revenue before the Lot Survey memo appears (Era 1 → 2 spine). */
 export const LOT_SURVEY_LIFETIME = 4000
@@ -635,3 +635,6 @@ export const RIVAL_CHAINS = {
   /** A taunt is logged every this-many new stores. */
   tauntEvery: 3,
 }
+
+/** Relic Museum: +0.1% shoppers per relic owned (soft-capped like every stat). */
+export const RELIC_DEMAND_PER = 0.001

@@ -97,8 +97,8 @@ describe('Grocery Empire 2.0 smoke', () => {
     expect(canReleaseAutonomous(s)).toBeNull()
   })
 
-  it('SAVE_VERSION is 5 and migrate sets it', () => {
-    expect(SAVE_VERSION).toBe(6)
+  it('SAVE_VERSION is current and migrate sets it', () => {
+    expect(SAVE_VERSION).toBe(7)
     const m = migrate({ version: 3, cash: 10, baskets: 1 })
     expect(m.version).toBe(SAVE_VERSION)
     expect(m.board.expandDiscount).toBeDefined()

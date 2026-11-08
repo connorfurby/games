@@ -159,6 +159,7 @@ export type Command =
   | { type: 'startProject'; id: string }
   | { type: 'priceWar'; id: RivalId }
   | { type: 'evenAttention' }
+  | { type: 'syncRelics'; wings: string[]; count: number; unlocked: boolean }
   | { type: 'walkDrifting' }
   | { type: 'buyoutRival'; id: RivalId }
   | { type: 'respecPerks' }
@@ -731,6 +732,14 @@ const coreHandlers = {
       def.run?.(s)
       log(s, def.voice, 'story')
       log(s, def.done, 'memo')
+    },
+  },
+  syncRelics: {
+    can: () => ok,
+    run: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'syncRelics' }>
+      s.relics = { wings: [...c.wings], count: Math.max(0, Math.floor(c.count)) }
+      if (c.unlocked) s.menus.relics = true
     },
   },
   evenAttention: {

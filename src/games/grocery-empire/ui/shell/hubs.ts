@@ -6,7 +6,7 @@ import type { IconName } from '../icons/Icon'
  * departments you have unlocked, so Era 0 is one hub and Era 6 is five.
  * Coach and More live in the HUD menu; Memos live in the Inbox drawer.
  */
-export type HubId = 'store' | 'supply' | 'team' | 'money' | 'empire'
+export type HubId = 'store' | 'supply' | 'team' | 'money' | 'empire' | 'museum'
 
 export interface HubDef {
   id: HubId
@@ -52,6 +52,13 @@ export const HUBS: HubDef[] = [
     purpose: 'Grow the chain: upgrades, rank, strategy, land, the fleet and the map.',
     icon: 'empire',
     menus: ['empire', 'map', 'upgrades', 'strategy', 'land', 'fleet'],
+  },
+  {
+    id: 'museum',
+    name: 'Museum',
+    purpose: 'Relics from every run, chests to open, and a wall to fill.',
+    icon: 'relics',
+    menus: ['relics'],
   },
 ]
 

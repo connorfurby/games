@@ -1,4 +1,6 @@
 import { EMPIRE_REWARDS } from '../../content/empireRewards'
+import { WING_BY_ID, type WingId } from '../../content/relics'
+import { RELIC_DEMAND_PER } from '../balance'
 import { PERKS } from '../../content/perks'
 import { PROJECTS } from '../../content/projects'
 import { UPGRADES } from '../../content/upgrades'
@@ -26,7 +28,7 @@ function signature(s: GameState): string {
   let pk = 0
   for (const v of Object.values(s.empire.perks)) pk = pk * 31 + (v ?? 0)
   const pj = Object.keys(s.projects?.done ?? {}).length
-  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}`
+  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}|${s.relics?.count ?? 0}|${s.relics?.wings?.length ?? 0}`
 }
 
 export function treeRanks(s: GameState): Record<string, number> {
@@ -64,6 +66,14 @@ export function statSources(s: GameState): StatSource[] {
       ],
       rank: gw,
     })
+  }
+  // Relic Museum: each finished wing, plus a little per relic on the wall.
+  for (const w of s.relics?.wings ?? []) {
+    const def = WING_BY_ID[w as WingId]
+    if (def) sources.push({ effects: [{ stat: def.bonus.stat, per: def.bonus.per }], rank: 1 })
+  }
+  if ((s.relics?.count ?? 0) > 0) {
+    sources.push({ effects: [{ stat: 'demand', per: RELIC_DEMAND_PER }], rank: s.relics.count })
   }
   for (const pj of PROJECTS) {
     if (s.projects?.done?.[pj.id]) sources.push({ effects: pj.effects, rank: 1 })
