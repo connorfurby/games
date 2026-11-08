@@ -1,111 +1,126 @@
 import { useState } from 'react'
 import {
   applyDevStage,
+  devGrantAttention,
   devGrantBaskets,
   devGrantCash,
+  devGrantIncome,
   devSkipIntroAndCoach,
+  devSkipTime,
   devUnlockAllMenus,
   wipeDevSandbox,
 } from '../../sim/devMode'
 import { listDevStages } from '../../sim/devStages'
-import { Btn } from './Btn'
-import { Section } from './Section'
+import { useGame } from '../GameContext'
+import { money } from '../format'
 
+/** DevMode sandbox tools: stage jumps, time skips, grants. Only shown on the dev save. */
 export function DevModePanel() {
+  const { state: s, numberFormat } = useGame()
   const [msg, setMsg] = useState('')
   const stages = listDevStages()
+  const act = (label: string, fn: () => void) => () => {
+    fn()
+    setMsg(label)
+  }
 
   return (
-    <Section label="DevMode sandbox">
-      <p className="ge-muted">
-        Isolated localStorage key. Stage jumps replace only this sandbox. Campaign, Shelf Tokens, and
-        achievements stay untouched.
-      </p>
-      <div className="ge-dev-stages">
-        {stages.map((st) => (
+    <div className="dv">
+      <p className="dv-note">Separate save. Nothing here touches your campaign, tokens or awards.</p>
+
+      <section className="dv-block">
+        <h4>Jump to a stage</h4>
+        <div className="dv-stages">
+          {stages.map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              className="ge-dev-stage dv-stage"
+              title={st.blurb}
+              onClick={() => setMsg(applyDevStage(st.id) ? `Loaded ${st.label}` : 'Stage failed.')}
+            >
+              <strong>{st.label}</strong>
+              <span>{st.blurb}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="dv-block">
+        <h4>Skip time</h4>
+        <div className="dv-row">
+          {[
+            ['+1 min', 60],
+            ['+10 min', 600],
+            ['+1 h', 3600],
+            ['+8 h', 8 * 3600],
+          ].map(([label, sec]) => (
+            <button key={label} type="button" className="dv-btn" onClick={act(`Skipped ${label}`, () => devSkipTime(sec as number))}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="dv-block">
+        <h4>Grant</h4>
+        <div className="dv-row">
+          <button type="button" className="dv-btn" onClick={act('+$1,000', () => devGrantCash(1000))}>
+            +$1k
+          </button>
           <button
-            key={st.id}
             type="button"
-            className="ge-dev-stage"
+            className="dv-btn"
+            title={`About ${money(Math.max(1000, s.rates.revenuePerSec * 600), numberFormat)} right now`}
+            onClick={act('+10 min of income', () => devGrantIncome(10))}
+          >
+            +10 min income
+          </button>
+          <button
+            type="button"
+            className="dv-btn"
+            title={`About ${money(Math.max(1000, s.rates.revenuePerSec * 3600), numberFormat)} right now`}
+            onClick={act('+1 h of income', () => devGrantIncome(60))}
+          >
+            +1 h income
+          </button>
+          <button type="button" className="dv-btn" onClick={act('+1,000 baskets', () => devGrantBaskets(1000))}>
+            +1k baskets
+          </button>
+          <button type="button" className="dv-btn" onClick={act('Attention filled', devGrantAttention)}>
+            Fill Attention
+          </button>
+        </div>
+      </section>
+
+      <section className="dv-block">
+        <h4>Sandbox</h4>
+        <div className="dv-row">
+          <button type="button" className="dv-btn" onClick={act('Menus unlocked', devUnlockAllMenus)}>
+            Unlock all menus
+          </button>
+          <button type="button" className="dv-btn" onClick={act('Intro and coach cleared', devSkipIntroAndCoach)}>
+            Skip intro and coach
+          </button>
+          <button
+            type="button"
+            className="dv-btn dv-btn--danger"
             onClick={() => {
-              if (applyDevStage(st.id)) setMsg(`Loaded · ${st.label}`)
-              else setMsg('Stage failed.')
+              if (!window.confirm('Wipe the DevMode sandbox? Your campaign save is untouched.')) return
+              wipeDevSandbox()
+              setMsg('Sandbox wiped')
             }}
           >
-            <strong>
-              E{st.era} · {st.label}
-            </strong>
-            <span>{st.blurb}</span>
+            Wipe sandbox
           </button>
-        ))}
-      </div>
-      <div className="ge-chip-row">
-        <Btn
-          tone="ghost"
-          onClick={() => {
-            devGrantCash(1000)
-            setMsg('+ $1,000')
-          }}
-        >
-          +$1k
-        </Btn>
-        <Btn
-          tone="ghost"
-          onClick={() => {
-            devGrantCash(100_000)
-            setMsg('+ $100,000')
-          }}
-        >
-          +$100k
-        </Btn>
-        <Btn
-          tone="ghost"
-          onClick={() => {
-            devGrantBaskets(100)
-            setMsg('+ 100 baskets')
-          }}
-        >
-          +100 baskets
-        </Btn>
-        <Btn
-          tone="ghost"
-          onClick={() => {
-            devGrantBaskets(10_000)
-            setMsg('+ 10,000 baskets')
-          }}
-        >
-          +10k baskets
-        </Btn>
-        <Btn
-          tone="ghost"
-          onClick={() => {
-            devUnlockAllMenus()
-            setMsg('Menus unlocked')
-          }}
-        >
-          Unlock menus
-        </Btn>
-        <Btn
-          tone="ghost"
-          onClick={() => {
-            devSkipIntroAndCoach()
-            setMsg('Intro/coach cleared')
-          }}
-        >
-          Skip intro/coach
-        </Btn>
-        <Btn
-          tone="danger"
-          onClick={() => {
-            if (!window.confirm('Wipe DevMode sandbox only? Campaign save is untouched.')) return
-            wipeDevSandbox()
-            setMsg('DevMode wiped')
-          }}
-        >
-          Wipe DevMode
-        </Btn>
-      </div>
-      {msg ? <p className="ge-muted">{msg}</p> : null}
-    </Section>
+        </div>
+      </section>
+
+      {msg ? (
+        <p className="dv-msg" role="status">
+          {msg}
+        </p>
+      ) : null}
+    </div>
   )
 }

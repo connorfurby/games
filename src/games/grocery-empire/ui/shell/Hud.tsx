@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { AppMenu } from '@/shell/AppMenu'
+import { useStable } from '../useStable'
 import type { NumberFormat } from '@/shared/bn'
 import { ERA_STORY } from '../../content/lore'
 import { MENUS, type MenuId } from '../../content/menus'
@@ -36,6 +36,8 @@ export function Hud({
   inboxCount,
   inboxOpen,
   onInbox,
+  toolsOpen,
+  onTools,
 }: {
   state: GameState
   pops: PopItem[]
@@ -46,6 +48,8 @@ export function Hud({
   inboxCount: number
   inboxOpen: boolean
   onInbox: () => void
+  toolsOpen: boolean
+  onTools: () => void
 }) {
   const net = s.rates.revenuePerSec - s.rates.costPerSec
   const era = ERA_STORY[s.era]
@@ -64,6 +68,9 @@ export function Hud({
       alert = { text: LIMIT_COPY[b.kind] ?? b.label, menu: s.menus[dest] ? dest : 'floor', tone: 'warn' }
     }
   }
+
+  // Bottleneck alerts swing with every crate; only change the banner when it settles.
+  alert = useStable(alert, (a) => a?.text ?? '', 2000, 5000)
 
   return (
     <header className="g2-hud">
@@ -160,10 +167,20 @@ export function Hud({
             <Icon name="coach" size={16} />
           </button>
         ) : null}
-        <button type="button" className="g2-icon-btn" onClick={() => onMenu('more')} title="Saves, settings and tools">
-          <Icon name="more" size={16} />
+        <button
+          type="button"
+          className={`g2-icon-btn g2-menu-btn${toolsOpen ? ' is-on' : ''}`}
+          onClick={onTools}
+          aria-expanded={toolsOpen}
+          aria-label="Menu"
+          title="Saves, settings and tools"
+        >
+          <svg viewBox="0 0 18 18" width="16" height="16" aria-hidden>
+            {[0, 1, 2].flatMap((r) =>
+              [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={1 + c * 6} y={1 + r * 6} width="4" height="4" rx="0.6" fill="currentColor" />),
+            )}
+          </svg>
         </button>
-        <AppMenu placement="inline" />
       </div>
     </header>
   )

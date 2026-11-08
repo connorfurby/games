@@ -12,7 +12,9 @@ import {
   todaysChallenge,
 } from '@/shell/dailyChallenge'
 import { localDayKey } from '@/shell/dailyStamp'
+import { openHotkeyMap } from '@/shell/AppMenu'
 import { useMeta } from '@/shell/MetaContext'
+import { SettingsModal } from '@/shell/SettingsModal'
 import { PLAYER_CHECKLIST } from '../../content/checklist'
 import { engine } from '../../sim/engine'
 import { migrate } from '../../sim/migrate'
@@ -27,7 +29,19 @@ import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { Sparkline } from '../components/Sparkline'
 
+export type MoreSection = 'run' | 'settings' | 'saves' | 'progress' | 'go'
+
+/** The Tools drawer shows one section at a time; the More menu (legacy route) shows them all. */
 export function MorePanel() {
+  return (
+    <Panel title="More" purpose="Saves, settings, and run tools." lore="more">
+      <MoreSections />
+    </Panel>
+  )
+}
+
+export function MoreSections({ only }: { only?: MoreSection }) {
+  const show = (sec: MoreSection) => !only || only === sec
   const { state: s, tick, dispatch, photoMode, setPhotoMode, reducedMotion } = useGame()
   const { meta, updateSettings } = useMeta()
   const inDev = isDevSave()
@@ -36,6 +50,7 @@ export function MorePanel() {
   const [resetDraft, setResetDraft] = useState('')
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
   const pendingImport = useRef<string | null>(null)
+  const [allSettings, setAllSettings] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const undoGate = canUndo()
 
@@ -172,10 +187,11 @@ export function MorePanel() {
   }
 
   return (
-    <Panel title="More" purpose="Saves, settings, and run tools." lore="more">
-      {inDev ? <DevModePanel /> : null}
+    <>
+      {inDev && !only ? <DevModePanel /> : null}
 
-      <div className="ge-more">
+      <div className={`ge-more${only ? ' ge-more--one' : ''}`}>
+        {show('run') ? (
         <section className="ge-more-block">
           <header className="ge-more-block__head">
             <h3>This run</h3>
@@ -234,7 +250,9 @@ export function MorePanel() {
             </p>
           ) : null}
         </section>
+        ) : null}
 
+        {show('settings') ? (
         <section className="ge-more-block">
           <header className="ge-more-block__head">
             <h3>Settings</h3>
@@ -293,8 +311,15 @@ export function MorePanel() {
             Hotkeys · U unpack · [ ] price · Space pause · Ctrl/Cmd+Z undo · Hold Esc soft-pause · P
             photo · 1–9 menus · ? list
           </p>
+          {only ? (
+            <Btn tone="ghost" onClick={() => setAllSettings(true)}>
+              Sound, theme and everything else…
+            </Btn>
+          ) : null}
         </section>
+        ) : null}
 
+        {show('saves') ? (
         <section className="ge-more-block ge-more-block--wide">
           <header className="ge-more-block__head">
             <h3>Saves</h3>
@@ -391,7 +416,9 @@ export function MorePanel() {
             </div>
           ) : null}
         </section>
+        ) : null}
 
+        {show('progress') ? (
         <section className="ge-more-block">
           <header className="ge-more-block__head">
             <h3>Progress</h3>
@@ -437,33 +464,59 @@ export function MorePanel() {
             </>
           ) : null}
         </section>
+        ) : null}
 
+        {show('go') ? (
         <section className="ge-more-block">
           <header className="ge-more-block__head">
-            <h3>Library</h3>
-            <p>Leave the aisle when you need meta tools.</p>
+            <h3>Go</h3>
+            <p>Leave the store for the rest of the site.</p>
           </header>
           <div className="ge-more-links">
             <Link className="ge-more-link" to="/">
-              Shelf
-            </Link>
-            <Link className="ge-more-link" to="/shop">
-              Shop
-            </Link>
-            <Link className="ge-more-link" to="/achievements">
-              Achievements
+              <strong>Home</strong>
+              <span>The shelf of games</span>
             </Link>
             <Link className="ge-more-link" to="/guide/grocery-empire">
-              Ops Wiki
+              <strong>Guide</strong>
+              <span>Ops Wiki and strategy</span>
             </Link>
+            <Link className="ge-more-link" to="/achievements">
+              <strong>Awards</strong>
+              <span>Achievements</span>
+            </Link>
+            <Link className="ge-more-link" to="/shop">
+              <strong>Shop</strong>
+              <span>Cosmetics and packs</span>
+            </Link>
+            <button type="button" className="ge-more-link" onClick={() => openHotkeyMap()}>
+              <strong>Keys</strong>
+              <span>Hotkey map</span>
+            </button>
+            {inDev ? (
+              <Link className="ge-more-link" to="/play/grocery-empire">
+                <strong>Campaign</strong>
+                <span>Leave the sandbox</span>
+              </Link>
+            ) : (
+              <Link className="ge-more-link" to="/play/grocery-empire/dev">
+                <strong>Dev sandbox</strong>
+                <span>Separate save for testing</span>
+              </Link>
+            )}
           </div>
         </section>
+        ) : null}
       </div>
 
-      <HelpCard title="Soft edges of the run">
-        Saves, settings, and the guide live here. Export a save before big experiments; toggle
-        Suggested next if the tip strip feels loud.
-      </HelpCard>
+      {!only ? (
+        <HelpCard title="Soft edges of the run">
+          Saves, settings, and the guide live here. Export a save before big experiments; toggle Suggested next if the
+          tip strip feels loud.
+        </HelpCard>
+      ) : null}
+
+      <SettingsModal open={allSettings} onClose={() => setAllSettings(false)} />
 
       <ConfirmModal
         open={!!confirm}
@@ -474,6 +527,6 @@ export function MorePanel() {
           setConfirm(null)
         }}
       />
-    </Panel>
+    </>
   )
 }

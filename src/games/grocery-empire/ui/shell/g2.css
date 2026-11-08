@@ -2333,3 +2333,1073 @@
     font-size: 1rem;
   }
 }
+
+/* ── Floor 2.0: compact ─────────────────────────────────────────────── */
+.fl .ge-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.fl-goal {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--g2-r-md);
+  background: color-mix(in srgb, var(--g2-tag) 9%, transparent);
+  border-left: 3px solid var(--g2-tag);
+  font-size: 0.85rem;
+}
+
+.fl-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.fl-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  font-size: 0.78rem;
+  overflow: hidden;
+}
+
+.fl-chip > span {
+  color: var(--ge-muted);
+  font-size: 0.7rem;
+}
+
+.fl-chip strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.fl-chip--meter > i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--ge-success);
+  transform-origin: left;
+}
+
+.fl-chip.is-bad strong {
+  color: var(--ge-danger, #e06a5a);
+}
+
+.fl-chip.is-bad > i {
+  background: var(--ge-danger, #e06a5a);
+}
+
+.fl-strip__note {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--ge-muted);
+}
+
+.fl-limit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.5rem 0.45rem 0.75rem;
+  border-radius: var(--g2-r-md);
+  border: 1px solid var(--g2-line);
+  border-left: 3px solid var(--g2-tag);
+  background: var(--g2-raised);
+}
+
+.fl-limit.is-hot {
+  border-left-color: var(--ge-danger, #e06a5a);
+}
+
+.fl-limit p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ge-muted);
+  min-width: 0;
+}
+
+.fl-limit strong {
+  color: var(--ge-ink);
+  font-weight: 650;
+  text-transform: none;
+}
+
+.fl-limit .ge-btn {
+  flex-shrink: 0;
+  min-height: 2rem;
+  font-size: 0.82rem;
+}
+
+.fl-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+.fl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  min-width: 0;
+}
+
+.fl-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-family: var(--g2-ui);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ge-muted);
+}
+
+.fl-note {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--ge-muted);
+  line-height: 1.35;
+}
+
+.fl-link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--g2-tag);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* Unpack: still the store's main verb, but sized like a button, not a billboard. */
+.g2-root .fl .ge-btn--primary.ge-unpack {
+  min-height: 3rem;
+  font-size: 1.15rem;
+  padding: 0.4rem 0.9rem;
+  gap: 0.45rem;
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.g2-root .fl .ge-btn--primary.ge-unpack:disabled {
+  background: color-mix(in srgb, var(--sc-tomato, #ff5a43) 30%, var(--ge-bg2));
+  color: color-mix(in srgb, #fff 75%, transparent);
+}
+
+.fl-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.fl-cat {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr 2.6rem;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.74rem;
+}
+
+.fl-cat > span:first-child {
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.fl-cat strong {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.fl-cat__bar {
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--g2-line);
+  overflow: hidden;
+}
+
+.fl-cat__bar > i {
+  position: absolute;
+  inset: 0;
+  background: var(--g2-tag);
+  transform-origin: left;
+}
+
+.fl-cat.is-spoil .fl-cat__bar > i {
+  background: var(--ge-danger, #e06a5a);
+}
+
+.fl-stepper {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr 2.25rem;
+  border: 1px solid var(--g2-line);
+  border-radius: var(--g2-r-sm);
+  overflow: hidden;
+  background: var(--ge-bg2, rgba(0, 0, 0, 0.2));
+}
+
+.fl-stepper button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ge-ink);
+  font-size: 1.1rem;
+  min-height: 2.4rem;
+  cursor: pointer;
+}
+
+.fl-stepper button:hover {
+  background: var(--g2-raised);
+}
+
+.g2-root .fl-stepper .ge-price__input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-inline: 1px solid var(--g2-line);
+  background: transparent;
+  color: var(--ge-ink);
+  text-align: center;
+  font-family: var(--g2-display);
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fl-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.fl-seg button {
+  appearance: none;
+  border: 1px solid var(--g2-line);
+  background: transparent;
+  color: var(--ge-muted);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  min-height: 1.75rem;
+  cursor: pointer;
+}
+
+.fl-seg button.is-on {
+  background: var(--g2-tag);
+  border-color: var(--g2-tag);
+  color: var(--g2-tag-ink);
+}
+
+.fl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: auto;
+}
+
+.g2-root .fl-row .ge-btn,
+.g2-root .fl-card .ge-btn {
+  min-height: 2.25rem;
+  font-size: 0.85rem;
+}
+
+.fl-dock {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .fl-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .fl-card--unpack {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .fl-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fl-card--unpack > .ge-unpack {
+    display: none;
+  }
+
+  .fl-strip__note {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .fl-limit {
+    flex-wrap: wrap;
+  }
+
+  /* On phones Unpack docks above the hub bar so it is always one tap away. */
+  .fl-dock {
+    display: block;
+    position: sticky;
+    bottom: 0.5rem;
+    z-index: 5;
+    margin-top: 0.25rem;
+  }
+
+  .g2-root .fl .ge-btn--primary.ge-unpack.fl-dock__btn {
+    width: 100%;
+    min-height: 3.25rem;
+    box-shadow:
+      inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+      0 6px 18px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* ── Density pass: shell-wide ───────────────────────────────────────── */
+.sc-scene {
+  height: clamp(120px, 20vh, 200px);
+}
+
+.g2-root .ge-panel {
+  padding: 0.85rem 1rem 1rem;
+}
+
+.g2-root .ge-panel__title {
+  font-size: 1.3rem;
+}
+
+.g2-root .ge-panel__head {
+  margin-bottom: 0.55rem;
+}
+
+@media (max-width: 720px) {
+  .sc-scene {
+    height: 104px;
+  }
+
+  .g2-root .ge-panel {
+    padding: 0.75rem 0.8rem 0.9rem;
+  }
+}
+
+/* Unpack reads in one line: icon · label · amount. */
+.g2-root .fl .ge-btn--primary.ge-unpack {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Phone story line: a slim banner at the top, so it never covers the action dock. */
+@media (max-width: 720px) {
+  .g2-dialogue {
+    top: 0.5rem;
+    bottom: auto;
+    left: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .g2-dialogue .ge-dialogue {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.5rem 0.45rem 0.55rem;
+  }
+
+  .g2-dialogue .ge-dialogue__speaker {
+    width: 32px;
+    height: 32px;
+  }
+
+  .g2-dialogue .ge-dialogue__speaker :is(strong, .ge-speaker__name) {
+    display: none;
+  }
+
+  .g2-dialogue .ge-dialogue__text {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .g2-dialogue .ge-dialogue__actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .g2-dialogue .ge-dialogue__actions .ge-btn {
+    min-height: 1.75rem;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .g2-dialogue .ge-dialogue__actions .ge-btn--primary {
+    padding-left: 1.1rem;
+  }
+}
+
+/* ── Menu drawer (tools) ────────────────────────────────────────────── */
+.g2-tools__tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+
+.g2-tools .g2-inbox__head {
+  gap: 0.5rem;
+}
+
+.g2-tools .g2-subtab {
+  flex-shrink: 0;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.g2-menu-btn.is-on {
+  background: var(--g2-raised);
+  color: var(--g2-tag);
+}
+
+.g2-tools .ge-more {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.g2-tools .ge-more-block {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.g2-tools .ge-more-block__head h3 {
+  font-family: var(--g2-display);
+  font-size: 1.05rem;
+  margin: 0 0 0.15rem;
+}
+
+.g2-tools .ge-more-block__head p {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ge-muted);
+}
+
+.g2-tools .ge-more-actions,
+.g2-tools .ge-more-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.g2-tools .ge-more-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.g2-tools .ge-more-slot {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ge-more-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.g2-root .ge-more-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  color: var(--ge-ink);
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.g2-root .ge-more-link:hover {
+  border-color: color-mix(in srgb, var(--g2-tag) 50%, transparent);
+}
+
+.g2-root .ge-more-link strong {
+  font-family: var(--g2-display);
+  font-weight: 600;
+}
+
+.g2-root .ge-more-link span {
+  font-size: 0.74rem;
+  color: var(--ge-muted);
+}
+
+/* Dev tools */
+.dv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.dv-note,
+.dv-msg {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ge-muted);
+}
+
+.dv-msg {
+  color: var(--ge-success);
+}
+
+.dv-block h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ge-muted);
+}
+
+.dv-stages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.g2-root .dv-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  color: var(--ge-ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.g2-root .dv-stage:hover {
+  border-color: color-mix(in srgb, var(--g2-tag) 55%, transparent);
+}
+
+.g2-root .dv-stage strong {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.g2-root .dv-stage span {
+  font-size: 0.7rem;
+  color: var(--ge-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dv-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.dv-btn {
+  appearance: none;
+  border: 1px solid var(--g2-line);
+  background: var(--g2-raised);
+  color: var(--ge-ink);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  min-height: 2rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.dv-btn:hover {
+  border-color: var(--g2-tag);
+}
+
+.dv-btn--danger {
+  color: var(--ge-danger, #e06a5a);
+  border-color: color-mix(in srgb, var(--ge-danger, #e06a5a) 40%, transparent);
+}
+
+.ge-devbar__tools {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.ge-devbar__tools + .ge-devbar__link {
+  margin-left: 0.9rem;
+}
+
+/* The Menu drawer covers the full height, over a dim scrim (click to close). */
+.ge-root.g2-root .g2-inbox.g2-tools {
+  top: 0;
+  z-index: 60;
+  width: min(460px, 100vw);
+}
+
+.g2-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: rgba(5, 7, 10, 0.45);
+}
+
+/* Receipt paper is cream: ghost buttons need dark ink to be seen at all. */
+.g2-root .ge-receipt-paper .ge-btn--ghost {
+  color: #2a2118;
+  background: rgba(42, 33, 24, 0.06);
+  border: 1px solid rgba(42, 33, 24, 0.35);
+}
+
+.g2-root .ge-receipt-paper .ge-btn--ghost:hover:not(:disabled) {
+  background: rgba(42, 33, 24, 0.12);
+  color: #1a140e;
+}
+
+.ge-receipt-actions {
+  margin-top: 0.9rem;
+}
+
+/* ── Density pass: shared department pieces ─────────────────────────── */
+/* Status strips read as one row of chips, not a row of big boxes. */
+.g2-root .ge-status-band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.g2-root .ge-status-band__cell {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  min-width: 0;
+}
+
+.g2-root .ge-status-band__label {
+  font-size: 0.7rem;
+  color: var(--ge-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.g2-root .ge-status-band__value {
+  font-family: var(--g2-ui);
+  font-size: 0.8rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.g2-root .ge-status-band__bar {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+}
+
+/* Callouts: one line of copy, action at the right, never a full-width slab. */
+.g2-root .ge-dept-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  padding: 0.5rem 0.6rem 0.5rem 0.75rem;
+}
+
+.g2-root .ge-dept-callout h3 {
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.g2-root .ge-dept-callout p {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+}
+
+.g2-root .ge-dept-callout > .ge-btn,
+.g2-root .ge-dept-callout .ge-btn {
+  width: auto;
+  flex: 0 0 auto;
+  min-height: 2.1rem;
+  font-size: 0.84rem;
+}
+
+.g2-root .ge-dept-callout__copy {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+/* Filter tabs inside panels: 2.0 pills. */
+.g2-root .ge-dept-tabs {
+  gap: 0.3rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.g2-root .ge-dept-tab {
+  border-radius: 999px;
+  border: 1px solid var(--g2-line);
+  background: transparent;
+  color: var(--ge-muted);
+  font-family: var(--g2-ui);
+  font-size: 0.76rem;
+  padding: 0.22rem 0.65rem;
+  min-height: 1.85rem;
+}
+
+.g2-root .ge-dept-tab.is-on {
+  background: var(--g2-tag);
+  border-color: var(--g2-tag);
+  color: var(--g2-tag-ink);
+}
+
+/* Spec boxes inside cards: lighter, smaller. */
+.g2-root .ge-card__meta {
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--g2-r-sm);
+  background: rgba(0, 0, 0, 0.14);
+  border: 0;
+}
+
+.g2-root .ge-card__blurb {
+  font-size: 0.78rem;
+}
+
+.g2-root .ge-card__actions .ge-btn {
+  min-height: 2.15rem;
+  font-size: 0.84rem;
+}
+
+/* Generic: buttons in panels default to a compact height. */
+.g2-root .ge-panel .ge-btn {
+  min-height: 2.15rem;
+}
+
+.g2-root .ge-status-band__cell {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+}
+
+/* ── Hub header: Hub name + purpose, sub-tabs as real tabs ─────────── */
+.g2-hubhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.4rem 1.25rem;
+  padding: 0.15rem 0.1rem 0;
+  border-bottom: 1px solid var(--g2-line);
+  flex-shrink: 0;
+}
+
+.g2-hubhead__title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+  padding-bottom: 0.5rem;
+}
+
+.g2-hubhead__title h1 {
+  margin: 0;
+  font-family: var(--g2-display);
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.g2-hubhead__title p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ge-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g2-hubhead .g2-subtabs {
+  gap: 0;
+  margin-bottom: -1px;
+}
+
+.g2-root .g2-hubhead .g2-subtab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ge-muted);
+  padding: 0.45rem 0.75rem 0.55rem;
+  min-height: 0;
+  font-size: 0.86rem;
+}
+
+.g2-root .g2-hubhead .g2-subtab:hover {
+  color: var(--ge-ink);
+  background: transparent;
+}
+
+.g2-root .g2-hubhead .g2-subtab.is-active {
+  color: var(--ge-ink);
+  border-bottom-color: var(--g2-tag);
+  background: transparent;
+  font-weight: 650;
+}
+
+.g2-root .g2-hubhead .g2-subtab.is-suggest:not(.is-active)::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-left: 0.3rem;
+  border-radius: 50%;
+  background: var(--g2-tag);
+}
+
+/* Inside a hub the panel title would repeat the tab name, so make it a quiet subhead. */
+.g2-root .g2-main .ge-panel__title {
+  font-size: 1.05rem;
+}
+
+.g2-root .g2-main .ge-panel__title svg {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .g2-hubhead {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.1rem;
+  }
+
+  .g2-hubhead__title {
+    padding-bottom: 0.1rem;
+  }
+
+  .g2-hubhead__title p {
+    display: none;
+  }
+
+  .g2-hubhead .g2-subtabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  /* Above the hub bar and the Unpack dock: never over the HUD controls. */
+  .g2-dialogue {
+    top: auto;
+    bottom: calc(4.6rem + 3.9rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 720px) {
+  /* Unpack dock: pinned just above the hub bar whenever the Floor is open. */
+  .fl-dock {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    z-index: 20;
+  }
+
+  .g2-root:has(.fl-dock) .g2-main {
+    padding-bottom: 8.5rem;
+  }
+
+  .g2-root:has(.fl-dock) .g2-whisper,
+  .g2-root:has(.fl-dock) .g2-toasts {
+    bottom: calc(8.4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .g2-dialogue {
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .g2-root:has(.fl-dock) .g2-dialogue {
+    bottom: calc(8.4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Fleet 2.0 ──────────────────────────────────────────────────────── */
+.fv .ge-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.fv-goal {
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--g2-r-md);
+  background: linear-gradient(120deg, color-mix(in srgb, #a98be0 14%, var(--g2-raised)), var(--g2-raised));
+  border: 1px solid color-mix(in srgb, #a98be0 35%, var(--g2-line));
+}
+
+.fv-goal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.fv-goal__head h3 {
+  margin: 0;
+  font-family: var(--g2-display);
+  font-size: 1.1rem;
+}
+
+.fv-goal__head span {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: #c3aaf0;
+}
+
+.fv-bar {
+  position: relative;
+  height: 8px;
+  margin: 0.5rem 0 0.4rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.fv-bar > i {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #8a6fd0, #c3aaf0);
+  transform-origin: left;
+}
+
+.fv-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ge-muted);
+  line-height: 1.4;
+}
+
+.fv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.fv-big {
+  margin: 0;
+  font-family: var(--g2-display);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.fv-big small {
+  font-family: var(--g2-ui);
+  font-size: 0.74rem;
+  color: var(--ge-muted);
+}
+
+.fv-war {
+  border-color: color-mix(in srgb, var(--ge-danger, #e06a5a) 45%, var(--g2-line));
+}
+
+.fv-axes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0.4rem;
+}
+
+.fv-axis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem 0.45rem 0.7rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+}
+
+.fv-axis__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fv-axis__who strong {
+  font-size: 0.86rem;
+}
+
+.fv-axis__who span {
+  font-size: 0.72rem;
+  color: var(--ge-muted);
+}
+
+.fv-stepper {
+  grid-template-columns: 1.9rem 2.6rem 1.9rem;
+  flex-shrink: 0;
+}
+
+.fv-stepper button {
+  min-height: 1.9rem;
+  font-size: 1rem;
+}
+
+.fv-stepper button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.fv-stepper output {
+  display: grid;
+  place-items: center;
+  border-inline: 1px solid var(--g2-line);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+@media (max-width: 900px) {
+  .fv-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

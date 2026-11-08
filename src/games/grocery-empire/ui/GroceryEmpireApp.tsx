@@ -45,6 +45,9 @@ import { useSalePops } from './components/Pop'
 import { Btn } from './components/Btn'
 import { channelToMenu, SuggestTip } from './components/SuggestTip'
 import { Hud } from './shell/Hud'
+import { useStable } from './useStable'
+import { isDevSave } from '../sim/saveKey'
+import { ToolsDrawer, type ToolsTab } from './shell/ToolsDrawer'
 import { HUBS, HUB_BY_ID, hubOf, type HubId } from './shell/hubs'
 import { StoreScene } from './scene/StoreScene'
 import './shell/g2.css'
@@ -126,9 +129,35 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   )
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([])
   const [photoMode, setPhotoMode] = useState(false)
-  const [inboxOpen, setInboxOpen] = useState(false)
+  const [inboxOpen, setInboxOpenRaw] = useState(false)
+  const setInboxOpen = (v: boolean | ((p: boolean) => boolean)) =>
+    setInboxOpenRaw((prev) => {
+      const next = typeof v === 'function' ? v(prev) : v
+      if (next) setToolsOpenRaw(false)
+      return next
+    })
   const [inboxTab, setInboxTab] = useState<'memos' | 'ledger'>('memos')
+  const [toolsOpen, setToolsOpenRaw] = useState(false)
+  const [toolsTab, setToolsTab] = useState<ToolsTab>(() => (isDevSave() ? 'dev' : 'run'))
+  // One drawer at a time: Memos or Menu.
+  const setToolsOpen = (v: boolean | ((p: boolean) => boolean)) =>
+    setToolsOpenRaw((prev) => {
+      const next = typeof v === 'function' ? v(prev) : v
+      if (next) setInboxOpenRaw(false)
+      return next
+    })
   const lastInHub = useRef<Partial<Record<HubId, MenuId>>>({})
+  const toolsOpenRef = useRef(false)
+  const toolsTabPicked = useRef(false)
+  toolsOpenRef.current = toolsOpen
+  // The old "More" menu now lives in the Menu drawer.
+  useEffect(() => {
+    if (menu !== 'more') return
+    setToolsTab('run')
+    setToolsOpen(true)
+    setMenu('floor')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menu])
   const [focusNonce, setFocusNonce] = useState(0)
   const [focusTarget, setFocusTarget] = useState<string | null>(null)
   const reducedMotion = meta.settings.reducedMotion
@@ -387,6 +416,12 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
         return
       }
 
+      if (e.key === ',') {
+        e.preventDefault()
+        setToolsOpen((v) => !v)
+        return
+      }
+
       // Digits 1–5 → hubs; skip while a coach tour is active.
       if (!engine.getState().tutorials.active && e.key >= '1' && e.key <= '5') {
         const h = HUBS[Number(e.key) - 1]
@@ -411,6 +446,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       if (held >= 350) return // hold = soft-pause only
       e.preventDefault()
       const live = engine.getState()
+      if (toolsOpenRef.current) {
+        setToolsOpen(false)
+        return
+      }
       if (live.offlineReceipt) {
         engine.dispatch({ type: 'dismissOfflineReceipt' })
         return
@@ -457,7 +496,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
   const speeds = meta.settings.speedUnlock ? [1, 2, 4, 8] : [1, 2]
   // Memos you could file right now (Inbox badge).
-  const inboxCount = useMemo(() => {
+  const inboxCountRaw = useMemo(() => {
     let n = 0
     for (const m of MEMOS) {
       if (m.standing || m.fork) continue
@@ -468,6 +507,8 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     return n
     // snap.v: state mutates in place
   }, [snap.v, state])
+  // The badge counts memos you can afford right now; don't let it blink as cash dips.
+  const inboxCount = useStable(inboxCountRaw, String, 1500, 4000)
 
   // Each department opens at the top (the store scene lives there).
   const mainRef = useRef<HTMLElement | null>(null)
@@ -489,10 +530,12 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const tip = pendingTip(state)
 
   const suggestOn = !!meta.settings.suggestNext
-  const suggestions = useMemo(
+  const suggestionsRaw = useMemo(
     () => (suggestOn ? getSuggestions(state, 10) : []),
     [snap.v, state, suggestOn],
   )
+  // Keep the top pick steady: a new #1 must hold ~2s, and a shown pick stays ≥6s.
+  const suggestions = useStable(suggestionsRaw, (l) => l[0]?.id ?? '', 2000, 6000)
   const suggestChannels = useMemo(() => suggestedChannels(suggestions), [suggestions])
   const topSuggest = suggestions[0] ?? null
 
@@ -576,7 +619,14 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           }${fx.bargeBirth ? ' ge-root--barge-birth' : ''}${inboxOpen ? ' g2-root--inbox' : ''}`.trim()}
           data-era={state.era}
         >
-          {devMode ? <DevModeBar /> : null}
+          {devMode ? (
+            <DevModeBar
+              onTools={() => {
+                setToolsTab('dev')
+                setToolsOpen(true)
+              }}
+            />
+          ) : null}
           <Hud
             state={state}
             pops={pops}
@@ -589,6 +639,11 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
             inboxCount={inboxCount}
             inboxOpen={inboxOpen}
             onInbox={() => setInboxOpen((v) => !v)}
+            toolsOpen={toolsOpen}
+            onTools={() => {
+              if (!toolsTabPicked.current) setToolsTab(isDevSave() ? 'dev' : 'run')
+              setToolsOpen((v) => !v)
+            }}
           />
 
           <nav className="g2-hubs" aria-label="Departments">
@@ -629,25 +684,33 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           <main className="g2-main" ref={mainRef}>
             {hub === 'store' && !photoMode ? <StoreScene state={state} /> : null}
             {photoMode ? <StoreScene state={state} /> : null}
-            {hub && hubMenus(hub).length > 1 ? (
-              <div className="g2-subtabs" role="tablist" aria-label={HUB_BY_ID[hub].name}>
-                {hubMenus(hub).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    aria-selected={menu === id}
-                    className={`g2-subtab${menu === id ? ' is-active' : ''}${
-                      suggestChannels.has(id) ? ' is-suggest' : ''
-                    }`}
-                    data-coach-id={MENU_COACH[id]}
-                    onClick={() => setMenu(id)}
-                    title={MENUS[id].purpose}
-                  >
-                    <Icon name={id} size={15} />
-                    {MENUS[id].name}
-                  </button>
-                ))}
+            {hub ? (
+              <div className="g2-hubhead">
+                <div className="g2-hubhead__title">
+                  <h1>{HUB_BY_ID[hub].name}</h1>
+                  <p>{HUB_BY_ID[hub].purpose}</p>
+                </div>
+                {hubMenus(hub).length > 1 ? (
+                  <div className="g2-subtabs" role="tablist" aria-label={HUB_BY_ID[hub].name}>
+                    {hubMenus(hub).map((id) => (
+                      <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        aria-selected={menu === id}
+                        className={`g2-subtab${menu === id ? ' is-active' : ''}${
+                          suggestChannels.has(id) ? ' is-suggest' : ''
+                        }`}
+                        data-coach-id={MENU_COACH[id]}
+                        onClick={() => setMenu(id)}
+                        title={MENUS[id].purpose}
+                      >
+                        <Icon name={id} size={15} />
+                        {MENUS[id].name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
             {suggestOn && !photoMode && !state.offlineReceipt && state.introSeen ? (
@@ -714,6 +777,20 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                   {inboxTab === 'memos' ? <MemosPanel compact /> : <Ledger state={state} limit={60} />}
                 </div>
               </motion.aside>
+            ) : null}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {toolsOpen ? (
+              <ToolsDrawer
+                tab={toolsTab}
+                onTab={(t) => {
+                  toolsTabPicked.current = true
+                  setToolsTab(t)
+                }}
+                onClose={() => setToolsOpen(false)}
+                reducedMotion={reducedMotion}
+              />
             ) : null}
           </AnimatePresence>
 

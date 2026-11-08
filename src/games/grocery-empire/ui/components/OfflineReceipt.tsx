@@ -62,12 +62,9 @@ export function OfflineReceiptModal({
           {receipt.interest > 0 ? <Line left="Interest" right={money(receipt.interest)} /> : null}
           {receipt.attention > 0 ? <Line left="Attention" right={`+${qty(receipt.attention)}`} /> : null}
         </div>
-        <p className="ge-muted" style={{ marginTop: '0.75rem' }}>
-          Stamp this first — the floor tour waits underneath.
-        </p>
-        <div className="ge-chip-row">
+        <div className="ge-chip-row ge-receipt-actions">
           <Btn tone="primary" onClick={onDismiss}>
-            Stamp &amp; file
+            Back to work
           </Btn>
           {nudge && onNudge && followUp?.channel !== nudge.menu ? (
             <Btn

@@ -1,4 +1,5 @@
 import { goalNeeds, nextGoal } from '../../content/goals'
+import { useSticky } from '../useStable'
 import { can } from '../../sim/commands'
 import type { GameState } from '../../sim/state'
 import type { Command } from '../../sim/commands'
@@ -35,6 +36,9 @@ export function NextGoal({
   dispatch: (cmd: Command) => void
 }) {
   const g = nextGoal(s)
+  const act0 = g?.action?.(s) ?? null
+  // "Do it" lights at once, but only falls back to "Saving" after a couple of quiet seconds.
+  const readyCalm = useSticky(!!act0 && can(s, act0).ok, 2500)
   if (!g) {
     return (
       <div className="g2-goal is-done" role="status">
@@ -49,8 +53,8 @@ export function NextGoal({
     progress = 0
   }
   const needs = goalNeeds(s, g)
-  const act = g.action?.(s) ?? null
-  const ready = !!act && can(s, act).ok
+  const act = act0
+  const ready = readyCalm
   const t = needs.cash > 0 && !ready ? eta(etaSec(s, needs.cash)) : null
   const also: string[] = []
   if (needs.attention > 0) also.push(`${qty(needs.attention, numberFormat)} Attention`)
@@ -76,7 +80,7 @@ export function NextGoal({
           className="g2-tag"
           disabled={!ready}
           onClick={() => dispatch(act)}
-          title={ready ? 'Do it now' : can(s, act).reason ?? 'Not yet'}
+          title={ready ? 'Do it now' : (act ? can(s, act).reason : undefined) ?? 'Not yet'}
         >
           <span className="g2-tag__price">{price}</span>
           <span className="g2-tag__label">{ready ? 'Do it' : 'Saving'}</span>

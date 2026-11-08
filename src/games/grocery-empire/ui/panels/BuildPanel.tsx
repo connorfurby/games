@@ -9,7 +9,6 @@ import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
 import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { GrowthStrip } from '../components/GrowthStrip'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import type { ExtraIcon } from '../icons/Icon'
@@ -235,7 +234,6 @@ export function BuildPanel() {
       lore="build"
       scene={<BuildBand state={s} />}
     >
-      <GrowthStrip mode="shell" />
 
       <div className="ge-dept-callout">
         <div className="ge-dept-callout__copy">

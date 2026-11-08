@@ -15,7 +15,6 @@ import { useGame } from '../GameContext'
 import { pct, qty } from '../format'
 import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { GrowthStrip } from '../components/GrowthStrip'
 import { HelpCard } from '../components/HelpCard'
 import { HungryLawsBoard } from '../components/HungryLaws'
 import { Panel } from '../components/Panel'
@@ -68,7 +67,6 @@ export function EmpirePanel() {
       purpose="Baskets raise rank. Rank unlocks upgrade bands and invest caps."
       lore="empire"
     >
-      <GrowthStrip mode="memory" />
       <div className="ge-empire-hero">
         <div className="ge-empire-hero__ring" style={{ background: ring }} aria-hidden>
           <div className="ge-empire-hero__core">

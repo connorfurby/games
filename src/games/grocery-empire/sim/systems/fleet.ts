@@ -243,6 +243,44 @@ export function tickLogistics(s: GameState, dt: number) {
   s.fuel = Math.min(cap, s.fuel)
 }
 
+/** Survey strength after upgrades (feeds harvest). */
+function surveyPower(s: GameState): number {
+  const longChart = upgradeEffect(s, 'long-chart')
+  const chartRoom = upgradeEffect(s, 'chart-room')
+  return (s.fleet.charter.survey ?? 0) * (1 + up(s, 'survey-yield') * 0.05 + chartRoom + longChart * 0.5)
+}
+
+/** Biomass harvested per barge per second, with Charter and upgrades. */
+export function harvestPerBarge(s: GameState): number {
+  return (
+    FLEET.harvestPerBargePerSec *
+    (1 + surveyPower(s) * 0.08) *
+    (1 + (s.fleet.charter.transit ?? 0) * 0.05) *
+    statMul(s, 'harvest')
+  )
+}
+
+/** Whole-fleet harvest per second (0 once biomass is gone). */
+export function fleetHarvestPerSec(s: GameState): number {
+  if (s.fleet.barges <= 0 || s.fleet.biomass <= 0) return 0
+  return harvestPerBarge(s) * s.fleet.barges
+}
+
+/** Expected free barges per minute from the Replication axis. */
+export function replicationPerMin(s: GameState): number {
+  const r = s.fleet.charter.replication ?? 0
+  if (s.fleet.barges <= 0 || r <= 0 || s.fleet.biomass <= 0) return 0
+  return Math.min(0.2, FLEET.replicationPerSec * r) * 60
+}
+
+/** Shell + Brand Seal resistance in a Drift war (divides losses). */
+export function warResist(s: GameState): number {
+  const thick = upgradeEffect(s, 'thick-shell')
+  const shell = (s.fleet.charter.shell ?? 0) * (1 + up(s, 'shell-eff') * 0.04 + thick)
+  const brandSeal = s.fleet.charter['brand-seal'] ?? 0
+  return 1 + shell * 0.1 + brandSeal * 0.12 + up(s, 'soft-hull') * 0.03 + thick * 0.5
+}
+
 export function tickFleet(s: GameState, dt: number) {
   if (s.era < 5 && !s.fleet.launched) return
 
@@ -250,22 +288,13 @@ export function tickFleet(s: GameState, dt: number) {
 
   const thick = upgradeEffect(s, 'thick-shell')
   const longChart = upgradeEffect(s, 'long-chart')
-  const chartRoom = upgradeEffect(s, 'chart-room')
   const shell = (s.fleet.charter.shell ?? 0) * (1 + up(s, 'shell-eff') * 0.04 + thick)
   const replication = s.fleet.charter.replication ?? 0
-  const survey =
-    (s.fleet.charter.survey ?? 0) * (1 + up(s, 'survey-yield') * 0.05 + chartRoom + longChart * 0.5)
   const brandSeal = s.fleet.charter['brand-seal'] ?? 0
 
   // Harvest biomass → cash/rations analogue
   if (s.fleet.barges > 0 && s.fleet.biomass > 0) {
-    const rate =
-      FLEET.harvestPerBargePerSec *
-      s.fleet.barges *
-      (1 + survey * 0.08) *
-      (1 + (s.fleet.charter.transit ?? 0) * 0.05) *
-      statMul(s, 'harvest') *
-      dt
+    const rate = harvestPerBarge(s) * s.fleet.barges * dt
     const took = Math.min(s.fleet.biomass, rate)
     s.fleet.biomass = Math.max(0, s.fleet.biomass - took)
     s.cash = round2(s.cash + took * 2)
