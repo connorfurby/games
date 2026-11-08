@@ -415,8 +415,11 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         base.projects = { done, active }
       }
       if (isObject(raw.relics)) {
-        const rl = raw.relics as { wings?: unknown; count?: unknown }
+        const rl = raw.relics as { wings?: unknown; count?: unknown; owned?: unknown }
+        const owned: Record<string, number> = {}
+        if (isObject(rl.owned)) for (const [k, v] of Object.entries(rl.owned)) owned[k] = Math.max(1, Math.floor(num(v, 1)))
         base.relics = {
+          owned,
           wings: Array.isArray(rl.wings) ? rl.wings.filter((w): w is string => typeof w === 'string') : [],
           count: Math.max(0, Math.floor(num(rl.count, 0))),
         }

@@ -3803,3 +3803,9 @@
     animation: none;
   }
 }
+
+@media (max-width: 720px) {
+  .sc-scene {
+    height: 128px;
+  }
+}

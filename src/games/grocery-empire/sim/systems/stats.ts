@@ -1,5 +1,6 @@
 import { EMPIRE_REWARDS } from '../../content/empireRewards'
 import { WING_BY_ID, type WingId } from '../../content/relics'
+import { relicEffects } from '../../content/relicPerks'
 import { RELIC_DEMAND_PER } from '../balance'
 import { PERKS } from '../../content/perks'
 import { PROJECTS } from '../../content/projects'
@@ -22,13 +23,19 @@ import type { GameState } from '../state'
  */
 const cache = new WeakMap<GameState, { sig: string; table: StatTable }>()
 
+function relicCopies(s: GameState): number {
+  let n = 0
+  for (const v of Object.values(s.relics?.owned ?? {})) n += v
+  return n
+}
+
 function signature(s: GameState): string {
   let up = 0
   for (const v of Object.values(s.upgrades)) up = up * 31 + (v ?? 0)
   let pk = 0
   for (const v of Object.values(s.empire.perks)) pk = pk * 31 + (v ?? 0)
   const pj = Object.keys(s.projects?.done ?? {}).length
-  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}|${s.relics?.count ?? 0}|${s.relics?.wings?.length ?? 0}`
+  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}|${s.relics?.count ?? 0}|${s.relics?.wings?.length ?? 0}|${relicCopies(s)}|${s.weather?.now}|${s.era}`
 }
 
 export function treeRanks(s: GameState): Record<string, number> {
@@ -75,6 +82,8 @@ export function statSources(s: GameState): StatSource[] {
   if ((s.relics?.count ?? 0) > 0) {
     sources.push({ effects: [{ stat: 'demand', per: RELIC_DEMAND_PER }], rank: s.relics.count })
   }
+  // Every relic's own perk (weather-, era-, copy- and twin-aware).
+  for (const src of relicEffects(s, s.relics?.owned ?? {})) sources.push(src)
   for (const pj of PROJECTS) {
     if (s.projects?.done?.[pj.id]) sources.push({ effects: pj.effects, rank: 1 })
   }

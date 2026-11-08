@@ -118,93 +118,6 @@ function Shopper({ i, lane, paused }: { i: number; lane: 'in' | 'out'; paused: b
   )
 }
 
-/** Horizon slots, alternating left and right of the flagship, outward. */
-function skylineSlots(n: number, gapL: number, gapR: number, x1: number): number[] {
-  const out: number[] = []
-  const step = 58
-  let l = gapL - 40
-  let r = gapR + 40
-  for (let i = 0; i < n; i++) {
-    const goRight = i % 2 === 0 ? r < x1 : l < 20
-    if (goRight) {
-      out.push(r)
-      r += step
-    } else {
-      out.push(l)
-      l -= step
-    }
-  }
-  return out
-}
-
-function Skyline({
-  count,
-  gapL,
-  gapR,
-  x1,
-  tierLights,
-}: {
-  count: number
-  gapL: number
-  gapR: number
-  x1: number
-  tierLights: number
-}) {
-  const n = Math.min(24, count)
-  if (n <= 0) return null
-  const slots = skylineSlots(n, gapL, gapR, x1)
-  return (
-    <g className="sc-skyline">
-      {Array.from({ length: n }, (_, i) => {
-        const w = 34 + rnd(i + 40) * 20
-        const h = 46 + rnd(i + 80) * (40 + tierLights * 10)
-        const x = slots[i]! - w / 2
-        const rows = Math.max(2, Math.floor(h / 14))
-        return (
-          <g key={i}>
-            <rect x={x} y={HORIZON - h} width={w} height={h} fill="var(--sc-building)" />
-            <rect x={x + 3} y={HORIZON - h + 4} width={w - 6} height={5} rx={1} fill="var(--sc-tag)" opacity={0.85} />
-            {Array.from({ length: rows - 1 }, (_, r) =>
-              Array.from({ length: 3 }, (_, c) =>
-                rnd(i * 31 + r * 7 + c) > 0.35 ? (
-                  <rect
-                    key={`${r}-${c}`}
-                    x={x + 5 + c * ((w - 10) / 3)}
-                    y={HORIZON - h + 14 + r * 13}
-                    width={(w - 10) / 3 - 4}
-                    height={7}
-                    fill="var(--sc-window)"
-                    opacity={0.55 + rnd(i + r + c) * 0.45}
-                  />
-                ) : null,
-              ),
-            )}
-          </g>
-        )
-      })}
-    </g>
-  )
-}
-
-function Plants({ count, x }: { count: number; x: number }) {
-  const n = Math.min(10, count)
-  if (n <= 0) return null
-  return (
-    <g className="sc-plants">
-      {Array.from({ length: n }, (_, i) => {
-        const px = x + i * 30
-        return (
-          <g key={i}>
-            <rect x={px} y={GROUND - 40} width={24} height={40} fill="var(--sc-plant)" />
-            <rect x={px + 15} y={GROUND - 58} width={5} height={20} fill="var(--sc-plant)" />
-            <circle className="sc-steam" cx={px + 17.5} cy={GROUND - 62} r={5} style={{ animationDelay: `${-i * 0.7}s` }} />
-          </g>
-        )
-      })}
-    </g>
-  )
-}
-
 function Hills({ count }: { count: number }) {
   const n = Math.min(10, count)
   if (n <= 0) return null
@@ -219,11 +132,11 @@ function Hills({ count }: { count: number }) {
   )
 }
 
-function Harbor({ lanes, paused }: { lanes: number; paused: boolean }) {
+function Harbor({ lanes, paused, right = W }: { lanes: number; paused: boolean; right?: number }) {
   const n = Math.min(10, lanes)
   return (
     <g className="sc-harbor">
-      <rect x={HARBOR_X} y={GROUND - 6} width={W - HARBOR_X} height={H - GROUND + 6} fill="var(--sc-water)" />
+      <rect x={HARBOR_X} y={GROUND - 6} width={right - HARBOR_X} height={H - GROUND + 6} fill="var(--sc-water)" />
       {Array.from({ length: n }, (_, i) => (
         <g
           key={i}
@@ -406,40 +319,10 @@ const RIVAL_LOOK: Record<string, { color: string; initials: string }> = {
   halo: { color: '#6b4fa8', initials: 'HP' },
 }
 
-/** Rival storefronts across the street; bought ones get repainted in your colors. */
-function RivalFronts({ s, slots }: { s: GameState; slots: number[] }) {
-  const list = Object.entries(s.rivals ?? {})
-  if (list.length === 0) return null
-  return (
-    <g className="sc-rivals">
-      {list.slice(0, slots.length).map(([id, r], i) => {
-        const look = RIVAL_LOOK[id] ?? { color: '#888', initials: '??' }
-        const x = slots[i]!
-        const w = 64 + Math.min(40, r.stores * 3)
-        const h = 44 + Math.min(24, r.stores * 2)
-        const color = r.bought ? 'var(--sc-tag)' : look.color
-        return (
-          <g key={id} transform={`translate(${x - w / 2} ${HORIZON + 6 - h})`}>
-            <rect width={w} height={h} fill="var(--sc-building)" stroke={color} strokeWidth={1.5} />
-            <rect x={4} y={4} width={w - 8} height={12} rx={2} fill={color} />
-            <text x={w / 2} y={13.5} textAnchor="middle" className="sc-rival-text">
-              {r.bought ? `${look.initials} ✓` : look.initials}
-            </text>
-            {Array.from({ length: Math.floor((w - 12) / 10) }, (_, k) => (
-              <path key={k} d={`M${6 + k * 10} 20 h10 l-1 6 h-8z`} fill={k % 2 ? color : 'var(--sc-receipt)'} opacity={0.85} />
-            ))}
-            <rect x={6} y={30} width={w - 12} height={h - 34} fill="var(--sc-window)" opacity={0.35} />
-          </g>
-        )
-      })}
-    </g>
-  )
-}
-
 /** The Relic Museum, once it opens: columns, pediment, a gem that glows at night. */
-function MuseumBuilding({ x, far = false }: { x: number; far?: boolean }) {
+function MuseumShape() {
   return (
-    <g className="sc-museum" transform={far ? `translate(${x} ${HORIZON + 4}) scale(0.72)` : `translate(${x} ${GROUND})`}>
+    <g className="sc-museum">
       <rect x={0} y={-8} width={96} height={8} fill="#cfc6b4" />
       <path d="M-4 -56 L48 -80 L100 -56 Z" fill="#e6dcc8" />
       <rect x={4} y={-56} width={88} height={6} fill="#d8cdb6" />
@@ -447,9 +330,6 @@ function MuseumBuilding({ x, far = false }: { x: number; far?: boolean }) {
         <rect key={cx} x={cx} y={-50} width={10} height={42} fill="#efe6d4" />
       ))}
       <circle cx={48} cy={-66} r={5} fill="#ff6b8b" className="sc-museum-gem" />
-      <text x={48} y={14} textAnchor="middle" className="sc-tier">
-        Museum
-      </text>
     </g>
   )
 }
@@ -462,14 +342,161 @@ function Queue({ n, doorX }: { n: number; doorX: number }) {
       {Array.from({ length: Math.min(9, n) }, (_, i) => {
         const hue = Math.floor(rnd(i + 1400) * 360)
         return (
-          <g key={i} transform={`translate(${doorX - 18 - i * 12} ${GROUND - 2})`} className="sc-queue-p" style={{ animationDelay: `${-i * 0.37}s` }}>
+          <g key={i} transform={`translate(${doorX - 18 - i * 12} ${GROUND - 2})`}>
+            <g className="sc-queue-p" style={{ animationDelay: `${-i * 0.37}s` }}>
             <rect x={-4} y={-17} width={8} height={12} rx={3} fill={`hsl(${hue} 45% 62%)`} />
             <circle cx={0} cy={-21} r={3.6} fill="#e9c9a4" />
             <rect x={-3.5} y={-5} width={2.5} height={5} fill="#2b2b33" />
             <rect x={1} y={-5} width={2.5} height={5} fill="#2b2b33" />
+            </g>
           </g>
         )
       })}
+    </g>
+  )
+}
+
+
+interface View {
+  x0: number
+  w: number
+}
+
+/** One tower on the far horizon (a chain store you own). */
+function Tower({ i, x, tierLights }: { i: number; x: number; tierLights: number }) {
+  const w = 34 + rnd(i + 40) * 18
+  const h = 44 + rnd(i + 80) * (34 + tierLights * 8)
+  const left = x - w / 2
+  const rows = Math.max(2, Math.floor(h / 14))
+  return (
+    <g>
+      <rect x={left} y={HORIZON - h} width={w} height={h} fill="var(--sc-building)" />
+      <rect x={left + 3} y={HORIZON - h + 4} width={w - 6} height={5} rx={1} fill="var(--sc-tag)" opacity={0.85} />
+      {Array.from({ length: rows - 1 }, (_, r) =>
+        Array.from({ length: 3 }, (_, c) =>
+          rnd(i * 31 + r * 7 + c) > 0.35 ? (
+            <rect
+              key={`${r}-${c}`}
+              x={left + 5 + c * ((w - 10) / 3)}
+              y={HORIZON - h + 14 + r * 13}
+              width={(w - 10) / 3 - 4}
+              height={7}
+              fill="var(--sc-window)"
+              opacity={0.55 + rnd(i + r + c) * 0.45}
+            />
+          ) : null,
+        ),
+      )}
+    </g>
+  )
+}
+
+function FarRival({ id, stores, bought, x }: { id: string; stores: number; bought: boolean; x: number }) {
+  const look = RIVAL_LOOK[id] ?? { color: '#888', initials: '??' }
+  const w = 56
+  const h = 40 + Math.min(22, stores * 2)
+  const color = bought ? 'var(--sc-tag)' : look.color
+  return (
+    <g transform={`translate(${x - w / 2} ${HORIZON - h})`}>
+      <rect width={w} height={h} fill="var(--sc-building)" stroke={color} strokeWidth={1.5} />
+      <rect x={4} y={4} width={w - 8} height={12} rx={2} fill={color} />
+      <text x={w / 2} y={13.5} textAnchor="middle" className="sc-rival-text">
+        {bought ? `${look.initials} ✓` : look.initials}
+      </text>
+      {Array.from({ length: 5 }, (_, k) => (
+        <path key={k} d={`M${4 + k * 9.6} 19 h9.6 l-1 5 h-7.6z`} fill={k % 2 ? color : 'var(--sc-receipt)'} opacity={0.85} />
+      ))}
+      <rect x={6} y={28} width={w - 12} height={h - 30} fill="var(--sc-window)" opacity={0.3} />
+    </g>
+  )
+}
+
+function FarPlants({ n, x }: { n: number; x: number }) {
+  return (
+    <g>
+      {Array.from({ length: n }, (_, i) => {
+        const px = x - 27 + i * 18
+        return (
+          <g key={i}>
+            <rect x={px} y={HORIZON - 30} width={16} height={30} fill="var(--sc-plant)" />
+            <rect x={px + 10} y={HORIZON - 42} width={4} height={14} fill="var(--sc-plant)" />
+            <circle className="sc-steam" cx={px + 12} cy={HORIZON - 46} r={4} style={{ animationDelay: `${-i * 0.7}s` }} />
+          </g>
+        )
+      })}
+    </g>
+  )
+}
+
+/**
+ * Everything on the far horizon shares one row of slots, handed out outward from the
+ * flagship: the museum first, then rivals, cold plants, and your chain's towers. Nothing
+ * overlaps, and wider screens simply show more of the row.
+ */
+function Horizon({
+  s,
+  view,
+  gapL,
+  gapR,
+  tier,
+  museumOpen,
+  rightLimit,
+}: {
+  s: GameState
+  view: View
+  gapL: number
+  gapR: number
+  tier: number
+  museumOpen: boolean
+  rightLimit: number
+}) {
+  type Item = { kind: 'museum' } | { kind: 'rival'; id: string; stores: number; bought: boolean } | { kind: 'plants'; n: number } | { kind: 'tower'; i: number }
+  const items: Item[] = []
+  if (museumOpen) items.push({ kind: 'museum' })
+  for (const [id, r] of Object.entries(s.rivals ?? {})) items.push({ kind: 'rival', id, stores: r.bought ? r.boughtStores : r.stores, bought: r.bought })
+  let plants = Math.min(12, s.cold?.plants ?? 0)
+  while (plants > 0) {
+    items.push({ kind: 'plants', n: Math.min(3, plants) })
+    plants -= 3
+  }
+  const towers = Math.min(40, Math.max(0, s.stores.length - 1) + (s.fleet?.franchises ?? 0))
+  for (let i = 0; i < towers; i++) items.push({ kind: 'tower', i })
+
+  const step = 64
+  const lo = view.x0 + 34
+  const hi = Math.min(view.x0 + view.w - 34, rightLimit)
+  let l = gapL - 36
+  let r = gapR + 36
+  const placed: { item: Item; x: number }[] = []
+  for (const item of items) {
+    const canL = l >= lo
+    const canR = r <= hi
+    if (!canL && !canR) break
+    // Alternate sides, preferring whichever side has more room left.
+    const goR = canR && (!canL || hi - r >= l - lo)
+    if (goR) {
+      placed.push({ item, x: r })
+      r += step
+    } else {
+      placed.push({ item, x: l })
+      l -= step
+    }
+  }
+  return (
+    <g className="sc-horizon">
+      {placed.map(({ item, x }, k) =>
+        item.kind === 'tower' ? (
+          <Tower key={k} i={item.i} x={x} tierLights={tier} />
+        ) : item.kind === 'rival' ? (
+          <FarRival key={k} id={item.id} stores={item.stores} bought={item.bought} x={x} />
+        ) : item.kind === 'plants' ? (
+          <FarPlants key={k} n={item.n} x={x} />
+        ) : (
+          <g key={k} transform={`translate(${x - 35} ${HORIZON}) scale(0.72)`}>
+            <MuseumShape />
+          </g>
+        ),
+      )}
     </g>
   )
 }
@@ -702,7 +729,7 @@ function Lamps({ xs }: { xs: number[] }) {
   )
 }
 
-function SceneInner({ s, museumOpen }: { s: GameState; museumOpen: boolean }) {
+function SceneInner({ s, museumOpen, view }: { s: GameState; museumOpen: boolean; view: View }) {
   const era = Math.max(0, Math.min(6, s.era))
   const phase = dayPhase(s)
   const dark = darkness(phase)
@@ -724,8 +751,8 @@ function SceneInner({ s, museumOpen }: { s: GameState; museumOpen: boolean }) {
   return (
     <svg
       className="sc-svg"
-      viewBox={`0 0 ${W} ${H}`}
-      preserveAspectRatio="xMidYMax slice"
+      viewBox={`${view.x0} 0 ${view.w} ${H}`}
+      preserveAspectRatio="xMidYMax meet"
       role="img"
       aria-label={`${FACADE[tier]!.name}. ${chainStores} other stores. Selling ${sold.toFixed(1)} baskets a second.`}
     >
@@ -751,34 +778,36 @@ function SceneInner({ s, museumOpen }: { s: GameState; museumOpen: boolean }) {
           <stop offset="1" stopColor="#ffcf7a" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <rect width={W} height={H} fill="url(#sc-sky)" />
+      <rect x={view.x0} width={view.w} height={H} fill="url(#sc-sky)" />
       <g opacity={era >= 5 ? Math.max(0.35, dark) : dark * 0.9}>
-        <Stars era={Math.max(3, era)} />
+        <g transform={`translate(${view.x0} 0) scale(${view.w / W} 1)`}>
+          <Stars era={Math.max(3, era)} />
+        </g>
       </g>
       <SunMoon phase={phase} dark={dark} />
-      <Clouds count={s.weather.now === 'rain' ? 7 : 4} grey={s.weather.now === 'rain'} paused={paused} />
+      <g transform={`translate(${view.x0} 0) scale(${view.w / W} 1)`}>
+        <Clouds count={s.weather.now === 'rain' ? 7 : 4} grey={s.weather.now === 'rain'} paused={paused} />
+      </g>
       <Barges count={s.fleet?.barges ?? 0} paused={paused} />
       <Hills count={s.politics?.acquisitions ?? 0} />
-      <Skyline
-        count={chainStores}
+      <Horizon
+        s={s}
+        view={view}
         gapL={facadeX - 20}
         gapR={facadeX + FACADE[tier]!.w + 20}
-        x1={era >= 4 ? 1180 : 1180}
-        tierLights={tier}
+        tier={tier}
+        museumOpen={museumOpen}
+        rightLimit={view.x0 + view.w}
       />
-      <RivalFronts s={s} slots={era >= 4 ? [60, 150, 330, 420] : [70, 1130, 170, 1030]} />
-      {museumOpen && era >= 4 ? <MuseumBuilding x={196} far /> : null}
-      <rect x={0} y={HORIZON - 60} width={W} height={80} fill="url(#sc-haze)" />
-      <Plants count={s.cold?.plants ?? 0} x={era >= 4 ? 40 : 880} />
-      {(s.fleet?.lanes ?? 0) > 0 || era >= 4 ? <Harbor lanes={s.fleet?.lanes ?? 0} paused={paused} /> : null}
+      <rect x={view.x0} y={HORIZON - 60} width={view.w} height={80} fill="url(#sc-haze)" />
+      {(s.fleet?.lanes ?? 0) > 0 || era >= 4 ? <Harbor lanes={s.fleet?.lanes ?? 0} paused={paused} right={view.x0 + view.w} /> : null}
       {/* street */}
-      <rect x={0} y={GROUND} width={era >= 4 ? HARBOR_X : W} height={H - GROUND} fill="var(--sc-street)" />
-      <rect x={0} y={GROUND} width={era >= 4 ? HARBOR_X : W} height={4} fill="var(--sc-curb)" />
+      <rect x={view.x0} y={GROUND} width={(era >= 4 ? HARBOR_X : view.x0 + view.w) - view.x0} height={H - GROUND} fill="var(--sc-street)" />
+      <rect x={view.x0} y={GROUND} width={(era >= 4 ? HARBOR_X : view.x0 + view.w) - view.x0} height={4} fill="var(--sc-curb)" />
       <ellipse cx={facadeX + FACADE[tier]!.w * 0.6} cy={GROUND} rx={FACADE[tier]!.w * 0.8} ry={70} fill="url(#sc-glow)" />
       <g opacity={0.25 + dark * 0.75}>
         <Lamps xs={[facadeX - 110, facadeX + FACADE[tier]!.w + 140]} />
       </g>
-      {museumOpen && era < 4 ? <MuseumBuilding x={Math.max(20, facadeX - 330)} /> : null}
       <Props s={s} x={facadeX} w={FACADE[tier]!.w} />
       <Facade s={s} x={facadeX} />
       <g className="sc-shoppers" style={{ ['--door' as string]: `${facadeX + FACADE[tier]!.w * 0.66 + 15}px` }}>
@@ -790,11 +819,13 @@ function SceneInner({ s, museumOpen }: { s: GameState; museumOpen: boolean }) {
         ))}
       </g>
       <Queue n={queueLen} doorX={facadeX + FACADE[tier]!.w * 0.66} />
-      <Rain on={s.weather.now === 'rain'} />
-      <Snow on={s.weather.now === 'cold'} />
-      <HeatHaze on={s.weather.now === 'heat'} />
+      <g transform={`translate(${view.x0} 0) scale(${view.w / W} 1)`}>
+        <Rain on={s.weather.now === 'rain'} />
+        <Snow on={s.weather.now === 'cold'} />
+        <HeatHaze on={s.weather.now === 'heat'} />
+      </g>
       {/* night falls over everything but the lights */}
-      <rect width={W} height={H} fill="#060914" opacity={dark * 0.28} pointerEvents="none" />
+      <rect x={view.x0} width={view.w} height={H} fill="#060914" opacity={dark * 0.28} pointerEvents="none" />
     </svg>
   )
 }
@@ -843,9 +874,30 @@ function sceneKey(s: GameState, museumOpen: boolean) {
 }
 
 const Memo = memo(
-  ({ s, museumOpen }: { s: GameState; k: string; museumOpen: boolean }) => <SceneInner s={s} museumOpen={museumOpen} />,
-  (a, b) => a.k === b.k,
+  ({ s, museumOpen, view }: { s: GameState; k: string; museumOpen: boolean; view: View }) => (
+    <SceneInner s={s} museumOpen={museumOpen} view={view} />
+  ),
+  (a, b) => a.k === b.k && a.view.w === b.view.w && a.view.x0 === b.view.x0,
 )
+
+/** Visible slice of the 1200-wide world: wider containers see more sky and street. */
+function useView(ref: React.RefObject<HTMLDivElement | null>, center: number): View {
+  const [w, setW] = useState(W)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect()
+      if (r.height <= 0) return
+      // Phones frame the flagship tightly; wide screens see more of the street.
+      const want = Math.max(620, Math.round(((r.width / r.height) * H) / 20) * 20)
+      setW(want)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref])
+  return w >= W ? { x0: -(w - W) / 2, w } : { x0: center - w / 2, w }
+}
 
 interface Coin {
   id: number
@@ -858,7 +910,7 @@ interface Coin {
  * takings, the delivery truck rolls in as its ETA runs down, spotlights sweep during a
  * celebrity endcap, and the marquee scrolls today's numbers.
  */
-function SceneLive({ s, reducedMotion }: { s: GameState; reducedMotion: boolean }) {
+function SceneLive({ s, reducedMotion, view }: { s: GameState; reducedMotion: boolean; view: View }) {
   const L = layoutOf(s)
   const [coins, setCoins] = useState<Coin[]>([])
   const last = useRef(0)
@@ -890,7 +942,12 @@ function SceneLive({ s, reducedMotion }: { s: GameState; reducedMotion: boolean 
   const showMarquee = L.tier >= 3
 
   return (
-    <svg className="sc-live" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" aria-hidden>
+    <svg
+      className="sc-live"
+      viewBox={`${view.x0} 0 ${view.w} ${H}`}
+      preserveAspectRatio="xMidYMax meet"
+      aria-hidden
+    >
       <defs>
         <clipPath id="sc-marquee-clip">
           <rect x={L.x + 12} y={L.top + 52} width={L.f.w * 0.55} height={11} />
@@ -954,10 +1011,13 @@ export function StoreScene({
   reducedMotion?: boolean
 }) {
   const dark = darkness(dayPhase(state))
+  const ref = useRef<HTMLDivElement>(null)
+  const L = layoutOf(state)
+  const view = useView(ref, L.x + L.f.w / 2 - 40)
   return (
-    <div className={`sc-scene${dark > 0.55 ? ' is-night' : ''}`}>
-      <Memo s={state} k={sceneKey(state, museumOpen)} museumOpen={museumOpen} />
-      <SceneLive s={state} reducedMotion={reducedMotion} />
+    <div ref={ref} className={`sc-scene${dark > 0.55 ? ' is-night' : ''}`}>
+      <Memo s={state} k={sceneKey(state, museumOpen)} museumOpen={museumOpen} view={view} />
+      <SceneLive s={state} reducedMotion={reducedMotion} view={view} />
     </div>
   )
 }

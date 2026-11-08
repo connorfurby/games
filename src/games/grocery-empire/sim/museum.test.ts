@@ -90,3 +90,24 @@ describe('museum', () => {
     expect(statMul(s, 'demand')).toBeGreaterThan(before)
   })
 })
+
+describe('relic perks', () => {
+  it('every relic has a perk, and no two read the same', async () => {
+    const { perkText } = await import('../content/relicPerks')
+    const texts = RELICS.map((r) => `${r.name}|${perkText(r)}`)
+    expect(texts.every((t) => t.split('|')[1]!.length > 5)).toBe(true)
+    const shapes = new Set(RELICS.map((r) => perkText(r)))
+    expect(shapes.size).toBeGreaterThan(150)
+  })
+
+  it('owned relics raise their stats in a run', () => {
+    const s = createInitialState(3)
+    const before = statMul(s, 'unpack')
+    const truck = RELICS.find((r) => r.glyph === 'truck')!
+    const owned: Record<string, number> = {}
+    for (const r of RELICS.filter((x) => x.glyph === 'truck' || x.glyph === 'magnet')) owned[r.id] = 3
+    run(s, { type: 'syncRelics', wings: [], count: Object.keys(owned).length, unlocked: true, owned })
+    expect(statMul(s, 'unpack') + statMul(s, 'crateCut') + statMul(s, 'backroom')).toBeGreaterThan(before + 1)
+    expect(owned[truck.id]).toBe(3)
+  })
+})

@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { RARITY_INFO, WING_BY_ID } from '../../content/relics'
 import { openChest, type Chest, type OpenResult } from '../../sim/museum'
+import { perkText } from '../../content/relicPerks'
 import { ChestArt, RelicIcon } from './RelicIcon'
 import { museumStore } from './store'
 
@@ -174,6 +175,7 @@ export function ChestOpener({
                 <h2 className="co-card__name">{relic!.name}</h2>
                 <p className="co-card__wing">{WING_BY_ID[relic!.wing].name} wing</p>
                 <p className="co-card__flavor">{relic!.flavor}</p>
+                <p className="co-card__perk">{perkText(relic!)}</p>
                 {!result?.isNew ? (
                   <p className="co-card__dupe">
                     Duplicate · +{result?.dust} dust <span>(now ×{(museumStore.get().relics[relic!.id]?.n ?? 2)})</span>

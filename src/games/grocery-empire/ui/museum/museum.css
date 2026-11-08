@@ -865,3 +865,98 @@
     animation: none !important;
   }
 }
+
+.mu-stat--btn {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mu-stat--btn small {
+  color: var(--g2-tag);
+  font-size: 0.68rem;
+}
+
+.mu-perk {
+  margin: 0.4rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--g2-r-sm);
+  background: color-mix(in srgb, var(--rc, var(--g2-tag)) 14%, rgba(0, 0, 0, 0.25));
+  border: 1px solid color-mix(in srgb, var(--rc, var(--g2-tag)) 40%, transparent);
+  font-size: 0.84rem;
+  text-align: left;
+}
+
+.mu-perk span,
+.co-card__perk::before {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--rc, var(--co-relic, var(--g2-tag)));
+  color: #120f0a;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mu-perk.is-locked {
+  opacity: 0.75;
+}
+
+.co-card__perk {
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 0.85rem;
+}
+
+.co-card__perk::before {
+  content: 'Perk';
+}
+
+.mu-perks {
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+}
+
+.mu-perks h3 {
+  margin: 0;
+  font-family: var(--g2-display);
+  font-size: 1.05rem;
+}
+
+.mu-perks p {
+  margin: 0.15rem 0 0.6rem;
+  font-size: 0.75rem;
+  color: var(--ge-muted);
+}
+
+.mu-perks ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mu-perks li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--g2-r-sm);
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.8rem;
+}
+
+.mu-perks strong {
+  color: var(--ge-success);
+  font-variant-numeric: tabular-nums;
+}

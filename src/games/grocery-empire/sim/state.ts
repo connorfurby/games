@@ -433,7 +433,7 @@ export interface GameState {
   /** 2.0 named rival chains, keyed by rival id. Missing = not opened yet. */
   rivals: Record<string, RivalState>
   /** 2.0 Relic Museum, mirrored in from the museum save (which outlives runs). */
-  relics: { wings: string[]; count: number }
+  relics: { wings: string[]; count: number; owned: Record<string, number> }
 
   menus: Record<MenuId, boolean>
   seenMenus: Record<string, boolean>
@@ -789,7 +789,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     prestigeCarry: emptyPrestigeCarry(),
     projects: { done: {}, active: [] },
     rivals: {},
-    relics: { wings: [], count: 0 },
+    relics: { wings: [], count: 0, owned: {} },
     rebrand: { goodwill: 0, count: 0, bankedThisRun: 0 },
 
     menus,

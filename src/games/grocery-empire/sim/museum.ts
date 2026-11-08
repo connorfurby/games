@@ -470,6 +470,8 @@ export function buyChest(m: MuseumSave, rarity: Rarity, wing: WingId | null): Ch
 }
 
 /** Stat bonus the run gets from the museum (read by sim/systems/stats.ts via state.relics). */
-export function museumSync(m: MuseumSave): { wings: string[]; count: number; unlocked: boolean } {
-  return { wings: completedWings(m), count: relicCount(m), unlocked: m.unlocked }
+export function museumSync(m: MuseumSave): { wings: string[]; count: number; unlocked: boolean; owned: Record<string, number> } {
+  const owned: Record<string, number> = {}
+  for (const [id, v] of Object.entries(m.relics)) owned[id] = v.n
+  return { wings: completedWings(m), count: relicCount(m), unlocked: m.unlocked, owned }
 }

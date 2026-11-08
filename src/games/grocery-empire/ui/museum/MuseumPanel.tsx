@@ -11,7 +11,8 @@ import {
   type Rarity,
   type WingId,
 } from '../../content/relics'
-import { STAT_INFO } from '../../content/upgrades/stats'
+import { STAT_INFO, type StatId } from '../../content/upgrades/stats'
+import { perkText, relicEffects } from '../../content/relicPerks'
 import {
   FEATS,
   MUSEUM,
@@ -35,6 +36,36 @@ function pct(n: number) {
   return `${Math.round(n * 100)}%`
 }
 
+/** What the wall adds up to right now, by stat (weather, era and copies included). */
+function PerkTotals() {
+  const { state } = useGame()
+  const rows = useMemo(() => {
+    const totals: Partial<Record<StatId, number>> = {}
+    for (const src of relicEffects(state, state.relics?.owned ?? {})) {
+      for (const e of src.effects) totals[e.stat] = (totals[e.stat] ?? 0) + e.per * src.rank
+    }
+    return (Object.entries(totals) as [StatId, number][]).sort((a, b) => b[1] - a[1])
+  }, [state, state.relics?.count, state.weather?.now, state.era])
+  if (rows.length === 0) return <p className="mu-empty">No relics yet. Each one you find adds its own perk to every run.</p>
+  return (
+    <section className="mu-perks" aria-label="Perk totals">
+      <h3>Relic perks, all runs</h3>
+      <p>Before the soft cap every stat shares. Weather and era perks change as you play.</p>
+      <ul>
+        {rows.map(([stat, v]) => (
+          <li key={stat}>
+            <span>{STAT_INFO[stat].label}</span>
+            <strong>
+              {STAT_INFO[stat].kind === 'cut' ? '−' : '+'}
+              {(v * 100).toFixed(1)}%
+            </strong>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export function MuseumPanel() {
   const { reducedMotion } = useGame()
   const m = useMuseum()
@@ -42,6 +73,7 @@ export function MuseumPanel() {
   const [selected, setSelected] = useState<string | null>(null)
   const [queue, setQueue] = useState<Chest[] | null>(null)
   const [shopWing, setShopWing] = useState<WingId | ''>('')
+  const [showPerks, setShowPerks] = useState(false)
   const owned = relicCount(m)
   const total = RELICS.length
   const done = completedWings(m)
@@ -82,12 +114,15 @@ export function MuseumPanel() {
               {done.length} <small>/ {WINGS.length}</small>
             </strong>
           </div>
-          <div className="mu-stat" title="Every relic adds a little foot traffic, in every run.">
-            <span>Wall bonus</span>
-            <strong>+{(owned * MUSEUM.demandPerRelic * 100).toFixed(1)}%</strong>
-          </div>
+          <button type="button" className="mu-stat mu-stat--btn" onClick={() => setShowPerks((v) => !v)} aria-expanded={showPerks}>
+            <span>Active perks</span>
+            <strong>{owned}</strong>
+            <small>{showPerks ? 'Hide' : 'See totals'}</small>
+          </button>
         </div>
       </header>
+
+      {showPerks ? <PerkTotals /> : null}
 
       <section className="mu-chests" aria-label="Chests">
         <div className="mu-chests__head">
@@ -212,6 +247,7 @@ export function MuseumPanel() {
                       className={`mu-tile mu-tile--${r.rarity}${got ? '' : ' is-unknown'}${selected === r.id ? ' is-sel' : ''}`}
                       onClick={() => setSelected(r.id)}
                       aria-label={got ? r.name : `Unknown ${RARITY_INFO[r.rarity].label} relic`}
+                      title={got ? `${r.name}: ${perkText(r)}` : undefined}
                     >
                       <RelicIcon id={r.id} shadow={!got} size={64} />
                       <span className="mu-tile__name">{got ? r.name : m.hints[r.id] === 2 ? partialName(r.name) : '???'}</span>
@@ -256,6 +292,9 @@ export function MuseumPanel() {
                 <>
                   <h3>{sel.name}</h3>
                   <p className="mu-detail__flavor">{sel.flavor}</p>
+                  <p className="mu-perk">
+                    <span>Perk</span> {perkText(sel)}
+                  </p>
                   <p className="mu-detail__meta">
                     Found {new Date(m.relics[sel.id]!.at).toLocaleDateString()}
                     {m.relics[sel.id]!.n > 1 ? ` · ${m.relics[sel.id]!.n} copies` : ''}
@@ -265,6 +304,9 @@ export function MuseumPanel() {
               ) : (
                 <>
                   <h3>{m.hints[sel.id] === 2 ? partialName(sel.name) : '???'}</h3>
+                  <p className="mu-perk is-locked">
+                    <span>Perk</span> {m.hints[sel.id] ? perkText(sel) : 'Hidden until you find it, or buy a hint.'}
+                  </p>
                   <ul className="mu-hints">
                     <li>
                       <strong>Where:</strong> {sel.feat ? 'Not in any chest. Earned by a feat.' : WING_BY_ID[sel.wing].source}
