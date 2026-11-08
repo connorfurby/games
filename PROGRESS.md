@@ -15,5 +15,5 @@ decision log). The original audit lives at https://claude.ai/artifact/DgAJbqsxSb
 
 ## Still open
 
-- Rewriting the remaining department panels in the 2.0 style (they are re-skinned today)
+- Bespoke 2.0 layouts for Staff, Build, Suppliers and Books (they use the shared card kit today)
 - A human multi-hour balance pass

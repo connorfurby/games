@@ -322,6 +322,10 @@ export const HISTORY = { everySec: 5, keep: 72 }
 
 /** Era 2 — chain & capital (plan Part F). */
 export const CHAIN = {
+  /** One-time depot build cost. */
+  depotCash: 18_000,
+  /** Drift at which a store counts as drifting (UI warning, Walk drifting). */
+  driftWarn: 0.4,
   /** Attention to train a store: base × growth^(level−1). */
   trainAttBase: 60,
   trainAttGrowth: 1.28,

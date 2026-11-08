@@ -20,6 +20,7 @@ import {
 import { VENTURE_BY_ID, ventureLevelCost } from '../content/ventures'
 import {
   CAPITAL,
+  CHAIN,
   DEMAND,
   EMPIRE,
   ENDCAP,
@@ -114,7 +115,7 @@ import {
   perishableQty,
   type DumpWhere,
 } from './systems/recovery'
-import { ensureFlagshipStore } from './systems/chain'
+import { canWalkStore, ensureFlagshipStore, walkStore } from './systems/chain'
 import { debtCovenantBreached } from './systems/capital'
 import { era2Handlers } from './commandsEra2'
 import { eraLateHandlers } from './commandsEraLate'
@@ -157,6 +158,8 @@ export type Command =
   | { type: 'buyPerk'; id: string }
   | { type: 'startProject'; id: string }
   | { type: 'priceWar'; id: RivalId }
+  | { type: 'evenAttention' }
+  | { type: 'walkDrifting' }
   | { type: 'buyoutRival'; id: RivalId }
   | { type: 'respecPerks' }
   | { type: 'expandLot'; id?: string }
@@ -728,6 +731,40 @@ const coreHandlers = {
       def.run?.(s)
       log(s, def.voice, 'story')
       log(s, def.done, 'memo')
+    },
+  },
+  evenAttention: {
+    can: (s) => {
+      if (s.era < 2) return no('Need Era 2.')
+      if (s.stores.length < 2) return no('Open a second store first.')
+      const fair = 1 / s.stores.length
+      if (s.stores.every((st) => Math.abs(st.attentionShare - fair) < 0.005)) return no('Already even.')
+      return ok
+    },
+    run: (s) => {
+      const fair = 1 / s.stores.length
+      for (const st of s.stores) st.attentionShare = fair
+      log(s, `Attention split evenly across ${s.stores.length} stores.`, 'info')
+    },
+  },
+  walkDrifting: {
+    can: (s) => {
+      const drifting = s.stores.filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn)
+      if (drifting.length === 0) return no('No store is drifting.')
+      return canWalkStore(s, drifting[0]!.id) ? no(canWalkStore(s, drifting[0]!.id)!) : ok
+    },
+    run: (s) => {
+      // Worst first, until Attention runs out.
+      const drifting = s.stores
+        .filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn)
+        .sort((a, b) => (b.drift ?? 0) - (a.drift ?? 0))
+      let walked = 0
+      for (const st of drifting) {
+        if (canWalkStore(s, st.id)) break
+        walkStore(s, st.id)
+        walked += 1
+      }
+      if (walked < drifting.length) log(s, `Walked ${walked} of ${drifting.length} drifting stores; out of Attention.`, 'info')
     },
   },
   priceWar: {

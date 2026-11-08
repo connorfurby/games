@@ -2040,3 +2040,296 @@
     animation: none;
   }
 }
+
+/* ── Land: chain roster ─────────────────────────────────────────────────── */
+.ld-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.ld-chain__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ld-chain__nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.ld-chain__nums > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 5.5rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+}
+
+.ld-chain__nums dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ge-muted);
+}
+
+.ld-chain__nums dd {
+  margin: 0;
+  font-family: var(--g2-display);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ld-chain__nums > div.is-bad dd {
+  color: var(--ge-danger, #e06a5a);
+}
+
+.ld-chain__buy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ld-chain__depot {
+  font-size: 0.8rem;
+  color: var(--ge-success);
+}
+
+.ld-chain__warn {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--g2-r-md);
+  border-left: 3px solid var(--ge-warn, #e09f3e);
+  background: color-mix(in srgb, var(--ge-warn, #e09f3e) 10%, transparent);
+  font-size: 0.82rem;
+}
+
+.ld-chain__bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ld-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ld-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1.2fr) minmax(7rem, 1fr) minmax(8rem, 1.1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+  border: 1px solid var(--g2-line);
+  border-left: 3px solid var(--g2-line);
+}
+
+.ld-row.is-warn {
+  border-left-color: var(--ge-warn, #e09f3e);
+}
+
+.ld-row.is-bad {
+  border-left-color: var(--ge-danger, #e06a5a);
+}
+
+.ld-row__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ld-row__who strong {
+  font-family: var(--g2-display);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ld-row__who span,
+.ld-row__drift > span:last-child,
+.ld-row__att > span {
+  font-size: 0.74rem;
+  color: var(--ge-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ld-row__drift,
+.ld-row__att {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.ld-meter {
+  position: relative;
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--g2-line);
+  overflow: hidden;
+}
+
+.ld-meter > span {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  background: var(--ge-success);
+}
+
+.ld-row.is-warn .ld-meter > span {
+  background: var(--ge-warn, #e09f3e);
+}
+
+.ld-row.is-bad .ld-meter > span {
+  background: var(--ge-danger, #e06a5a);
+}
+
+.ld-row__att .ge-range {
+  width: 100%;
+  margin: 0;
+}
+
+.ld-seg {
+  display: inline-flex;
+  border: 1px solid var(--g2-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ld-seg button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ge-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  padding: 0.3rem 0.6rem;
+  min-height: 2rem;
+  cursor: pointer;
+}
+
+.ld-seg button.is-on {
+  background: var(--g2-tag);
+  color: #1b1408;
+  font-weight: 600;
+}
+
+.ld-row__act {
+  display: flex;
+  gap: 0.3rem;
+}
+
+@media (max-width: 900px) {
+  .ld-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.5rem 0.75rem;
+  }
+
+  .ld-seg {
+    justify-self: start;
+  }
+
+  .ld-row__act {
+    justify-self: end;
+  }
+}
+
+/* ── Legacy department kit, re-cut for 2.0 ──────────────────────────────── */
+/* The older panels share these classes; this keeps them in the After Hours look
+   (neutral raised cards, yellow for "do this", red only for real trouble). */
+.g2-main .ge-card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0.6rem;
+}
+
+.g2-main .ge-card {
+  gap: 0.45rem;
+  padding: 0.75rem 0.8rem;
+  border-radius: var(--g2-r-md);
+  border: 1px solid var(--g2-line);
+  background: var(--g2-raised);
+}
+
+.g2-main .ge-card--owned {
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--ge-success) 35%, var(--g2-line));
+}
+
+.g2-main .ge-card.is-ready {
+  border-color: color-mix(in srgb, var(--g2-tag) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--g2-tag) 18%, transparent);
+}
+
+.g2-main .ge-card__head strong {
+  font-family: var(--g2-display);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.g2-main .ge-card__meta-row {
+  font-size: 0.8rem;
+}
+
+.g2-main .ge-card__meta-row > span,
+.g2-main .ge-stat-strip__item > span {
+  font-size: 0.66rem;
+}
+
+.g2-main .ge-dept-callout {
+  border: 1px solid var(--g2-line);
+  border-left: 3px solid var(--g2-tag);
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+}
+
+.g2-main .ge-empire-block__head h3 {
+  font-family: var(--g2-display);
+  font-weight: 600;
+}
+
+/* "Ready / affordable" bars are yellow in 2.0; red is reserved for trouble. */
+.g2-root .ge-staff-role.is-on,
+.g2-root .ge-memo--ready,
+.g2-root .ge-standing-card.is-ready {
+  box-shadow: inset 3px 0 0 var(--g2-tag);
+}
+
+.g2-main .ge-staff-role {
+  border-radius: var(--g2-r-md);
+  background: var(--g2-raised);
+}
+
+@media (max-width: 720px) {
+  .ld-chain__nums {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .ld-chain__nums > div {
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .ld-chain__nums dd {
+    font-size: 1rem;
+  }
+}
