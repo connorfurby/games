@@ -11,6 +11,7 @@ import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { Icon } from '../icons/Icon'
 import { ColdBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 const BALANCED_COLD: Command[] = [
   { type: 'buyPlant' },
@@ -32,7 +33,12 @@ export function ColdPanel() {
       title="Cold"
       purpose="Buy freshness time for dairy and meat."
       lore="cold"
-      scene={<ColdBand state={s} />}
+      scene={
+        <>
+          <ColdBand state={s} />
+          <DeptDiorama kind="cold" />
+        </>
+      }
     >
       <div className={`ge-dept-callout${c.browned ? ' is-ready' : ''}`.trim()}>
         <div className="ge-dept-callout__copy">

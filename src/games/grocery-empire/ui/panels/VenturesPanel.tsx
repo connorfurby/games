@@ -10,6 +10,7 @@ import { HelpCard } from '../components/HelpCard'
 import { Meter } from '../components/Meter'
 import { Panel } from '../components/Panel'
 import { Icon } from '../icons/Icon'
+import { VentureArt } from '../ventures/VentureArt'
 function duration(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) return '—'
   if (sec < 60) return `${Math.ceil(sec)}s`
@@ -41,7 +42,7 @@ function bulkCost(def: (typeof VENTURES)[number], level: number, count: number) 
 }
 
 export function VenturesPanel() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
   const collectSuggested = useIsSuggested('ventures-collect')
   const [readyOnly, setReadyOnly] = useState(false)
 
@@ -59,7 +60,9 @@ export function VenturesPanel() {
   const listed = rows.filter((r) => r.available || (r.vs && r.vs.level > 0))
   // Tills the store has outgrown (under 0.5% of income) collect themselves and fold into one row.
   const floor = ventureOutgrownBelow(s)
-  const isSmall = ({ def, vs }: (typeof rows)[number]) => ventureIncome(def, Math.max(1, vs?.level ?? 0)) < floor
+  // Only an opened till can be "small change". An unopened one stays a card so you can still buy it.
+  const isSmall = ({ def, vs }: (typeof rows)[number]) =>
+    (vs?.level ?? 0) > 0 && ventureIncome(def, vs?.level ?? 0) < floor
   const small = listed.filter(isSmall)
   const open = listed.filter((r) => !isSmall(r))
   const claimable = open.filter(({ vs }) => (vs?.stored ?? 0) > 0)
@@ -121,8 +124,7 @@ export function VenturesPanel() {
           <span className="vt-small__label">Small change · collects itself</span>
           {small.map(({ def, vs }) => (
             <span key={def.id} className="vt-small__item">
-              {def.name}
-              {(vs?.level ?? 0) > 0 ? ` L${vs!.level} · ${money(ventureIncome(def, vs!.level), numberFormat)}/s` : ' · not opened'}
+              {def.name} L{vs?.level ?? 0} · {money(ventureIncome(def, vs?.level ?? 0), numberFormat)}/s
             </span>
           ))}
         </div>
@@ -172,8 +174,15 @@ export function VenturesPanel() {
           return (
             <article
               key={def.id}
-              className={`ge-card${opened ? ' ge-card--owned' : ''}${canCollect || canOpen || canLevel ? ' is-ready' : ''}`.trim()}
+              className={`ge-card ge-card--venture${opened ? ' ge-card--owned' : ''}${canCollect || canOpen || canLevel ? ' is-ready' : ''}`.trim()}
             >
+              <VentureArt
+                id={def.id}
+                level={level}
+                fill={opened && storeCap > 0 ? stored / storeCap : 0}
+                open={opened}
+                motion={!reducedMotion}
+              />
               <div className="ge-card__head">
                 <Icon name="venture" size={20} tone="accent" />
                 <div>

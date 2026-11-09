@@ -14,6 +14,7 @@ import { Panel } from '../components/Panel'
 import type { ExtraIcon } from '../icons/Icon'
 import { Icon } from '../icons/Icon'
 import { BuildBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 /** Convenience one-click: early builds in order, skip any that aren't affordable. */
 const STARTER_CORNER: Command[] = [
@@ -232,7 +233,12 @@ export function BuildPanel() {
       title="Build"
       purpose="Spend cash to grow capacity — shelf, cold, seats, trucks."
       lore="build"
-      scene={<BuildBand state={s} />}
+      scene={
+        <>
+          <BuildBand state={s} />
+          <DeptDiorama kind="build" />
+        </>
+      }
     >
 
       <div className="ge-dept-callout">

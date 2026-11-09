@@ -4,6 +4,7 @@ import type { GameState } from '../../sim/state'
 import { networkBreakdown, storeEngineWeight } from '../../sim/systems/network'
 import { useGame } from '../GameContext'
 import { money } from '../format'
+import { BlockMap, type MapPin } from '../map/BlockMap'
 
 /**
  * Empire Map: everything you own, drawn as rings around the flagship.
@@ -98,6 +99,28 @@ function buildPins(s: GameState): Pin[] {
   return pins
 }
 
+function toMapPin(p: Pin): MapPin {
+  const key = pinKey(p)
+  switch (p.kind) {
+    case 'flagship':
+      return { key, kind: 'flagship' }
+    case 'store':
+      return { key, kind: 'store', index: p.index }
+    case 'district':
+      return { key, kind: 'district', n: p.n }
+    case 'plant':
+      return { key, kind: 'plant', n: p.n, offline: p.offline }
+    case 'port':
+      return { key, kind: 'port', n: p.n }
+    case 'franchise':
+      return { key, kind: 'franchise', n: p.n }
+    case 'barge':
+      return { key, kind: 'barge', n: p.n }
+    case 'rival':
+      return { key, kind: 'rival', n: p.n, rival: p.id, bought: p.bought }
+  }
+}
+
 function pinKey(p: Pin): string {
   switch (p.kind) {
     case 'flagship':
@@ -176,12 +199,10 @@ export function EmpireMap() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const pins = useMemo(() => buildPins(s), [sig])
   const net = useMemo(() => networkBreakdown(s), [tick, s])
-  const scale = 500 / view.r
-  const u = 1 / scale // one screen-ish unit in map space
   const sel = pins.find((p) => pinKey(p) === selected) ?? pins[0]!
   const info = describe(s, sel, numberFormat)
-  const rings = (Object.keys(RING) as (keyof typeof RING)[]).filter((k) => s.era >= VIEWS.find((v) => v.id === k)!.era)
   const lanes = s.fleet?.lanes ?? 0
+  const draw = useMemo(() => pins.map(toMapPin), [pins])
 
   const counts: [string, string][] = [
     ['Stores', String(s.stores.length)],
@@ -196,7 +217,7 @@ export function EmpireMap() {
       <section className="ge-panel mp-head">
         <header className="ge-panel__head">
           <h2 className="ge-panel__title">Empire Map</h2>
-          <p className="ge-panel__purpose">Everything you own, in rings around the flagship. Tap a pin for details.</p>
+          <p className="ge-panel__purpose">Your block, then the water and the orbit. Tap a building.</p>
         </header>
         <dl className="mp-counts">
           {counts.map(([k, v]) => (
@@ -228,63 +249,7 @@ export function EmpireMap() {
             )
           })}
         </div>
-        <svg className="mp-svg" viewBox="0 0 1000 1000" role="img" aria-label={`Map of your empire, ${view.label} view`}>
-          <defs>
-            <radialGradient id="mp-sea" cx="50%" cy="50%" r="50%">
-              <stop offset="0" stopColor="var(--g2-raised)" />
-              <stop offset="1" stopColor="var(--ge-bg, #0d0f14)" />
-            </radialGradient>
-          </defs>
-          <rect width="1000" height="1000" fill="url(#mp-sea)" />
-          <g
-            className={reducedMotion ? '' : 'mp-zoomable'}
-            style={{ transform: `scale(${scale})`, transformOrigin: '500px 500px' }}
-          >
-            {rings.map((k) => (
-              <g key={k}>
-                <circle cx={C} cy={C} r={(RING[k][0] + RING[k][1]) / 2} className={`mp-ring mp-ring--${k}`} strokeWidth={RING[k][1] - RING[k][0]} />
-                <text x={C} y={C - RING[k][1] + 14 * u} className="mp-ring__label" fontSize={11 * u} textAnchor="middle">
-                  {VIEWS.find((v) => v.id === k)!.label.toUpperCase()}
-                </text>
-              </g>
-            ))}
-            {s.era >= 5 && (s.fleet?.biomassMax ?? 0) > 0 ? (
-              <circle
-                cx={C}
-                cy={C}
-                r={496}
-                className="mp-biomass"
-                strokeWidth={4 * u}
-                pathLength={1}
-                strokeDasharray={`${1 - (s.fleet.biomass ?? 0) / s.fleet.biomassMax} 1`}
-              >
-                <title>Biomass cleared</title>
-              </circle>
-            ) : null}
-            {pins
-              .filter((p) => p.kind === 'port')
-              .map((p) => (
-                <path
-                  key={`lane-${pinKey(p)}`}
-                  d={`M${C} ${C} Q${(C + p.x) / 2 + (p.y - C) * 0.25} ${(C + p.y) / 2 - (p.x - C) * 0.25} ${p.x} ${p.y}`}
-                  className={`mp-lane${s.fuel > 0 ? '' : ' is-dry'}`}
-                  strokeWidth={1.4 * u}
-                />
-              ))}
-            <g className={reducedMotion ? '' : 'mp-orbit'} style={{ transformOrigin: '500px 500px' }}>
-              {pins
-                .filter((p) => p.kind === 'barge')
-                .map((p) => (
-                  <PinMark key={pinKey(p)} p={p} u={u} active={pinKey(p) === selected} onPick={setSelected} />
-                ))}
-            </g>
-            {pins
-              .filter((p) => p.kind !== 'barge')
-              .map((p) => (
-                <PinMark key={pinKey(p)} p={p} u={u} active={pinKey(p) === selected} onPick={setSelected} />
-              ))}
-          </g>
-        </svg>
+        <BlockMap pins={draw} state={s} selected={selected} onSelect={setSelected} view={view.id} reducedMotion={reducedMotion} />
         <aside className="mp-detail" aria-live="polite">
           <h3>{info.title}</h3>
           {info.lines.map((l) => (
@@ -310,55 +275,3 @@ export function EmpireMap() {
   )
 }
 
-function PinMark({ p, u, active, onPick }: { p: Pin; u: number; active: boolean; onPick: (k: string) => void }) {
-  const k = pinKey(p)
-  const pick = () => onPick(k)
-  const common = {
-    className: `mp-pin mp-pin--${p.kind}${p.kind === 'plant' && p.offline ? ' is-off' : ''}${p.kind === 'rival' && p.bought ? ' is-bought' : ''}${active ? ' is-active' : ''}`,
-    onClick: pick,
-    tabIndex: 0,
-    role: 'button',
-    onKeyDown: (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        pick()
-      }
-    },
-  }
-  const r = (p.kind === 'flagship' ? 13 : p.kind === 'store' || p.kind === 'district' ? 7 : 5.5) * u
-  if (p.kind === 'flagship') {
-    return (
-      <g {...common} aria-label="Flagship">
-        <circle cx={p.x} cy={p.y} r={r * 1.8} className="mp-halo" />
-        <path d={`M${p.x - r} ${p.y + r * 0.8}V${p.y - r * 0.2}L${p.x} ${p.y - r}L${p.x + r} ${p.y - r * 0.2}V${p.y + r * 0.8}Z`} />
-      </g>
-    )
-  }
-  if (p.kind === 'district') {
-    const pts = Array.from({ length: 6 }, (_, i) => {
-      const a = (Math.PI / 3) * i + Math.PI / 6
-      return `${p.x + Math.cos(a) * r},${p.y + Math.sin(a) * r}`
-    }).join(' ')
-    return <polygon {...common} points={pts} aria-label={`District ${p.n}`} />
-  }
-  if (p.kind === 'store' || p.kind === 'rival' || p.kind === 'franchise') {
-    return (
-      <path
-        {...common}
-        aria-label={p.kind}
-        d={`M${p.x - r} ${p.y + r * 0.8}V${p.y - r * 0.2}L${p.x} ${p.y - r}L${p.x + r} ${p.y - r * 0.2}V${p.y + r * 0.8}Z`}
-      />
-    )
-  }
-  if (p.kind === 'plant') {
-    return (
-      <g {...common} aria-label={`Cold plant ${p.n}`}>
-        <rect x={p.x - r} y={p.y - r} width={r * 2} height={r * 2} rx={r * 0.4} />
-      </g>
-    )
-  }
-  if (p.kind === 'barge') {
-    return <ellipse {...common} cx={p.x} cy={p.y} rx={r * 1.2} ry={r * 0.6} aria-label={`Barge ${p.n}`} />
-  }
-  return <circle {...common} cx={p.x} cy={p.y} r={r} aria-label={`Lane ${p.n}`} />
-}

@@ -17,6 +17,7 @@ import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
+import { FleetHarbor } from '../fleet/FleetHarbor'
 
 function eta(sec: number): string {
   if (sec < 90) return `${Math.ceil(sec)}s`
@@ -67,6 +68,7 @@ export function FleetPanel() {
 
   return (
     <Panel title="Fleet" purpose="Barges harvest the biomass; clearing it ends the era." lore="fleet" className="fv">
+      <FleetHarbor state={s} motion={!reducedMotion} />
       <section className="fv-goal" aria-label="Biomass">
         <div className="fv-goal__head">
           <h3>Clear the biomass</h3>

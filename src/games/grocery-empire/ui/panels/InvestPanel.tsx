@@ -10,6 +10,7 @@ import { Btn } from '../components/Btn'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { InvestBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 const RISKS: InvestRisk[] = ['low', 'mid', 'high']
 
@@ -94,7 +95,12 @@ export function InvestPanel() {
       title="Invest"
       purpose="Park surplus cash inside a capped yield."
       lore="invest"
-      scene={<InvestBand state={s} />}
+      scene={
+        <>
+          <InvestBand state={s} />
+          <DeptDiorama kind="invest" />
+        </>
+      }
     >
       {outgrown ? (
         <p className="vt-small" role="note">

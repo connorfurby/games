@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ERA2_EXPANSIONS } from '../../content/era2'
 import { CHAIN } from '../../sim/balance'
 import { can } from '../../sim/commands'
@@ -16,6 +17,7 @@ import { Btn } from '../components/Btn'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { LandBand } from '../scenes/DepartmentBands'
+import { LandStreet } from '../land/LandStreet'
 
 const EARLY = [
   {
@@ -110,7 +112,8 @@ function LandExpansionCard({
 
 /** Era 2+ chain roster: one compact row per store, bulk actions on top. */
 function ChainRoster() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
+  const [focus, setFocus] = useState<string | null>(null)
   const stores = s.stores ?? []
   const nextStoreCost = openStoreCost(s)
   const openBlock =
@@ -128,6 +131,16 @@ function ChainRoster() {
 
   return (
     <section className="ld-chain" aria-label="Chain">
+      <LandStreet
+        state={s}
+        onPick={(id) => {
+          setFocus(id)
+          document.getElementById(`ld-${id}`)?.scrollIntoView({
+            block: 'nearest',
+            behavior: reducedMotion ? 'auto' : 'smooth',
+          })
+        }}
+      />
       <div className="ld-chain__top">
         <dl className="ld-chain__nums">
           <div>
@@ -212,7 +225,7 @@ function ChainRoster() {
           const trainBlock = canTrainStore(s, st.id)
           const driftTone = drift >= 0.7 ? 'is-bad' : drift >= CHAIN.driftWarn ? 'is-warn' : ''
           return (
-            <li key={st.id} className={`ld-row ${driftTone}`} data-coach-id={i === Math.min(1, stores.length - 1) ? 'land-policy' : undefined}>
+            <li id={`ld-${st.id}`} key={st.id} className={`ld-row ${driftTone}${focus === st.id ? ' is-focus' : ''}`} data-coach-id={i === Math.min(1, stores.length - 1) ? 'land-policy' : undefined}>
               <div className="ld-row__who">
                 <strong>{st.name}</strong>
                 <span>

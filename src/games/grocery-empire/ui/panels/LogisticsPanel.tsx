@@ -5,6 +5,7 @@ import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { Icon } from '../icons/Icon'
 import { LogisticsBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 export function LogisticsPanel() {
   const { state: s, dispatch } = useGame()
@@ -19,7 +20,12 @@ export function LogisticsPanel() {
       title="Logistics"
       purpose="Burn fuel for lanes and Control."
       lore="logistics"
-      scene={<LogisticsBand state={s} />}
+      scene={
+        <>
+          <LogisticsBand state={s} />
+          <DeptDiorama kind="logistics" />
+        </>
+      }
     >
       <div className={`ge-dept-callout${lowFuel ? ' is-ready' : ''}`.trim()}>
         <div className="ge-dept-callout__copy">

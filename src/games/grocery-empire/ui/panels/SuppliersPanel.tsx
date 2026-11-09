@@ -16,6 +16,7 @@ import { HelpCard } from '../components/HelpCard'
 import { MixPriority } from '../components/MixPriority'
 import { Panel } from '../components/Panel'
 import { SuppliersBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 function indexMood(index: number): { label: string; hint: string } {
   if (index < 0.88) return { label: 'Cheap', hint: 'Wholesale is soft — good time to buy.' }
@@ -75,7 +76,12 @@ export function SuppliersPanel() {
       title="Suppliers"
       purpose="Buy trucks. Cheap dips fill the backroom."
       lore="suppliers"
-      scene={<SuppliersBand state={s} />}
+      scene={
+        <>
+          <SuppliersBand state={s} />
+          <DeptDiorama kind="suppliers" />
+        </>
+      }
     >
       <div className="ge-sup">
         <section className="ge-sup-pulse">

@@ -1854,12 +1854,13 @@
 
 .mp-svg {
   width: 100%;
-  max-height: min(68vh, 680px);
-  aspect-ratio: 1;
+  height: auto;
+  max-height: min(70vh, 560px);
   justify-self: center;
   border-radius: var(--g2-r-md);
   overflow: hidden;
   touch-action: manipulation;
+  background: #12161c;
 }
 
 .mp-zoomable {
@@ -4058,4 +4059,229 @@
   position: absolute;
   top: -6px;
   right: -6px;
+}
+
+/* ── City block map ─────────────────────────────────────────────────────── */
+.bm .mp-pin {
+  fill: none;
+  stroke: none;
+  cursor: pointer;
+}
+
+.bm .mp-pin.is-active .bm-wall,
+.bm .mp-pin:focus-visible .bm-wall {
+  stroke: var(--g2-tag);
+  stroke-width: 1.6;
+}
+
+.bm-wall { fill: var(--sc-brick); }
+.bm-win { fill: var(--sc-window); }
+.bm-door { fill: var(--sc-door); }
+.bm-sign {
+  fill: var(--sc-tag);
+  font: 700 8px var(--g2-ui);
+}
+.bm-boards { fill: #6b4a32; }
+.bm-roads rect { fill: var(--sc-street); }
+.bm-dashes { stroke: #efe9dc; stroke-opacity: 0.28; stroke-dasharray: 6 8; fill: none; }
+.bm-street, .bm-tiny, .bm-more text {
+  fill: #efe9dc;
+  font: 700 9px var(--g2-ui);
+  letter-spacing: 0.14em;
+  opacity: 0.7;
+}
+.bm-district { fill: #3f7d58; fill-opacity: 0.28; stroke: #7cc47f; stroke-opacity: 0.35; }
+.bm-park { fill: #1e3a28; }
+.bm-tree { fill: #2f6d4f; }
+.bm-lot { fill: #2a3034; }
+.bm-depot { fill: var(--sc-plant); }
+.bm-plant { fill: #d7e6ee; }
+.bm-plant.is-off { fill: #3a4043; }
+.bm-stack { fill: #7a8794; }
+.bm-smoke { fill: #c5d0d6; opacity: 0.45; }
+.bm-water { fill: var(--sc-water); }
+.bm-dock { stroke: #9bc0e6; stroke-width: 2; }
+.bm-dock.is-dry { stroke: #3a4043; }
+.bm-hull { fill: var(--sc-hull); }
+.bm-lane { fill: none; stroke: #5b9bd5; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.bm-lane.is-dry { opacity: 0.3; }
+.bm-star { fill: #efe9dc; }
+.bm-beam { stroke: #c3aaf0; stroke-opacity: 0.45; fill: none; }
+.bm-bio-track { fill: #1b2147; }
+.bm-bio-fill { fill: #a98be0; }
+.bm.is-live .bm-win { animation: bm-twinkle 3.2s ease-in-out infinite; }
+.bm.is-live .bm-smoke { animation: bm-rise 2.4s ease-in infinite; }
+.bm.is-live .bm-barge { animation: bm-bob 3.6s ease-in-out infinite; }
+.bm.is-live .bm-water { animation: bm-sheen 7s linear infinite; }
+
+@keyframes bm-twinkle {
+  50% { opacity: 0.45; }
+}
+@keyframes bm-rise {
+  from { transform: translateY(2px); opacity: 0.2; }
+  to { transform: translateY(-8px); opacity: 0; }
+}
+@keyframes bm-bob {
+  50% { transform: translateY(-2px); }
+}
+@keyframes bm-sheen {
+  from { opacity: 0.85; }
+  50% { opacity: 1; }
+  to { opacity: 0.85; }
+}
+
+/* ── Ventures ───────────────────────────────────────────────────────────── */
+.g2-root .ge-card--venture {
+  padding: 0 0.6rem 0.55rem;
+  overflow: hidden;
+  gap: 0.4rem;
+}
+.va {
+  display: block;
+  width: calc(100% + 1.2rem);
+  margin: 0 -0.6rem 0.15rem;
+  height: auto;
+}
+.va-sign, .va-jar {
+  fill: #efe9dc;
+  font: 700 8px var(--g2-ui);
+  letter-spacing: 0.12em;
+}
+.va.is-shut { filter: saturate(0.4); }
+.va.is-live .va-steam {
+  fill: none;
+  stroke: #efe9dc;
+  stroke-opacity: 0.55;
+  animation: va-steam 1.8s ease-in infinite;
+}
+.va.is-live .va-scooter { animation: va-scoot 2.8s ease-in-out infinite; }
+.va.is-live .va-onair { animation: bm-twinkle 1.2s ease-in-out infinite; }
+.va.is-live .va-frost { animation: bm-twinkle 2s ease-in-out infinite; }
+@keyframes va-steam {
+  from { opacity: 0.1; transform: translateY(4px); }
+  to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes va-scoot {
+  50% { transform: translateX(8px); }
+}
+
+/* ── Staff floor ────────────────────────────────────────────────────────── */
+.sf { margin: 0.55rem 0 0; }
+.sf svg, .fh svg, .dd, .ld-lot__svg { display: block; width: 100%; height: auto; }
+.sf {
+  border-radius: var(--g2-r-md);
+  overflow: hidden;
+  border: 1px solid var(--g2-line);
+}
+.sf figcaption, .fh figcaption {
+  margin: 0;
+  padding: 0.35rem 0.6rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--ge-muted);
+  background: var(--g2-raised);
+}
+.sf-label, .sf-name, .sf-empty {
+  fill: #efe9dc;
+  font: 600 9px var(--g2-ui);
+}
+.sf-name { font-size: 7px; opacity: 0.85; }
+.sf-lamp { fill: #ffd98c; }
+.sf.is-live .sf-person.is-live { animation: sf-work 2.4s ease-in-out infinite; }
+.sf.is-live .sf-lamp { animation: bm-twinkle 2.2s ease-in-out infinite; }
+.sf-portrait { width: 40px; height: 40px; flex: none; }
+@keyframes sf-work {
+  50% { transform: translateY(-1.5px); }
+}
+
+/* ── Land street ────────────────────────────────────────────────────────── */
+.ld-street {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0.35rem 0.15rem 0.55rem;
+  scroll-snap-type: x mandatory;
+}
+.ld-lot {
+  flex: 0 0 5.6rem;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  border: 1px solid var(--g2-line);
+  border-radius: var(--g2-r-sm);
+  background: #1a1e22;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ld-lot.is-flag { border-color: color-mix(in srgb, var(--g2-tag) 70%, transparent); }
+.ld-lot.is-drift { border-color: var(--ge-danger, #e06a5a); }
+.ld-lot--depot { cursor: default; }
+.ld-lot__name {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ld-lot__meta { font-size: 0.62rem; color: var(--ge-muted); }
+.ld-row.is-focus {
+  outline: 1px solid var(--g2-tag);
+  outline-offset: 2px;
+}
+
+/* ── Fleet harbor ───────────────────────────────────────────────────────── */
+.fh {
+  margin: 0 0 0.75rem;
+  border-radius: var(--g2-r-md);
+  overflow: hidden;
+  border: 1px solid var(--g2-line);
+}
+.fh-bio { fill: #6a4ea0; }
+.fh-bio-label, .fh-wait, .fh-dock-label, .fh-pip-label {
+  fill: #efe9dc;
+  font: 700 9px var(--g2-ui);
+  letter-spacing: 0.08em;
+}
+.fh-wake { stroke: #5b9bd5; stroke-opacity: 0.45; fill: none; }
+.fh-beam { stroke: #c3aaf0; stroke-opacity: 0.55; fill: none; }
+.fh-pip { fill: var(--sc-barge); }
+.fh-war { fill: #d9665b; opacity: 0.08; pointer-events: none; }
+.fh.is-live .fh-barge { animation: bm-bob 3.4s ease-in-out infinite; }
+.fh.is-live.is-war .fh-war { animation: bm-twinkle 1.1s ease-in-out infinite; }
+
+/* ── Department dioramas ────────────────────────────────────────────────── */
+.dd {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0.45rem;
+  border-radius: var(--g2-r-md);
+  border: 1px solid var(--g2-line);
+}
+.dd-bg { fill: #171b20; }
+.dd-label { fill: #efe9dc; font: 600 11px var(--g2-ui); opacity: 0.8; }
+.dd-smoke { fill: #d7e6ee; opacity: 0.5; }
+.dd.is-live .dd-smoke { animation: bm-rise 2.6s ease-in infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bm.is-live .bm-win,
+  .bm.is-live .bm-smoke,
+  .bm.is-live .bm-barge,
+  .bm.is-live .bm-water,
+  .va.is-live .va-steam,
+  .va.is-live .va-scooter,
+  .va.is-live .va-onair,
+  .va.is-live .va-frost,
+  .sf.is-live .sf-person.is-live,
+  .sf.is-live .sf-lamp,
+  .fh.is-live .fh-barge,
+  .fh.is-live.is-war .fh-war,
+  .dd.is-live .dd-smoke {
+    animation: none;
+  }
 }
