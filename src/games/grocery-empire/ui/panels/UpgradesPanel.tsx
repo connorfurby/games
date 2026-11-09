@@ -454,7 +454,7 @@ export function UpgradesPanel() {
       <GrowthStrip mode="habits" />
       <HelpCard title="Cash trees — layered boards">
         Pay cash here for repeatable ranks across Counter → Aisle → Chain → Institution. Empire rank
-        opens the next layer; exclusive capstones pick a shape until Retraining. Empire trait points
+        opens the next layer; exclusive capstones pick a shape for the run. Empire trait points
         live on the doctrine board — separate from these cash trees.
       </HelpCard>
 

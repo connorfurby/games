@@ -55,7 +55,7 @@ describe('layered upgrades', () => {
     expect(can(s, { type: 'buyUpgrade', id: 'bag-well' }).ok).toBe(true)
   })
 
-  it('fork lock blocks the sibling until Retraining', () => {
+  it('fork lock blocks the sibling for the run', () => {
     const s = createInitialState(2)
     s.menus.upgrades = true
     s.empire.level = 40

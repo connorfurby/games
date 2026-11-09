@@ -1,7 +1,7 @@
 import { LOT_SURVEY_LIFETIME } from '../sim/balance'
 import { rebootFee } from '../sim/formulas'
 import { LATE_MEMOS } from './lateEras'
-import { AMEND_MINUTES, RETRAIN, STANDING_ORDERS } from '../sim/balance'
+import { AMEND_MINUTES, STANDING_ORDERS } from '../sim/balance'
 import { log, queueTutorial, setEra, unlockMenu } from '../sim/helpers'
 import type { GameState } from '../sim/state'
 import { enableMomentum, enableQuadratic } from '../sim/systems/cold'
@@ -699,31 +699,6 @@ export const MEMOS: MemoDef[] = [
     cost: c(0, 6000, 60),
     visible: (s) => had(s, 'slogan'),
     done: 'Planogram taped to the backroom door. Every facing has a reason.',
-  },
-  {
-    id: 'retraining',
-    name: 'Retraining Seminar',
-    voice: 'A weekend course. Everyone forgets the old way and learns the new one.',
-    effect:
-      'Refunds every upgrade level you bought, in full cash — including exclusive capstone forks. Cost doubles each time.',
-    era: 1,
-    cost: (s) => ({
-      cash: 0,
-      attention: RETRAIN.baseAttention * Math.pow(RETRAIN.growth, s.compute.retrains),
-      ideas: RETRAIN.ideas * Math.pow(RETRAIN.growth, s.compute.retrains),
-    }),
-    visible: (s) => s.compute.ideasUnlocked && s.stats.upgradesBought >= 5,
-    blocked: (s) => (s.upgradeSpend > 0 ? null : 'No upgrade levels to refund yet.'),
-    run: (s) => {
-      const refund = s.upgradeSpend
-      s.cash += refund
-      s.upgrades = {}
-      s.upgradeSpend = 0
-      s.compute.retrains += 1
-      log(s, `Retraining refunded $${refund.toFixed(2)} of upgrades. Rebuild however you like.`, 'good')
-    },
-    repeatable: true,
-    done: 'Retraining seminar complete.',
   },
   {
     id: 'private-label-sku',

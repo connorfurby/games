@@ -58,7 +58,7 @@ export interface UpgradeDef {
   band?: UpgradeBand
   /** All must be met before the node is buyable. */
   requires?: UpgradeRequire[]
-  /** Exclusive group — buying one locks siblings until Retraining. */
+  /** Exclusive group — buying one locks the siblings for this run. */
   fork?: string
   /** Layout slot within the band (0–4 columns, row down). */
   col?: number

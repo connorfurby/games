@@ -216,8 +216,6 @@ export const SCANNER_PULSE = {
   wobbleMax: 2.15,
 }
 
-export const RETRAIN = { baseAttention: 5000, ideas: 50, growth: 2 }
-
 export const RECOVERY = {
   helperAfterSec: 30,
   helperCooldownSec: 3600,

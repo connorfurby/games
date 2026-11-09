@@ -365,7 +365,7 @@ export const TUTORIALS: TutorialDef[] = [
         coachId: 'menu-upgrades',
         title: 'Open Upgrades',
         body: 'Leveled trees fill gaps between memos. Floor helps unpack and baskets; Supply helps crates. Buy something small on Floor so the habit sticks.',
-        recovery: 'Wrong tree only shifts pace — Retraining refunds levels later.',
+        recovery: 'A weak upgrade still helps something. The choice stays for the run.',
         action: { type: 'openMenu', params: { menu: 'upgrades' } },
         doneWhen: { kind: 'menu', key: 'upgrades' },
       },
