@@ -59,11 +59,11 @@ export function VenturesPanel() {
 
   const listed = rows.filter((r) => r.available || (r.vs && r.vs.level > 0))
   const locked = rows.filter((r) => !r.available && !(r.vs && r.vs.level > 0))
-  // Tills the store has outgrown (under 0.5% of income) collect themselves and fold into one row.
+  // Maxed tills that earn under 0.5% of income collect themselves and fold into one row.
+  // Anything you can still level stays a card, so Upgrade never disappears.
   const floor = ventureOutgrownBelow(s)
-  // Only an opened till can be "small change". An unopened one stays a card so you can still buy it.
   const isSmall = ({ def, vs }: (typeof rows)[number]) =>
-    (vs?.level ?? 0) > 0 && ventureIncome(def, vs?.level ?? 0) < floor
+    (vs?.level ?? 0) >= def.maxLevel && ventureIncome(def, vs?.level ?? 0) < floor
   const small = listed.filter(isSmall)
   const open = listed.filter((r) => !isSmall(r))
   const claimable = open.filter(({ vs }) => (vs?.stored ?? 0) > 0)
@@ -112,15 +112,13 @@ export function VenturesPanel() {
             Claim all
           </Btn>
         </div>
-      ) : open.length > 0 ? (
-        <p className="ge-muted" style={{ margin: '0 0 0.65rem', fontSize: '0.78rem' }}>
-          {open.length} open · tills fill while you run the aisle — claim before they cap.
-        </p>
-      ) : null}
-
-      {open.some((r) => (r.vs?.level ?? 0) > 0) ? (
+      ) : open.some((r) => (r.vs?.level ?? 0) > 0) ? (
         <p className="ge-muted" style={{ margin: '0 0 0.65rem', fontSize: '0.78rem' }}>
           Upgrade is the button on each open card. It spends cash and raises that till.
+        </p>
+      ) : open.length > 0 ? (
+        <p className="ge-muted" style={{ margin: '0 0 0.65rem', fontSize: '0.78rem' }}>
+          None opened yet. Open a card to start the till — Upgrade shows up on that card right after.
         </p>
       ) : null}
 
@@ -132,7 +130,7 @@ export function VenturesPanel() {
       ) : null}
 
       {small.length > 0 ? (
-        <div className="vt-small" title="These tills earn under 0.5% of your income now. They collect themselves.">
+        <div className="vt-small" title="These tills are maxed and earn under 0.5% of your income. They collect themselves.">
           <span className="vt-small__label">Small change · collects itself</span>
           {small.map(({ def, vs }) => (
             <span key={def.id} className="vt-small__item">
@@ -260,15 +258,6 @@ export function VenturesPanel() {
                   <Meter value={stored} max={Math.max(1, storeCap)} label={money(stored, numberFormat)} />
                   <div className="ge-card__actions">
                     <Btn
-                      tone={canCollect ? 'primary' : 'ghost'}
-                      coachId={`venture-collect-${def.id}`}
-                      disabled={!canCollect}
-                      title={!canCollect ? 'Nothing stacked yet' : undefined}
-                      onClick={() => dispatch({ type: 'collectVenture', id: def.id })}
-                    >
-                      {canCollect ? `Claim ${money(stored, numberFormat)}` : 'Claim'}
-                    </Btn>
-                    <Btn
                       tone={canLevel ? 'primary' : 'ghost'}
                       disabled={atMax || s.cash < nextCost}
                       title={
@@ -276,11 +265,20 @@ export function VenturesPanel() {
                           ? 'Max level'
                           : s.cash < nextCost
                             ? `Need ${money(nextCost, numberFormat)}`
-                            : undefined
+                            : `Raise this till. Next level adds ${rate(gain)}.`
                       }
                       onClick={() => dispatch({ type: 'levelVenture', id: def.id })}
                     >
                       {atMax ? 'Maxed' : `Upgrade · ${money(nextCost, numberFormat)}`}
+                    </Btn>
+                    <Btn
+                      tone={canCollect && !canLevel ? 'primary' : 'ghost'}
+                      coachId={`venture-collect-${def.id}`}
+                      disabled={!canCollect}
+                      title={!canCollect ? 'Nothing stacked yet' : undefined}
+                      onClick={() => dispatch({ type: 'collectVenture', id: def.id })}
+                    >
+                      {canCollect ? `Claim ${money(stored, numberFormat)}` : 'Claim'}
                     </Btn>
                     {!atMax ? (
                       <>

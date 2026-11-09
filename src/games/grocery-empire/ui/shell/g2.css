@@ -3071,29 +3071,34 @@
   min-width: 0;
 }
 
-/* Filter tabs inside panels: 2.0 pills. */
+/* Tabs inside a page: a nested box, not another copy of the section bar. */
 .g2-root .ge-dept-tabs {
-  gap: 0.3rem;
-  padding: 0;
-  background: transparent;
-  border: 0;
+  width: 100%;
+  gap: 0.25rem;
+  margin: 0.15rem 0 0.7rem;
+  padding: 0.22rem;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--g2-line);
+  border-radius: 8px;
 }
 
 .g2-root .ge-dept-tab {
-  border-radius: 999px;
-  border: 1px solid var(--g2-line);
+  border-radius: 6px;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--ge-muted);
   font-family: var(--g2-ui);
-  font-size: 0.76rem;
-  padding: 0.22rem 0.65rem;
-  min-height: 1.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  min-height: 2rem;
 }
 
 .g2-root .ge-dept-tab.is-on {
-  background: var(--g2-tag);
+  background: var(--ge-bg);
   border-color: var(--g2-tag);
-  color: var(--g2-tag-ink);
+  color: var(--ge-ink);
+  box-shadow: inset 0 -2px 0 var(--g2-tag);
 }
 
 /* Spec boxes inside cards: lighter, smaller. */
@@ -3123,15 +3128,13 @@
   justify-content: flex-start;
 }
 
-/* ── Hub header: Hub name + purpose, sub-tabs as real tabs ─────────── */
+/* ── Hub header: name on top, section tabs in their own bar ─────────── */
 .g2-hubhead {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.4rem 1.25rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
   padding: 0.15rem 0.1rem 0;
-  border-bottom: 1px solid var(--g2-line);
   flex-shrink: 0;
 }
 
@@ -3161,31 +3164,38 @@
 }
 
 .g2-hubhead .g2-subtabs {
-  gap: 0;
-  margin-bottom: -1px;
+  width: 100%;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.28rem;
+  background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+  border: 1px solid var(--g2-line);
+  border-radius: 12px;
 }
 
 .g2-root .g2-hubhead .g2-subtab {
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
+  flex: 1 1 7rem;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
   background: transparent;
   color: var(--ge-muted);
-  padding: 0.45rem 0.75rem 0.55rem;
-  min-height: 0;
-  font-size: 0.86rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 2.45rem;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .g2-root .g2-hubhead .g2-subtab:hover {
   color: var(--ge-ink);
-  background: transparent;
+  background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
 }
 
 .g2-root .g2-hubhead .g2-subtab.is-active {
-  color: var(--ge-ink);
-  border-bottom-color: var(--g2-tag);
-  background: transparent;
-  font-weight: 650;
+  color: var(--ge-bg);
+  background: var(--ge-ink);
+  border-color: var(--ge-ink);
+  font-weight: 700;
 }
 
 .g2-root .g2-hubhead .g2-subtab.is-suggest:not(.is-active)::after {
@@ -3208,9 +3218,7 @@
 
 @media (max-width: 720px) {
   .g2-hubhead {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.1rem;
+    gap: 0.45rem;
   }
 
   .g2-hubhead__title {
@@ -3423,6 +3431,65 @@
   font-weight: 650;
   color: var(--ge-ink);
   margin-right: 0.25rem;
+}
+
+.bk-board {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.75rem 0.4rem;
+  border: 1px solid var(--g2-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ge-ink) 5%, transparent);
+}
+
+.bk-board__head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.bk-board__head p {
+  margin: 0.2rem 0 0.55rem;
+  font-size: 0.78rem;
+  color: var(--ge-muted);
+}
+
+.bk-board__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bk-board__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.bk-board__list li.is-due {
+  background: color-mix(in srgb, var(--g2-tag) 12%, transparent);
+}
+
+.bk-board__list strong {
+  display: block;
+  font-size: 0.88rem;
+}
+
+.bk-board__list span {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.75rem;
+  color: var(--ge-muted);
+  line-height: 1.35;
+}
+
+.bk-board__list .ge-btn {
+  flex: 0 0 auto;
 }
 
 .vt-small__item + .vt-small__item::before {
@@ -3740,19 +3807,8 @@
   position: relative;
 }
 
-.g2-root .g2-hubhead .g2-subtab.is-active {
-  border-bottom-color: transparent;
-}
-
-.g2-subtab__ink {
-  position: absolute;
-  left: 0.5rem;
-  right: 0.5rem;
-  bottom: -1px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--g2-tag);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--g2-tag) 60%, transparent);
+.g2-root .g2-hubhead .g2-subtab__ink {
+  display: none;
 }
 
 .g2-hub.is-active svg {

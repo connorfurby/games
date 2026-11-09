@@ -25,10 +25,10 @@ import { Sparkline } from '../components/Sparkline'
 import { StatusBand } from '../components/StatusBand'
 
 const BOARD_AGENDAS: { id: BoardAgenda; label: string; tip: string }[] = [
-  { id: 'expand', label: 'Expand', tip: 'Next store −10%' },
-  { id: 'dividend', label: 'Dividend', tip: 'Cash from equity · Brand nick' },
-  { id: 'rnd', label: 'Shelf R&D', tip: 'Perishables last longer' },
-  { id: 'hours', label: 'Cut hours', tip: 'Wage ease' },
+  { id: 'expand', label: 'Expand', tip: 'The next store costs 10% less. A little equity is set aside.' },
+  { id: 'dividend', label: 'Dividend', tip: 'Turn some equity into cash. Brand takes a nick.' },
+  { id: 'rnd', label: 'Shelf R&D', tip: 'Perishables last longer until the next meeting. Costs up to $400.' },
+  { id: 'hours', label: 'Cut hours', tip: 'Hours snap to 1× for a short stretch. Wages ease and demand softens.' },
 ]
 
 function etaLabel(sec: number): string {
@@ -393,29 +393,34 @@ export function BooksPanel() {
             </Btn>
           </div>
           {s.incorporated ? (
-            <>
-              <p className="ge-muted" style={{ fontSize: '0.78rem', margin: '0.5rem 0 0.25rem' }}>
-                {meetingDue
-                  ? 'Board meeting due — pick one agenda.'
-                  : `Next meeting in ${nextMeetingInSec}s`}
-              </p>
-              <div className="ge-chip-row" data-coach-id="books-board">
+            <div className="bk-board" data-coach-id="books-board">
+              <header className="bk-board__head">
+                <h3>Board meeting</h3>
+                <p>
+                  {meetingDue
+                    ? 'One choice. The others wait until the next meeting.'
+                    : `Next meeting ${etaLabel(nextMeetingInSec)}.`}
+                </p>
+              </header>
+              <ul className="bk-board__list">
                 {BOARD_AGENDAS.map((a) => (
-                  <Btn
-                    key={a.id}
-                    tone={meetingDue ? 'primary' : 'ghost'}
-                    disabled={!meetingDue}
-                    title={meetingDue ? a.tip : `Next meeting in ${nextMeetingInSec}s`}
-                    onClick={() => dispatch({ type: 'resolveBoard', agenda: a.id })}
-                  >
-                    {a.label}
-                  </Btn>
+                  <li key={a.id} className={meetingDue ? 'is-due' : ''}>
+                    <div>
+                      <strong>{a.label}</strong>
+                      <span>{a.tip}</span>
+                    </div>
+                    <Btn
+                      tone={meetingDue ? 'primary' : 'ghost'}
+                      disabled={!meetingDue}
+                      title={meetingDue ? a.tip : `Next meeting ${etaLabel(nextMeetingInSec)}`}
+                      onClick={() => dispatch({ type: 'resolveBoard', agenda: a.id })}
+                    >
+                      {meetingDue ? 'Choose' : 'Waiting'}
+                    </Btn>
+                  </li>
                 ))}
-              </div>
-              {BOARD_AGENDAS.map((a) => (
-                <Line key={a.id} left={a.label} right={a.tip} muted />
-              ))}
-            </>
+              </ul>
+            </div>
           ) : (
             <p className="ge-muted" style={{ fontSize: '0.78rem' }} data-coach-id="books-board">
               Board agenda opens after you incorporate.
