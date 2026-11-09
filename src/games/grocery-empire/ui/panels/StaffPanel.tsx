@@ -26,6 +26,7 @@ import { Panel } from '../components/Panel'
 import type { ExtraIcon } from '../icons/Icon'
 import { Icon } from '../icons/Icon'
 import { StaffBand } from '../scenes/DepartmentBands'
+import { RolePortrait, StaffFloor } from '../staff/StaffFloor'
 
 const ROLE_ICON: Record<RoleId, ExtraIcon> = {
   clerk: 'role-clerk',
@@ -74,7 +75,7 @@ function StaffRoleCard({
       }`.trim()}
     >
       <div className="ge-staff-role__top">
-        <Icon name={ROLE_ICON[role]} size={16} tone="accent" />
+        <RolePortrait role={role} />
         <div>
           <strong>{def.name}</strong>
           <span>×{n} on floor</span>
@@ -147,7 +148,12 @@ export function StaffPanel() {
       title="Staff"
       purpose="Hire the role that clears today’s bottleneck."
       lore="staff"
-      scene={<StaffBand state={s} />}
+      scene={
+        <>
+          <StaffBand state={s} />
+          <StaffFloor roster={roster} bottleneck={bottleneck.kind} motion={!reducedMotion} />
+        </>
+      }
     >
       {recommendedRole && recommendCheck ? (
         <div className="ge-dept-callout" role="status">

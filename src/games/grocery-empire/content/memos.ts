@@ -1,3 +1,5 @@
+import { LOT_SURVEY_LIFETIME } from '../sim/balance'
+import { rebootFee } from '../sim/formulas'
 import { LATE_MEMOS } from './lateEras'
 import { AMEND_MINUTES, RETRAIN, STANDING_ORDERS } from '../sim/balance'
 import { log, queueTutorial, setEra, unlockMenu } from '../sim/helpers'
@@ -343,7 +345,7 @@ export const MEMOS: MemoDef[] = [
     effect: 'Opens the Cold track in Build. Coolers slow spoilage and allow Dairy.',
     era: 1,
     cost: c(60),
-    visible: (s) => s.categories.produce && s.stats.spoiled >= 3,
+    visible: (s) => (s.categories.produce && s.stats.spoiled >= 3) || s.era >= 2,
     run: (s) => {
       unlockMenu(s, 'build')
     },
@@ -743,7 +745,7 @@ export const MEMOS: MemoDef[] = [
     effect: 'Opens Land: expansions, including buying the lot.',
     era: 1,
     cost: c(500, 5000),
-    visible: (s) => s.compute.unlocked && s.lifetimeRevenue >= 8000,
+    visible: (s) => s.compute.unlocked && s.lifetimeRevenue >= LOT_SURVEY_LIFETIME,
     run: (s) => {
       unlockMenu(s, 'land')
       queueTutorial(s, 'land')
@@ -765,8 +767,8 @@ export const MEMOS: MemoDef[] = [
     voice: 'Compressors the size of trucks. The county wants forms.',
     effect: 'Unlock Cold menu and plant builds.',
     era: 3,
-    cost: c(8000, 4000),
-    visible: (s) => s.autonomous || (s.builds.cold ?? 0) >= 2,
+    cost: c(150_000, 4000),
+    visible: (s) => s.autonomous || ((s.builds.cold ?? 0) >= 2 && s.stores.length >= 3),
     run: (s) => {
       setEra(s, 3)
       unlockMenu(s, 'cold')
@@ -780,7 +782,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Insurance in steel cylinders.',
     effect: 'Unlock Tank Farm builds; +cold buffer.',
     era: 3,
-    cost: c(12_000, 2000),
+    cost: c(120_000, 2000),
     visible: (s) => had(s, 'cold-plant-permit') && s.cold.plants >= 1,
     run: (s) => unlockMenu(s, 'cold'),
     done: 'Tank Farm spec on the wall. Buffer the line.',
@@ -791,7 +793,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'While freshness holds, everything compounds. When it slips, auto-shed.',
     effect: 'Enable Momentum; freshness floor 25% on brownout.',
     era: 3,
-    cost: c(20_000, 5000, 40),
+    cost: c(400_000, 5000, 40),
     visible: (s) => had(s, 'tank-farm') && s.cold.tanks >= 1,
     run: (s) => {
       enableMomentum(s)
@@ -805,7 +807,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'One memo. Every plant counts twice. The region notices.',
     effect: 'Quadratic plant multiplier (once).',
     era: 3,
-    cost: c(50_000, 8000, 80),
+    cost: c(4_000_000, 8000, 80),
     visible: (s) => had(s, 'momentum') && s.cold.plants >= 3,
     run: (s) => enableQuadratic(s),
     done: 'County Emptying: plants count twice. Yield will vanish.',
@@ -816,7 +818,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'A polite person who knows zoning.',
     effect: 'Open Politics; Political Capital wallet.',
     era: 3,
-    cost: c(15_000, 3000),
+    cost: c(300_000, 3000),
     visible: (s) => had(s, 'cold-plant-permit') && ((s.builds.civic ?? 0) >= 1 || s.empire.level >= 3),
     run: (s) => {
       openPolitics(s)
@@ -830,7 +832,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Buy neighbors before they form a committee.',
     effect: 'Region acquisition actions.',
     era: 3,
-    cost: c(30_000, 4000, 20),
+    cost: c(1_500_000, 4000, 20),
     visible: (s) => had(s, 'lobby-office'),
     run: (s) => unlockMenu(s, 'politics'),
     done: 'Acquisition Desk staffed.',
@@ -841,7 +843,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Pack the brand. The map gets bigger.',
     effect: 'Leave when county yield is empty.',
     era: 3,
-    cost: c(100_000, 10_000, 50),
+    cost: c(30_000_000, 10_000, 50),
     visible: (s) => had(s, 'monopoly-watch') && s.cold.yieldLeft <= 0,
     blocked: (s) => (s.politics.capital >= 15 ? null : 'Need 15 Political Capital.'),
     run: (s) => leaveRegion(s),
@@ -853,7 +855,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Your name on the line, not just the can.',
     effect: 'Factory production path (+production build lean).',
     era: 3,
-    cost: c(40_000, 6000, 60),
+    cost: c(2_000_000, 6000, 60),
     visible: (s) => had(s, 'cold-plant-permit') && s.categories.privateLabel,
     run: (s) => {
       s.builds.production = Math.max(s.builds.production ?? 0, 2)
@@ -867,7 +869,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Fuel, weather, and a schedule that lies.',
     effect: 'Open Logistics; first freighter lane.',
     era: 4,
-    cost: c(80_000, 5000),
+    cost: c(60_000_000, 5000),
     visible: (s) => s.era >= 4 || s.politics.leftRegion,
     run: (s) => {
       unlockMenu(s, 'logistics')
@@ -885,7 +887,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Partners grow faster. Brand drifts unless sealed.',
     effect: 'Franchise expansion (Brand risk, recoverable).',
     era: 4,
-    cost: c(60_000, 4000, 30),
+    cost: c(150_000_000, 4000, 30),
     visible: (s) => had(s, 'ocean-lane') || s.fleet.lanes >= 1,
     run: (s) => unlockMenu(s, 'logistics'),
     done: 'Franchise kit printed. Brand will drift — it regenerates.',
@@ -896,7 +898,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Never launch empty.',
     effect: '+fuel capacity; lane reliability.',
     era: 4,
-    cost: c(25_000, 2000),
+    cost: c(40_000_000, 2000),
     visible: (s) => had(s, 'ocean-lane') || !!s.menus.logistics,
     done: 'Fuel buffer policy posted. Never launch empty.',
   },
@@ -906,7 +908,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'Someone has to say which ocean matters today.',
     effect: 'Control currency; route priorities.',
     era: 4,
-    cost: c(90_000, 8000, 40),
+    cost: c(500_000_000, 8000, 40),
     visible: (s) => s.fleet.lanes >= 3 || (had(s, 'ocean-lane') && s.fleet.lanes >= 1),
     run: (s) => {
       s.control = Math.max(s.control, 10)
@@ -920,7 +922,7 @@ export const MEMOS: MemoDef[] = [
     voice: 'A dock that points at the dark.',
     effect: 'Unlock Fleet / Charter.',
     era: 5,
-    cost: c(200_000, 12_000, 100),
+    cost: c(3_000_000_000, 12_000, 100),
     visible: (s) => s.era >= 4 && (s.autonomous || s.fleet.lanes >= 1 || s.control >= 5),
     run: (s) => {
       setEra(s, 5)
@@ -980,9 +982,9 @@ export const MEMOS: MemoDef[] = [
     id: 'reboot-fleet',
     name: 'Reboot Fleet',
     voice: 'Refund Charter. Respec. No shame.',
-    effect: 'Respec Charter points (small cash fee).',
+    effect: 'Respec Charter points. Fee: a slice of cash on hand.',
     era: 5,
-    cost: c(0),
+    cost: (s) => ({ cash: Math.ceil(rebootFee(s)), attention: 0, ideas: 0 }),
     visible: (s) => s.fleet.launched,
     run: (s) => rebootFleet(s),
     repeatable: true,

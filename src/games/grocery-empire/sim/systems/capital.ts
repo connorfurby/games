@@ -1,4 +1,5 @@
 import { CAPITAL, DOCTRINE_EFFECTS, INVEST } from '../balance'
+import { upgradeEffect } from '../../content/upgrades'
 import { DOCTRINES as ERA2_DOCTRINES } from '../../content/era2'
 import { bestPrice, covenantRatio, investBookCap, investYieldingBalance, up } from '../formulas'
 import { clamp, log, round2 } from '../helpers'
@@ -104,7 +105,7 @@ function tickBoard(s: GameState, dt: number) {
         Math.min(0.4, overdue / CAPITAL.boardIntervalSec) *
         dt *
         CAPITAL.boardIgnoreRepDrain *
-        Math.max(0.3, 1 - up(s, 'board-buffer') * 0.15)
+        Math.max(0.2, 1 - up(s, 'board-buffer') * 0.15 - upgradeEffect(s, 'minute-taker'))
       if (drainChance > 0 && nextRng(s) < drainChance) {
         s.compute.reputation = Math.max(0, s.compute.reputation - 1)
         s.brand = clamp(s.brand - 0.01, 0.05, 1)

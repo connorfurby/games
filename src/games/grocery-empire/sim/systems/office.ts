@@ -1,3 +1,4 @@
+import { chainAttentionDrainPerSec } from './chain'
 import { COMPUTE, OFFICE_REBALANCE, SCANNER_PULSE } from '../balance'
 import { attentionCap, attentionPerSec, ideasPerSec } from '../formulas'
 import { log } from '../helpers'
@@ -17,7 +18,8 @@ export function tickOffice(s: GameState, dt: number) {
   const c = s.compute
   const cap = attentionCap(s)
   const before = c.attention
-  c.attention = Math.min(cap, c.attention + attentionPerSec(s) * dt)
+  const net = attentionPerSec(s) - chainAttentionDrainPerSec(s)
+  c.attention = Math.max(0, Math.min(cap, c.attention + net * dt))
   if (before < cap && c.attention >= cap) s.stats.attentionFilled += 1
 
   if (c.ideasUnlocked && c.ideasOn && c.attention >= cap - 1e-9) {

@@ -5,7 +5,10 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 4
+export const SAVE_VERSION = 7
+
+/** Lifetime revenue before the Lot Survey memo appears (Era 1 → 2 spine). */
+export const LOT_SURVEY_LIFETIME = 4000
 
 export const START = {
   /** Gentler open: enough for a first wholesale dip without immediate rent panic. */
@@ -254,9 +257,9 @@ export const EMPIRE = {
   /** Soft XP from venture collect — scaled by payout, far below basket XP. */
   xpPerVentureCollect: 2,
   xpPerVentureCash: 0.0004,
-  levelBase: 100,
-  levelGrowth: 1.35,
-  maxLevel: 50,
+  levelBase: 120,
+  levelGrowth: 1.37,
+  maxLevel: 100,
   /** +2.5% demand per Empire level above 1. */
   demandPerLevel: 0.025,
 }
@@ -319,6 +322,13 @@ export const HISTORY = { everySec: 5, keep: 72 }
 
 /** Era 2 — chain & capital (plan Part F). */
 export const CHAIN = {
+  /** One-time depot build cost. */
+  depotCash: 18_000,
+  /** Drift at which a store counts as drifting (UI warning, Walk drifting). */
+  driftWarn: 0.4,
+  /** Attention to train a store: base × growth^(level−1). */
+  trainAttBase: 60,
+  trainAttGrowth: 1.28,
   maxStores: 12,
   openBaseCost: 12_000,
   openGrowth: 2.1,
@@ -386,8 +396,8 @@ export const DOCTRINE_EFFECTS = {
  * Upgrade rank gates by band.
  * Band 0 (Counter): classic `2 + floor(empire/2)` — teaching nodes ignore this.
  * Band 1 (Aisle): opens at empire 4 → `4 + max(0, empire - 4)`.
- * Band 2 (Chain): locked until empire 8 → `floor((empire - 8) / 2)`.
- * Band 3 (Institution): locked until empire 16 → `floor((empire - 16) / 3)`.
+ * Band 2 (Chain): opens at empire 8 → `1 + floor((empire - 8) / 2)`.
+ * Band 3 (Institution): opens at empire 16 → `1 + floor((empire - 16) / 3)`.
  */
 export const UPGRADE_RANKS = {
   baseUnlocked: 2,
@@ -442,11 +452,11 @@ export const CAPITAL = {
 
 /** Era 3 — cold chain. */
 export const COLD = {
-  plantCost: 25_000,
-  plantGrowth: 1.45,
-  tankCost: 18_000,
-  tankGrowth: 1.4,
-  plantSupply: 12,
+  plantCost: 60_000,
+  plantGrowth: 1.6,
+  tankCost: 45_000,
+  tankGrowth: 1.55,
+  plantSupply: 16,
   tankBuffer: 8,
   baseDemand: 10,
   demandPerPlant: 4,
@@ -481,9 +491,9 @@ export const POLITICS = {
   lobbyGainPerSec: 0.004,
   lobbyCost: 40,
   lobbyCapitalGain: 12,
-  acquireCash: 50_000,
+  acquireCash: 400_000,
   acquireCapital: 25,
-  acquireGrowth: 1.5,
+  acquireGrowth: 2.2,
   monopolyPerAcquire: 0.12,
   monopolyFineCashFrac: 0.08,
   monopolyFineFlat: 5000,
@@ -495,27 +505,30 @@ export const POLITICS = {
 
 /** Era 4 — globe logistics. */
 export const LOGISTICS = {
-  laneCash: 80_000,
+  laneCash: 80_000_000,
+  laneGrowth: 2,
   laneControl: 5,
   laneFuel: 40,
   fuelCapBase: 100,
   fuelCapPerBuffer: 50,
   fuelBurnPerLanePerSec: 0.08,
   fuelBuyUnit: 20,
-  fuelBuyCash: 2000,
-  controlFromCash: 0.00002,
+  fuelBuyCash: 2_000_000,
+  controlPerLogCash: 0.01,
   brandDriftPerFranchise: 0.004,
-  franchiseCash: 60_000,
+  franchiseCash: 120_000_000,
+  franchiseGrowth: 1.9,
   franchiseBrandHit: 0.08,
 }
 
 /** Era 5 — seed barges / charter. */
 export const FLEET = {
-  bargeLaunchCash: 200_000,
+  bargeLaunchCash: 5_000_000_000,
+  bargeGrowth: 2.4,
   bargeLaunchRead: 8,
   bargeSoftFloor: 1,
-  biomassStart: 50_000,
-  harvestPerBargePerSec: 0.35,
+  biomassStart: 12_000_000,
+  harvestPerBargePerSec: 2,
   replicationPerSec: 0.002,
   charterBaseCap: 12,
   charterPerLegacy: 0.05,
@@ -548,3 +561,80 @@ export const HUNGRY_LAWS = {
   /** Ad cost growth after each buy (base 2). */
   expensiveAdsGrowth: 2.35,
 } as const
+
+/**
+ * 2.0 network — every owned asset copies the flagship's sales.
+ * Total income ≈ flagship sales × value ladder × network.
+ */
+export const NETWORK = {
+  /** Share of a copied sale that lands as profit (stores buy their own stock). */
+  margin: 0.55,
+  /** A fresh chain store is worth this many flagships; +perLevel each store level. */
+  storeBase: 0.7,
+  storePerLevel: 0.08,
+  /** Neglected store floor (fraction of its weight at zero Attention). */
+  neglectFloor: 0.55,
+  driftCut: 0.3,
+  /** Without a Depot, stores from this index on run at noDepotMul. */
+  storesBeforeDepot: 4,
+  noDepotMul: 0.6,
+  depotMul: 1.2,
+  perFranchise: 1.5,
+  /** Each acquired district (Era 3 politics) multiplies the whole network. */
+  perDistrict: 0.3,
+  /** Each fuelled ocean lane (Era 4) multiplies the network; dry lanes barely help. */
+  perLane: 0.25,
+  perDryLane: 0.08,
+  /** Each seed barge (Era 5+). */
+  perBarge: 0.15,
+  autonomousMul: 1.3,
+  /** Empire XP from copied baskets, relative to flagship baskets. */
+  xpShare: 0.06,
+}
+
+/** 2.0 value ladder — premium stock: price and wholesale cost both scale. */
+export const VALUE = {
+  /** By storefront tier: Empty, Stall, Corner, Standard, Supermarket, Hyper, Mega, Hub. */
+  storefront: [1, 1, 2, 3.5, 6, 10, 16, 24] as const,
+  /** By era 0..6. */
+  era: [1, 1.5, 2.5, 5, 10, 20, 40] as const,
+}
+
+/** 2.0 Rebrand prestige. Goodwill = floor(cbrt(lifetime revenue / revenuePerGoodwillCube)). */
+export const REBRAND = {
+  minEra: 3,
+  revenuePerGoodwillCube: 1e6,
+  /** Stat bonus per Goodwill (soft-capped with everything else). */
+  valuePerGoodwill: 0.04,
+  demandPerGoodwill: 0.03,
+  startCashPerGoodwill: 0.25,
+}
+
+/** 2.0 word of mouth — every basket sold brings a few more shoppers. Log-scaled, never runs away. */
+export const WORD_OF_MOUTH = {
+  /** Demand × (1 + perDecade × log10(1 + baskets / scale)). */
+  perDecade: 0.45,
+  scale: 60,
+}
+
+/** 2.0 named rival chains (content/rivals.ts). */
+export const RIVAL_CHAINS = {
+  /** Demand cut per independent rival store: demand × 1 / (1 + Σ stores × perStore). */
+  perStore: 0.006,
+  /** Buyout = buyoutBase × (1 + stores × buyoutPerStore). */
+  buyoutPerStore: 0.35,
+  /** A bought rival store is worth this many flagships in the network. */
+  boughtStoreWeight: 0.25,
+  /** Price war: costs this share of the buyout, closes stores, freezes growth. */
+  warCostFrac: 0.05,
+  warStoresClosed: 2,
+  warFreezeSec: 600,
+  warCooldownSec: 180,
+  /** Empire XP on buyout: this share of the current level's cost, per store bought. */
+  buyoutLevelShare: 0.06,
+  /** A taunt is logged every this-many new stores. */
+  tauntEvery: 3,
+}
+
+/** Relic Museum: +0.1% shoppers per relic owned (soft-capped like every stat). */
+export const RELIC_DEMAND_PER = 0.001

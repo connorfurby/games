@@ -285,11 +285,11 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.stores.length < 2 && !s.memos['depot-permit']) {
         return no('Open a second store or buy Depot Permit.')
       }
-      if (s.cash < 18_000) return no('Need $18000.')
+      if (s.cash < CHAIN.depotCash) return no(`Need $${CHAIN.depotCash}.`)
       return ok
     },
     run: (s) => {
-      s.cash -= 18_000
+      s.cash -= CHAIN.depotCash
       s.depot = true
       unlockMenu(s, 'land')
       unlockMenu(s, 'ventures')

@@ -15,12 +15,16 @@ import { useGame } from '../GameContext'
 import { pct, qty } from '../format'
 import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { GrowthStrip } from '../components/GrowthStrip'
 import { HelpCard } from '../components/HelpCard'
 import { HungryLawsBoard } from '../components/HungryLaws'
 import { Panel } from '../components/Panel'
+import { can } from '../../sim/commands'
+import type { GameState } from '../../sim/state'
+import { STAT_INFO } from '../../content/upgrades/stats'
+import { SkillTree, type TreeNode, type TreeNodeState } from '../tree/SkillTree'
+import { StatGlyph } from '../tree/StatGlyph'
 
-const BRANCHES: PerkBranch[] = ['floorcraft', 'ledger', 'charter']
+const BRANCHES: PerkBranch[] = ['floorcraft', 'ledger', 'charter', 'frontier', 'legacy']
 
 function perkVisible(s: Parameters<NonNullable<PerkDef['visible']>>[0], p: PerkDef) {
   if (!p.visible) return true
@@ -29,6 +33,140 @@ function perkVisible(s: Parameters<NonNullable<PerkDef['visible']>>[0], p: PerkD
   } catch {
     return false
   }
+}
+
+const BRANCH_TINT: Record<PerkBranch, string> = {
+  floorcraft: '#f2c14e',
+  ledger: '#8fb6e0',
+  charter: '#ff8a7a',
+  frontier: '#7fd3a0',
+  legacy: '#c3aaf0',
+}
+
+/** Exclusive doctrine already taken by a sibling, if any. */
+function exclusiveTaken(s: GameState, p: PerkDef): PerkDef | null {
+  if (!p.exclusive) return null
+  for (const other of PERKS) {
+    if (other.id !== p.id && other.exclusive === p.exclusive && (s.empire.perks[other.id] ?? 0) > 0) return other
+  }
+  return null
+}
+
+function perkNode(s: GameState, p: PerkDef): TreeNode {
+  const lvl = s.empire.perks[p.id] ?? 0
+  const visible = perkVisible(s, p)
+  const ok = can(s, { type: 'buyPerk', id: p.id }).ok
+  const reqOk = !p.requires?.length || p.requires.every((r) => (s.empire.perks[r.id] ?? 0) >= r.level)
+  const state: TreeNodeState = !visible
+    ? 'unknown'
+    : lvl >= p.max
+      ? 'max'
+      : ok
+        ? 'ready'
+        : lvl > 0
+          ? 'owned'
+          : !reqOk || exclusiveTaken(s, p)
+            ? 'locked'
+            : 'open'
+  return {
+    id: p.id,
+    name: p.name,
+    tier: p.band ?? 0,
+    requires: p.requires ?? [],
+    fork: p.exclusive,
+    lvl,
+    max: p.max,
+    state,
+    stat: p.effects?.[0]?.stat,
+    sub: lvl >= p.max ? undefined : `${p.cost} pt${p.cost === 1 ? '' : 's'}`,
+  }
+}
+
+function PerkDetail({ p, onBuy, onJump }: { p: PerkDef; onBuy: () => void; onJump: (id: string) => void }) {
+  const { state: s } = useGame()
+  const lvl = s.empire.perks[p.id] ?? 0
+  const check = can(s, { type: 'buyPerk', id: p.id })
+  const taken = exclusiveTaken(s, p)
+  const unlocks = PERKS.filter((x) => x.requires?.some((r) => r.id === p.id))
+  return (
+    <div className="sd">
+      <div className="sd-head">
+        <span className="sd-icon">
+          <StatGlyph stat={p.effects?.[0]?.stat} size={24} />
+        </span>
+        <div>
+          <h3>{p.name}</h3>
+          <small>
+            {PERK_BRANCHES[p.branch].name} · {lvl}/{p.max}
+          </small>
+        </div>
+      </div>
+      <ul className="sd-rows">
+        <li>
+          <span>Each point</span>
+          <strong>{p.per}</strong>
+        </li>
+        {p.effects?.map((e) => (
+          <li key={e.stat}>
+            <span>Now: {STAT_INFO[e.stat].label}</span>
+            <strong>+{(e.per * lvl * 100).toFixed(1)}%</strong>
+          </li>
+        ))}
+        <li>
+          <span>Cost</span>
+          <strong>
+            {p.cost} trait point{p.cost === 1 ? '' : 's'} · you have {s.empire.points}
+          </strong>
+        </li>
+        {taken ? (
+          <li className="is-bad">
+            <span>Choose one</span>
+            <strong>You took {taken.name}</strong>
+          </li>
+        ) : null}
+      </ul>
+      {lvl < p.max ? (
+        <div className="sd-buy">
+          <button type="button" className="g2-tag" disabled={!check.ok} title={check.ok ? undefined : check.reason} onClick={onBuy}>
+            <span className="g2-tag__price">
+              {p.cost} pt{p.cost === 1 ? '' : 's'}
+            </span>
+            <span className="g2-tag__label">{check.ok ? 'Take it' : check.reason}</span>
+          </button>
+        </div>
+      ) : (
+        <p className="sd-links">Maxed.</p>
+      )}
+      {p.requires?.length ? (
+        <p className="sd-links">
+          Needs:{' '}
+          {p.requires.map((r, i) => (
+            <span key={r.id}>
+              {i ? ', ' : ''}
+              <button type="button" onClick={() => onJump(r.id)}>
+                {PERK_BY_ID[r.id]?.name ?? r.id}
+              </button>{' '}
+              {r.level}
+            </span>
+          ))}
+        </p>
+      ) : null}
+      {unlocks.length ? (
+        <p className="sd-links">
+          Unlocks:{' '}
+          {unlocks.map((u, i) => (
+            <span key={u.id}>
+              {i ? ', ' : ''}
+              <button type="button" onClick={() => onJump(u.id)}>
+                {u.name}
+              </button>
+            </span>
+          ))}
+        </p>
+      ) : null}
+      {p.touches ? <p className="sd-links">Boosts the cash upgrade “{p.touches}”.</p> : null}
+    </div>
+  )
 }
 
 export function EmpirePanel() {
@@ -45,9 +183,14 @@ export function EmpirePanel() {
   const ring = `conic-gradient(var(--ge-accent) ${fill * 360}deg, color-mix(in srgb, var(--ge-ink) 12%, transparent) 0)`
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
   const [focusId, setFocusId] = useState<string | null>(null)
+  const [branch, setBranch] = useState<PerkBranch>('floorcraft')
 
   const spent = useMemo(
-    () => Object.entries(s.empire.perks).reduce((n, [, v]) => n + (v ?? 0), 0),
+    () =>
+      Object.entries(s.empire.perks).reduce(
+        (n, [id, v]) => n + (v ?? 0) * (PERK_BY_ID[id]?.cost ?? 1),
+        0,
+      ),
     [s.empire.perks],
   )
 
@@ -64,7 +207,6 @@ export function EmpirePanel() {
       purpose="Baskets raise rank. Rank unlocks upgrade bands and invest caps."
       lore="empire"
     >
-      <GrowthStrip mode="memory" />
       <div className="ge-empire-hero">
         <div className="ge-empire-hero__ring" style={{ background: ring }} aria-hidden>
           <div className="ge-empire-hero__core">
@@ -201,88 +343,34 @@ export function EmpirePanel() {
           ) : null}
         </header>
 
-        {points > 0 || spent > 0 ? (
-          <div className="ge-doctrine-board">
-            {BRANCHES.map((branch) => {
-              const meta = PERK_BRANCHES[branch]
-              const list = PERKS.filter((p) => p.branch === branch && perkVisible(s, p))
-              return (
-                <div key={branch} className="ge-doctrine-col">
-                  <header className="ge-doctrine-col__head">
-                    <h4>{meta.name}</h4>
-                    <p>{meta.blurb}</p>
-                  </header>
-                  {list.map((p) => {
-                    const lvl = s.empire.perks[p.id] ?? 0
-                    const maxed = lvl >= p.max
-                    const reqOk =
-                      !p.requires?.length ||
-                      p.requires.every((r) => (s.empire.perks[r.id] ?? 0) >= r.level)
-                    let exclusiveBlock: string | null = null
-                    if (p.exclusive) {
-                      for (const other of PERKS) {
-                        if (other.id === p.id || other.exclusive !== p.exclusive) continue
-                        if ((s.empire.perks[other.id] ?? 0) > 0) {
-                          exclusiveBlock = other.name
-                          break
-                        }
-                      }
-                    }
-                    const canBuy = !maxed && points >= p.cost && reqOk && !exclusiveBlock
-                    const locked = !reqOk || !!exclusiveBlock
-                    return (
-                      <article
-                        key={p.id}
-                        className={`ge-perk-card${canBuy ? ' is-ready' : ''}${
-                          maxed ? ' is-max' : ''
-                        }${locked && !maxed ? ' is-locked' : ''}`.trim()}
-                        onClick={() => setFocusId(p.id)}
-                      >
-                        <div className="ge-perk-card__top">
-                          <strong>{p.name}</strong>
-                          <span className="ge-perk-card__lvl">
-                            {lvl}/{p.max}
-                          </span>
-                        </div>
-                        <p>{p.per}</p>
-                        {exclusiveBlock ? (
-                          <p className="ge-muted" style={{ fontSize: '0.65rem', margin: 0 }}>
-                            Other path: {exclusiveBlock}
-                          </p>
-                        ) : !reqOk ? (
-                          <p className="ge-muted" style={{ fontSize: '0.65rem', margin: 0 }}>
-                            Needs{' '}
-                            {(p.requires ?? [])
-                              .map((r) => `${PERK_BY_ID[r.id]?.name ?? r.id} ${r.level}`)
-                              .join(', ')}
-                          </p>
-                        ) : null}
-                        <div className="ge-perk-card__pips" aria-hidden>
-                          {Array.from({ length: p.max }, (_, i) => (
-                            <i key={i} className={i < lvl ? 'is-on' : undefined} />
-                          ))}
-                        </div>
-                        <Btn
-                          tone={canBuy ? 'primary' : 'ghost'}
-                          coachId={`perk-${p.id}`}
-                          disabled={!canBuy}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            dispatch({ type: 'buyPerk', id: p.id })
-                          }}
-                        >
-                          {maxed ? 'Maxed' : exclusiveBlock ? 'Forked' : `${p.cost} trait pt`}
-                        </Btn>
-                      </article>
-                    )
-                  })}
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="ge-muted">Level up once to earn a trait point.</p>
-        )}
+        <nav className="dt-branches" aria-label="Doctrine branches">
+          {BRANCHES.map((b) => {
+            const list = PERKS.filter((p) => p.branch === b && perkVisible(s, p))
+            const owned = list.reduce((n, p) => n + (s.empire.perks[p.id] ?? 0), 0)
+            const ready = list.filter((p) => can(s, { type: 'buyPerk', id: p.id }).ok).length
+            if (list.length === 0) return null
+            return (
+              <button key={b} type="button" className={`dt-branch${branch === b ? ' is-on' : ''}`} onClick={() => setBranch(b)} style={{ '--bt': BRANCH_TINT[b] } as React.CSSProperties}>
+                <strong>{PERK_BRANCHES[b].name}</strong>
+                <small>{owned} pts in</small>
+                {ready > 0 ? <span className="g2-badge">{ready}</span> : null}
+              </button>
+            )
+          })}
+        </nav>
+        <p className="ge-muted" style={{ margin: '0 0 0.6rem', fontSize: '0.8rem' }}>
+          {PERK_BRANCHES[branch].blurb}
+        </p>
+        <SkillTree
+          nodes={PERKS.filter((p) => p.branch === branch).map((p) => perkNode(s, p))}
+          tiers={[{ label: 'Basics' }, { label: 'Deeper' }, { label: 'Signature', note: 'some are choose-one' }]}
+          tint={BRANCH_TINT[branch]}
+          selected={focusId && PERK_BY_ID[focusId]?.branch === branch ? focusId : null}
+          onSelect={setFocusId}
+          reducedMotion={reducedMotion}
+          emptyText="Level up once to earn a trait point."
+          renderDetail={(id) => <PerkDetail p={PERK_BY_ID[id]!} onBuy={() => dispatch({ type: 'buyPerk', id })} onJump={setFocusId} />}
+        />
 
         {focus?.touches ? (
           <p className="ge-muted" style={{ marginTop: '0.55rem', fontSize: '0.72rem' }}>

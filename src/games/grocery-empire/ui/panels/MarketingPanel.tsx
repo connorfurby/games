@@ -9,6 +9,7 @@ import { Btn } from '../components/Btn'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { MarketingBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 const POSTURES: { id: MarketingPosture; label: string; blurb: string }[] = [
   { id: 'neighborhood', label: 'Neighborhood', blurb: 'Baseline ads — steady glances.' },
@@ -47,7 +48,12 @@ export function MarketingPanel() {
       title="Marketing"
       purpose="Buy demand — only when shoppers are the limit."
       lore="marketing"
-      scene={<MarketingBand state={s} />}
+      scene={
+        <>
+          <MarketingBand state={s} />
+          <DeptDiorama kind="marketing" />
+        </>
+      }
     >
       {bottleneck.kind !== 'demand' ? (
         <div className="ge-dept-callout" role="status">

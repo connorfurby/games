@@ -1,6 +1,18 @@
 import type { GameState } from '../../sim/state'
+import type { StatEffect } from './stats'
 
-export const TREE_IDS = ['floor', 'people', 'supply', 'brand', 'capital', 'automation', 'space'] as const
+export const TREE_IDS = [
+  'floor',
+  'people',
+  'supply',
+  'brand',
+  'automation',
+  'capital',
+  'lab',
+  'fresh',
+  'logistics',
+  'space',
+] as const
 export type TreeId = (typeof TREE_IDS)[number]
 
 export const TREES: Record<TreeId, { name: string; blurb: string; tint: 'accent' | 'success' | 'ink' }> = {
@@ -10,7 +22,10 @@ export const TREES: Record<TreeId, { name: string; blurb: string; tint: 'accent'
   brand: { name: 'Brand', blurb: 'Ads, loyalty, weather, and inspection goodwill.', tint: 'accent' },
   capital: { name: 'Capital', blurb: 'Interest, debt, and soft landings.', tint: 'ink' },
   automation: { name: 'Automation', blurb: 'Less clicking, same store.', tint: 'success' },
-  space: { name: 'Space', blurb: 'Shell, survey, and drift resist once barges are in play.', tint: 'accent' },
+  lab: { name: 'Lab', blurb: 'Research that changes the rules: new stock, new tricks, bigger ideas.', tint: 'ink' },
+  fresh: { name: 'Fresh', blurb: 'Cold chain, deli and bakery — freshness that compounds.', tint: 'success' },
+  logistics: { name: 'Logistics', blurb: 'Districts, lanes and hubs that make the network hum.', tint: 'ink' },
+  space: { name: 'Orbital', blurb: 'Barges, biomass and the long chart once the fleet is up.', tint: 'accent' },
 }
 
 export const BAND_IDS = [0, 1, 2, 3] as const
@@ -63,6 +78,8 @@ export interface UpgradeDef {
   breakpoints?: number[]
   /** Empire perk that multiplies this node's magnitude (capped product). */
   synergy?: { perk: string; mul: number }
+  /** 2.0 stat effects (milestones and tree mastery apply). */
+  effects?: StatEffect[]
   /** Optional visibility gate. Hidden nodes never block a tree. */
   visible?: (s: GameState) => boolean
   /** Override band rank unlock for this node. */

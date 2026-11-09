@@ -6,6 +6,16 @@ import { money, qty } from '../format'
 import { Btn } from './Btn'
 import { Line } from './Line'
 
+/** A front-page line from the numbers — the moment you come back to. */
+function headline(r: Receipt): string {
+  const hours = r.cappedSeconds / 3600
+  const when = hours >= 6 ? 'overnight' : hours >= 1 ? `in ${Math.floor(hours)} hour${hours >= 2 ? 's' : ''}` : 'while you stepped out'
+  if (r.sold <= 0) return `Quiet aisles ${when}: the doors stayed open, nobody bought`
+  const base = `Store sells ${qty(r.sold)} baskets ${when}, takes ${money(r.revenue)}`
+  if (r.spoiled > r.sold * 0.1) return `${base} — ${qty(r.spoiled)} items go bad`
+  return base
+}
+
 export function OfflineReceiptModal({
   receipt,
   reducedMotion,
@@ -34,10 +44,10 @@ export function OfflineReceiptModal({
         transition={{ duration: reducedMotion ? 0 : 0.35, ease: 'easeOut' }}
       >
         <div className="ge-receipt-paper__perf" />
-        <h3 id="ge-offline-title">While you were away</h3>
-        <p className="ge-receipt-paper__epigraph">
-          The aisle kept walking. Here is what the tape remembered.
-        </p>
+        <p className="ge-receipt-paper__epigraph">While you were away</p>
+        <h3 id="ge-offline-title" className="ge-receipt-headline">
+          {headline(receipt)}
+        </h3>
         <p className="ge-muted">
           {Math.floor(receipt.cappedSeconds / 60)} min simulated
           {receipt.seconds > receipt.cappedSeconds ? ' (capped at 8h)' : ''}
@@ -52,12 +62,9 @@ export function OfflineReceiptModal({
           {receipt.interest > 0 ? <Line left="Interest" right={money(receipt.interest)} /> : null}
           {receipt.attention > 0 ? <Line left="Attention" right={`+${qty(receipt.attention)}`} /> : null}
         </div>
-        <p className="ge-muted" style={{ marginTop: '0.75rem' }}>
-          Stamp this first — the floor tour waits underneath.
-        </p>
-        <div className="ge-chip-row">
+        <div className="ge-chip-row ge-receipt-actions">
           <Btn tone="primary" onClick={onDismiss}>
-            Stamp &amp; file
+            Back to work
           </Btn>
           {nudge && onNudge && followUp?.channel !== nudge.menu ? (
             <Btn

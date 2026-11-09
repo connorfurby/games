@@ -1,6 +1,15 @@
+import { useState } from 'react'
 import { ERA2_EXPANSIONS } from '../../content/era2'
 import { CHAIN } from '../../sim/balance'
-import { canTrainStore, canWalkStore, openStoreCost } from '../../sim/systems/chain'
+import { can } from '../../sim/commands'
+import {
+  canTrainStore,
+  canWalkStore,
+  chainAttentionDrainPerSec,
+  openStoreCost,
+  trainStoreCost,
+} from '../../sim/systems/chain'
+import { networkStores, storeEngineWeight } from '../../sim/systems/network'
 import type { StorePolicy } from '../../sim/state'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
@@ -8,6 +17,7 @@ import { Btn } from '../components/Btn'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { LandBand } from '../scenes/DepartmentBands'
+import { LandStreet } from '../land/LandStreet'
 
 const EARLY = [
   {
@@ -100,179 +110,205 @@ function LandExpansionCard({
   )
 }
 
+/** Era 2+ chain roster: one compact row per store, bulk actions on top. */
+function ChainRoster() {
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
+  const [focus, setFocus] = useState<string | null>(null)
+  const stores = s.stores ?? []
+  const nextStoreCost = openStoreCost(s)
+  const openBlock =
+    stores.length >= CHAIN.maxStores
+      ? 'Store cap reached.'
+      : s.cash < nextStoreCost
+        ? `Need ${money(nextStoreCost, numberFormat)}.`
+        : null
+  const depotCheck = can(s, { type: 'buildDepot' })
+  const walkAll = can(s, { type: 'walkDrifting' })
+  const even = can(s, { type: 'evenAttention' })
+  const drifting = stores.filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn).length
+  const equiv = 1 + networkStores(s)
+  const fair = 1 / Math.max(1, stores.length)
+
+  return (
+    <section className="ld-chain" aria-label="Chain">
+      <LandStreet
+        state={s}
+        onPick={(id) => {
+          setFocus(id)
+          document.getElementById(`ld-${id}`)?.scrollIntoView({
+            block: 'nearest',
+            behavior: reducedMotion ? 'auto' : 'smooth',
+          })
+        }}
+      />
+      <div className="ld-chain__top">
+        <dl className="ld-chain__nums">
+          <div>
+            <dt>Stores</dt>
+            <dd>{stores.length}</dd>
+          </div>
+          <div title="How many flagships the chain is worth, counting levels, policy, Attention and drift.">
+            <dt>Worth</dt>
+            <dd>×{equiv.toFixed(2)}</dd>
+          </div>
+          <div>
+            <dt>Attention</dt>
+            <dd>−{chainAttentionDrainPerSec(s).toFixed(2)}/s</dd>
+          </div>
+          <div className={drifting > 0 ? 'is-bad' : ''}>
+            <dt>Drifting</dt>
+            <dd>{drifting}</dd>
+          </div>
+        </dl>
+        <div className="ld-chain__buy">
+          <button
+            type="button"
+            className="g2-tag"
+            data-coach-id="land-open-store"
+            disabled={!!openBlock}
+            title={openBlock ?? 'Open the next store'}
+            onClick={() => dispatch({ type: 'openStore' })}
+          >
+            <span className="g2-tag__price">{money(nextStoreCost, numberFormat)}</span>
+            <span className="g2-tag__label">Open store {stores.length + 1}</span>
+          </button>
+          {!s.depot ? (
+            <button
+              type="button"
+              className="g2-tag g2-tag--small"
+              data-coach-id="land-depot"
+              disabled={!depotCheck.ok}
+              title={depotCheck.ok ? 'Stores past the fourth run at full speed and the chain earns 20% more.' : depotCheck.reason}
+              onClick={() => dispatch({ type: 'buildDepot' })}
+            >
+              <span className="g2-tag__price">{money(CHAIN.depotCash, numberFormat)}</span>
+              <span className="g2-tag__label">Depot</span>
+            </button>
+          ) : (
+            <span className="ld-chain__depot">Depot online</span>
+          )}
+        </div>
+      </div>
+
+      {stores.length >= 5 && !s.depot ? (
+        <p className="ld-chain__warn" role="status">
+          {stores.length} stores without a depot: stores past the fourth run at 60%. Build a depot.
+        </p>
+      ) : null}
+
+      <div className="ld-chain__bulk">
+        <button
+          type="button"
+          className="ge-btn ge-btn--ghost"
+          disabled={!walkAll.ok}
+          title={walkAll.ok ? 'Walk every drifting store, worst first, while Attention lasts.' : walkAll.reason}
+          onClick={() => dispatch({ type: 'walkDrifting' })}
+        >
+          Walk all drifting{drifting > 0 ? ` (${drifting})` : ''}
+        </button>
+        <button
+          type="button"
+          className="ge-btn ge-btn--ghost"
+          disabled={!even.ok}
+          title={even.ok ? 'Give every store the same share of Attention.' : even.reason}
+          onClick={() => dispatch({ type: 'evenAttention' })}
+        >
+          Even out Attention
+        </button>
+      </div>
+
+      <ol className="ld-roster">
+        {stores.map((st, i) => {
+          const weight = i === 0 ? 1 : storeEngineWeight(s, st, i)
+          const drift = st.drift ?? 0
+          const walkBlock = canWalkStore(s, st.id)
+          const trainBlock = canTrainStore(s, st.id)
+          const driftTone = drift >= 0.7 ? 'is-bad' : drift >= CHAIN.driftWarn ? 'is-warn' : ''
+          return (
+            <li id={`ld-${st.id}`} key={st.id} className={`ld-row ${driftTone}${focus === st.id ? ' is-focus' : ''}`} data-coach-id={i === Math.min(1, stores.length - 1) ? 'land-policy' : undefined}>
+              <div className="ld-row__who">
+                <strong>{st.name}</strong>
+                <span>
+                  Lv {st.level}
+                  {i === 0 ? ' · flagship' : ` · ×${weight.toFixed(2)}`}
+                </span>
+              </div>
+              <div className="ld-row__drift" title="Drift rises when a store gets less than its fair share of Attention. Walking it clears drift.">
+                <span className="ld-meter">
+                  <span style={{ transform: `scaleX(${Math.min(1, drift)})` }} />
+                </span>
+                <span>{Math.round(drift * 100)}% drift</span>
+              </div>
+              <label className="ld-row__att" title={`Fair share is ${Math.round(fair * 100)}%.`}>
+                <span>Attn {Math.round(st.attentionShare * 100)}%</span>
+                <input
+                  className="ge-range"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(st.attentionShare * 100)}
+                  aria-label={`${st.name} Attention share`}
+                  onChange={(e) =>
+                    dispatch({ type: 'setAttentionShare', storeId: st.id, share: Number(e.target.value) / 100 })
+                  }
+                />
+              </label>
+              <div className="ld-seg" role="radiogroup" aria-label={`${st.name} policy`}>
+                {POLICIES.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={st.policy === p.id}
+                    className={st.policy === p.id ? 'is-on' : ''}
+                    title={p.tip}
+                    onClick={() => dispatch({ type: 'setPolicy', storeId: st.id, policy: p.id })}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <div className="ld-row__act">
+                <button
+                  type="button"
+                  className={`ge-btn ${drift >= CHAIN.driftWarn ? 'ge-btn--primary' : 'ge-btn--ghost'}`}
+                  data-suggest-id={`walk-${st.id}`}
+                  disabled={!!walkBlock}
+                  title={walkBlock ?? 'Spend 40 Attention to clear drift.'}
+                  onClick={() => dispatch({ type: 'walkStore', storeId: st.id })}
+                >
+                  Walk
+                </button>
+                <button
+                  type="button"
+                  className="ge-btn ge-btn--ghost"
+                  disabled={!!trainBlock}
+                  title={trainBlock ?? `Spend ${trainStoreCost(st)} Attention for store XP.`}
+                  onClick={() => dispatch({ type: 'trainStore', storeId: st.id })}
+                >
+                  Train
+                </button>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
 export function LandPanel() {
   const { state: s, dispatch, numberFormat } = useGame()
   const owned = s.expansions ?? {}
-  const stores = s.stores ?? []
-  const nextStoreCost = openStoreCost(s)
-  const canOpenStore = s.era >= 2 && stores.length < CHAIN.maxStores && s.cash >= nextStoreCost
 
   return (
     <Panel
       title="Land"
       purpose="Open doors. Attention is the cost of every key."
       lore="land"
-      scene={<LandBand state={s} />}
+      scene={s.era >= 2 ? undefined : <LandBand state={s} />}
     >
-      {s.era >= 2 ? (
-        <section className="ge-empire-block" style={{ marginTop: 0 }}>
-          <header className="ge-empire-block__head">
-            <h3>Chain</h3>
-            <p>Open stores, build a depot, set each location’s voice.</p>
-          </header>
-          <div className="ge-dept-callout">
-            <div className="ge-dept-callout__copy">
-              <h3>
-                {stores.length} store{stores.length === 1 ? '' : 's'}
-                {s.depot ? ' · depot online' : ''}
-              </h3>
-              <p>
-                Each new key costs cash and Attention drain — Walk drifting stores in the list below.
-              </p>
-            </div>
-            <div className="ge-chip-row">
-              <Btn
-                tone={canOpenStore ? 'primary' : 'ghost'}
-                coachId="land-open-store"
-                disabled={!canOpenStore}
-                title={
-                  !canOpenStore
-                    ? stores.length >= CHAIN.maxStores
-                      ? 'Store cap reached'
-                      : s.cash < nextStoreCost
-                        ? `Need ${money(nextStoreCost, numberFormat)}`
-                        : undefined
-                    : undefined
-                }
-                onClick={() => dispatch({ type: 'openStore' })}
-              >
-                Open store · {money(nextStoreCost, numberFormat)}
-              </Btn>
-              <Btn
-                coachId="land-depot"
-                disabled={s.depot || s.cash < 18_000}
-                title={
-                  s.depot
-                    ? 'Depot already online'
-                    : s.cash < 18_000
-                      ? 'Need $18,000.00'
-                      : undefined
-                }
-                onClick={() => dispatch({ type: 'buildDepot' })}
-              >
-                {s.depot ? 'Depot online' : 'Depot · $18,000.00'}
-              </Btn>
-            </div>
-          </div>
-
-          {stores.length >= 5 && !s.depot ? (
-            <p
-              className="ge-muted ge-alert ge-alert--warn"
-              role="status"
-              style={{ fontSize: '0.78rem', color: 'var(--ge-warn, #e09f3e)' }}
-            >
-              ⚠ {stores.length} stores without a depot — Attention drain and logistics penalties climb.
-              Build a depot.
-            </p>
-          ) : null}
-
-          {stores.length > 0 ? (
-            <div className="ge-card-grid">
-              {stores.map((st) => (
-                <article key={st.id} className="ge-card ge-card--owned" data-coach-id="land-policy">
-                  <div className="ge-card__head">
-                    <div>
-                      <strong>{st.name}</strong>
-                      <p className="ge-muted">
-                        Lv {st.level} · XP {Math.floor(st.xp)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="ge-card__meta">
-                    <div className="ge-card__meta-row">
-                      <span>Attn</span>
-                      <strong>{Math.round(st.attentionShare * 100)}%</strong>
-                    </div>
-                    <div className="ge-card__meta-row">
-                      <span>Voice</span>
-                      <strong>{st.policy}</strong>
-                    </div>
-                  </div>
-                  <div className="ge-card__meta">
-                    <div className="ge-card__meta-row">
-                      <span>Drift</span>
-                      <strong
-                        title="Rises when under-attended. Walk the store to clear it."
-                        style={{
-                          color:
-                            (st.drift ?? 0) >= 0.7
-                              ? 'var(--ge-danger, #d9534f)'
-                              : (st.drift ?? 0) >= 0.4
-                                ? 'var(--ge-warn, #e09f3e)'
-                                : undefined,
-                        }}
-                      >
-                        {Math.round((st.drift ?? 0) * 100)}%
-                      </strong>
-                    </div>
-                  </div>
-                  <div className="ge-chip-row">
-                    <Btn
-                      data-suggest-id={`walk-${st.id}`}
-                      tone={(st.drift ?? 0) >= 0.4 ? 'primary' : 'ghost'}
-                      disabled={!!canWalkStore(s, st.id)}
-                      title={canWalkStore(s, st.id) ?? 'Spend Attention to clear drift'}
-                      onClick={() => dispatch({ type: 'walkStore', storeId: st.id })}
-                    >
-                      Walk store
-                    </Btn>
-                    <Btn
-                      tone="ghost"
-                      disabled={!!canTrainStore(s, st.id)}
-                      title={canTrainStore(s, st.id) ?? 'Spend Attention to give this store XP'}
-                      onClick={() => dispatch({ type: 'trainStore', storeId: st.id })}
-                    >
-                      Train store
-                    </Btn>
-                  </div>
-                  <div className="ge-chip-row">
-                    {POLICIES.map((p) => (
-                      <Btn
-                        key={p.id}
-                        tone={st.policy === p.id ? 'primary' : 'ghost'}
-                        title={p.tip}
-                        onClick={() => dispatch({ type: 'setPolicy', storeId: st.id, policy: p.id })}
-                      >
-                        {p.label}
-                      </Btn>
-                    ))}
-                  </div>
-                  <p className="ge-muted">
-                    {POLICIES.find((p) => p.id === st.policy)?.tip}
-                  </p>
-                  <label className="ge-muted" style={{ display: 'block' }}>
-                    Attention share
-                    <input
-                      className="ge-range"
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={Math.round(st.attentionShare * 100)}
-                      onChange={(e) =>
-                        dispatch({
-                          type: 'setAttentionShare',
-                          storeId: st.id,
-                          share: Number(e.target.value) / 100,
-                        })
-                      }
-                    />
-                  </label>
-                </article>
-              ))}
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+      {s.era >= 2 ? <ChainRoster /> : null}
 
       <section className="ge-empire-block">
         <header className="ge-empire-block__head">

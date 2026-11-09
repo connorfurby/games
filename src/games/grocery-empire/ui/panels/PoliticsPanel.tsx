@@ -7,6 +7,7 @@ import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { Icon } from '../icons/Icon'
 import { PoliticsBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 export function PoliticsPanel() {
   const { state: s, dispatch, numberFormat } = useGame()
@@ -22,7 +23,12 @@ export function PoliticsPanel() {
       title="Politics"
       purpose="Spend political capital — lobby, buy, leave."
       lore="politics"
-      scene={<PoliticsBand state={s} />}
+      scene={
+        <>
+          <PoliticsBand state={s} />
+          <DeptDiorama kind="politics" />
+        </>
+      }
     >
       <div className={`ge-dept-callout${heat ? ' is-ready' : ''}`.trim()}>
         <div className="ge-dept-callout__copy">

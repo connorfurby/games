@@ -46,6 +46,8 @@ const PATHS: Record<IconName, string> = {
   suppliers: 'M3 16h18M5 16V9l3-3h8l3 3v7M8 16v2M16 16v2M9 11h6',
   staff: 'M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1.5-3 4-4.5 7-4.5S17.5 17 19 20',
   marketing: 'M4 10v4l7 3V7l-7 3zm7-1 8-4v14l-8-4M15 10.5v3',
+  // Two storefronts facing off.
+  rivals: 'M3 20V11l4-3 4 3v9M13 20v-9l4-3 4 3v9M5 20v-4h4v4M15 20v-4h4v4M2 20h20',
   books: 'M6 4h9a2 2 0 0 1 2 2v14H8a2 2 0 0 0-2 2V4zm0 0v16M11 8h4M11 12h4',
   invest: 'M4 18h16M6 14l4-5 3 3 5-7',
   build: 'M4 20V9l8-5 8 5v11M9 20v-6h6v6',
@@ -58,6 +60,9 @@ const PATHS: Record<IconName, string> = {
   logistics: 'M3 13h11V8H3v5zm11 0h4l3 3v3h-2M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
   fleet: 'M4 15c2-4 5-6 8-6s6 2 8 6M6 15l2 4h8l2-4M12 5v4M9 7h6',
   empire: 'M4 20h16M6 20V10l6-5 6 5v10M10 20v-5h4v5',
+  // A pedestal with a gem on it.
+  relics: 'M12 3l4 4-4 6-4-6 4-4zM8 7h8M6 21h12M8 21v-4h8v4M10 17v-2h4v2',
+  map: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01',
   coach:
     'M12 4a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V8a4 4 0 0 1 4-4z',
   more: 'M6 12h.01M12 12h.01M18 12h.01',

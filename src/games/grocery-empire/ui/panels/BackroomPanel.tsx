@@ -11,6 +11,7 @@ import { HelpCard } from '../components/HelpCard'
 import { MixPriority } from '../components/MixPriority'
 import { Panel } from '../components/Panel'
 import { BackroomBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 const PARTIAL_DUMP = 10
 
@@ -47,7 +48,12 @@ export function BackroomPanel() {
       title="Backroom"
       purpose="Hold crates, watch spoil, restock the shelf."
       lore="backroom"
-      scene={<BackroomBand state={s} />}
+      scene={
+        <>
+          <BackroomBand state={s} />
+          <DeptDiorama kind="backroom" />
+        </>
+      }
     >
       {fill >= 0.95 ? (
         <div className="ge-dept-callout is-ready" role="status" data-coach-id="backroom-capacity">

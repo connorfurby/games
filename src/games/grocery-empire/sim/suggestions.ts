@@ -15,6 +15,7 @@ import {
   backroomCap,
   hireCost,
   investBookCap,
+  investOutgrown,
   nextUpgradeCost,
   perk,
   salesBottleneck,
@@ -438,7 +439,7 @@ function collectEra2(s: GameState, out: Suggestion[]) {
   }
 
   // Park idle cash in the invest book.
-  if (s.menus.invest && s.invest.unlocked && !s.invest.circuitBreaker) {
+  if (s.menus.invest && s.invest.unlocked && !s.invest.circuitBreaker && !investOutgrown(s)) {
     const reserve = Math.max(25, s.rates.costPerSec * 300)
     const surplus = Math.max(0, s.cash - reserve)
     const room = Math.max(0, investBookCap(s) - s.invest.balance)

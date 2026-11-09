@@ -9,12 +9,12 @@ import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
 import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { GrowthStrip } from '../components/GrowthStrip'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import type { ExtraIcon } from '../icons/Icon'
 import { Icon } from '../icons/Icon'
 import { BuildBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 /** Convenience one-click: early builds in order, skip any that aren't affordable. */
 const STARTER_CORNER: Command[] = [
@@ -233,9 +233,13 @@ export function BuildPanel() {
       title="Build"
       purpose="Spend cash to grow capacity — shelf, cold, seats, trucks."
       lore="build"
-      scene={<BuildBand state={s} />}
+      scene={
+        <>
+          <BuildBand state={s} />
+          <DeptDiorama kind="build" />
+        </>
+      }
     >
-      <GrowthStrip mode="shell" />
 
       <div className="ge-dept-callout">
         <div className="ge-dept-callout__copy">

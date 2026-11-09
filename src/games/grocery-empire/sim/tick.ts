@@ -20,6 +20,7 @@ import { tickMorale, tickStaffUnpack, tickStaffXp } from './systems/people'
 import { tickOffice } from './systems/office'
 import { tickFinance } from './systems/finance'
 import { tickEvents } from './systems/events'
+import { tickRivals } from './systems/rivals'
 import { tickGrowth } from './systems/growth'
 import { tickRecovery } from './systems/recovery'
 import { tickChain } from './systems/chain'
@@ -129,6 +130,7 @@ export function applyTick(s: GameState, dt: number) {
   tickOffice(s, step)
   tickFinance(s, step, revenue)
   tickEvents(s, step)
+  tickRivals(s)
   tickGrowth(s, step)
   if (s.era >= 2) {
     tickChain(s, step, sold)

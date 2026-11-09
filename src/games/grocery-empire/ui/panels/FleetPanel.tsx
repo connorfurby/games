@@ -1,17 +1,32 @@
 import { useState } from 'react'
 import { CHARTER_AXES } from '../../content/lateEras'
 import { can } from '../../sim/commands'
+import { FLEET } from '../../sim/balance'
+import { engine } from '../../sim/engine'
 import { endingOpen } from '../../sim/systems/endings'
+import {
+  bargeCost,
+  fleetHarvestPerSec,
+  harvestPerBarge,
+  replicationPerMin,
+  warResist,
+} from '../../sim/systems/fleet'
+import { money, qty } from '../format'
 import { useGame } from '../GameContext'
 import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
-import { Icon } from '../icons/Icon'
-import { FleetBand } from '../scenes/DepartmentBands'
+import { FleetHarbor } from '../fleet/FleetHarbor'
+
+function eta(sec: number): string {
+  if (sec < 90) return `${Math.ceil(sec)}s`
+  if (sec < 5400) return `${Math.round(sec / 60)} min`
+  return `${(sec / 3600).toFixed(1)} h`
+}
 
 export function FleetPanel() {
-  const { state: s, dispatch, reducedMotion } = useGame()
+  const { state: s, dispatch, reducedMotion, numberFormat } = useGame()
   const f = s.fleet
   const showEnding = endingOpen(s) || !!s.memos['universal-ration'] || s.era >= 6
   const launchCheck = can(s, { type: 'launchBarge' })
@@ -23,129 +38,187 @@ export function FleetPanel() {
   const rejectCheck = can(s, { type: 'rejectEnding' })
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
 
-  return (
-    <Panel
-      title="Fleet"
-      purpose="Launch barges. Spend Read and Charter."
-      lore="fleet"
-      scene={<FleetBand state={s} />}
-    >
-      {f.warOn ? (
-        <div className="ge-war-strip" role="status">
-          Drift war live — losses cost time and Legacy. Guardian preset available under pressure.
-        </div>
-      ) : null}
+  const harvest = fleetHarvestPerSec(s)
+  const perBarge = harvestPerBarge(s)
+  const repl = replicationPerMin(s)
+  const cleared = f.biomassMax > 0 ? 1 - f.biomass / f.biomassMax : 0
+  const etaSec = harvest > 0 ? f.biomass / harvest : Infinity
+  const cost = bargeCost(s)
+  const pool = f.charterPool
+  const spent = Object.values(f.charter).reduce((a, n) => a + Math.max(0, n), 0)
+  const resist = warResist(s)
 
-      <div className="ge-dept-split">
-        <article className="ge-card ge-card--owned">
-          <header className="ge-empire-block__head">
-            <h3>Barges</h3>
-            <p>
-              {f.barges} barge{f.barges === 1 ? '' : 's'} · {f.warOn ? 'war live' : 'quiet waters'}
-            </p>
-          </header>
-          <div className="ge-card__actions">
-            <Btn
-              tone="primary"
-              coachId="fleet-launch"
+  // What each Charter axis is doing right now, in plain numbers.
+  const axisEffect = (id: string, lvl: number): string => {
+    switch (id) {
+      case 'shell':
+        return lvl > 0 ? `War losses ÷${resist.toFixed(1)}` : 'No war protection'
+      case 'replication':
+        return lvl > 0 ? `~${repl.toFixed(repl < 10 ? 1 : 0)} free barges/min` : 'No free barges'
+      case 'survey':
+        return `+${Math.round(lvl * 8)}% harvest`
+      case 'transit':
+        return `+${Math.round(lvl * 5)}% harvest`
+      case 'brand-seal':
+        return lvl > 0 ? 'Brand recovers; war losses down' : 'Brand drifts with franchises'
+      default:
+        return ''
+    }
+  }
+
+  return (
+    <Panel title="Fleet" purpose="Barges harvest the biomass; clearing it ends the era." lore="fleet" className="fv">
+      <FleetHarbor state={s} motion={!reducedMotion} />
+      <section className="fv-goal" aria-label="Biomass">
+        <div className="fv-goal__head">
+          <h3>Clear the biomass</h3>
+          <span>{f.biomass > 0 ? `${(cleared * 100).toFixed(cleared < 0.1 ? 1 : 0)}% cleared` : 'Cleared'}</span>
+        </div>
+        <div className="fv-bar" role="progressbar" aria-valuenow={Math.round(cleared * 100)} aria-valuemin={0} aria-valuemax={100}>
+          <i style={{ transform: `scaleX(${cleared})` }} />
+        </div>
+        <p className="fv-note">
+          {f.biomass > 0
+            ? `${qty(f.biomass, numberFormat)} left · harvesting ${qty(harvest, numberFormat)}/s${
+                Number.isFinite(etaSec) ? ` · about ${eta(etaSec)} at this rate` : ' · launch a barge to start'
+              }`
+            : 'The universe is rationed. The ending is open below.'}
+        </p>
+      </section>
+
+      <div className="fv-grid">
+        <section className="fl-card" aria-label="Barges">
+          <h3 className="fl-card__title">Barges</h3>
+          <p className="fv-big">{qty(f.barges, numberFormat)}</p>
+          <p className="fv-note">
+            Each harvests {perBarge.toFixed(perBarge < 10 ? 1 : 0)}/s.
+            {repl > 0 ? ` Replication adds ~${repl.toFixed(repl < 10 ? 1 : 0)} a minute for free.` : ''}
+          </p>
+          <div className="fl-row">
+            <button
+              type="button"
+              className="g2-tag"
+              data-coach-id="fleet-launch"
               disabled={!launchCheck.ok}
-              title={!launchCheck.ok ? launchCheck.reason : undefined}
+              title={launchCheck.ok ? `+${perBarge.toFixed(1)}/s harvest` : launchCheck.reason}
               onClick={() => dispatch({ type: 'launchBarge' })}
             >
-              <Icon name="barge" size={14} />
-              Launch barge
+              <span className="g2-tag__price">{money(cost, numberFormat)}</span>
+              <span className="g2-tag__label">Launch barge</span>
+            </button>
+          </div>
+        </section>
+
+        <section className="fl-card" aria-label="Charter">
+          <h3 className="fl-card__title">Charter</h3>
+          <p className="fv-big">
+            {pool} <small>unspent · {spent} placed · cap {f.charterCap}</small>
+          </p>
+          <p className="fv-note">Points shape every barge. Buy them with Read ({qty(s.read, numberFormat)} on hand).</p>
+          <div className="fl-row">
+            <Btn
+              tone="primary"
+              disabled={!charterCheck.ok}
+              title={charterCheck.ok ? 'One Charter point' : charterCheck.reason}
+              onClick={() => dispatch({ type: 'buyCharter' })}
+            >
+              +1 point · {FLEET.readPerCharterPoint} Read
             </Btn>
             <Btn
               tone="ghost"
-              coachId="fleet-drift"
-              disabled={!driftCheck.ok}
-              title={!driftCheck.ok ? driftCheck.reason : undefined}
-              onClick={() => dispatch({ type: 'startDriftWar' })}
+              disabled={!charterCheck.ok}
+              title={charterCheck.ok ? `Up to 10 points · ${FLEET.readPerCharterPoint * 10} Read` : charterCheck.reason}
+              onClick={() => {
+                for (let i = 0; i < 10; i++) {
+                  if (!can(engine.getState(), { type: 'buyCharter' }).ok) break
+                  dispatch({ type: 'buyCharter' })
+                }
+              }}
             >
-              Drift war
+              +10
             </Btn>
-          </div>
-        </article>
-
-        <article className="ge-card">
-          <header className="ge-empire-block__head">
-            <h3>Charter</h3>
-            <p>
-              Pool {f.charterPool} · Cap {f.charterCap}
-            </p>
-          </header>
-          <Btn
-            tone="ghost"
-            disabled={!charterCheck.ok}
-            title={!charterCheck.ok ? charterCheck.reason : undefined}
-            onClick={() => dispatch({ type: 'buyCharter' })}
-          >
-            <Icon name="charter" size={14} />
-            Buy point (Read)
-          </Btn>
-          <div className="ge-chip-row">
             <Btn
-              tone="primary"
-              coachId="fleet-guardian"
+              tone="ghost"
               disabled={!guardianCheck.ok}
-              title={!guardianCheck.ok ? guardianCheck.reason : undefined}
+              title={
+                guardianCheck.ok
+                  ? 'Reset to the safe opener (Shell 5 · Replication 4 · Survey 1 · Transit 1) and protect the last barge.'
+                  : guardianCheck.reason
+              }
               onClick={() => dispatch({ type: 'applyGuardian' })}
             >
-              Guardian
+              Safe opener
             </Btn>
             <Btn
               tone="ghost"
               disabled={!rebootCheck.ok}
-              title={!rebootCheck.ok ? rebootCheck.reason : undefined}
+              title={rebootCheck.ok ? 'Refund every placed point (costs a slice of cash).' : rebootCheck.reason}
               onClick={() => dispatch({ type: 'rebootFleet' })}
             >
-              Reboot
+              Refund all
             </Btn>
           </div>
-        </article>
+        </section>
+
+        <section className={`fl-card${f.warOn ? ' fv-war' : ''}`} aria-label="Drift war">
+          <h3 className="fl-card__title">Drift war</h3>
+          <p className="fv-big">
+            {f.legacy.toFixed(1)} <small>Legacy</small>
+          </p>
+          <p className="fv-note">
+            {f.warOn
+              ? `War is on: earning Legacy (raises the Charter cap) but barges can be lost. Shell and Brand Seal cut losses ÷${resist.toFixed(1)}.`
+              : 'Optional. Fight Off-Brand for Legacy, which raises the Charter cap. Costs barges now and then.'}
+          </p>
+          {!f.warOn ? (
+            <div className="fl-row">
+              <Btn
+                tone="ghost"
+                disabled={!driftCheck.ok}
+                title={driftCheck.ok ? 'Start the Drift war' : driftCheck.reason}
+                onClick={() => dispatch({ type: 'startDriftWar' })}
+              >
+                Start the war
+              </Btn>
+            </div>
+          ) : null}
+        </section>
       </div>
 
-      <section className="ge-empire-block">
-        <header className="ge-empire-block__head">
-          <h3>Charter axes</h3>
-          <p>Spend pool points across the doctrines of orbit.</p>
-        </header>
-        <div className="ge-card-grid">
-          {CHARTER_AXES.map((a) => {
-            const minusCheck = can(s, { type: 'setCharterAxis', axis: a.id, delta: -1 })
-            const plusCheck = can(s, { type: 'setCharterAxis', axis: a.id, delta: 1 })
-            return (
-              <article key={a.id} className="ge-card">
-                <div className="ge-card__head">
-                  <Icon name="charter" size={18} tone="accent" />
-                  <div>
-                    <strong>{a.name}</strong>
-                    <p className="ge-muted">{f.charter[a.id] ?? 0}</p>
-                  </div>
-                </div>
-                <p className="ge-card__blurb">{a.blurb}</p>
-                <div className="ge-card__actions">
-                  <Btn
-                    tone="ghost"
-                    disabled={!minusCheck.ok}
-                    title={!minusCheck.ok ? minusCheck.reason : undefined}
-                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: -1 })}
-                  >
-                    −
-                  </Btn>
-                  <Btn
-                    tone="primary"
-                    disabled={!plusCheck.ok}
-                    title={!plusCheck.ok ? plusCheck.reason : undefined}
-                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: 1 })}
-                  >
-                    +
-                  </Btn>
-                </div>
-              </article>
-            )
-          })}
-        </div>
+      <section className="fv-axes" aria-label="Charter axes">
+        {CHARTER_AXES.map((a) => {
+          const lvl = f.charter[a.id] ?? 0
+          const minus = can(s, { type: 'setCharterAxis', axis: a.id, delta: -1 })
+          const plus = can(s, { type: 'setCharterAxis', axis: a.id, delta: 1 })
+          return (
+            <div key={a.id} className="fv-axis">
+              <div className="fv-axis__who">
+                <strong>{a.name}</strong>
+                <span>{axisEffect(a.id, lvl)}</span>
+              </div>
+              <div className="fl-stepper fv-stepper">
+                <button
+                  type="button"
+                  disabled={!minus.ok}
+                  aria-label={`Take a point from ${a.name}`}
+                  onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: -1 })}
+                >
+                  −
+                </button>
+                <output aria-label={`${a.name} points`}>{lvl}</output>
+                <button
+                  type="button"
+                  disabled={!plus.ok}
+                  title={plus.ok ? undefined : plus.reason}
+                  aria-label={`Put a point in ${a.name}`}
+                  onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: 1 })}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )
+        })}
       </section>
 
       {showEnding || s.endingChoice ? (
@@ -196,9 +269,10 @@ export function FleetPanel() {
         </section>
       ) : null}
 
-      <HelpCard title="Orbit is still a shelf">
-        Barges stock the void the way clerks stock aisles. Charter points are doctrines. Legacy is the
-        score when Off-Brand copies your fonts.
+      <HelpCard title="How the fleet works">
+        Barges harvest biomass; when it hits zero, Era 6 opens. More barges, Survey and Transit all speed the harvest.
+        Replication breeds free barges. Charter points come from Read; Legacy from the optional Drift war raises how
+        many points you can hold.
       </HelpCard>
 
       <ConfirmModal

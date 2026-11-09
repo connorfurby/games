@@ -71,7 +71,9 @@ export function MetaProvider({ children }: { children: ReactNode }) {
     const merged: MetaSave = {
       ...DEFAULT_META,
       ...m,
-      unlockedPacks: m.unlockedPacks?.length ? m.unlockedPacks : DEFAULT_META.unlockedPacks,
+      unlockedPacks: Array.from(
+        new Set([...(m.unlockedPacks?.length ? m.unlockedPacks : []), ...DEFAULT_META.unlockedPacks]),
+      ),
       unlockedLedgerSkins: m.unlockedLedgerSkins?.length
         ? m.unlockedLedgerSkins
         : DEFAULT_META.unlockedLedgerSkins,

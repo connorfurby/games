@@ -5,9 +5,13 @@ import { migrate } from './migrate'
 import { getActiveSaveId } from './saveKey'
 import { createInitialState, type GameState } from './state'
 import { applyOffline, applyTick } from './tick'
+import { canRebrand, rebrand as rebrandState } from './systems/prestige'
 import { applyUndo, canUndo as undoAvailable, clearUndo, pushUndo } from './undo'
 
 type Listener = () => void
+
+/** Sim pulses per UI repaint (10 Hz sim → 5 Hz paint). */
+const PULSES_PER_PAINT = 2
 
 /**
  * React `useSyncExternalStore` compares snapshots with Object.is.
@@ -27,6 +31,7 @@ export class GroceryEngine {
   private hiddenAt: number | null = null
   private running = false
   private softPauseMul = 1
+  private pulses = 0
   private onVis: (() => void) | null = null
 
   constructor(state?: GameState) {
@@ -121,7 +126,9 @@ export class GroceryEngine {
       this.autosaveAcc = 0
       this.save()
     }
-    this.bump()
+    // The sim ticks at 10 Hz; the UI repaints at 5 Hz (dispatches still repaint at once).
+    this.pulses += 1
+    if (this.pulses % PULSES_PER_PAINT === 0) this.bump()
   }
 
   can = (cmd: Command): Check => canCmd(this.state, cmd)
@@ -206,6 +213,15 @@ export class GroceryEngine {
   newGame(seed?: number) {
     clearGameSave(getActiveSaveId())
     this.reset(seed)
+  }
+
+  /** Rebrand prestige: fresh store, keep Empire + Goodwill. Returns a reason if blocked. */
+  rebrand(): string | null {
+    const blocked = canRebrand(this.state)
+    if (blocked) return blocked
+    clearUndo()
+    this.replaceState(rebrandState(this.state))
+    return null
   }
 
   /** Replace live state from a deserialized save (after import / slot load). */

@@ -4,6 +4,7 @@ import { inspectionDecay, inspectionFine, inspectionGainMul, memo, up } from '..
 import { clamp, log } from '../helpers'
 import { chance, nextRng } from '../rng'
 import type { GameState, RivalKind } from '../state'
+import { activeRivals, leadingRivalName } from './rivals'
 
 export function canCallInspector(s: GameState): string | null {
   if (s.time - s.inspection.lastInspectorAt < INSPECTION.inspectorCooldownSec) {
@@ -165,7 +166,8 @@ function startRival(s: GameState) {
   r.kind = kind
   r.endsAt = s.time + RIVAL_EVENTS.durationSec
   r.lastAt = s.time
-  log(s, RIVAL_COPY[kind].start, 'warn')
+  const who = leadingRivalName(s)
+  log(s, who ? `${who} moves. ${RIVAL_COPY[kind].start}` : RIVAL_COPY[kind].start, 'warn')
 }
 
 /** Era 2+: one mild rival move at a time, ~10–14 min apart, never stacked on a coupon war. */
@@ -177,6 +179,8 @@ function tickRival(s: GameState, dt: number) {
     return
   }
   if (s.era < 2 || s.ads < 1) return
+  // Bought every rival on the board: nobody left to pick a fight.
+  if (s.rivals && Object.keys(s.rivals).length > 0 && activeRivals(s).length === 0) return
   if (s.events.couponWar?.active) return
   if (s.time - r.lastAt < RIVAL_EVENTS.minGapSec) return
   if (s.time - (s.events.couponWar?.lastAt ?? -1e9) < 120) return

@@ -85,7 +85,7 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
 export const DEFAULT_META: MetaSave = {
   version: 1,
   shelfTokens: 0,
-  unlockedPacks: ['receipt-classic'],
+  unlockedPacks: ['receipt-classic', 'receipt-1'],
   equippedPack: 'receipt-classic',
   unlockedLedgerSkins: ['torn-receipt'],
   equippedLedgerSkin: 'torn-receipt',

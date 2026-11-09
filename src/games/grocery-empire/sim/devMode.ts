@@ -12,6 +12,8 @@ import {
   setActiveSaveId,
 } from './saveKey'
 import { createInitialState, type GameState } from './state'
+import { applyOffline } from './tick'
+import { attentionCap } from './formulas'
 
 /** Fresh DevMode starts past coach spam so stage jumps are usable. */
 function quietSandbox(s: GameState) {
@@ -36,7 +38,7 @@ function loadOrCreateDevSandbox() {
     const s = createInitialState(90_001)
     quietSandbox(s)
     log(s, 'DevMode sandbox — separate from your real campaign save.', 'story')
-    log(s, 'Jump stages from More → DevMode. Wipe DevMode anytime.', 'story')
+    log(s, 'Jump stages from Menu › Dev (the grid button, top right). Wipe DevMode anytime.', 'story')
     engine.replaceState(s)
     return
   }
@@ -134,4 +136,30 @@ export function activeSaveLabel(): string {
 
 export function activeSaveKeyForUi(): string {
   return getActiveSaveId()
+}
+
+/** Fast-forward the sandbox as if the tab were closed for `sec` seconds (offline rules). */
+export function devSkipTime(sec: number) {
+  devMutate((s) => {
+    // Keeps the welcome-back receipt for skips of 10+ minutes, so DevMode previews it.
+    const r = applyOffline(s, sec)
+    if (sec < 600) s.offlineReceipt = null
+    log(s, `DevMode skipped ${Math.round(sec / 60)} min: +$${Math.round(r.revenue)} revenue, ${Math.round(r.sold)} sold.`, 'story')
+  })
+}
+
+/** Cash worth `minutes` of current income (at least $1k), so grants scale with the era. */
+export function devGrantIncome(minutes: number) {
+  devMutate((s) => {
+    const amount = Math.max(1000, Math.max(0, s.rates.revenuePerSec) * 60 * minutes)
+    s.cash += amount
+    log(s, `DevMode +${minutes} min of income.`, 'story')
+  })
+}
+
+export function devGrantAttention() {
+  devMutate((s) => {
+    s.compute.attention = attentionCap(s)
+    log(s, 'DevMode — Attention filled.', 'story')
+  })
 }

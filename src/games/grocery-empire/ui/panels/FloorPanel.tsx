@@ -1,3 +1,5 @@
+import { valueMul } from '../../sim/systems/network'
+import { useStable } from '../useStable'
 import { useEffect, useRef, useState } from 'react'
 import { useMeta } from '@/shell/MetaContext'
 import { playUnpackFx } from '@/shared/audio'
@@ -20,6 +22,7 @@ import {
   salesBottleneck,
   shelfCap,
   unitCost,
+  shelfPrice,
   up,
 } from '../../sim/formulas'
 import { sumQty } from '../../sim/helpers'
@@ -27,11 +30,34 @@ import { useGame } from '../GameContext'
 import { clock, money, qty, rate } from '../format'
 import { Btn } from '../components/Btn'
 import { HelpCard } from '../components/HelpCard'
-import { Meter } from '../components/Meter'
 import { Panel } from '../components/Panel'
-import { Section } from '../components/Section'
-import { StatusBand, type StatusItem } from '../components/StatusBand'
 import { Icon } from '../icons/Icon'
+
+/** Tiny weather icons for the status chip. */
+function WeatherGlyph({ kind }: { kind: string }) {
+  return (
+    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden className="fl-ico">
+      {kind === 'rain' ? (
+        <g fill="currentColor">
+          <ellipse cx="6" cy="4.5" rx="4.5" ry="2.5" />
+          <path d="M3.5 8l-1 2.5M6 8l-1 2.5M8.5 8l-1 2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+        </g>
+      ) : kind === 'cold' ? (
+        <path d="M6 1v10M1.7 3.5l8.6 5M1.7 8.5l8.6-5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      ) : kind === 'heat' ? (
+        <g fill="currentColor">
+          <circle cx="6" cy="6" r="2.6" />
+          <path d="M6 .5v2M6 9.5v2M.5 6h2M9.5 6h2M2 2l1.4 1.4M8.6 8.6L10 10M2 10l1.4-1.4M8.6 3.4L10 2" stroke="currentColor" strokeWidth="1" />
+        </g>
+      ) : (
+        <g fill="currentColor">
+          <circle cx="4.5" cy="5" r="2.2" opacity=".85" />
+          <ellipse cx="7" cy="7.5" rx="4" ry="2.2" />
+        </g>
+      )}
+    </svg>
+  )
+}
 
 export function FloorPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion, setActiveMenu } = useGame()
@@ -51,17 +77,11 @@ export function FloorPanel() {
   const wholesaleCost = crateCost(s, orderCat, s.supplier)
   const starterCrate = can(s, { type: 'callStarterCrate' })
   const orderName = CATEGORIES[orderCat]?.name ?? orderCat
-  const presentation = meta.settings.presentation
   const weather = s.weather?.now ?? 'fair'
   const fill = Math.min(1, shelf / Math.max(1, cap))
   const [priceFlick, setPriceFlick] = useState(false)
   const pricePrev = useRef(s.price)
 
-  const showPlanogram = presentation !== 'dense' && unlockedCats.length >= 2
-  const coldOn = !!s.menus.cold || (s.cold?.plants ?? 0) > 0
-  const fleetOn = !!s.menus.fleet || (s.fleet?.barges ?? 0) > 0
-  const plants = s.cold?.plants ?? 0
-  const barges = Math.min(12, Math.max(0, Math.floor(s.fleet?.barges ?? 0)))
 
   useEffect(() => {
     if (pricePrev.current === s.price) return
@@ -109,7 +129,6 @@ export function FloorPanel() {
   const celebLeft = celebUntil > s.time ? Math.max(0, Math.ceil(celebUntil - s.time)) : 0
 
   const early = s.era < 1 && !earlyFloorChromeDone(s)
-  const showPlanogramNow = showPlanogram && !early
   const tight = shelf + back <= 0 || s.cash < 2
   const backHeavy = back > Math.max(20, shelf * 2) && shelf >= cap * 0.85
   const rent = rentPerSec(s)
@@ -118,12 +137,14 @@ export function FloorPanel() {
       ? '—'
       : `${weather}${hasWeatherForecast(s) ? ` → ${s.weather?.next ?? 'fair'}` : ''}`
   const suppliersOpen = !!s.menus.suppliers
-  const bottleneck = salesBottleneck(s)
+  // The limit swings shelf ↔ demand with every unpack; show it once it settles.
+  const bottleneck = useStable(salesBottleneck(s), (b) => b.kind, 2000, 5000)
   const featured = featuredCategories(s)
   const repEta = reputationEtaSec(s)
   const orderDef = CATEGORIES[orderCat]
   const unit = unitCost(s, orderCat)
-  const sell = s.price * (orderDef?.priceRatio ?? 1)
+  const sell = shelfPrice(s, orderCat)
+  const premium = valueMul(s)
   const margin = sell - unit
   const eff = effectiveLife(s, orderCat)
 
@@ -184,96 +205,84 @@ export function FloorPanel() {
     }
   })()
 
-  return (
-    <Panel
-      title="Floor"
-      purpose="Sell baskets. Unpack, price, buy crates."
-      lore="floor"
+  const flowLine = backHeavy
+    ? `Shelf full · ${qty(back)} waiting in back.`
+    : `Cash → truck → backroom → Unpack. Rent ${rate(rent)}.`
+  const statusLine = [
+    featured.length ? `Featuring ${featured.map((c) => CATEGORIES[c].short).join(' + ')}` : null,
+    Number.isFinite(repEta) && repEta > 0
+      ? `Rep in ~${repEta < 60 ? `${Math.ceil(repEta)}s` : `${Math.ceil(repEta / 60)} min`}`
+      : null,
+    celebLeft > 0 ? `Celebrity endcap +25% · ${celebLeft}s` : null,
+  ].filter(Boolean)
+
+  const unpackBtn = (dock: boolean) => (
+    <Btn
+      tone="primary"
+      coachId={dock ? undefined : 'floor-unpack'}
+      className={`ge-unpack${dock ? ' fl-dock__btn' : ''}`}
+      title="Backroom → shelf (free). Shoppers only buy shelf stock."
+      disabled={back <= 0}
+      onClick={unpack}
+      onPointerDown={canHold ? startHold : undefined}
+      onPointerUp={canHold ? stopHold : undefined}
+      onPointerLeave={canHold ? stopHold : undefined}
+      onPointerCancel={canHold ? stopHold : undefined}
     >
+      <Icon name="unpack" size={dock ? 18 : 16} />
+      Unpack
+      <span className="ge-unpack__amt">+{manualUnpackAmount(s)}</span>
+    </Btn>
+  )
+
+  return (
+    <Panel title="Floor" purpose="Sell baskets: unpack, price, restock." lore="floor" className="fl">
       {early || (s.era < 1 && s.baskets < 25) ? (
-        <div className="ge-goal" data-coach-id="floor-goal">
-          <strong>Right now</strong>
-          <p>Unpack to the shelf. Baskets score. Cash pays rent &amp; trucks.</p>
-        </div>
-      ) : featured.length > 0 || (Number.isFinite(repEta) && repEta > 0) ? (
-        <p className="ge-muted" style={{ marginTop: 0 }}>
-          {[
-            featured.length
-              ? `Featuring ${featured.map((c) => CATEGORIES[c].short).join(' + ')}`
-              : null,
-            Number.isFinite(repEta) && repEta > 0
-              ? `Rep ~${repEta < 60 ? `${Math.ceil(repEta)}s` : `${Math.ceil(repEta / 60)} min`}`
-              : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      ) : null}
-      {celebLeft > 0 ? (
-        <p className="ge-coupon-war" role="status">
-          Celebrity endcap · +25% demand · {celebLeft}s left
+        <p className="fl-goal" data-coach-id="floor-goal">
+          <strong>Right now:</strong> unpack to the shelf. Baskets score; cash pays rent and trucks.
         </p>
       ) : null}
 
-      <div data-coach-id="floor-weather">
-        <StatusBand
-          items={(
-            [
-              {
-                label: 'Shelf',
-                value: `${qty(shelf)} / ${qty(cap)}`,
-                fill,
-                tone: shelf <= 0 ? 'danger' : fill > 0.7 ? 'success' : 'accent',
-                hint: 'What shoppers can buy',
-              },
-              {
-                label: 'Back',
-                value: qty(back),
-                tone: back <= 0 ? 'muted' : 'accent',
-                hint: 'Waiting for Unpack',
-              },
-              ...(s.era >= 1
-                ? [
-                    {
-                      label: 'Wx',
-                      value: wx,
-                      tone: weather !== 'fair' ? 'accent' : 'muted',
-                      hint: 'Weather now (and tomorrow with the Weather Radio)',
-                    } satisfies StatusItem,
-                  ]
-                : []),
-              {
-                label: 'Heat',
-                value: `${Math.round(heat * 100)}%`,
-                fill: heat,
-                tone: heatHot ? 'danger' : 'muted',
-                hint: 'Inspection heat — call early when hot',
-              },
-            ] as StatusItem[]
-          )}
-        />
+      <div className="fl-strip" data-coach-id="floor-weather">
+        <span className={`fl-chip fl-chip--meter${shelf <= 0 ? ' is-bad' : ''}`} title="What shoppers can buy">
+          <Icon name="floor" size={12} />
+          <span>Shelf</span>
+          <strong>
+            {qty(shelf)}/{qty(cap)}
+          </strong>
+          <i style={{ transform: `scaleX(${fill})` }} />
+        </span>
+        <span className="fl-chip" title="Waiting for Unpack">
+          <Icon name="backroom" size={12} />
+          <span>Back</span>
+          <strong>{qty(back)}</strong>
+        </span>
+        {s.era >= 1 ? (
+          <span className={`fl-chip fl-chip--wx-${weather}`} title="Weather now (and tomorrow with the Weather Radio)">
+            <WeatherGlyph kind={weather} />
+            <span>Weather</span>
+            <strong>{wx}</strong>
+          </span>
+        ) : null}
+        <span className={`fl-chip${heatHot ? ' is-bad' : ''}`} title="Inspection heat. Call the inspector early when it runs hot.">
+          <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden className="fl-ico">
+            <path d="M6 1c1 2 4 3 4 6a4 4 0 0 1-8 0c0-2 1-3 2-4 .5 1 .5 2 1.5 2.5C6 4 5.5 2.5 6 1z" fill="currentColor" />
+          </svg>
+          <span>Heat</span>
+          <strong>{Math.round(heat * 100)}%</strong>
+        </span>
+        {statusLine.length ? <span className="fl-strip__note">{statusLine.join(' · ')}</span> : null}
       </div>
 
       {!early ? (
-        <div className="ge-dept-callout" role="status" data-coach-id="floor-bottleneck">
-          <div className="ge-dept-callout__copy">
-            <h3>Limit · {bottleneck.kind}</h3>
-            <p>
-              {bottleneck.label}
-              {nextEta != null
-                ? ` · Truck ${clock(nextEta)}${orders.length > 1 ? ` (+${orders.length - 1})` : ''}`
-                : ''}
-              {runwayMin != null
-                ? ` · Runway ~${runwayMin < 1 ? '<1' : Math.floor(runwayMin)} min`
-                : ''}
-            </p>
-          </div>
+        <div className="fl-limit" role="status" data-coach-id="floor-bottleneck">
+          <p>
+            <strong>Limit: {bottleneck.kind}.</strong> {bottleneck.label}
+            {nextEta != null ? ` Truck in ${clock(nextEta)}${orders.length > 1 ? ` (+${orders.length - 1})` : ''}.` : ''}
+            {runwayMin != null ? ` Runway ~${runwayMin < 1 ? '<1' : Math.floor(runwayMin)} min.` : ''}
+          </p>
           {bottleneckAction ? (
-            <Btn
-              tone="primary"
-              disabled={bottleneckAction.disabled}
-              onClick={bottleneckAction.onClick}
-            >
+            <Btn tone="primary" disabled={bottleneckAction.disabled} onClick={bottleneckAction.onClick}>
               {bottleneckAction.label}
             </Btn>
           ) : null}
@@ -281,15 +290,13 @@ export function FloorPanel() {
       ) : null}
 
       {!early && heatHot ? (
-        <div className="ge-dept-callout is-ready" data-coach-id="floor-inspection">
-          <div className="ge-dept-callout__copy">
-            <h3>Inspection heat</h3>
-            <p>
-              {inspectCheck.ok
-                ? `Call early to cut ${Math.round(INSPECTION.inspectorRelief * 100)} pts.`
-                : (inspectCheck.reason ?? 'Inspector unavailable.')}
-            </p>
-          </div>
+        <div className="fl-limit is-hot" data-coach-id="floor-inspection">
+          <p>
+            <strong>Inspection heat.</strong>{' '}
+            {inspectCheck.ok
+              ? `Call early to cut ${Math.round(INSPECTION.inspectorRelief * 100)} pts.`
+              : (inspectCheck.reason ?? 'Inspector unavailable.')}
+          </p>
           <Btn
             tone="primary"
             coachId="call-inspector"
@@ -297,161 +304,131 @@ export function FloorPanel() {
             title={!inspectCheck.ok ? inspectCheck.reason : undefined}
             onClick={() => dispatch({ type: 'callInspector' })}
           >
-            Call inspector · {money(INSPECTION.inspectorCost, numberFormat)}
+            Inspector · {money(INSPECTION.inspectorCost, numberFormat)}
           </Btn>
         </div>
       ) : null}
 
-      <div
-        className={`ge-floor ge-floor--${presentation} ge-floor--wx-${weather}${
-          coldOn && presentation === 'map' ? ' ge-floor--cold-glow' : ''
-        }${fleetOn && presentation === 'map' ? ' ge-floor--stars' : ''}`.trim()}
-        style={{ ['--ge-shelf-fill' as string]: String(fill) }}
-        aria-label={`Storefront · ${weather} · shelf ${Math.round(fill * 100)}%`}
-      >
-        {presentation === 'map' ? (
-          <div className="ge-floor__aisle" aria-hidden>
-            <div className="ge-floor__bay">A1</div>
-            <div className="ge-floor__bay">A2</div>
-            <div className={`ge-floor__bay${coldOn ? ' ge-floor__bay--cold' : ''}`.trim()}>
-              {coldOn ? `Cold×${Math.max(1, plants)}` : 'Reg'}
-            </div>
-            {fleetOn ? (
-              <div className="ge-floor__stars" aria-hidden>
-                {Array.from({ length: Math.max(3, barges || 3) }, (_, i) => (
-                  <i key={i} className="ge-floor__star" />
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {showPlanogramNow ? (
-          <div className="ge-planogram" aria-hidden>
+      <div className={`fl-grid ge-floor--wx-${weather}`}>
+        <section className="fl-card fl-card--unpack" aria-label="Unpack">
+          {unpackBtn(false)}
+          <div className="fl-cats">
             {unlockedCats.map((c) => {
               const def = CATEGORIES[c]
+              const n = sumQty(s.shelf, c)
               const oldest = s.shelf.find((b) => b.cat === c)
               const spoil = oldest ? batchSpoilFrac(s, oldest) : 0
               return (
                 <div
                   key={c}
-                  className={`ge-planogram__bar${spoil > 0.55 ? ' is-spoil ge-planogram__bar--wilt' : ''}`.trim()}
-                  style={{
-                    ['--ge-cat-fill' as string]: String(catFill(c)),
-                    ['--ge-spoil' as string]: String(spoil),
-                  }}
-                  title={def.short}
+                  className={`fl-cat${spoil > 0.55 ? ' is-spoil' : ''}`}
+                  title={def.life != null && oldest ? `${def.name}: oldest batch ${Math.floor(oldest.age)}s old` : `${def.name}: does not spoil`}
                 >
                   <span>{def.short}</span>
+                  <span className="fl-cat__bar">
+                    <i style={{ transform: `scaleX(${catFill(c)})` }} />
+                  </span>
+                  <strong>{qty(n)}</strong>
                 </div>
               )
             })}
           </div>
-        ) : null}
+          <p className="fl-note" data-coach-id="floor-rent">
+            {flowLine}
+          </p>
+        </section>
 
-        <div className="ge-floor__desk">
-          <div className="ge-floor__actions">
+        <section
+          className={`fl-card fl-card--price${priceFlick ? ' ge-price--flick' : ''}`}
+          aria-label="Price"
+          data-coach-id="floor-price"
+          data-suggest-id="floor-price"
+        >
+          <h3 className="fl-card__title">
+            <Icon name="price" size={14} /> Price
+          </h3>
+          <div className="fl-stepper">
+            <button type="button" onClick={() => nudge(-0.1)} aria-label="Lower price">
+              −
+            </button>
+            <input
+              className="ge-price__input"
+              type="number"
+              min={PRICE.min}
+              max={PRICE.max}
+              step={PRICE.step}
+              value={s.price}
+              aria-label="Shelf price"
+              onChange={(e) => {
+                const v = Number(e.target.value)
+                if (Number.isFinite(v)) dispatch({ type: 'setPrice', price: v })
+              }}
+            />
+            <button type="button" onClick={() => nudge(0.1)} aria-label="Raise price">
+              +
+            </button>
+          </div>
+          {tip != null ? (
+            <p className="fl-note">
+              Best ≈ {money(tip, numberFormat)}{' '}
+              {Math.abs(s.price - tip) >= 0.05 ? (
+                <button type="button" className="fl-link" onClick={() => dispatch({ type: 'setPrice', price: tip })}>
+                  Match
+                </button>
+              ) : (
+                '· on target'
+              )}
+            </p>
+          ) : null}
+          {!early ? (
+            <p className="fl-note" title="Projected demand if you nudge the price by 10¢">
+              −10¢ → {rate(demandLow)} · +10¢ → {rate(demandHigh)}
+            </p>
+          ) : null}
+          {premium > 1.001 ? (
+            <p className="fl-note" title="Better stores carry premium stock: it costs more and rings up for more.">
+              Premium ×{premium.toFixed(premium < 10 ? 1 : 0)}: a can rings up at {money(shelfPrice(s, 'cans'), numberFormat)}
+            </p>
+          ) : null}
+        </section>
+
+        <section className="fl-card fl-card--stock" aria-label="Stock" data-coach-id="floor-wholesale" data-suggest-id="floor-wholesale">
+          <h3 className="fl-card__title">
+            <Icon name="wholesale" size={14} /> Stock
+          </h3>
+          {unlockedCats.length > 1 ? (
+            <div className="fl-seg" role="radiogroup" aria-label="Aisle to buy">
+              {unlockedCats.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={orderCat === c}
+                  className={orderCat === c ? 'is-on' : ''}
+                  title={CATEGORIES[c].role}
+                  onClick={() => dispatch({ type: 'setOrderCat', cat: c })}
+                >
+                  {CATEGORIES[c].short}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {orderDef ? (
+            <p className="fl-note" title={orderDef.role}>
+              Sell {money(sell, numberFormat)} · cost {money(unit, numberFormat)} · margin {money(margin, numberFormat)}
+              {eff != null ? ` · life ~${Math.round(eff / 60)}m` : ''}
+            </p>
+          ) : null}
+          <div className="fl-row">
             <Btn
               tone="primary"
-              coachId="floor-unpack"
-              className="ge-unpack"
-              title="Backroom → shelf (free). Shoppers only buy shelf stock."
-              onClick={unpack}
-              onPointerDown={canHold ? startHold : undefined}
-              onPointerUp={canHold ? stopHold : undefined}
-              onPointerLeave={canHold ? stopHold : undefined}
-              onPointerCancel={canHold ? stopHold : undefined}
+              disabled={s.cash < wholesaleCost}
+              title={`Buy one ${orderName} crate into the backroom`}
+              onClick={() => dispatch({ type: 'buyWholesale', cat: orderCat, crates: 1 })}
             >
-              <Icon name="unpack" size={18} />
-              Unpack
-              <span className="ge-unpack__amt">+{manualUnpackAmount(s)}</span>
+              Buy {orderName} · {money(wholesaleCost, numberFormat)}
             </Btn>
-
-            <div
-              className={`ge-price${priceFlick ? ' ge-price--flick' : ''}`.trim()}
-              data-coach-id="floor-price"
-              data-suggest-id="floor-price"
-            >
-              <span className="ge-price__tag">
-                <Icon name="price" size={14} /> Price
-              </span>
-              <div className="ge-price__row">
-                <Btn tone="ghost" onClick={() => nudge(-0.1)} aria-label="Lower price">
-                  −
-                </Btn>
-                <input
-                  className="ge-price__input"
-                  type="number"
-                  min={PRICE.min}
-                  max={PRICE.max}
-                  step={PRICE.step}
-                  value={s.price}
-                  onChange={(e) => {
-                    const v = Number(e.target.value)
-                    if (Number.isFinite(v)) dispatch({ type: 'setPrice', price: v })
-                  }}
-                />
-                <Btn tone="ghost" onClick={() => nudge(0.1)} aria-label="Raise price">
-                  +
-                </Btn>
-              </div>
-              {tip != null ? (
-                <div className="ge-price__tip">
-                  <span className="ge-muted">Best ≈ {money(tip, numberFormat)}</span>
-                  {Math.abs(s.price - tip) >= 0.05 ? (
-                    <Btn
-                      tone="ghost"
-                      title="Set shelf price to Best"
-                      onClick={() => dispatch({ type: 'setPrice', price: tip })}
-                    >
-                      Match
-                    </Btn>
-                  ) : (
-                    <span className="ge-muted">On target</span>
-                  )}
-                </div>
-              ) : null}
-              {!early ? (
-                <p className="ge-muted" title="Projected demand if you nudge the price by 10¢">
-                  {money(Math.max(PRICE.min, s.price - 0.1), numberFormat)} → {rate(demandLow)} · {' '}
-                  {money(Math.min(PRICE.max, s.price + 0.1), numberFormat)} → {rate(demandHigh)}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="ge-floor__buy" data-coach-id="floor-wholesale" data-suggest-id="floor-wholesale">
-              <span className="ge-price__tag">
-                <Icon name="wholesale" size={14} /> Stock
-              </span>
-              {unlockedCats.length > 1 ? (
-                <div className="ge-chip-row" role="group" aria-label="Aisle to buy">
-                  {unlockedCats.map((c) => (
-                    <Btn
-                      key={c}
-                      tone={orderCat === c ? 'primary' : 'ghost'}
-                      title={CATEGORIES[c].role}
-                      onClick={() => dispatch({ type: 'setOrderCat', cat: c })}
-                    >
-                      {CATEGORIES[c].short}
-                    </Btn>
-                  ))}
-                </div>
-              ) : null}
-              {orderDef ? (
-                <p className="ge-muted">
-                  {orderDef.role} · sell {money(sell, numberFormat)} · cost{' '}
-                  {money(unit, numberFormat)} · margin {money(margin, numberFormat)}
-                  {eff != null ? ` · life ~${Math.round(eff / 60)}m` : ' · no spoil'}
-                </p>
-              ) : null}
-              <Btn
-                tone="primary"
-                disabled={s.cash < wholesaleCost}
-                title={`Buy one ${orderName} crate into the backroom`}
-                onClick={() => dispatch({ type: 'buyWholesale', cat: orderCat, crates: 1 })}
-              >
-                Buy {orderName} · {money(wholesaleCost, numberFormat)}
-              </Btn>
+            {starterCrate.ok || tight ? (
               <Btn
                 tone="ghost"
                 disabled={!starterCrate.ok}
@@ -460,79 +437,23 @@ export function FloorPanel() {
               >
                 Starter crate
               </Btn>
-            </div>
-          </div>
-
-          <div className="ge-floor__shelf-block">
-            <Section label="On the shelf">
-              <div className="ge-floor__shelf-head">
-                <Meter
-                  value={shelf}
-                  max={Math.max(1, cap)}
-                  label={`${qty(shelf)} / ${qty(cap)}`}
-                  tone={shelf <= 0 ? undefined : 'accent'}
-                />
-              </div>
-              <div className="ge-cat-grid">
-                {unlockedCats.map((c) => {
-                  const def = CATEGORIES[c]
-                  const n = sumQty(s.shelf, c)
-                  const oldest = s.shelf.find((b) => b.cat === c)
-                  const spoil = oldest ? batchSpoilFrac(s, oldest) : 0
-                  return (
-                    <div
-                      key={c}
-                      className={`ge-cat-chip${spoil > 0.55 ? ' ge-cat-chip--spoil ge-cat-chip--wilt' : ''}`.trim()}
-                      style={spoil > 0 ? { ['--ge-spoil' as string]: String(spoil) } : undefined}
-                    >
-                      <strong>{def.short}</strong>
-                      <span>{qty(n)}</span>
-                      <span className="ge-muted">
-                        {def.life != null && oldest ? `age ${Math.floor(oldest.age)}s` : 'stable'}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-              {backHeavy ? (
-                <p className="ge-muted ge-floor__nudge">
-                  Shelf is full · {qty(back)} waiting in back. Sales free slots; then Unpack.
-                </p>
-              ) : (
-                <p className="ge-muted ge-floor__flow" data-coach-id="floor-rent">
-                  Cash → truck → backroom → Unpack. Rent {rate(rent)}.
-                </p>
-              )}
-            </Section>
-          </div>
-        </div>
-
-        {tight ? (
-          <Section label="Tight week">
-            <div className="ge-chip-row">
-              <Btn
-                tone="primary"
-                disabled={!starterCrate.ok}
-                title={starterCrate.ok ? 'Free cans crate' : (starterCrate.reason ?? 'Not eligible')}
-                onClick={() => dispatch({ type: 'callStarterCrate' })}
-              >
-                Starter crate
+            ) : null}
+            {tight && suppliersOpen ? (
+              <Btn tone="ghost" onClick={() => setActiveMenu('suppliers')}>
+                Safety nets
               </Btn>
-              {suppliersOpen ? (
-                <Btn tone="ghost" onClick={() => setActiveMenu('suppliers')}>
-                  Safety nets on Suppliers
-                </Btn>
-              ) : null}
-            </div>
-          </Section>
-        ) : null}
-
-        <HelpCard title="What am I doing?">
-          Pick an aisle, buy a crate (backroom), then Unpack to the shelf. Restock priority only chooses
-          among aisles you already bought — it does not order for you. Price IQ shows a Best ≈ price
-          tuned to your demand curve and wholesale cost; without it, nudge price and watch the projected demand.
-        </HelpCard>
+            ) : null}
+          </div>
+        </section>
       </div>
+
+      <HelpCard title="What am I doing?">
+        Pick an aisle, buy a crate (backroom), then Unpack to the shelf. Restock priority only chooses among aisles you
+        already bought — it does not order for you. Price IQ shows a Best ≈ price tuned to your demand curve and
+        wholesale cost; without it, nudge price and watch the projected demand.
+      </HelpCard>
+
+      <div className="fl-dock">{unpackBtn(true)}</div>
     </Panel>
   )
 }

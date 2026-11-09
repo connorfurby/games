@@ -10,6 +10,7 @@ import { Btn } from '../components/Btn'
 import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { InvestBand } from '../scenes/DepartmentBands'
+import { DeptDiorama } from '../scenes/DeptDiorama'
 
 const RISKS: InvestRisk[] = ['low', 'mid', 'high']
 
@@ -63,7 +64,8 @@ export function InvestPanel() {
   const reserve = Math.max(25, s.rates.costPerSec * 300)
   const surplus = Math.max(0, s.cash - reserve)
   const depositSuggest = Math.floor(Math.min(surplus, capRoom) * 100) / 100
-  const wantDeposit = capRoom > 1 && depositSuggest >= Math.max(10, capRoom * 0.05)
+  const outgrown = pbCap * rate < Math.max(0, s.rates.revenuePerSec) * 0.005
+  const wantDeposit = !outgrown && capRoom > 1 && depositSuggest >= Math.max(10, capRoom * 0.05)
   const atCap = bal >= pbCap - 1
   const shortfall = atCap ? memoCashShortfall(s) : null
   const withdrawSuggest = shortfall
@@ -93,8 +95,20 @@ export function InvestPanel() {
       title="Invest"
       purpose="Park surplus cash inside a capped yield."
       lore="invest"
-      scene={<InvestBand state={s} />}
+      scene={
+        <>
+          <InvestBand state={s} />
+          <DeptDiorama kind="invest" />
+        </>
+      }
     >
+      {outgrown ? (
+        <p className="vt-small" role="note">
+          <span className="vt-small__label">Small change now.</span> A full passbook earns about{' '}
+          {money(pbCap * rate, numberFormat)}/s against {money(s.rates.revenuePerSec, numberFormat)}/s of sales. The
+          cap grows with Empire rank; it matters again early in a Rebrand.
+        </p>
+      ) : null}
       {wantDeposit || wantWithdraw ? (
         <div className="ge-dept-callout" role="status" data-coach-id="invest-advisor">
           <div className="ge-dept-callout__copy">

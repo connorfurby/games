@@ -410,9 +410,9 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
     const rows = MEMOS.filter((m) => {
       if (m.standing) return false
       if (m.fork) return false
-      const bought = (s.memos[m.id] ?? 0) > 0
-      if (bought && !m.repeatable) return false
-      if (m.max != null && bought >= m.max) return false
+      const owned = s.memos[m.id] ?? 0
+      if (owned > 0 && !m.repeatable) return false
+      if (m.max != null && owned >= m.max) return false
       if (s.memoSeen?.[m.id]) return true
       try {
         return m.visible(s)

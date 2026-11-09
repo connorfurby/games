@@ -28,6 +28,8 @@ function tickMenus(s: GameState) {
     unlockMenu(s, 'upgrades')
   }
   if (s.memos['flyer'] || s.ads > 1) unlockMenu(s, 'marketing')
+  if (s.rivals && Object.keys(s.rivals).length > 0) unlockMenu(s, 'rivals')
+  if (s.stores.length >= 2 || s.era >= 2) unlockMenu(s, 'map')
   if (s.memos['passbook'] || s.passbook.balance > 0) unlockMenu(s, 'invest')
   if (s.memos['coffee-permit'] || Object.keys(s.ventures).length > 0) unlockMenu(s, 'ventures')
   if (s.memos['lot-survey'] || s.expansions['side-yard']) unlockMenu(s, 'land')

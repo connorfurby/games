@@ -325,6 +325,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           browned: bool(c.browned, d.browned),
           brownouts: Math.max(0, Math.floor(num(c.brownouts, d.brownouts))),
           autoSheds: Math.max(0, Math.floor(num(c.autoSheds, d.autoSheds))),
+          offline: Math.max(0, Math.floor(num(c.offline, d.offline))),
           momentumHoldSec: Math.max(0, num(c.momentumHoldSec, d.momentumHoldSec)),
           quadratic: bool(c.quadratic, d.quadratic),
           lastBrownoutLogAt: num(c.lastBrownoutLogAt, d.lastBrownoutLogAt),
@@ -355,6 +356,8 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         }
         base.fleet = {
           barges: Math.max(0, Math.floor(num(f.barges, d.barges))),
+          // Pre-v6 saves priced barges by count; cap so replicated fleets aren't priced out.
+          launches: Math.max(0, Math.floor(num(f.launches, Math.min(num(f.barges, 0), 12)))),
           biomass: Math.max(0, num(f.biomass, d.biomass)),
           biomassMax: Math.max(0, num(f.biomassMax, d.biomassMax)),
           charter,
@@ -388,6 +391,55 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           universeIndex: Math.max(0, Math.floor(num(raw.prestigeCarry.universeIndex, d.universeIndex))),
           mutators,
         }
+      }
+
+      if (isObject(raw.rebrand)) {
+        base.rebrand = {
+          goodwill: Math.max(0, Math.floor(num(raw.rebrand.goodwill, 0))),
+          count: Math.max(0, Math.floor(num(raw.rebrand.count, 0))),
+          bankedThisRun: Math.max(0, Math.floor(num(raw.rebrand.bankedThisRun, 0))),
+        }
+      }
+      if (isObject(raw.projects)) {
+        const done: Record<string, true> = {}
+        if (isObject(raw.projects.done)) {
+          for (const [k, v] of Object.entries(raw.projects.done)) if (v) done[k] = true
+        }
+        const active = Array.isArray(raw.projects.active)
+          ? (raw.projects.active as unknown[])
+              .filter((a): a is { id: string; endsAt: number } =>
+                isObject(a) && typeof a.id === 'string' && typeof a.endsAt === 'number',
+              )
+              .map((a) => ({ id: a.id, endsAt: a.endsAt }))
+          : []
+        base.projects = { done, active }
+      }
+      if (isObject(raw.relics)) {
+        const rl = raw.relics as { wings?: unknown; count?: unknown; owned?: unknown }
+        const owned: Record<string, number> = {}
+        if (isObject(rl.owned)) for (const [k, v] of Object.entries(rl.owned)) owned[k] = Math.max(1, Math.floor(num(v, 1)))
+        base.relics = {
+          owned,
+          wings: Array.isArray(rl.wings) ? rl.wings.filter((w): w is string => typeof w === 'string') : [],
+          count: Math.max(0, Math.floor(num(rl.count, 0))),
+        }
+      }
+      if (isObject(raw.rivals)) {
+        const rivals: GameState['rivals'] = {}
+        for (const [k, v] of Object.entries(raw.rivals)) {
+          if (!isObject(v)) continue
+          rivals[k] = {
+            stores: Math.max(1, Math.floor(num(v.stores, 1))),
+            bought: bool(v.bought, false),
+            boughtStores: Math.max(0, Math.floor(num(v.boughtStores, 0))),
+            nextGrowAt: num(v.nextGrowAt, 0),
+            frozenUntil: num(v.frozenUntil, 0),
+            warReadyAt: num(v.warReadyAt, 0),
+            grown: Math.max(0, Math.floor(num(v.grown, 0))),
+            wars: Math.max(0, Math.floor(num(v.wars, 0))),
+          }
+        }
+        base.rivals = rivals
       }
 
       if (isObject(raw.menus)) {

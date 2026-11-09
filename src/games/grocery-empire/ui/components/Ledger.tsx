@@ -29,15 +29,19 @@ export function Ledger({
   state,
   limit = 10,
   hideStory = false,
+  inline = false,
 }: {
   state: GameState
   limit?: number
   /** When StoryBanner is showing the latest story beat, skip duplicating it here. */
   hideStory?: boolean
+  /** Its own tab (e.g. the Memos drawer): always open, no toggle. */
+  inline?: boolean
 }) {
   const { meta } = useMeta()
   const [kind, setKind] = useState<'all' | LedgerKind>('all')
-  const [open, setOpen] = useState(false)
+  const [openState, setOpen] = useState(false)
+  const open = inline || openState
   const skin =
     LEDGER_SKINS.find((s) => s.id === meta.equippedLedgerSkin) ?? LEDGER_SKINS[0]
   const skinClass = skin.cssClass
@@ -63,7 +67,7 @@ export function Ledger({
       {open ? (
         <div id="ge-ledger-drawer" className="ge-ledger__drawer" role="region" aria-label="Ledger">
           <div className="ge-ledger__toolbar">
-            <span className="ge-ledger__title">Ledger</span>
+            {inline ? null : <span className="ge-ledger__title">Ledger</span>}
             <div className="ge-ledger__chips" role="tablist" aria-label="Filter ledger">
               {CHIP_OPTS.map((o) => (
                 <button
@@ -102,6 +106,7 @@ export function Ledger({
         </div>
       ) : null}
 
+      {inline ? null : (
       <button
         type="button"
         className={`ge-ledger__tab${warnWaiting && !open ? ' has-warn' : ''}`.trim()}
@@ -115,6 +120,7 @@ export function Ledger({
           {open ? '▾' : '▴'}
         </span>
       </button>
+      )}
     </div>
   )
 }

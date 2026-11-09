@@ -16,6 +16,7 @@ import { useMeta } from './MetaContext'
 /** Optional plate thumbs for known pack ids (presentation only). */
 const PACK_PLATES: Record<string, PlateId> = {
   'receipt-classic': 'counter',
+  'receipt-1': 'counter',
   'corner-bodega': 'corner',
   'sunday-flyer': 'corner',
   'cold-room': 'cold',

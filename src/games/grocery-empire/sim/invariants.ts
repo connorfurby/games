@@ -220,6 +220,7 @@ export function repair(s: GameState): GameState {
     s.cold.yieldLeft = Math.max(0, finite(s.cold.yieldLeft))
     s.cold.yieldMax = Math.max(0, finite(s.cold.yieldMax))
     s.cold.autoSheds = Math.max(0, Math.floor(finite(s.cold.autoSheds)))
+    s.cold.offline = Math.max(0, Math.floor(finite(s.cold.offline ?? 0)))
     s.cold.brownouts = Math.max(0, Math.floor(finite(s.cold.brownouts)))
     s.cold.momentumHoldSec = Math.max(0, finite(s.cold.momentumHoldSec))
   }
@@ -234,6 +235,7 @@ export function repair(s: GameState): GameState {
   s.brand = clamp(finite(s.brand, 1), 0, 1)
   if (s.fleet) {
     s.fleet.barges = Math.max(0, Math.floor(finite(s.fleet.barges)))
+    s.fleet.launches = Math.max(0, Math.floor(finite(s.fleet.launches ?? 0)))
     s.fleet.biomass = Math.max(0, finite(s.fleet.biomass))
     s.fleet.biomassMax = Math.max(0, finite(s.fleet.biomassMax))
     s.fleet.charterPool = Math.max(0, Math.floor(finite(s.fleet.charterPool)))
@@ -246,6 +248,14 @@ export function repair(s: GameState): GameState {
       s.fleet.barges = 1
     }
   }
+  if (!s.rebrand || typeof s.rebrand !== 'object') s.rebrand = { goodwill: 0, count: 0, bankedThisRun: 0 }
+  s.rebrand.goodwill = Math.max(0, Math.floor(finite(s.rebrand.goodwill)))
+  if (!s.projects || typeof s.projects !== 'object') s.projects = { done: {}, active: [] }
+  if (!Array.isArray(s.projects.active)) s.projects.active = []
+  if (!s.projects.done || typeof s.projects.done !== 'object') s.projects.done = {}
+  if (!s.rivals || typeof s.rivals !== 'object') s.rivals = {}
+  if (!s.relics || !Array.isArray(s.relics.wings)) s.relics = { wings: [], count: 0, owned: {} }
+  if (!s.relics.owned || typeof s.relics.owned !== 'object') s.relics.owned = {}
   if (s.prestigeCarry) {
     s.prestigeCarry.appetite = Math.max(0, finite(s.prestigeCarry.appetite))
     s.prestigeCarry.tipSharpness = Math.max(0, finite(s.prestigeCarry.tipSharpness))

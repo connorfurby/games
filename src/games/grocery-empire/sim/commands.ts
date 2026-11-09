@@ -1,8 +1,13 @@
+import { valueMul } from './systems/network'
+import { buyout, canBuyout, canPriceWar, priceWar } from './systems/rivals'
+import type { RivalId } from '../content/rivals'
 import { TRACK_BY_ID, type BuildFilter, refundFrac } from '../content/builds'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ERA2_EXPANSION_BY_ID } from '../content/era2'
 import { INTRO_BEATS } from '../content/intro'
-import { MEMO_BY_ID } from '../content/memos'
+import { MEMO_BY_ID, MEMOS } from '../content/memos'
+import { PROJECT_BY_ID } from '../content/projects'
+import { empireUnlocked } from '../content/empireRewards'
 import { PERK_BY_ID } from '../content/perks'
 import { ROLE_IDS, traitForStaffId, type RoleId } from '../content/staff'
 import { TIP_BY_ID } from '../content/tips'
@@ -14,6 +19,8 @@ import {
 } from '../content/upgrades'
 import { VENTURE_BY_ID, ventureLevelCost } from '../content/ventures'
 import {
+  CAPITAL,
+  CHAIN,
   DEMAND,
   EMPIRE,
   ENDCAP,
@@ -108,7 +115,7 @@ import {
   perishableQty,
   type DumpWhere,
 } from './systems/recovery'
-import { ensureFlagshipStore } from './systems/chain'
+import { canWalkStore, ensureFlagshipStore, walkStore } from './systems/chain'
 import { debtCovenantBreached } from './systems/capital'
 import { era2Handlers } from './commandsEra2'
 import { eraLateHandlers } from './commandsEraLate'
@@ -149,6 +156,12 @@ export type Command =
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
+  | { type: 'startProject'; id: string }
+  | { type: 'priceWar'; id: RivalId }
+  | { type: 'evenAttention' }
+  | { type: 'syncRelics'; wings: string[]; count: number; unlocked: boolean; owned?: Record<string, number> }
+  | { type: 'walkDrifting' }
+  | { type: 'buyoutRival'; id: RivalId }
   | { type: 'respecPerks' }
   | { type: 'expandLot'; id?: string }
   | { type: 'expandSideYard' }
@@ -719,6 +732,84 @@ const coreHandlers = {
       def.run?.(s)
       log(s, def.voice, 'story')
       log(s, def.done, 'memo')
+    },
+  },
+  syncRelics: {
+    can: () => ok,
+    run: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'syncRelics' }>
+      s.relics = { wings: [...c.wings], count: Math.max(0, Math.floor(c.count)), owned: { ...(c.owned ?? {}) } }
+      if (c.unlocked) s.menus.relics = true
+    },
+  },
+  evenAttention: {
+    can: (s) => {
+      if (s.era < 2) return no('Need Era 2.')
+      if (s.stores.length < 2) return no('Open a second store first.')
+      const fair = 1 / s.stores.length
+      if (s.stores.every((st) => Math.abs(st.attentionShare - fair) < 0.005)) return no('Already even.')
+      return ok
+    },
+    run: (s) => {
+      const fair = 1 / s.stores.length
+      for (const st of s.stores) st.attentionShare = fair
+      log(s, `Attention split evenly across ${s.stores.length} stores.`, 'info')
+    },
+  },
+  walkDrifting: {
+    can: (s) => {
+      const drifting = s.stores.filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn)
+      if (drifting.length === 0) return no('No store is drifting.')
+      return canWalkStore(s, drifting[0]!.id) ? no(canWalkStore(s, drifting[0]!.id)!) : ok
+    },
+    run: (s) => {
+      // Worst first, until Attention runs out.
+      const drifting = s.stores
+        .filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn)
+        .sort((a, b) => (b.drift ?? 0) - (a.drift ?? 0))
+      let walked = 0
+      for (const st of drifting) {
+        if (canWalkStore(s, st.id)) break
+        walkStore(s, st.id)
+        walked += 1
+      }
+      if (walked < drifting.length) log(s, `Walked ${walked} of ${drifting.length} drifting stores; out of Attention.`, 'info')
+    },
+  },
+  priceWar: {
+    can: (s, cmd) => {
+      const why = canPriceWar(s, (cmd as Extract<Command, { type: 'priceWar' }>).id)
+      return why ? no(why) : ok
+    },
+    run: (s, cmd) => priceWar(s, (cmd as Extract<Command, { type: 'priceWar' }>).id),
+  },
+  buyoutRival: {
+    can: (s, cmd) => {
+      const why = canBuyout(s, (cmd as Extract<Command, { type: 'buyoutRival' }>).id)
+      return why ? no(why) : ok
+    },
+    run: (s, cmd) => buyout(s, (cmd as Extract<Command, { type: 'buyoutRival' }>).id),
+  },
+  startProject: {
+    can: (s, cmd) => {
+      const id = (cmd as Extract<Command, { type: 'startProject' }>).id
+      const def = PROJECT_BY_ID[id]
+      if (!def) return no('Unknown project.')
+      if (!empireUnlocked(s.empire.level, 'projects')) return no('Projects open at Empire 15.')
+      if (s.era < def.era) return no(`Needs era ${def.era}.`)
+      if (s.projects.done[id]) return no('Already built.')
+      if (s.projects.active.some((a) => a.id === id)) return no('Already under way.')
+      const crews = empireUnlocked(s.empire.level, 'second-project') ? 2 : 1
+      if (s.projects.active.length >= crews) return no(crews > 1 ? 'Both crews are busy.' : 'The crew is busy.')
+      if (s.cash < def.cash) return no(`Need $${Math.ceil(def.cash)}.`)
+      return ok
+    },
+    run: (s, cmd) => {
+      const id = (cmd as Extract<Command, { type: 'startProject' }>).id
+      const def = PROJECT_BY_ID[id]!
+      s.cash -= def.cash
+      s.projects.active.push({ id, endsAt: s.time + def.seconds })
+      log(s, `Project started: ${def.name}.`, 'good')
     },
   },
   buyUpgrade: {
@@ -1338,7 +1429,8 @@ export function tickAutoRestock(s: GameState) {
   if (!order.length && s.categories[s.orderCat]) order.push(s.orderCat)
   const crates = s.supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
   for (const cat of order) {
-    if (unitCost(s, cat) > s.autoRestock.maxCost) continue
+    // maxCost is in base (stall-tier) dollars so the cap survives the 2.0 value ladder.
+    if (unitCost(s, cat) / valueMul(s) > s.autoRestock.maxCost) continue
     if (!can(s, { type: 'buyWholesale', cat, crates }).ok) continue
     run(s, { type: 'buyWholesale', cat, crates })
     return
@@ -1351,6 +1443,18 @@ export function tickAutoTournament(s: GameState) {
   if (s.era < 2 || !s.compute.unlocked) return
   const cap = attentionCap(s)
   if (cap <= 0 || s.compute.attention < cap * 0.98) return
+  // Never eat Attention that a memo on the desk is waiting for.
+  const after = s.compute.attention - CAPITAL.tournamentAttention
+  for (const m of MEMOS) {
+    if (!s.memoSeen[m.id]) continue
+    if ((s.memos[m.id] ?? 0) > 0 && !m.repeatable) continue
+    try {
+      const need = m.cost(s).attention ?? 0
+      if (need > after && need <= cap) return
+    } catch {
+      /* ignore */
+    }
+  }
   const cmd: Command = { type: 'runTournament' }
   if (can(s, cmd).ok) run(s, cmd)
 }
