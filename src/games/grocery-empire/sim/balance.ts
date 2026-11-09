@@ -488,7 +488,8 @@ export const COLD = {
 export const POLITICS = {
   capitalStart: 20,
   leakPerSec: 0.015,
-  lobbyGainPerSec: 0.004,
+  /** One lobbyist beats the leak. Extra retainers stack. */
+  lobbyGainPerSec: 0.02,
   lobbyCost: 40,
   lobbyCapitalGain: 12,
   acquireCash: 400_000,

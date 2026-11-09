@@ -104,9 +104,11 @@ export function BooksPanel() {
           ? `Need ${CAPITAL.incorporateRep} Rep`
           : null
 
-  // Runway: income vs the full bill (rent + wages + upkeep). Store sales, ventures, yield all count.
+  // Runway follows the till (cashPerSec), not sales minus rent alone.
   const income = storeRev + ventureRate + Math.max(0, investYield)
-  const net = income - burn
+  const trackedNet = s.rates.cashPerSec
+  const liveTill = (s.rateAvg?.cash?.length ?? 0) > 0 || Math.abs(trackedNet) >= 0.01
+  const net = liveTill ? trackedNet : income - burn
   const runwaySec = net < -1e-6 ? s.cash / -net : Number.POSITIVE_INFINITY
   const arrearsPayRate = storeRev * RECOVERY.arrearsRevenueShare
   const arrearsEta =
@@ -397,11 +399,10 @@ export function BooksPanel() {
                   ? 'Board meeting due — pick one agenda.'
                   : `Next meeting in ${nextMeetingInSec}s`}
               </p>
-              <div className="ge-chip-row">
+              <div className="ge-chip-row" data-coach-id="books-board">
                 {BOARD_AGENDAS.map((a) => (
                   <Btn
                     key={a.id}
-                    coachId={a.id === 'expand' ? 'books-board' : undefined}
                     tone={meetingDue ? 'primary' : 'ghost'}
                     disabled={!meetingDue}
                     title={meetingDue ? a.tip : `Next meeting in ${nextMeetingInSec}s`}
@@ -416,7 +417,7 @@ export function BooksPanel() {
               ))}
             </>
           ) : (
-            <p className="ge-muted" style={{ fontSize: '0.78rem' }}>
+            <p className="ge-muted" style={{ fontSize: '0.78rem' }} data-coach-id="books-board">
               Board agenda opens after you incorporate.
             </p>
           )}

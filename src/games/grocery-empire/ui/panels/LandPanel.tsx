@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ERA2_EXPANSIONS } from '../../content/era2'
 import { CHAIN } from '../../sim/balance'
 import { can } from '../../sim/commands'
+import { attentionPerSec } from '../../sim/formulas'
 import {
   canTrainStore,
   canWalkStore,
@@ -128,6 +129,9 @@ function ChainRoster() {
   const drifting = stores.filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn).length
   const equiv = 1 + networkStores(s)
   const fair = 1 / Math.max(1, stores.length)
+  const attGen = s.compute.unlocked ? attentionPerSec(s) : 0
+  const attDrain = chainAttentionDrainPerSec(s)
+  const attNet = attGen - attDrain
 
   return (
     <section className="ld-chain" aria-label="Chain">
@@ -151,9 +155,14 @@ function ChainRoster() {
             <dt>Worth</dt>
             <dd>×{equiv.toFixed(2)}</dd>
           </div>
-          <div>
+          <div
+            title={`Analysts +${attGen.toFixed(1)}/s, stores −${attDrain.toFixed(2)}/s. Ideas mint when the bar is full.`}
+          >
             <dt>Attention</dt>
-            <dd>−{chainAttentionDrainPerSec(s).toFixed(2)}/s</dd>
+            <dd className={attNet < 0 ? 'is-bad' : ''}>
+              {attNet >= 0 ? '+' : '−'}
+              {Math.abs(attNet).toFixed(2)}/s
+            </dd>
           </div>
           <div className={drifting > 0 ? 'is-bad' : ''}>
             <dt>Drifting</dt>

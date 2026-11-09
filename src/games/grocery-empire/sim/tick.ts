@@ -68,28 +68,36 @@ function pushBucket(buf: number[], value: number) {
 function updateRates(s: GameState, dt: number) {
   if (!s.rateAvg) s.rateAvg = emptyRateAvg()
   const w = s.rateAvg
+  if (!Array.isArray(w.cash)) w.cash = []
+  if (!Number.isFinite(w.curCash)) w.curCash = 0
   w.curSold += s.acc.soldWindow
   w.curRev += s.acc.revWindow
   w.curCost += s.acc.costWindow
   w.curSpoil += s.acc.spoilWindow
+  w.curCash += s.acc.cashWindow ?? 0
   w.t += dt
   s.acc.soldWindow = 0
   s.acc.revWindow = 0
   s.acc.costWindow = 0
   s.acc.spoilWindow = 0
+  s.acc.cashWindow = 0
 
+  // Peel whole seconds off the accumulator. A 3s chunk must not dump every
+  // dollar into the first bucket and leave the rest at zero.
   while (w.t >= 1) {
+    const share = 1 / w.t
+    const keep = 1 - share
+    pushBucket(w.sold, w.curSold * share)
+    pushBucket(w.rev, w.curRev * share)
+    pushBucket(w.cost, w.curCost * share)
+    pushBucket(w.spoil, w.curSpoil * share)
+    pushBucket(w.cash, w.curCash * share)
+    w.curSold *= keep
+    w.curRev *= keep
+    w.curCost *= keep
+    w.curSpoil *= keep
+    w.curCash *= keep
     w.t -= 1
-    // Attribute the whole unfinished second's accumulators into one bucket, then continue.
-    // Split proportionally when t was >> 1 (speed-up / offline catch-up chunks).
-    pushBucket(w.sold, w.curSold)
-    pushBucket(w.rev, w.curRev)
-    pushBucket(w.cost, w.curCost)
-    pushBucket(w.spoil, w.curSpoil)
-    w.curSold = 0
-    w.curRev = 0
-    w.curCost = 0
-    w.curSpoil = 0
   }
 
   const filled = w.sold.length + w.t
@@ -105,9 +113,14 @@ function updateRates(s: GameState, dt: number) {
   s.rates.revenuePerSec = q((sumBuf(w.rev) + w.curRev) / denom)
   s.rates.costPerSec = q((sumBuf(w.cost) + w.curCost) / denom)
   s.rates.spoilPerSec = q((sumBuf(w.spoil) + w.curSpoil) / denom)
+  s.rates.cashPerSec = q((sumBuf(w.cash) + w.curCash) / denom)
 }
 
-/** Advance the sim by dt simulated seconds. Mutates s. */
+/**
+ * Advance the sim by `dt` simulated seconds. Mutates s.
+ * Speed is the caller's job (the live engine passes `DT * speed`). Multiplying
+ * again here made 2× run at 4× and collapsed the cash-rate window.
+ */
 export function applyTick(s: GameState, dt: number) {
   if (dt <= 0) return s
   if (s.paused) {
@@ -115,7 +128,8 @@ export function applyTick(s: GameState, dt: number) {
     return s
   }
 
-  const step = dt * (s.speed || 1)
+  const step = dt
+  const cashBefore = s.cash
   s.time += step
 
   tickWholesale(s, step)
@@ -147,13 +161,18 @@ export function applyTick(s: GameState, dt: number) {
   tickAutoRestock(s)
   tickAutoTournament(s)
   tickUnlocks(s, step)
+  repair(s)
+  s.acc.cashWindow = (s.acc.cashWindow ?? 0) + (s.cash - cashBefore)
   updateRates(s, step)
   pushHistory(s, step)
-  repair(s)
   return s
 }
 
-export function applyOffline(s: GameState, elapsedSec: number): OfflineReceipt {
+export function applyOffline(
+  s: GameState,
+  elapsedSec: number,
+  opts?: { showReceipt?: boolean },
+): OfflineReceipt {
   const capped = Math.min(Math.max(0, elapsedSec), OFFLINE_CAP_SEC)
   const receipt: OfflineReceipt = {
     seconds: elapsedSec,
@@ -167,8 +186,8 @@ export function applyOffline(s: GameState, elapsedSec: number): OfflineReceipt {
     ventures: 0,
     interest: 0,
   }
-  if (capped <= 0) {
-    s.offlineReceipt = receipt
+  if (capped <= 0 || s.paused) {
+    if (opts?.showReceipt !== false) s.offlineReceipt = receipt
     return receipt
   }
 
@@ -206,7 +225,7 @@ export function applyOffline(s: GameState, elapsedSec: number): OfflineReceipt {
   s.stats.offlineSec += capped
   s.paused = wasPaused
   s.speed = wasSpeed
-  s.offlineReceipt = receipt
+  if (opts?.showReceipt !== false) s.offlineReceipt = receipt
   repair(s)
   return receipt
 }

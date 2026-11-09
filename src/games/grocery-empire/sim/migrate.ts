@@ -217,6 +217,8 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           attention: Math.max(0, num(c.attention, 0)),
           ideasUnlocked: bool(c.ideasUnlocked, false),
           ideasOn: bool(c.ideasOn, true),
+          autoTourney: bool(c.autoTourney, true),
+          nextAutoTourneyAt: Math.max(0, num(c.nextAutoTourneyAt, 0)),
           ideas: Math.max(0, num(c.ideas, 0)),
           reputation: Math.max(0, Math.floor(num(c.reputation, 2))),
           repEarned: Math.max(0, Math.floor(num(c.repEarned, 2))),
@@ -453,6 +455,8 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         base.tutorials.queue = Array.isArray(raw.tutorials.queue) ? (raw.tutorials.queue as string[]) : []
         base.tutorials.active = (raw.tutorials.active as GameState['tutorials']['active']) ?? null
       }
+      base.menuStamp = Math.max(0, Math.floor(num(raw.menuStamp, 0)))
+      base.lastMenu = typeof raw.lastMenu === 'string' && raw.lastMenu ? raw.lastMenu : 'floor'
       if (Array.isArray(raw.chapterQueue)) base.chapterQueue = raw.chapterQueue as number[]
 
       if (Array.isArray(raw.ledger)) base.ledger = raw.ledger as GameState['ledger']
@@ -527,6 +531,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         base.rates.demandPerSec = num(raw.rates.demandPerSec, 0)
         base.rates.venturePerSec = num(raw.rates.venturePerSec, 0)
         base.rates.investYieldPerSec = num(raw.rates.investYieldPerSec, 0)
+        base.rates.cashPerSec = num(raw.rates.cashPerSec, 0)
       }
       if (isObject(raw.history)) {
         base.history.cash = Array.isArray(raw.history.cash) ? (raw.history.cash as number[]) : []
@@ -548,6 +553,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         base.acc.costWindow = num(raw.acc.costWindow, 0)
         base.acc.soldWindow = num(raw.acc.soldWindow, 0)
         base.acc.spoilWindow = num(raw.acc.spoilWindow, 0)
+        base.acc.cashWindow = num(raw.acc.cashWindow, 0)
         base.acc.lastSpoilLogAt = num(raw.acc.lastSpoilLogAt, -1e9)
         base.acc.lastShrinkLogAt = num(raw.acc.lastShrinkLogAt, -1e9)
         base.acc.lastPoetryAt = num(raw.acc.lastPoetryAt, -1e9)
@@ -561,6 +567,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         ra.curRev = num(raw.rateAvg.curRev, 0)
         ra.curCost = num(raw.rateAvg.curCost, 0)
         ra.curSpoil = num(raw.rateAvg.curSpoil, 0)
+        ra.curCash = num(raw.rateAvg.curCash, 0)
         ra.sold = Array.isArray(raw.rateAvg.sold)
           ? (raw.rateAvg.sold as unknown[]).map((v) => num(v, 0)).filter((v) => v >= 0)
           : []
@@ -572,6 +579,9 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           : []
         ra.spoil = Array.isArray(raw.rateAvg.spoil)
           ? (raw.rateAvg.spoil as unknown[]).map((v) => num(v, 0)).filter((v) => v >= 0)
+          : []
+        ra.cash = Array.isArray(raw.rateAvg.cash)
+          ? (raw.rateAvg.cash as unknown[]).map((v) => num(v, 0))
           : []
         base.rateAvg = ra
       } else {

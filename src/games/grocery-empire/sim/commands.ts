@@ -179,7 +179,8 @@ export type Command =
   | { type: 'toggleFavoriteMemo'; id: string }
   | { type: 'dismissOfflineReceipt' }
   | { type: 'skipTutorial' }
-  | { type: 'completeTutorialStep' }
+  | { type: 'completeTutorialStep'; id?: string; step?: number }
+  | { type: 'noteMenu'; id: string }
   | { type: 'doTutorialForMe' }
   | { type: 'setPaused'; paused?: boolean }
   | { type: 'setSpeed'; speed: number }
@@ -189,6 +190,7 @@ export type Command =
   | { type: 'spendRep'; on: 'analyst' | 'archive' }
   | { type: 'rebalanceOffice'; toward: 'archive' | 'analyst' }
   | { type: 'toggleIdeas' }
+  | { type: 'setAutoTourney'; on: boolean }
   | { type: 'pulseScanner' }
   | { type: 'startTutorial'; id: string }
   | { type: 'redeemLoyalty' }
@@ -1236,8 +1238,24 @@ const coreHandlers = {
   },
   completeTutorialStep: {
     can: (s) => (s.tutorials.active ? ok : no('No active tutorial.')),
-    run: (s) => {
+    run: (s, cmd) => {
+      const t = s.tutorials.active
+      if (!t) return
+      const c = cmd as Extract<Command, { type: 'completeTutorialStep' }>
+      // Stale overlay (Strict Mode double-effect, or a tick that already advanced)
+      // must not skip the next step.
+      if (c.id != null && c.id !== t.id) return
+      if (c.step != null && c.step !== t.step) return
       advanceTutorialStep(s)
+    },
+  },
+  noteMenu: {
+    can: () => ok,
+    run: (s, cmd) => {
+      const id = (cmd as Extract<Command, { type: 'noteMenu' }>).id
+      if (!isMenuId(id)) return
+      s.lastMenu = id
+      s.menuStamp = (s.menuStamp ?? 0) + 1
     },
   },
   doTutorialForMe: {
@@ -1315,6 +1333,12 @@ const coreHandlers = {
   toggleIdeas: {
     can: (s) => (s.compute.ideasUnlocked ? ok : no('Ideas not unlocked.')),
     run: (s) => toggleIdeas(s),
+  },
+  setAutoTourney: {
+    can: (s) => ((s.upgrades['tourney-while-full'] ?? 0) >= 1 ? ok : no('Buy Tourney While Full first.')),
+    run: (s, cmd) => {
+      s.compute.autoTourney = (cmd as Extract<Command, { type: 'setAutoTourney' }>).on
+    },
   },
   pulseScanner: {
     can: (s) => {
@@ -1437,10 +1461,19 @@ export function tickAutoRestock(s: GameState) {
   }
 }
 
-/** Tourney While Full: spend a full Attention bar on a tournament instead of wasting the ceiling. */
+/** Sim seconds between automatic tournaments. The bar has to sit full long enough for Ideas. */
+const AUTO_TOURNEY_GAP = 45
+
+/**
+ * Tourney While Full spends 120 Attention when the bar is full.
+ * It waits while Ideas are on — Ideas only mint at the cap — and never fires every tick.
+ */
 export function tickAutoTournament(s: GameState) {
   if (up(s, 'tourney-while-full') < 1) return
+  if (s.compute.autoTourney === false) return
   if (s.era < 2 || !s.compute.unlocked) return
+  if (s.compute.ideasUnlocked && s.compute.ideasOn) return
+  if (s.time < (s.compute.nextAutoTourneyAt ?? 0)) return
   const cap = attentionCap(s)
   if (cap <= 0 || s.compute.attention < cap * 0.98) return
   // Never eat Attention that a memo on the desk is waiting for.
@@ -1456,5 +1489,7 @@ export function tickAutoTournament(s: GameState) {
     }
   }
   const cmd: Command = { type: 'runTournament' }
-  if (can(s, cmd).ok) run(s, cmd)
+  if (!can(s, cmd).ok) return
+  run(s, cmd)
+  s.compute.nextAutoTourneyAt = s.time + AUTO_TOURNEY_GAP
 }

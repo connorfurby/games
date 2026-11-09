@@ -16,6 +16,7 @@ import { engine } from '../../sim/engine'
 import { COMPUTE } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { attentionCap, attentionPerSec } from '../../sim/formulas'
+import { chainAttentionDrainPerSec } from '../../sim/systems/chain'
 import { SPINE_MEMOS } from '../../sim/suggestions'
 import { officeRebalanceCost } from '../../sim/systems/office'
 import { useGame, useIsSuggested } from '../GameContext'
@@ -38,6 +39,7 @@ function costLabel(def: MemoDef, s: Parameters<MemoDef['cost']>[0], fmt: NumberF
   if (c.cash) parts.push(money(c.cash, fmt))
   if (c.attention) parts.push(`${qty(c.attention)} Att`)
   if (c.ideas) parts.push(`${qty(c.ideas)} Ide`)
+  if (parts.length === 0 && def.effect) return `Free · ${def.effect}`
   return parts.join(' · ') || 'Free'
 }
 
@@ -94,6 +96,26 @@ const MEMO_INDEX = new Map(MEMOS.map((m, i) => [m.id, i]))
 type GS = Parameters<MemoDef['cost']>[0]
 
 const owned = (s: GS, id: string) => (s.memos[id] ?? 0) > 0
+
+function attentionNote(s: GS): string {
+  const gen = attentionPerSec(s)
+  const drain = chainAttentionDrainPerSec(s)
+  const net = gen - drain
+  const parts = [
+    `${net >= 0 ? '+' : ''}${net.toFixed(2)}/s net`,
+    `analysts +${gen.toFixed(1)}/s`,
+  ]
+  if (drain > 0) parts.push(`stores −${drain.toFixed(2)}/s`)
+  if (s.compute.ideasUnlocked) {
+    parts.push(s.compute.ideasOn ? 'full bar mints Ideas' : 'Ideas paused')
+  }
+  if ((s.upgrades['tourney-while-full'] ?? 0) >= 1) {
+    if (s.compute.autoTourney === false) parts.push('auto-tournament off')
+    else if (s.compute.ideasUnlocked && s.compute.ideasOn) parts.push('auto-tournament waiting')
+    else parts.push('auto-tournament every 45s while full')
+  }
+  return parts.join(' · ')
+}
 
 /**
  * Archives-first advice: another Analyst only fills Attention faster, so it overflows when
@@ -553,6 +575,7 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
                 max={Math.max(1, attentionCap(s))}
                 label={`Att ${qty(s.compute.attention)} / ${qty(attentionCap(s))}`}
               />
+              <p className="ge-office__rep">{attentionNote(s)}</p>
             </div>
 
             <div className="ge-office__stats">
@@ -632,7 +655,11 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
               {s.compute.ideasUnlocked ? (
                 <Btn
                   tone="ghost"
-                  title={s.compute.ideasOn ? 'Ideas mint while Attention is full' : 'Ideas paused'}
+                  title={
+                    s.compute.ideasOn
+                      ? 'Ideas mint while Attention is full. Auto-tournament waits.'
+                      : 'Ideas paused. Tourney While Full can spend the bar.'
+                  }
                   onClick={() => dispatch({ type: 'toggleIdeas' })}
                 >
                   Ideas {s.compute.ideasOn ? 'on' : 'off'}
@@ -857,9 +884,9 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
 
       {s.compute?.unlocked ? (
         <HelpCard title="Attention & Ideas">
-          Analysts make Attention; Archives set the cap. Memos spend Attention, so raise the cap
-          (Archives) before hiring more Analysts. When Attention is full, Analysts spill into Ideas,
-          which pay for the heavier memos. Spend Reputation on an Archive first, an Analyst second.
+          Analysts make Attention; Archives set the cap. Stores spend some of it, but not enough to
+          stop the bar filling. Ideas mint only while the bar is full, so Tourney While Full waits
+          until you turn Ideas off. Spend Reputation on an Archive first, an Analyst second.
         </HelpCard>
       ) : (
         <HelpCard title="Memos">

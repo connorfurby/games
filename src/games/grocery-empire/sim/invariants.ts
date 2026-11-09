@@ -75,6 +75,9 @@ export function repair(s: GameState): GameState {
   s.compute.fibA = Math.max(1, Math.floor(finite(s.compute.fibA, 2)))
   s.compute.fibB = Math.max(1, Math.floor(finite(s.compute.fibB, 3)))
   s.compute.officeMoves = Math.max(0, Math.floor(finite(s.compute.officeMoves)))
+  s.compute.ideasOn = s.compute.ideasOn !== false
+  s.compute.autoTourney = s.compute.autoTourney !== false
+  s.compute.nextAutoTourneyAt = Math.max(0, finite(s.compute.nextAutoTourneyAt))
   s.compute.scanner = Boolean(s.compute.scanner)
   s.compute.scannerReadyAt = Math.max(0, finite(s.compute.scannerReadyAt))
   // Soft clamp Attention after Archive moves / load repair
@@ -134,6 +137,10 @@ export function repair(s: GameState): GameState {
   s.rates.demandPerSec = Math.max(0, finite(s.rates.demandPerSec))
   s.rates.venturePerSec = Math.max(0, finite(s.rates.venturePerSec))
   s.rates.investYieldPerSec = Math.max(0, finite(s.rates.investYieldPerSec))
+  s.rates.cashPerSec = finite(s.rates.cashPerSec)
+  s.menuStamp = Math.max(0, Math.floor(finite(s.menuStamp)))
+  if (typeof s.lastMenu !== 'string' || !s.lastMenu) s.lastMenu = 'floor'
+  s.acc.cashWindow = finite(s.acc.cashWindow)
 
   if (!s.rateAvg || typeof s.rateAvg !== 'object') {
     s.rateAvg = {
@@ -142,10 +149,12 @@ export function repair(s: GameState): GameState {
       curRev: 0,
       curCost: 0,
       curSpoil: 0,
+      curCash: 0,
       sold: [],
       rev: [],
       cost: [],
       spoil: [],
+      cash: [],
     }
   } else {
     s.rateAvg.t = Math.max(0, finite(s.rateAvg.t))
@@ -153,10 +162,12 @@ export function repair(s: GameState): GameState {
     s.rateAvg.curRev = Math.max(0, finite(s.rateAvg.curRev))
     s.rateAvg.curCost = Math.max(0, finite(s.rateAvg.curCost))
     s.rateAvg.curSpoil = Math.max(0, finite(s.rateAvg.curSpoil))
+    s.rateAvg.curCash = finite(s.rateAvg.curCash)
     if (!Array.isArray(s.rateAvg.sold)) s.rateAvg.sold = []
     if (!Array.isArray(s.rateAvg.rev)) s.rateAvg.rev = []
     if (!Array.isArray(s.rateAvg.cost)) s.rateAvg.cost = []
     if (!Array.isArray(s.rateAvg.spoil)) s.rateAvg.spoil = []
+    if (!Array.isArray(s.rateAvg.cash)) s.rateAvg.cash = []
   }
 
   if (!Array.isArray(s.stores)) s.stores = []

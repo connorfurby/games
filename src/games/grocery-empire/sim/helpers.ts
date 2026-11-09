@@ -82,6 +82,7 @@ export function captureTutorialBaseline(s: GameState): Record<string, number> {
     dumps: s.stats.dumps,
     cash: s.cash,
     baskets: s.baskets,
+    menuStamp: s.menuStamp ?? 0,
   }
 }
 
@@ -100,6 +101,9 @@ export function isTutorialStepDone(
   baseline: Record<string, number>,
 ): boolean {
   const dw = step.doneWhen
+  // Flag / memo already true when the step opened: explain it, wait for Next.
+  // Auto-completing here made tours flash and vanish the moment they queued.
+  if ((baseline.ack ?? 0) === 1 && (dw.kind === 'flag' || dw.kind === 'memo')) return false
   switch (dw.kind) {
     case 'always':
       return false
@@ -116,8 +120,11 @@ export function isTutorialStepDone(
       const base = baseline[key] ?? 0
       return cur >= base + min
     }
-    case 'menu':
-      return !!(dw.key && s.menus[dw.key as MenuId])
+    case 'menu': {
+      // Unlock is not a visit. The player has to open the tab after the step starts.
+      const key = dw.key ?? ''
+      return (s.menuStamp ?? 0) > (baseline.menuStamp ?? 0) && s.lastMenu === key
+    }
     case 'memo':
       return !!(dw.key && s.memos[dw.key])
     case 'flag': {
@@ -132,12 +139,32 @@ export function isTutorialStepDone(
   }
 }
 
+function conditionAlreadyTrue(s: GameState, step: TutorialStep): boolean {
+  const dw = step.doneWhen
+  if (dw.kind === 'memo') return !!(dw.key && s.memos[dw.key])
+  if (dw.kind === 'flag') {
+    if (!dw.key) return false
+    const v = readPath(s, dw.key)
+    if (typeof v === 'boolean') return v
+    if (typeof v === 'number') return v > 0
+    return !!v
+  }
+  return false
+}
+
+function armBaseline(s: GameState, id: string, stepIndex: number): Record<string, number> {
+  const baseline = captureTutorialBaseline(s)
+  const step = TUTORIAL_BY_ID[id]?.steps[stepIndex]
+  if (step && conditionAlreadyTrue(s, step)) baseline.ack = 1
+  return baseline
+}
+
 export function beginTutorial(s: GameState, id: string) {
   if (!TUTORIAL_BY_ID[id]) return
   s.tutorials.active = {
     id,
     step: 0,
-    baseline: captureTutorialBaseline(s),
+    baseline: armBaseline(s, id, 0),
     startedAt: s.time,
   }
 }
@@ -154,7 +181,7 @@ export function advanceTutorialStep(s: GameState) {
     return
   }
   t.step = next
-  t.baseline = captureTutorialBaseline(s)
+  t.baseline = armBaseline(s, t.id, next)
   t.startedAt = s.time
 }
 

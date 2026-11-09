@@ -71,6 +71,34 @@ export function StrategyPanel() {
         </Btn>
       </div>
 
+      {(s.upgrades['tourney-while-full'] ?? 0) >= 1 ? (
+        <div className="ge-dept-callout">
+          <div className="ge-dept-callout__copy">
+            <h3>Tourney While Full</h3>
+            <p>
+              {s.compute.autoTourney === false
+                ? 'Paused. The bar is yours.'
+                : s.compute.ideasUnlocked && s.compute.ideasOn
+                  ? 'Waiting. Ideas are on, so the full bar mints Ideas instead of being spent every tick.'
+                  : 'On. Spends 120 Attention about every 45 seconds while the bar is full.'}
+            </p>
+          </div>
+          <div className="ge-chip-row">
+            <Btn
+              tone="ghost"
+              onClick={() => dispatch({ type: 'setAutoTourney', on: s.compute.autoTourney === false })}
+            >
+              {s.compute.autoTourney === false ? 'Resume auto-tournament' : 'Pause auto-tournament'}
+            </Btn>
+            {s.compute.ideasUnlocked ? (
+              <Btn tone="ghost" onClick={() => dispatch({ type: 'toggleIdeas' })}>
+                Ideas {s.compute.ideasOn ? 'on' : 'off'}
+              </Btn>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       <section className="ge-empire-block">
         <header className="ge-empire-block__head">
           <h3>Doctrines</h3>

@@ -1,3 +1,4 @@
+import { POLITICS } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { acquireCost } from '../../sim/systems/politics'
 import { useGame } from '../GameContext'
@@ -15,6 +16,9 @@ export function PoliticsPanel() {
   const acq = acquireCost(s)
   const heat = p.monopolyRisk > 0.55
   const lobbyCheck = can(s, { type: 'hireLobby' })
+  const leak = p.capital > 0 ? POLITICS.leakPerSec : 0
+  const lobbyGain = POLITICS.lobbyGainPerSec * p.lobby
+  const capitalNet = lobbyGain - leak
   const acquireCheck = can(s, { type: 'acquireRegion' })
   const leaveCheck = can(s, { type: 'leaveRegion' })
 
@@ -51,18 +55,22 @@ export function PoliticsPanel() {
       <div className="ge-dept-split">
         <article className="ge-card">
           <header className="ge-empire-block__head">
-            <h3>Lobby</h3>
-            <p>Lobbyists mint political capital for cover and neighbors.</p>
+            <h3>Lobby · {p.lobby}</h3>
+            <p>
+              {p.lobby === 0
+                ? `No retainers. Capital leaks ${POLITICS.leakPerSec}/s while you hold any.`
+                : `${capitalNet >= 0 ? '+' : ''}${capitalNet.toFixed(3)} PC/s · leak ${POLITICS.leakPerSec}/s, each lobbyist +${POLITICS.lobbyGainPerSec}/s.`}
+            </p>
           </header>
           <Btn
             tone="primary"
             coachId="politics-lobby"
             disabled={!lobbyCheck.ok}
-            title={!lobbyCheck.ok ? lobbyCheck.reason : undefined}
+            title={!lobbyCheck.ok ? lobbyCheck.reason : `+${POLITICS.lobbyCapitalGain} PC now, then +${POLITICS.lobbyGainPerSec}/s`}
             onClick={() => dispatch({ type: 'hireLobby' })}
           >
             <Icon name="lobby" size={14} />
-            Hire lobbyist
+            Hire lobbyist · {money(POLITICS.lobbyCost, numberFormat)}
           </Btn>
         </article>
 

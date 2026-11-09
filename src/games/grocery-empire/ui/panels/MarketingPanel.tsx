@@ -138,7 +138,11 @@ export function MarketingPanel() {
             {RIVAL_COPY[rivalKind].verb} · {money(rivalCost, numberFormat)}
           </Btn>
         </div>
-      ) : null}
+      ) : (
+        <p className="ge-muted" data-coach-id="marketing-rival">
+          No rival on the sidewalk right now. They show up once the block notices your ads.
+        </p>
+      )}
 
       <div className="ge-dept-split">
         <article className="ge-card">

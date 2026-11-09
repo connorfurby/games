@@ -45,7 +45,7 @@ export function TopBar({
   onJumpMenu?: (id: MenuId) => void
 }) {
   const undoGate = canUndo()
-  const net = state.rates.revenuePerSec - state.rates.costPerSec
+  const net = state.rates.cashPerSec ?? state.rates.revenuePerSec - state.rates.costPerSec
   const eraTitle = ERA_STORY[state.era]?.title ?? `Era ${state.era}`
   const eraTip = ERA_STORY[state.era]?.epigraph ?? eraTitle
 
@@ -206,9 +206,9 @@ export function TopBar({
         </div>
         <div
           className={`ge-top__pace-item${net < 0 ? ' is-neg' : ' is-pos'}`}
-          title="Smoothed revenue − burn (rent, wages, upkeep)"
+          title="Smoothed cash change per second — sales, side income, rent, wages, and debt"
         >
-          <span>Net</span>
+          <span>Cash</span>
           <strong>{rate(net)}</strong>
         </div>
       </div>

@@ -142,7 +142,7 @@ function BuildTrackCard({
           <div className="ge-card__actions">
             <Btn
               tone={canBuy ? 'primary' : 'ghost'}
-              coachId={track.id === 'storefront' ? 'menu-build' : sid}
+              coachId={track.id === 'storefront' ? 'build-storefront' : sid}
               disabled={!canBuy}
               title={!canBuy && next ? `Need ${money(next.cost, numberFormat)}` : undefined}
               onClick={onBuy}

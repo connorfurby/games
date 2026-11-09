@@ -12,7 +12,7 @@ export const AUTOMATION_UPGRADES: UpgradeDef[] = [
   { id: 'war-matcher', tree: 'automation', name: 'War Matcher', per: 'Matches rival coupons automatically', blurb: 'The kid at the register answers the rival circular for you.', max: 1, base: 700, growth: 1, band: 0, col: 2, row: 1, visible: (s) => s.era >= 2 && s.ads >= 2 },
   { id: 'night-sweep', tree: 'automation', name: 'Night Sweep', per: '+25% inspection meter decay on night hours', blurb: 'The floor is clean before the sun is up.', max: 4, base: 260, growth: 2.0, band: 0, col: 3, row: 1, visible: (s) => !!s.memos['night-latch'] },
   { id: 'even-att', tree: 'automation', name: 'Even Attention', per: 'No store drops below half its fair Attention', blurb: 'The spreadsheet nudges before the drift sets in.', max: 1, base: 1500, growth: 1, band: 0, col: 4, row: 1, visible: (s) => s.era >= 2 && s.stores.length >= 2 },
-  { id: 'tourney-while-full', tree: 'automation', name: 'Tourney While Full', per: 'Runs a tournament when Attention is full', blurb: 'No more wasted ceiling; the analysts always have homework.', max: 1, base: 2000, growth: 1, band: 0, col: 0, row: 2, visible: (s) => s.era >= 2 && s.stats.tournamentsRun > 0 },
+  { id: 'tourney-while-full', tree: 'automation', name: 'Tourney While Full', per: 'A tournament every 45s while the bar is full and Ideas are off', blurb: 'Ideas keep the full bar. Turn Ideas off and the ceiling becomes homework, once every 45 seconds.', max: 1, base: 2000, growth: 1, band: 0, col: 0, row: 2, visible: (s) => s.era >= 2 && s.stats.tournamentsRun > 0 },
 
   {
     id: 'clipboard-habit',

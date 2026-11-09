@@ -40,7 +40,10 @@ export function ColdPanel() {
         </>
       }
     >
-      <div className={`ge-dept-callout${c.browned ? ' is-ready' : ''}`.trim()}>
+      <div
+        className={`ge-dept-callout${c.browned ? ' is-ready' : ''}`.trim()}
+        data-coach-id="cold-momentum"
+      >
         <div className="ge-dept-callout__copy">
           <h3>{c.browned ? 'Brownout' : c.momentumOn ? `Momentum ×${c.momentum.toFixed(2)}` : 'Cold line'}</h3>
           <p>

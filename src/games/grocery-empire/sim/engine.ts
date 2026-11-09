@@ -49,9 +49,11 @@ export class GroceryEngine {
     const state = raw == null ? createInitialState() : migrate(raw)
     if (raw && typeof (raw as { lastSavedAt?: unknown }).lastSavedAt === 'number') {
       const elapsed = (Date.now() - (raw as { lastSavedAt: number }).lastSavedAt) / 1000
-      if (elapsed > 2) {
+      // Paused stays paused across a reload. Short refreshes catch up quietly;
+      // the away-receipt only appears once the gap is long enough to matter.
+      if (elapsed > 2 && !state.paused) {
         try {
-          applyOffline(state, elapsed)
+          applyOffline(state, elapsed, { showReceipt: elapsed >= 20 })
         } catch (e) {
           console.error('offline catch-up failed', e)
         }
@@ -106,8 +108,10 @@ export class GroceryEngine {
     if (this.hiddenAt != null) {
       const elapsed = (Date.now() - this.hiddenAt) / 1000
       this.hiddenAt = null
-      if (elapsed >= 1) {
-        applyOffline(this.state, elapsed)
+      // Live ticks are frozen while hidden, so this catch-up is the only
+      // progress. A short tab switch must not also pop the away receipt.
+      if (elapsed >= 0.25 && !this.state.paused) {
+        applyOffline(this.state, elapsed, { showReceipt: elapsed >= 20 })
         this.bump()
         this.save()
       }
@@ -116,6 +120,9 @@ export class GroceryEngine {
 
   private pulse() {
     if (!this.running) return
+    // Background tabs throttle timers. Skip live ticks and catch up once on return
+    // so cash, sales, and tours are not applied twice.
+    if (typeof document !== 'undefined' && document.hidden) return
     const dt = DT * Math.max(0, this.state.speed) * this.softPauseMul
     if (!this.state.paused && dt > 0) {
       applyTick(this.state, dt)

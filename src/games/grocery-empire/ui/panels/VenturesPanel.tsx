@@ -58,6 +58,7 @@ export function VenturesPanel() {
   })
 
   const listed = rows.filter((r) => r.available || (r.vs && r.vs.level > 0))
+  const locked = rows.filter((r) => !r.available && !(r.vs && r.vs.level > 0))
   // Tills the store has outgrown (under 0.5% of income) collect themselves and fold into one row.
   const floor = ventureOutgrownBelow(s)
   // Only an opened till can be "small change". An unopened one stays a card so you can still buy it.
@@ -82,7 +83,7 @@ export function VenturesPanel() {
   return (
     <Panel
       title="Ventures"
-      purpose="Side tills — collect when the jar fills."
+      purpose="Open a side till, then Upgrade it on the card."
       lore="ventures"
     >
       {claimable.length > 0 ? (
@@ -117,7 +118,18 @@ export function VenturesPanel() {
         </p>
       ) : null}
 
-      {open.length === 0 && small.length === 0 ? <p className="ge-empty">No ventures open. Watch the memos.</p> : null}
+      {open.some((r) => (r.vs?.level ?? 0) > 0) ? (
+        <p className="ge-muted" style={{ margin: '0 0 0.65rem', fontSize: '0.78rem' }}>
+          Upgrade is the button on each open card. It spends cash and raises that till.
+        </p>
+      ) : null}
+
+      {open.length === 0 && small.length === 0 ? (
+        <p className="ge-empty">
+          No venture is open yet. Cards below list what unlocks each one. After you open one, Upgrade
+          is on that card.
+        </p>
+      ) : null}
 
       {small.length > 0 ? (
         <div className="vt-small" title="These tills earn under 0.5% of your income now. They collect themselves.">
@@ -268,7 +280,7 @@ export function VenturesPanel() {
                       }
                       onClick={() => dispatch({ type: 'levelVenture', id: def.id })}
                     >
-                      {atMax ? 'Max' : `Lv · ${money(nextCost, numberFormat)}`}
+                      {atMax ? 'Maxed' : `Upgrade · ${money(nextCost, numberFormat)}`}
                     </Btn>
                     {!atMax ? (
                       <>
@@ -314,14 +326,43 @@ export function VenturesPanel() {
                   Open · {money(def.openCost, numberFormat)}
                 </Btn>
               )}
+              {!opened ? (
+                <p className="ge-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.7rem' }}>
+                  After it opens, Upgrade on this card raises the till.
+                </p>
+              ) : null}
             </article>
           )
         })}
       </div>
 
+      {locked.length > 0 ? (
+        <section className="ge-empire-block">
+          <header className="ge-empire-block__head">
+            <h3>Not open yet</h3>
+            <p>These stay listed so the unlock is visible. Opening one puts Upgrade on the card.</p>
+          </header>
+          <div className="ge-card-grid">
+            {locked.map(({ def }) => (
+              <article key={def.id} className="ge-card">
+                <div className="ge-card__head">
+                  <div>
+                    <strong>{def.name}</strong>
+                    <p className="ge-muted">{def.blurb}</p>
+                  </div>
+                </div>
+                <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>
+                  Opens at {def.opensAt}.
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <HelpCard title="Side hustles">
-        A venture is a paycheck and a little foot traffic to the aisle. It does not stamp memos or
-        earn Reputation. Collect before the till caps — overflow stops stacking.
+        Open a venture, then press Upgrade on its card. Each level raises that till. Collect before
+        the jar caps — overflow stops stacking. A venture does not stamp memos or earn Reputation.
       </HelpCard>
     </Panel>
   )

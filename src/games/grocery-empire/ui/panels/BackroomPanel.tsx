@@ -100,7 +100,11 @@ export function BackroomPanel() {
               const n = sumQty(s.backroom, c)
               const def = CATEGORIES[c]
               return (
-                <li key={c} className={n > 0 ? 'is-on' : ''}>
+                <li
+                  key={c}
+                  className={n > 0 ? 'is-on' : ''}
+                  data-coach-id={c === 'dairy' ? 'backroom-dairy' : undefined}
+                >
                   <strong>{def.short}</strong>
                   <span>{def.name}</span>
                   <em>{qty(n)}</em>

@@ -8,7 +8,7 @@ import { Btn } from './Btn'
 import { SpeakerChrome } from './SpeakerChrome'
 
 export function CoachOverlay({ active }: { active: TutorialRun }) {
-  const { state, dispatch, setActiveMenu, activeMenu, reducedMotion } = useGame()
+  const { state, dispatch, setActiveMenu, activeMenu, reducedMotion, tick } = useGame()
   const tut = TUTORIAL_BY_ID[active.id]
   const step = tut?.steps[active.step]
   const [rect, setRect] = useState<DOMRect | null>(null)
@@ -38,7 +38,7 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
       if (!(el instanceof HTMLElement)) {
         setRect(null)
         setMissingTarget(true)
-        if (tries < 8) {
+        if (tries < 20) {
           tries += 1
           window.setTimeout(measure, 50)
         } else if (import.meta.env.DEV) {
@@ -61,28 +61,20 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
     }
-  }, [step?.coachId, active.step, active.id, reducedMotion, activeMenu])
+  }, [step?.coachId, active.step, active.id, reducedMotion, activeMenu, tick])
 
-  // Guided action: advance when doneWhen is satisfied vs baselines (or menu opened in UI).
+  // Advance as soon as the step's condition is true. Depend on `tick` — GameState
+  // is mutated in place, so `state` alone never changes identity and the tour
+  // used to wait up to a full sim-second (longer while soft-paused).
   useEffect(() => {
     if (!step) return
     if (step.doneWhen.kind === 'always') return
-
-    // Menu steps: require the player (or Do-it-for-me) to open the tab — not mere unlock.
-    if (step.doneWhen.kind === 'menu') {
-      if (step.doneWhen.key && activeMenu === step.doneWhen.key) {
-        dispatch({ type: 'completeTutorialStep' })
-      }
-      return
-    }
-
-    if (isTutorialStepDone(state, step, active.baseline)) {
-      dispatch({ type: 'completeTutorialStep' })
-    }
-  }, [state, step, active.baseline, active.step, active.id, activeMenu, dispatch])
+    if (!isTutorialStepDone(state, step, active.baseline)) return
+    dispatch({ type: 'completeTutorialStep', id: active.id, step: active.step })
+  }, [tick, state, step, active.baseline, active.step, active.id, dispatch])
 
   const onSkip = () => dispatch({ type: 'skipTutorial' })
-  const onNext = () => dispatch({ type: 'completeTutorialStep' })
+  const onNext = () => dispatch({ type: 'completeTutorialStep', id: active.id, step: active.step })
   const onDoForMe = () => {
     const action = step?.action
     if (action?.type === 'openMenu' && typeof action.params?.menu === 'string') {

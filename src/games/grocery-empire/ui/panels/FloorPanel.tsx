@@ -156,7 +156,11 @@ export function FloorPanel() {
   const nextEta =
     orders.length > 0 ? Math.max(0, Math.min(...orders.map((o) => o.eta)) - s.time) : null
 
-  const burnPerSec = Math.max(s.rates.costPerSec, rent) - s.rates.revenuePerSec
+  const burnPerSec = (() => {
+    const tracked = s.rates.cashPerSec
+    if (Number.isFinite(tracked) && Math.abs(tracked) >= 0.01) return tracked < 0 ? -tracked : 0
+    return Math.max(0, Math.max(s.rates.costPerSec, rent) - s.rates.revenuePerSec)
+  })()
   const runwayMin = burnPerSec > 1e-6 && s.cash > 0 ? s.cash / burnPerSec / 60 : null
 
   const demandLow = demandPerSec(s, Math.max(PRICE.min, s.price - 0.1)) * varietyMul(s)
@@ -307,6 +311,10 @@ export function FloorPanel() {
             Inspector · {money(INSPECTION.inspectorCost, numberFormat)}
           </Btn>
         </div>
+      ) : s.era >= 1 ? (
+        <p className="ge-muted" data-coach-id="floor-inspection">
+          Inspection meter {Math.round(heat * 100)}%. Spoil and dirt fill it; prep memos drain it.
+        </p>
       ) : null}
 
       <div className={`fl-grid ge-floor--wx-${weather}`}>

@@ -442,7 +442,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
         if (h && ms.length) {
           e.preventDefault()
           const last = lastInHub.current[h.id]
-          setMenu(last && ms.includes(last) ? last : ms[0]!)
+          const pick = last && ms.includes(last) ? last : ms[0]!
+          setMenu(pick)
+          engine.dispatch({ type: 'noteMenu', id: pick })
         }
       }
     }
@@ -480,6 +482,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       }
       if (menuRef.current !== 'floor' && live.menus.floor) {
         setMenu('floor')
+        engine.dispatch({ type: 'noteMenu', id: 'floor' })
         return
       }
       if (!live.paused) {
@@ -562,7 +565,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const focusSuggestion = (s: Suggestion) => {
     if (s.channel === 'memos') setInboxOpen(true)
     const dest = channelToMenu(s.channel)
-    if (dest && state.menus[dest]) setMenu(dest)
+    if (dest && state.menus[dest]) {
+      setMenu(dest)
+      engine.dispatch({ type: 'noteMenu', id: dest })
+    }
     setFocusTarget(s.target ?? null)
     setFocusNonce((n) => n + 1)
     // Double rAF so tab panels can remount the target before we scroll.
@@ -616,7 +622,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     const ms = hubMenus(h)
     if (ms.length === 0) return
     const last = lastInHub.current[h]
-    setMenu(last && ms.includes(last) ? last : ms[0]!)
+    const pick = last && ms.includes(last) ? last : ms[0]!
+    setMenu(pick)
+    engine.dispatch({ type: 'noteMenu', id: pick })
   }
   if (hub) lastInHub.current[hub] = menu
 
@@ -654,7 +662,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
             numberFormat={numberFormat}
             dispatch={dispatch}
             onMenu={(id) => {
-              if (state.menus[id]) setMenu(id)
+              if (state.menus[id]) {
+                setMenu(id)
+                engine.dispatch({ type: 'noteMenu', id })
+              }
             }}
             inboxCount={inboxCount}
             inboxOpen={inboxOpen}
@@ -729,7 +740,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                           suggestChannels.has(id) ? ' is-suggest' : ''
                         }`}
                         data-coach-id={MENU_COACH[id]}
-                        onClick={() => setMenu(id)}
+                        onClick={() => {
+                          setMenu(id)
+                          engine.dispatch({ type: 'noteMenu', id })
+                        }}
                         title={MENUS[id].purpose}
                       >
                         <Icon name={id} size={15} />
@@ -863,7 +877,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 return null
               })()}
               onNudge={(id) => {
-                if (state.menus[id]) setMenu(id)
+                if (state.menus[id]) {
+                  setMenu(id)
+                  engine.dispatch({ type: 'noteMenu', id })
+                }
               }}
             />
           ) : null}

@@ -363,6 +363,10 @@ export interface GameState {
     attention: number
     ideasUnlocked: boolean
     ideasOn: boolean
+    /** Tourney While Full. False pauses it. Ideas still own the full bar while ideasOn. */
+    autoTourney: boolean
+    /** Sim-time before the next automatic tournament. */
+    nextAutoTourneyAt: number
     ideas: number
     reputation: number
     repEarned: number
@@ -437,6 +441,9 @@ export interface GameState {
 
   menus: Record<MenuId, boolean>
   seenMenus: Record<string, boolean>
+  /** Player-opened department. Coach auto-nav does not bump this. */
+  menuStamp: number
+  lastMenu: string
   tutorials: { done: Record<string, boolean>; queue: string[]; active: TutorialRun | null }
   chapterQueue: number[]
 
@@ -483,6 +490,8 @@ export interface GameState {
     venturePerSec: number
     /** Passbook + invest book interest rate on yielding balances. */
     investYieldPerSec: number
+    /** Smoothed till: actual cash change per sim second (sales, side income, bills, debt). */
+    cashPerSec: number
   }
   history: { cash: number[]; sold: number[]; revenue: number[]; timer: number; lastSold: number; lastRevenue: number }
   /**
@@ -495,10 +504,12 @@ export interface GameState {
     curRev: number
     curCost: number
     curSpoil: number
+    curCash: number
     sold: number[]
     rev: number[]
     cost: number[]
     spoil: number[]
+    cash: number[]
   }
   acc: {
     cat: Record<CategoryId, number>
@@ -510,6 +521,8 @@ export interface GameState {
     costWindow: number
     soldWindow: number
     spoilWindow: number
+    /** Net cash delta since the last rate bucket (can be negative). */
+    cashWindow: number
     lastSpoilLogAt: number
     lastShrinkLogAt: number
     /** Sim time of last receipt-poetry ledger line. */
@@ -724,6 +737,8 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       attention: 0,
       ideasUnlocked: false,
       ideasOn: true,
+      autoTourney: true,
+      nextAutoTourneyAt: 0,
       ideas: 0,
       reputation: 2,
       repEarned: 2,
@@ -794,6 +809,8 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
 
     menus,
     seenMenus: { floor: true, more: true },
+    menuStamp: 0,
+    lastMenu: 'floor',
     tutorials: { done: {}, queue: [], active: null },
     chapterQueue: [],
 
@@ -828,6 +845,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       demandPerSec: 0,
       venturePerSec: 0,
       investYieldPerSec: 0,
+      cashPerSec: 0,
     },
     history: { cash: [], sold: [], revenue: [], timer: 0, lastSold: 0, lastRevenue: 0 },
     rateAvg: emptyRateAvg(),
@@ -841,6 +859,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       costWindow: 0,
       soldWindow: 0,
       spoilWindow: 0,
+      cashWindow: 0,
       lastSpoilLogAt: -1e9,
       lastShrinkLogAt: -1e9,
       lastPoetryAt: -1e9,
@@ -860,10 +879,12 @@ export function emptyRateAvg(): GameState['rateAvg'] {
     curRev: 0,
     curCost: 0,
     curSpoil: 0,
+    curCash: 0,
     sold: [],
     rev: [],
     cost: [],
     spoil: [],
+    cash: [],
   }
 }
 

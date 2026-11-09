@@ -1,4 +1,4 @@
-import { CHAIN, CHECKOUT } from '../balance'
+import { CHAIN, CHECKOUT, COMPUTE } from '../balance'
 import { upgradeEffect } from '../../content/upgrades'
 import { clamp, log } from '../helpers'
 import type { GameState, StorePolicy, StoreState } from '../state'
@@ -72,9 +72,12 @@ export function chainAttentionDrainPerSec(s: GameState): number {
   if (allocated <= 0) return 0
   const metroMul = s.expansions['metro-slot'] ? CHAIN.metroAttDrainMul : 1
   const softcap = !s.depot && s.stores.length >= 5 ? 1.5 : 1
-  return (
+  const raw =
     CHAIN.attentionDrainPerSec * allocated * Math.min(1.5, 0.6 + s.stores.length * 0.15) * metroMul * softcap
-  )
+  // Stores slow the fill. They cannot outrun analysts, or Ideas never mint.
+  const gen = s.compute.analysts * COMPUTE.attentionPerAnalyst * (s.memos['ledger-tape'] ? 1.1 : 1)
+  if (gen <= 0) return raw
+  return Math.min(raw, gen * 0.85)
 }
 
 /** Weighted chain demand multiplier from store count, policies, attention, depot. */

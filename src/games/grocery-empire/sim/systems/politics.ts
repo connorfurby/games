@@ -89,8 +89,9 @@ export function tickPolitics(s: GameState, dt: number) {
   if (s.era < 3) return
   if (!(s.memos['lobby-office'] > 0) && s.politics.capital <= 0 && s.politics.lobby <= 0) return
 
+  // Leak stays flat. Lobbyists add capital; they do not make the wallet leak faster.
   if (s.politics.capital > 0) {
-    const leak = POLITICS.leakPerSec * (1 + s.politics.lobby * 0.1) * dt
+    const leak = POLITICS.leakPerSec * dt
     s.politics.capital = Math.max(0, round2(s.politics.capital - leak))
   }
   if (s.politics.lobby > 0) {
