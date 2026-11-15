@@ -10,9 +10,17 @@ import type { TreeId, UpgradeBand, UpgradeDef } from './types'
  * either trivially cheap or out of reach for the economy around it.
  */
 
-/** Cash a band-0 node costs at rank 0, by the era it unlocks in. */
-const ERA_BASE = [45, 450, 25_000, 2e6, 1e9, 1e11, 1e13] as const
-const BAND_MUL: Record<UpgradeBand, number> = { 0: 1, 1: 6, 2: 50, 3: 500 }
+/** Cash a band-0 node costs at rank 0, by the era it unlocks in. Eras 7–12 continue the ladder. */
+export const ERA_BASE = [45, 450, 25_000, 2e6, 1e9, 1e11, 1e13, 1e16, 1e18, 1e20, 1e22, 1e24, 1e26] as const
+export const BAND_MUL: Record<UpgradeBand, number> = { 0: 1, 1: 6, 2: 50, 3: 500 }
+
+/** Era ≥ 4 already scales by 0.6. Era ≥ 7 scales by an extra 0.75. */
+export function eraEffectScale(era: number): number {
+  let scale = PER_SCALE
+  if (era >= 4) scale *= 0.6
+  if (era >= 7) scale *= 0.75
+  return scale
+}
 const BAND_GROWTH: Record<UpgradeBand, number> = { 0: 1.55, 1: 1.45, 2: 1.38, 3: 1.3 }
 const BAND_MAX: Record<UpgradeBand, number> = { 0: 15, 1: 25, 2: 30, 3: 40 }
 /** Global tuning knob for every 2.0 node's per-rank effect. */
@@ -30,7 +38,7 @@ type Row = [
 
 function build(tree: TreeId, rows: Row[]): UpgradeDef[] {
   return rows.map(([id, name, blurb, fx, band, era, extra], i) => {
-    const scale = era >= 4 ? PER_SCALE * 0.6 : PER_SCALE
+    const scale = eraEffectScale(era)
     const effects: StatEffect[] = fx.map(([stat, per]) => ({ stat, per: Math.round(per * scale * 10000) / 10000 }))
     const { needs, ...rest } = extra ?? {}
     const def: UpgradeDef = {

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { nextGoal } from '../../content/goals'
 import { ERA_STORY } from '../../content/lore'
 import { TUTORIAL_BY_ID, TUTORIALS, type TutorialDef } from '../../content/tutorials'
 import { cheapestCrate, salesBottleneck } from '../../sim/formulas'
@@ -6,9 +7,7 @@ import { sumQty } from '../../sim/helpers'
 import type { GameState } from '../../sim/state'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
-import { Panel } from '../components/Panel'
+import { Button, ScreenHeader } from '../kit'
 
 type Filter = 'open' | 'done' | 'all'
 
@@ -27,8 +26,42 @@ interface DoctorPick {
   why: string
 }
 
+/** Map the current Next Goal verb onto a short stretch tour when one exists. */
+function stretchTourForGoal(s: GameState): DoctorPick | null {
+  const act = nextGoal(s)?.action?.(s)
+  if (!act) return null
+  const map: Record<string, DoctorPick> = {
+    serveRegular: { tourId: 'stretch-regulars', why: 'A regular is waiting — Serve them on Floor.' },
+    setFacing: { tourId: 'stretch-regulars', why: 'Feature a can facing so neighbors keep visiting.' },
+    assignShift: { tourId: 'stretch-shifts', why: 'Put someone on the Open shift.' },
+    hire: { tourId: 'stretch-shifts', why: 'Hire staff, then staff the Open shift.' },
+    payInvoice: { tourId: 'stretch-invoices', why: 'Settle wholesale invoices before they age.' },
+    fileStandardFlagship: {
+      tourId: 'stretch-planogram',
+      why: 'Practice and file the flagship planogram on Floor.',
+    },
+    fileFlagshipPlanogram: {
+      tourId: 'stretch-planogram',
+      why: 'Practice and file the flagship planogram on Floor.',
+    },
+    printFlyerWeek: { tourId: 'stretch-flyers', why: 'Print a flyer week on Marketing.' },
+    signCoolerLog: { tourId: 'stretch-cooler', why: 'Sign the cooler log on Cold.' },
+    setManifest: { tourId: 'stretch-dispatch', why: 'Lock a matching manifest on Dispatch.' },
+    dispatchHauler: { tourId: 'stretch-pockets', why: 'Send a Hauler on a Pocket Ops trip.' },
+    answerHearing: { tourId: 'stretch-hearing', why: 'Answer the Concord hearing on Charter.' },
+    toggleClause: { tourId: 'stretch-hearing', why: 'Keep the next charter clause, then clear hearings.' },
+  }
+  const pick = map[act.type]
+  if (!pick || !TUTORIAL_BY_ID[pick.tourId]) return null
+  if ((TUTORIAL_BY_ID[pick.tourId]?.era ?? 99) > s.era) return null
+  return pick
+}
+
 /** Read bottleneck + empty shelf + cash and pick the tour most likely to unstick the player. */
 function stuckDoctor(s: GameState): DoctorPick | null {
+  const stretch = stretchTourForGoal(s)
+  if (stretch) return stretch
+
   const b = salesBottleneck(s)
   const back = sumQty(s.backroom)
   const crate = cheapestCrate(s)
@@ -134,7 +167,8 @@ export function CoachPanel() {
   const doctorTour = doctor ? TUTORIAL_BY_ID[doctor.tourId] : null
 
   return (
-    <Panel title="Coach" purpose="Replay lessons by chapter." lore="coach">
+    <section className="ge-panel">
+      <ScreenHeader title="Coach" purpose="Replay lessons by chapter." />
       {active ? (
         <div className="ge-dept-callout">
           <div className="ge-dept-callout__copy">
@@ -145,9 +179,9 @@ export function CoachPanel() {
                 : `Step ${active.step + 1}`}
             </p>
           </div>
-          <Btn tone="ghost" onClick={() => dispatch({ type: 'skipTutorial' })}>
+          <Button tone="ghost" onClick={() => dispatch({ type: 'skipTutorial' })}>
             Skip tour
-          </Btn>
+          </Button>
         </div>
       ) : (
         <div className="ge-dept-callout">
@@ -166,12 +200,12 @@ export function CoachPanel() {
             <h3>Stuck? Ask the doctor</h3>
             <p>{doctor.why}</p>
           </div>
-          <Btn
+          <Button
             tone="primary"
             onClick={() => dispatch({ type: 'startTutorial', id: doctor.tourId })}
           >
             Start “{doctorTour.name}”
-          </Btn>
+          </Button>
         </div>
       ) : null}
 
@@ -226,13 +260,13 @@ export function CoachPanel() {
                         ['all', 'All'],
                       ] as const
                     ).map(([id, label]) => (
-                      <Btn
+                      <Button
                         key={id}
                         tone={filter === id ? 'primary' : 'ghost'}
                         onClick={() => setFilter(id)}
                       >
                         {label}
-                      </Btn>
+                      </Button>
                     ))}
                   </div>
                 </header>
@@ -268,12 +302,12 @@ export function CoachPanel() {
                             </div>
                           </div>
                           <div className="ge-up-node__buys">
-                            <Btn
+                            <Button
                               tone={isActive || !isDone ? 'primary' : 'ghost'}
                               onClick={() => dispatch({ type: 'startTutorial', id: t.id })}
                             >
                               {isActive ? 'Restart' : isDone ? 'Replay' : 'Start'}
-                            </Btn>
+                            </Button>
                           </div>
                         </li>
                       )
@@ -285,11 +319,6 @@ export function CoachPanel() {
           </div>
         </div>
       )}
-
-      <HelpCard title="Neighborhood tours">
-        Chapters match eras you’ve reached. Open shows unfinished scripts; Done is the filing cabinet.
-        Skip is always allowed mid-tour.
-      </HelpCard>
-    </Panel>
+    </section>
   )
 }

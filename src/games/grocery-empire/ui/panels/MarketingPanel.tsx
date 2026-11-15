@@ -1,15 +1,16 @@
-import { CELEBRITY_ENDCAP, MARKETING } from '../../sim/balance'
+import { useState } from 'react'
+import { CELEBRITY_ENDCAP, DEPTH, LATE } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { adMul, demandPerSec, salesBottleneck, varietyMul } from '../../sim/formulas'
+import { celebrityCashCost, postureFee } from '../../sim/lateCost'
 import { matchCouponCost, RIVAL_COPY, rivalAnswerCost } from '../../sim/systems/events'
-import type { MarketingPosture } from '../../sim/state'
+import { broadcastClimates, wireAdActive } from '../../sim/systems/late'
+import type { MarketingPosture, RivalKind } from '../../sim/state'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
-import { Panel } from '../components/Panel'
-import { MarketingBand } from '../scenes/DepartmentBands'
-import { DeptDiorama } from '../scenes/DeptDiorama'
+import { PlayFrame } from '../play'
+import { Badge, Button, Chip, SegmentedControl, Sheet } from '../kit'
+import { BillboardScene } from '../scenes/live/BillboardScene'
 
 const POSTURES: { id: MarketingPosture; label: string; blurb: string }[] = [
   { id: 'neighborhood', label: 'Neighborhood', blurb: 'Baseline ads — steady glances.' },
@@ -17,23 +18,63 @@ const POSTURES: { id: MarketingPosture; label: string; blurb: string }[] = [
   { id: 'houseBrand', label: 'House brand', blurb: '−8% shoppers · +16% ticket · private label pulls harder.' },
 ]
 
+const RIVAL_EFFECT: Record<RivalKind, string> = {
+  poach: 'Crew morale dips while the rival hands out flyers.',
+  undercut: 'Demand −6% while the chalk price stands.',
+  raid: 'Demand −4% while their display blocks your door-side endcap.',
+  smear: 'Demand −5% while the rumor travels.',
+}
+
 export function MarketingPanel() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
+  const [flyerSheet, setFlyerSheet] = useState(false)
   const war = s.events?.couponWar
-  const warLeft = war?.active ? Math.max(0, Math.ceil(war.endsAt - s.time)) : 0
   const matchCost = matchCouponCost(s)
   const celebUntil = s.campaigns?.celebrityUntil ?? 0
   const celebLeft = celebUntil > s.time ? Math.max(0, Math.ceil(celebUntil - s.time)) : 0
   const canAd = s.cash >= s.adCost
   const refundCheck = can(s, { type: 'refundAd' })
+  const fee = postureFee(s)
+  const climates = s.era >= 7 ? broadcastClimates(s) : []
+  const wireLeft = wireAdActive(s) ? Math.max(0, Math.ceil((s.late?.wireAdsUntil ?? 0) - s.time)) : 0
+  const [discountBand, setDiscountBand] = useState<'soft' | 'mid' | 'deep'>('soft')
+  const flyerCheck = can(s, {
+    type: 'printFlyerWeek',
+    aisles: ['cans', 'produce'],
+    discountBand,
+    promise: 'hours',
+  })
+  const printFlyer = () => {
+    const cats = (['cans', 'produce', 'dairy', 'household', 'bakery', 'deli'] as const).filter(
+      (c) => s.categories[c],
+    )
+    if (cats.length < 2) return
+    dispatch({
+      type: 'printFlyerWeek',
+      aisles: [cats[0]!, cats[1]!],
+      discountBand,
+      promise: 'hours',
+    })
+  }
+  const flyerWeeks = s.depth?.flyerWeeks ?? 0
+  const flyerLive = (s.depth?.flyer?.until ?? 0) > s.time
+  const flyerCopy = s.depth?.counterFlyerNeeded
+    ? 'Penny counter-flyer out — print a week to clear it.'
+    : flyerLive
+      ? `Live on ${s.depth?.flyer?.aisles.join(' + ')} · band ${s.depth?.flyer?.discount}${
+          s.depth?.flyer?.bandHeld === false ? ' · BROKEN' : ' · held'
+        } · ${Math.ceil((s.depth!.flyer!.until - s.time) / 60)}m left`
+      : (s.depth?.flyer?.cooldownUntil ?? 0) > s.time
+        ? `Cooldown ${Math.ceil((s.depth!.flyer!.cooldownUntil - s.time) / 60)}m · ${flyerWeeks} weeks held`
+        : `Print a week (2 aisles). Hold the band. ${flyerWeeks} / ${DEPTH.flyerWeeksNeed} toward the cold permit.`
+  const wireCheck = can(s, { type: 'wireAd' })
   const matchCheck = can(s, { type: 'matchCoupons' })
   const rivalKind = s.events?.rival?.kind ?? null
-  const rivalLeft = rivalKind ? Math.max(0, Math.ceil((s.events?.rival?.endsAt ?? 0) - s.time)) : 0
   const rivalCost = rivalAnswerCost(s)
   const rivalCheck = can(s, { type: 'answerRival' })
+  const curb = !!war?.active || !!rivalKind
   const bottleneck = salesBottleneck(s)
   const before = adMul(s)
-  // Hypothetical +1 ad: same multiplier stack as the sim, one level higher.
   const afterApprox = adMul({ ...s, ads: s.ads + 1 })
   const demandNow = demandPerSec(s) * varietyMul(s)
   const gainFrac = before > 0 ? afterApprox / before - 1 : 0.08
@@ -41,226 +82,254 @@ export function MarketingPanel() {
   const showCelebBuy = celebLeft <= 0 && (celebCheck.ok || !!s.memoSeen['celebrity-endcap'])
   const extraRev = demandNow * Math.max(0, gainFrac) * s.price
   const paybackSec = extraRev > 1e-6 ? s.adCost / extraRev : Number.POSITIVE_INFINITY
-  const paybackWarn = paybackSec > MARKETING.paybackWarnSec
+  const posture = s.marketingPosture ?? 'neighborhood'
+  const loyaltyOn = s.loyalty.tier > 0 || !!s.memos['punch-card']
+  const paybackText = Number.isFinite(paybackSec)
+    ? paybackSec < 60
+      ? `~${Math.ceil(paybackSec)}s`
+      : `~${Math.ceil(paybackSec / 60)} min`
+    : '—'
+
+  const printReady = s.era >= 2 && flyerCheck.ok && (flyerWeeks < DEPTH.flyerWeeksNeed || s.depth?.counterFlyerNeeded)
 
   return (
-    <Panel
-      title="Marketing"
-      purpose="Buy demand — only when shoppers are the limit."
-      lore="marketing"
-      scene={
-        <>
-          <MarketingBand state={s} />
-          <DeptDiorama kind="marketing" />
-        </>
-      }
-    >
-      {bottleneck.kind !== 'demand' ? (
-        <div className="ge-dept-callout" role="status">
-          <div className="ge-dept-callout__copy">
-            <h3>Ads won’t move baskets</h3>
-            <p>
-              Limit is {bottleneck.kind} — {bottleneck.label} Clear that before buying more glances.
-            </p>
-          </div>
+    <section className="ge-panel">
+      <PlayFrame
+        purpose="Staff, marketing, rivals and side businesses."
+        department="Marketing"
+        room={<BillboardScene />}
+        tray={{
+          primary: curb
+            ? war?.active
+              ? {
+                  label: 'Match coupons',
+                  tone: 'primary',
+                  size: 'lg',
+                  coachId: 'marketing-rival',
+                  disabled: !matchCheck.ok,
+                  title: !matchCheck.ok ? matchCheck.reason : undefined,
+                  cost: money(matchCost, numberFormat),
+                  onClick: () => dispatch({ type: 'matchCoupons' }),
+                }
+              : rivalKind
+                ? {
+                    label: RIVAL_COPY[rivalKind].verb,
+                    tone: 'primary',
+                    size: 'lg',
+                    coachId: 'marketing-rival',
+                    disabled: !rivalCheck.ok,
+                    title: !rivalCheck.ok ? rivalCheck.reason : RIVAL_EFFECT[rivalKind],
+                    cost: money(rivalCost, numberFormat),
+                    onClick: () => dispatch({ type: 'answerRival' }),
+                  }
+                : {
+                    label: 'Buy ad',
+                    tone: 'primary',
+                    size: 'lg',
+                    coachId: 'marketing-ads',
+                    disabled: !canAd,
+                    cost: money(s.adCost, numberFormat),
+                    onClick: () => dispatch({ type: 'buyAd' }),
+                  }
+            : printReady
+              ? {
+                  label: `Print week · ${discountBand}`,
+                  tone: 'free',
+                  size: 'lg',
+                  onClick: () => setFlyerSheet(true),
+                }
+              : {
+                  label: 'Buy ad',
+                  tone: 'primary',
+                  size: 'lg',
+                  coachId: 'marketing-ads',
+                  disabled: !canAd,
+                  title: !canAd ? `Need ${money(s.adCost, numberFormat)}` : undefined,
+                  cost: money(s.adCost, numberFormat),
+                  feedback: true,
+                  onClick: () => dispatch({ type: 'buyAd' }),
+                },
+          failReason: curb
+            ? war?.active
+              ? matchCheck.reason
+              : rivalCheck.reason
+            : printReady
+              ? flyerCheck.reason
+              : !canAd
+                ? `Need ${money(s.adCost, numberFormat)}`
+                : undefined,
+          secondaries: [
+            ...(s.era >= 2
+              ? [{ key: 'flyer', label: 'Flyer desk', fact: `${flyerWeeks}/${DEPTH.flyerWeeksNeed}`, onClick: () => setFlyerSheet(true) }]
+              : []),
+            {
+              key: 'undo',
+              label: 'Undo ad',
+              disabled: !refundCheck.ok,
+              title: !refundCheck.ok ? refundCheck.reason : undefined,
+              onClick: () => dispatch({ type: 'refundAd' }),
+            },
+          ],
+        }}
+      >
+        <div className="p6-row">
+          <Badge tone="muted">Ads Lv {s.ads}</Badge>
+          {bottleneck.kind !== 'demand' ? (
+            <Badge tone="warn" title={`Limit is ${bottleneck.kind}. ${bottleneck.label}`}>
+              Ads won’t move baskets
+            </Badge>
+          ) : (
+            <Badge tone="success">Shoppers are the limit · payback {paybackText}</Badge>
+          )}
+          {celebLeft > 0 ? <Badge tone="muted">Celeb {celebLeft}s</Badge> : null}
         </div>
-      ) : null}
-
-      {celebLeft > 0 ? (
-        <div className="ge-dept-callout" role="status">
-          <div className="ge-dept-callout__copy">
-            <h3>Celebrity endcap</h3>
-            <p>Demand +25% for {celebLeft}s. Brand may take a nick when they leave.</p>
-          </div>
-        </div>
-      ) : null}
-
-      {showCelebBuy ? (
-        <div className="ge-dept-callout">
-          <div className="ge-dept-callout__copy">
-            <h3>Celebrity endcap</h3>
-            <p>
-              +25% demand for {CELEBRITY_ENDCAP.durationSec}s · {money(CELEBRITY_ENDCAP.cashCost, numberFormat)} +{' '}
-              {CELEBRITY_ENDCAP.ideasCost} Ideas.
-            </p>
-          </div>
-          <Btn
+      <div className="p6-row">
+        <Button
+          tone="ghost"
+          size="sm"
+          disabled={!refundCheck.ok}
+          title={!refundCheck.ok ? refundCheck.reason : undefined}
+          onClick={() => dispatch({ type: 'refundAd' })}
+        >
+          Undo ad
+        </Button>
+        {showCelebBuy ? (
+          <Button
             tone={celebCheck.ok ? 'primary' : 'ghost'}
+            size="sm"
             disabled={!celebCheck.ok}
-            title={!celebCheck.ok ? celebCheck.reason : undefined}
+            title={
+              !celebCheck.ok
+                ? celebCheck.reason
+                : `+25% for ${CELEBRITY_ENDCAP.durationSec}s · ${money(celebrityCashCost(s), numberFormat)} + ${CELEBRITY_ENDCAP.ideasCost} Ideas`
+            }
             onClick={() => dispatch({ type: 'buyMemo', id: 'celebrity-endcap' })}
           >
-            Book celebrity
-          </Btn>
-        </div>
-      ) : null}
+            Celebrity
+          </Button>
+        ) : null}
+      </div>
 
-      {war?.active ? (
-        <div className="ge-dept-callout" role="status">
-          <div className="ge-dept-callout__copy">
-            <h3>Coupon war · {warLeft}s</h3>
-            <p>Rival circulars out — demand −8%. Match early to hold Brand.</p>
-          </div>
-          <Btn
-            tone="primary"
-            disabled={!matchCheck.ok}
-            title={!matchCheck.ok ? matchCheck.reason : undefined}
-            onClick={() => dispatch({ type: 'matchCoupons' })}
-          >
-            Match · {money(matchCost, numberFormat)}
-          </Btn>
-        </div>
-      ) : null}
-
-      {rivalKind ? (
-        <div className="ge-dept-callout" role="status" data-coach-id="marketing-rival">
-          <div className="ge-dept-callout__copy">
-            <h3>
-              {RIVAL_COPY[rivalKind].name} · {rivalLeft}s
-            </h3>
-            <p>
-              {rivalKind === 'poach'
-                ? 'Crew morale dips while the rival hands out flyers.'
-                : rivalKind === 'undercut'
-                  ? 'Demand −6% while the chalk price stands.'
-                  : rivalKind === 'raid'
-                    ? 'Demand −4% while their display blocks your door-side endcap.'
-                    : 'Demand −5% while the rumor travels.'}{' '}
-              Answer to end it early; it fades on its own.
-            </p>
-          </div>
-          <Btn
-            tone="primary"
-            disabled={!rivalCheck.ok}
-            title={!rivalCheck.ok ? rivalCheck.reason : undefined}
-            onClick={() => dispatch({ type: 'answerRival' })}
-          >
-            {RIVAL_COPY[rivalKind].verb} · {money(rivalCost, numberFormat)}
-          </Btn>
-        </div>
-      ) : (
-        <p className="ge-muted" data-coach-id="marketing-rival">
-          No rival on the sidewalk right now. They show up once the block notices your ads.
-        </p>
-      )}
-
-      <div className="ge-dept-split">
-        <article className="ge-card">
-          <header className="ge-empire-block__head">
-            <h3>Posture</h3>
-            <p>One voice at a time. Switch costs ${MARKETING.switchFee}.</p>
-          </header>
-          <div className="ge-chip-row">
-            {POSTURES.map((p) => {
-              const on = (s.marketingPosture ?? 'neighborhood') === p.id
-              const check = can(s, { type: 'setMarketingPosture', posture: p.id })
-              return (
-                <Btn
-                  key={p.id}
-                  tone={on ? 'primary' : 'ghost'}
+      <div className="p6-stack">
+        <div className="p6-row" title={`Posture fee ${money(fee, numberFormat)}`}>
+          {POSTURES.map((p) => {
+            const on = posture === p.id
+            const check = can(s, { type: 'setMarketingPosture', posture: p.id })
+            return (
+              <span key={p.id} title={on ? p.blurb : !check.ok ? check.reason : p.blurb}>
+                <Chip
+                  selected={on}
                   disabled={on || !check.ok}
-                  title={on ? p.blurb : !check.ok ? check.reason : p.blurb}
                   onClick={() => dispatch({ type: 'setMarketingPosture', posture: p.id })}
                 >
                   {p.label}
-                </Btn>
-              )
-            })}
-          </div>
-          <p className="ge-muted">
-            {POSTURES.find((p) => p.id === (s.marketingPosture ?? 'neighborhood'))?.blurb}
-          </p>
-        </article>
+                </Chip>
+              </span>
+            )
+          })}
+        </div>
 
-        <article className={`ge-card${canAd ? ' is-ready' : ''}`.trim()}>
-          <header className="ge-empire-block__head">
-            <h3>Ads</h3>
-            <p>Buy glances. Cost climbs; pull rises slowly.</p>
-          </header>
-          <div className="ge-card__meta">
-            <div className="ge-card__meta-row">
-              <span>Level</span>
-              <strong>{s.ads}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Next</span>
-              <strong>{money(s.adCost, numberFormat)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Est. gain</span>
-              <strong>~+{(gainFrac * 100).toFixed(0)}% demand</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Payback</span>
-              <strong>
-                {Number.isFinite(paybackSec)
-                  ? paybackSec < 60
-                    ? `~${Math.ceil(paybackSec)}s`
-                    : `~${Math.ceil(paybackSec / 60)} min`
-                  : '—'}
-              </strong>
-            </div>
-          </div>
-          {bottleneck.kind === 'demand' && paybackWarn ? (
-            <p className="ge-muted">
-              Payback is slow — staff seats or a managed store may buy more baskets than another ad.
-            </p>
-          ) : null}
-          <div className="ge-card__actions">
-            <Btn
-              tone={canAd ? 'primary' : 'ghost'}
-              coachId="marketing-ads"
-              disabled={!canAd}
-              title={!canAd ? `Need ${money(s.adCost, numberFormat)}` : undefined}
-              onClick={() => dispatch({ type: 'buyAd' })}
-            >
-              Buy ad · {money(s.adCost, numberFormat)}
-            </Btn>
-            <Btn
-              tone="ghost"
-              disabled={!refundCheck.ok}
-              title={!refundCheck.ok ? refundCheck.reason : undefined}
-              onClick={() => dispatch({ type: 'refundAd' })}
-            >
-              Undo
-            </Btn>
-          </div>
-        </article>
-
-        {s.loyalty.tier > 0 ? (
-          <article className="ge-card">
-            <header className="ge-empire-block__head">
-              <h3>Loyalty</h3>
-              <p>More shoppers now; rewards owed on the tape.</p>
-            </header>
-            <div data-coach-id="marketing-loyalty">
-              <div className="ge-card__meta">
-                <div className="ge-card__meta-row">
-                  <span>Tier</span>
-                  <strong>{s.loyalty.tier}</strong>
-                </div>
-                <div className="ge-card__meta-row">
-                  <span>Owed</span>
-                  <strong>{money(s.loyalty.liability, numberFormat)}</strong>
-                </div>
-              </div>
-              <Btn
-                tone="ghost"
-                disabled={s.loyalty.liability < 0.5 || s.cash < 0.5}
-                onClick={() => dispatch({ type: 'redeemLoyalty' })}
+        {s.era >= 2 ? (
+          <Sheet
+            open={flyerSheet}
+            onClose={() => setFlyerSheet(false)}
+            title="Flyer Desk"
+            reducedMotion={reducedMotion}
+            footer={
+              <Button tone="ghost" onClick={() => setFlyerSheet(false)}>
+                Done
+              </Button>
+            }
+          >
+            <div className="p6-stack" data-coach-id="marketing-flyer-band">
+              <p className="p6-copy">{flyerCopy}</p>
+              <SegmentedControl
+                aria-label="Discount band"
+                value={discountBand}
+                onChange={(v) => setDiscountBand(v as 'soft' | 'mid' | 'deep')}
+                options={[
+                  { value: 'soft', label: 'Soft', title: 'Safe, pays less' },
+                  { value: 'mid', label: 'Mid', title: 'Balanced week' },
+                  { value: 'deep', label: 'Deep', title: 'Higher pull · spoil risk on perishables' },
+                ]}
+              />
+              <Button
+                tone="primary"
+                size="lg"
+                disabled={!flyerCheck.ok}
+                title={flyerCheck.ok ? undefined : flyerCheck.reason}
+                onClick={printFlyer}
               >
-                Redeem rewards
-              </Btn>
+                Print week · {discountBand}
+              </Button>
             </div>
-          </article>
+          </Sheet>
         ) : null}
 
+          {s.era >= 7 ? (
+            <div data-coach-id="marketing-broadcast" className="p6-row">
+              <span className="p6-muted">Broadcast</span>
+              {climates.length === 0 ? (
+                <span className="p6-muted">Stock a world first.</span>
+              ) : (
+                climates.map((climate) => {
+                  const check = can(s, { type: 'broadcast', climate })
+                  const left = Math.ceil(s.late?.broadcasts?.[climate] ?? 0)
+                  return (
+                    <Button
+                      key={climate}
+                      size="sm"
+                      tone={left > 0 || check.ok ? 'primary' : 'secondary'}
+                      disabled={!check.ok}
+                      title={
+                        !check.ok
+                          ? check.reason
+                          : `+${Math.round(LATE.broadcastSalesBump * 100)}% off-world sales per world in this climate for ${LATE.broadcastDurationSec}s.`
+                      }
+                      onClick={() => dispatch({ type: 'broadcast', climate })}
+                    >
+                      {climate} · {left > 0 ? `${left}s` : `${LATE.broadcastSurveyCost} survey`}
+                    </Button>
+                  )
+                })
+              )}
+            </div>
+          ) : null}
+
+          {s.era >= 10 ? (
+            <div data-coach-id="marketing-wire-ad" className="p6-row">
+              <Button
+                size="sm"
+                tone={wireCheck.ok ? 'primary' : 'secondary'}
+                disabled={!wireCheck.ok}
+                title={!wireCheck.ok ? wireCheck.reason : undefined}
+                onClick={() => dispatch({ type: 'wireAd' })}
+              >
+                {wireLeft > 0 ? `Wire ad · ${wireLeft}s` : `Wire ad · ${LATE.wireAdSignalCost} signal`}
+              </Button>
+              <span className="p6-muted">
+                ×{LATE.wireAdMul} for {LATE.wireAdDurationSec}s · Signal {(s.horizon?.signal ?? 0).toFixed(1)}
+              </span>
+            </div>
+          ) : null}
       </div>
 
-      <HelpCard title="Paper and promises">
-        Posture picks volume vs ticket. Ads buy glances until payback stretches — then hire or open a
-        door. Loyalty spends later so regulars return now.
-      </HelpCard>
-    </Panel>
+        {loyaltyOn ? (
+          <div className="p6-row" data-coach-id="marketing-loyalty" role="group">
+            <span>
+              Loyalty T{s.loyalty.tier} · owed {money(s.loyalty.liability, numberFormat)}
+            </span>
+            <Button
+              tone="ghost"
+              size="sm"
+              disabled={s.loyalty.liability < 0.5 || s.cash < 0.5}
+              onClick={() => dispatch({ type: 'redeemLoyalty' })}
+            >
+              Redeem
+            </Button>
+          </div>
+        ) : null}
+      </PlayFrame>
+    </section>
   )
 }

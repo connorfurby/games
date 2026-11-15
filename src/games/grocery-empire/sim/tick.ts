@@ -29,6 +29,9 @@ import { tickCold } from './systems/cold'
 import { tickPolitics } from './systems/politics'
 import { tickFleet, tickLogistics } from './systems/fleet'
 import { tickEndings } from './systems/endings'
+import { tickHorizon } from './systems/horizon'
+import { tickLate } from './systems/late'
+import { tickRegulars, tickShifts } from './systems/regulars'
 import { tickUnlocks } from './unlocks'
 
 function pushHistory(s: GameState, dt: number) {
@@ -157,7 +160,11 @@ export function applyTick(s: GameState, dt: number) {
   if (s.era >= 4) tickLogistics(s, step)
   if (s.era >= 5) tickFleet(s, step)
   tickEndings(s, step)
+  if (s.era >= 7 || s.horizon?.continued) tickHorizon(s, step)
+  if (s.era >= 7 || s.horizon?.continued) tickLate(s, step)
   tickRecovery(s, step)
+  tickShifts(s)
+  tickRegulars(s, step)
   tickAutoRestock(s)
   tickAutoTournament(s)
   tickUnlocks(s, step)
@@ -185,6 +192,11 @@ export function applyOffline(
     attention: 0,
     ventures: 0,
     interest: 0,
+    survey: 0,
+    freight: 0,
+    seed: 0,
+    signal: 0,
+    seal: 0,
   }
   if (capped <= 0 || s.paused) {
     if (opts?.showReceipt !== false) s.offlineReceipt = receipt
@@ -204,6 +216,11 @@ export function applyOffline(
     attention: s.compute.attention,
     ventures: s.stats.ventureCollected,
     interest: s.stats.interestEarned,
+    survey: s.horizon?.survey ?? 0,
+    freight: s.horizon?.freight ?? 0,
+    seed: s.horizon?.seed ?? 0,
+    signal: s.horizon?.signal ?? 0,
+    seal: s.horizon?.seal ?? 0,
   }
 
   let left = capped
@@ -221,6 +238,11 @@ export function applyOffline(
   receipt.attention = Math.max(0, s.compute.attention - before.attention)
   receipt.ventures = s.stats.ventureCollected - before.ventures
   receipt.interest = s.stats.interestEarned - before.interest
+  receipt.survey = Math.max(0, (s.horizon?.survey ?? 0) - before.survey)
+  receipt.freight = Math.max(0, (s.horizon?.freight ?? 0) - before.freight)
+  receipt.seed = Math.max(0, (s.horizon?.seed ?? 0) - before.seed)
+  receipt.signal = Math.max(0, (s.horizon?.signal ?? 0) - before.signal)
+  receipt.seal = Math.max(0, (s.horizon?.seal ?? 0) - before.seal)
 
   s.stats.offlineSec += capped
   s.paused = wasPaused

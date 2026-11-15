@@ -20,16 +20,32 @@ import {
   buyHint,
   chestOdds,
   completedWings,
+  dustRelic,
   hintCost,
+  levelRelic,
+  museumSync,
   partialName,
   relicCount,
+  relicLevelCost,
+  relicLevelPower,
+  setAutoDust,
+  socketCapFor,
+  socketRelic,
+  unsocketRelic,
   wingOpen,
   type Chest,
 } from '../../sim/museum'
 import { useGame } from '../GameContext'
+import { HubStage } from '../components/HubStage'
+import { Button, SegmentedControl, Sheet, useConfirm, usePhone } from '../kit'
 import { ChestOpener } from './ChestOpener'
+import { MuseumGallery } from './MuseumGallery'
 import { ChestArt, RelicIcon } from './RelicIcon'
 import { museumStore, useMuseum } from './store'
+
+function syncMuseum(dispatch: (cmd: { type: 'syncRelics' } & ReturnType<typeof museumSync>) => void) {
+  dispatch({ type: 'syncRelics', ...museumSync(museumStore.get()) })
+}
 import './museum.css'
 
 function pct(n: number) {
@@ -67,7 +83,9 @@ function PerkTotals() {
 }
 
 export function MuseumPanel() {
-  const { reducedMotion } = useGame()
+  const { state: gs, dispatch, reducedMotion } = useGame()
+  const confirm = useConfirm()
+  const phone = usePhone()
   const m = useMuseum()
   const [wing, setWing] = useState<WingId | 'all'>('all')
   const [selected, setSelected] = useState<string | null>(null)
@@ -91,7 +109,6 @@ export function MuseumPanel() {
     <section className="ge-panel mu" aria-label="Relic Museum">
       <header className="mu-hero">
         <div className="mu-hero__title">
-          <h2>The Relic Museum</h2>
           <p>Relics stay on this wall through every run, Rebrand and reset.</p>
         </div>
         <div className="mu-hero__stats">
@@ -108,6 +125,42 @@ export function MuseumPanel() {
             <span>Dust</span>
             <strong className="mu-dust">{m.dust}</strong>
           </div>
+          <label className="mu-stat">
+            <span>Auto-dust</span>
+            <select
+              value={m.autoDust ?? ''}
+              onChange={async (e) => {
+                const next = e.target.value
+                if (!next) {
+                  museumStore.update((save) => setAutoDust(save, null))
+                  syncMuseum(dispatch)
+                  return
+                }
+                const rarity = next as Rarity
+                const name = RARITY_INFO[rarity].label
+                const ok = await confirm({
+                  title: 'Auto-dust relics?',
+                  body: `Dust new ${name} relics, and anything more common?`,
+                  tone: 'danger',
+                  confirmLabel: 'Dust them',
+                })
+                if (!ok) {
+                  e.target.value = m.autoDust ?? ''
+                  return
+                }
+                museumStore.update((save) => setAutoDust(save, rarity))
+                dispatch({ type: 'setAutoDust', rarityCeiling: rarity })
+                syncMuseum(dispatch)
+              }}
+            >
+              <option value="">Off</option>
+              {RARITIES.map((r) => (
+                <option key={r} value={r}>
+                  {RARITY_INFO[r].label} and below
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="mu-stat">
             <span>Wings done</span>
             <strong>
@@ -124,20 +177,29 @@ export function MuseumPanel() {
 
       {showPerks ? <PerkTotals /> : null}
 
-      <section className="mu-chests" aria-label="Chests">
+      <HubStage
+        scene={
+          <MuseumGallery
+            m={m}
+            onOpenChests={() => {
+              if (m.chests.length) setQueue([...m.chests])
+              else document.querySelector('.mu-chests')?.scrollIntoView({ block: 'nearest' })
+            }}
+            onSelect={setSelected}
+          />
+        }
+        primary={
+      <section className="mu-chests" aria-label="Chests" data-coach-id="museum-chests">
         <div className="mu-chests__head">
           <h3>Chests {m.chests.length > 0 ? <span className="mu-count">{m.chests.length}</span> : null}</h3>
           {m.chests.length > 1 ? (
-            <button type="button" className="g2-tag g2-tag--small" onClick={() => setQueue([...m.chests])}>
-              <span className="g2-tag__price">Open all</span>
-              <span className="g2-tag__label">{m.chests.length} chests</span>
-            </button>
+            <Button tone="secondary" size="sm" onClick={() => setQueue([...m.chests])}>
+              Open all · {m.chests.length} chests
+            </Button>
           ) : null}
         </div>
         {m.chests.length === 0 ? (
-          <p className="mu-empty">
-            No chests waiting. They come from goals, eras, rivals, Projects, milestones and time on the floor.
-          </p>
+          <p className="mu-empty">No chests waiting.</p>
         ) : (
           <div className="mu-shelf">
             {RARITIES.filter((r) => byRarity[r]?.length).map((r) => (
@@ -173,10 +235,10 @@ export function MuseumPanel() {
               </select>
             </label>
             {(Object.entries(MUSEUM.shop) as [Rarity, number][]).map(([r, price]) => (
-              <button
+              <Button
                 key={r}
-                type="button"
-                className="dv-btn"
+                tone="ghost"
+                size="sm"
                 disabled={m.dust < price}
                 title={`Odds: ${Object.entries(chestOdds(r))
                   .map(([k, v]) => `${RARITY_INFO[k as Rarity].label} ${pct(v ?? 0)}`)
@@ -184,35 +246,34 @@ export function MuseumPanel() {
                 onClick={() => museumStore.update((mm) => buyChest(mm, r, shopWing || null) != null)}
               >
                 {RARITY_INFO[r].label} · {price} dust
-              </button>
+              </Button>
             ))}
           </div>
         </details>
       </section>
-
-      <nav className="mu-wings" aria-label="Wings">
-        <button type="button" className={`mu-wingchip${wing === 'all' ? ' is-on' : ''}`} onClick={() => setWing('all')}>
-          All wings
-        </button>
-        {WINGS.map((w) => {
-          const list = relicsInWing(w.id)
-          const have = list.filter((r) => m.relics[r.id]).length
-          return (
-            <button
-              key={w.id}
-              type="button"
-              className={`mu-wingchip${wing === w.id ? ' is-on' : ''}${have === list.length ? ' is-done' : ''}`}
-              style={{ '--wh': w.hue } as React.CSSProperties}
-              onClick={() => setWing(w.id)}
-            >
-              {w.name}
-              <small>
-                {have}/{list.length}
-              </small>
-            </button>
-          )
-        })}
-      </nav>
+        }
+      >
+      <div className="mu-wings-seg">
+        <SegmentedControl
+          aria-label="Wings"
+          value={wing}
+          onChange={setWing}
+          reducedMotion={reducedMotion}
+          options={[
+            { value: 'all' as const, label: 'All' },
+            ...WINGS.map((w) => {
+              const list = relicsInWing(w.id)
+              const have = list.filter((r) => m.relics[r.id]).length
+              return {
+                value: w.id as WingId | 'all',
+                label: w.name,
+                badge: have,
+                title: `${have}/${list.length}`,
+              }
+            }),
+          ]}
+        />
+      </div>
 
       <div className="mu-wall">
         {wings.map((w) => {
@@ -249,7 +310,7 @@ export function MuseumPanel() {
                       aria-label={got ? r.name : `Unknown ${RARITY_INFO[r.rarity].label} relic`}
                       title={got ? `${r.name}: ${perkText(r)}` : undefined}
                     >
-                      <RelicIcon id={r.id} shadow={!got} size={64} />
+                      <RelicIcon id={r.id} shadow={!got} size={64} level={m.relics[r.id]?.level ?? 0} socketed={m.sockets.includes(r.id)} />
                       <span className="mu-tile__name">{got ? r.name : m.hints[r.id] === 2 ? partialName(r.name) : '???'}</span>
                       {got && got.n > 1 ? <span className="mu-tile__n">×{got.n}</span> : null}
                     </button>
@@ -261,8 +322,85 @@ export function MuseumPanel() {
         })}
       </div>
 
+      {phone && sel ? (
+        <Sheet
+          open
+          onClose={() => setSelected(null)}
+          title={m.relics[sel.id] ? sel.name : 'Unknown relic'}
+          reducedMotion={reducedMotion}
+        >
+          <div className={`mu-detail mu-detail--sheet mu-detail--${sel.rarity}`} style={{ '--rc': RARITY_INFO[sel.rarity].color } as React.CSSProperties}>
+            <div className="mu-detail__art">
+              <RelicIcon
+                id={sel.id}
+                shadow={!m.relics[sel.id]}
+                size={120}
+                level={m.relics[sel.id]?.level ?? 0}
+                socketed={m.sockets.includes(sel.id)}
+              />
+            </div>
+            <p className="mu-detail__rarity">
+              {RARITY_INFO[sel.rarity].label} · {WING_BY_ID[sel.wing].name}
+            </p>
+            {m.relics[sel.id] ? (
+              <>
+                <p className="mu-detail__flavor">{sel.flavor}</p>
+                <p className="mu-perk">
+                  <span>Perk</span> {perkText(sel)}
+                </p>
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                  <Button
+                    tone="primary"
+                    size="sm"
+                    disabled={m.relics[sel.id]!.level >= 10 || m.dust < relicLevelCost(sel.rarity, m.relics[sel.id]!.level)}
+                    onClick={() => {
+                      const id = sel.id
+                      museumStore.update((save) => levelRelic(save, id, 1))
+                      syncMuseum(dispatch)
+                    }}
+                  >
+                    Level
+                  </Button>
+                  {m.sockets.includes(sel.id) ? (
+                    <Button
+                      tone="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const id = sel.id
+                        museumStore.update((save) => unsocketRelic(save, id))
+                        syncMuseum(dispatch)
+                      }}
+                    >
+                      Unsocket
+                    </Button>
+                  ) : (
+                    <Button
+                      tone="secondary"
+                      size="sm"
+                      disabled={m.sockets.length >= socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'])}
+                      onClick={() => {
+                        const id = sel.id
+                        const cap = socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'] || gs.horizon.socketsUnlocked >= 5)
+                        museumStore.update((save) => socketRelic(save, id, cap))
+                        syncMuseum(dispatch)
+                      }}
+                    >
+                      Socket
+                    </Button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="mu-perk is-locked">
+                <span>Perk</span> Hidden until you find it, or buy a hint.
+              </p>
+            )}
+          </div>
+        </Sheet>
+      ) : null}
+
       <AnimatePresence>
-        {sel ? (
+        {!phone && sel ? (
           <motion.div
             className="mu-detail-wrap"
             onClick={() => setSelected(null)}
@@ -283,7 +421,13 @@ export function MuseumPanel() {
                 ✕
               </button>
               <div className="mu-detail__art">
-                <RelicIcon id={sel.id} shadow={!m.relics[sel.id]} size={160} />
+                <RelicIcon
+                  id={sel.id}
+                  shadow={!m.relics[sel.id]}
+                  size={160}
+                  level={m.relics[sel.id]?.level ?? 0}
+                  socketed={m.sockets.includes(sel.id)}
+                />
               </div>
               <p className="mu-detail__rarity">
                 {RARITY_INFO[sel.rarity].label} · {WING_BY_ID[sel.wing].name}
@@ -298,8 +442,77 @@ export function MuseumPanel() {
                   <p className="mu-detail__meta">
                     Found {new Date(m.relics[sel.id]!.at).toLocaleDateString()}
                     {m.relics[sel.id]!.n > 1 ? ` · ${m.relics[sel.id]!.n} copies` : ''}
+                    {` · Lv ${m.relics[sel.id]!.level} · ×${relicLevelPower(m.relics[sel.id]!.level).toFixed(2)}`}
+                    {m.relics[sel.id]!.level < 10
+                      ? ` · ${relicLevelCost(sel.rarity, m.relics[sel.id]!.level)} dust to next`
+                      : ' · max level'}
                     {sel.feat ? ` · ${FEATS[sel.feat]?.text}` : ''}
                   </p>
+                  <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                    <Button
+                      tone="primary"
+                      size="sm"
+                      disabled={m.relics[sel.id]!.level >= 10 || m.dust < relicLevelCost(sel.rarity, m.relics[sel.id]!.level)}
+                      onClick={() => {
+                        const id = sel.id
+                        museumStore.update((save) => levelRelic(save, id, 1))
+                        syncMuseum(dispatch)
+                      }}
+                    >
+                      Level
+                    </Button>
+                    <Button
+                      tone="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const id = sel.id
+                        museumStore.update((save) => levelRelic(save, id, 10))
+                        syncMuseum(dispatch)
+                      }}
+                    >
+                      Level what dust allows
+                    </Button>
+                    {m.sockets.includes(sel.id) ? (
+                      <Button
+                        tone="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const id = sel.id
+                          museumStore.update((save) => unsocketRelic(save, id))
+                          syncMuseum(dispatch)
+                        }}
+                      >
+                        Unsocket
+                      </Button>
+                    ) : (
+                      <Button
+                        tone="secondary"
+                        size="sm"
+                        disabled={m.sockets.length >= socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'])}
+                        onClick={() => {
+                          const id = sel.id
+                          const cap = socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'] || gs.horizon.socketsUnlocked >= 5)
+                          museumStore.update((save) => socketRelic(save, id, cap))
+                          syncMuseum(dispatch)
+                        }}
+                      >
+                        Socket
+                      </Button>
+                    )}
+                    {m.relics[sel.id]!.n > 1 ? (
+                      <Button
+                        tone="danger"
+                        size="sm"
+                        onClick={() => {
+                          const id = sel.id
+                          museumStore.update((save) => dustRelic(save, id))
+                          syncMuseum(dispatch)
+                        }}
+                      >
+                        Dust a copy
+                      </Button>
+                    ) : null}
+                  </div>
                 </>
               ) : (
                 <>
@@ -333,15 +546,15 @@ export function MuseumPanel() {
                     ) : null}
                   </ul>
                   {(m.hints[sel.id] ?? 0) < 2 ? (
-                    <button
-                      type="button"
-                      className="g2-tag"
+                    <Button
+                      tone="secondary"
+                      size="sm"
                       disabled={m.dust < hintCost(sel, ((m.hints[sel.id] ?? 0) + 1) as 1 | 2)}
+                      cost={`${hintCost(sel, ((m.hints[sel.id] ?? 0) + 1) as 1 | 2)} dust`}
                       onClick={() => museumStore.update((mm) => buyHint(mm, sel.id))}
                     >
-                      <span className="g2-tag__price">{hintCost(sel, ((m.hints[sel.id] ?? 0) + 1) as 1 | 2)} dust</span>
-                      <span className="g2-tag__label">{m.hints[sel.id] ? 'Bigger hint' : 'Buy a hint'}</span>
-                    </button>
+                      {m.hints[sel.id] ? 'Bigger hint' : 'Buy a hint'}
+                    </Button>
                   ) : null}
                   <p className="mu-detail__meta">Dust comes from duplicate relics. You have {m.dust}.</p>
                 </>
@@ -350,6 +563,7 @@ export function MuseumPanel() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+      </HubStage>
 
       {queue && queue.length > 0 ? (
         <ChestOpener chests={queue} reducedMotion={reducedMotion} onClose={() => setQueue(null)} />

@@ -1,7 +1,7 @@
 import { bookNetworkSales } from './network'
 import { statMul } from './stats'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
-import { DEMAND, EMPIRE, INSPECTION, SHRINK, WEATHER_SEC, WHOLESALE } from '../balance'
+import { DEMAND, DEPTH, EMPIRE, INSPECTION, SHRINK, WEATHER_SEC, WHOLESALE } from '../balance'
 import {
   agingMul,
   backroomCap,
@@ -10,6 +10,7 @@ import {
   demandPerSec,
   dipBellLevel,
   doorOverflow,
+  facingMarginMul,
   inspectionGainMul,
   lifeMul,
   memo,
@@ -82,9 +83,32 @@ export function tickDeliveries(s: GameState, dt: number) {
   s.orders = s.orders.filter((o) => o.eta > 0)
   for (const o of arrived) {
     const room = Math.max(0, backroomCap(s) + doorOverflow(s) - sumQty(s.backroom))
-    const accepted = Math.min(room, o.qty)
+    let accepted = Math.min(room, o.qty)
     const refused = o.qty - accepted
-    addBatch(s.backroom, o.cat, accepted, 0)
+    let age = 0
+    if (
+      o.cat === DEPTH.greengrocer.cat &&
+      s.depth?.contracts?.greengrocer
+    ) {
+      age = DEPTH.greengrocer.ageOnArrive
+    }
+    // Port Broker: cheap import bulk shorts in bad weather without a wet spice lane.
+    if (o.cat === 'import' && s.depth?.contracts?.portBroker) {
+      const wetSpice = (s.fleet.laneList ?? []).some(
+        (l) => l.route === 'spice-route' && (l.fuel > 0 || s.fuel > 0),
+      )
+      if (!wetSpice || (s.weather.now !== 'fair' && chance(s, DEPTH.portBrokerShortChance))) {
+        const short = Math.floor(accepted * 0.35)
+        if (short > 0) {
+          accepted -= short
+          s.stats.shortShips += 1
+          const refund = Math.round(short * o.unitCost * 100) / 100
+          s.cash += refund
+          log(s, `Port Broker shorted ${short} import (−weather / dry spice lane).`, 'warn')
+        }
+      }
+    }
+    addBatch(s.backroom, o.cat, accepted, age)
     if (refused > 0) {
       const refund = Math.round(refused * o.unitCost * 100) / 100
       s.cash += refund
@@ -181,7 +205,7 @@ export function tickSales(s: GameState, dt: number): { sold: number; revenue: nu
     if (n <= 0) continue
     s.acc.cat[c] -= n
     takeUnits(s.shelf, n, fifo, c)
-    const r = n * s.price * CATEGORIES[c].priceRatio * revenueMul(s)
+    const r = n * s.price * CATEGORIES[c].priceRatio * revenueMul(s) * facingMarginMul(s, c)
     sold += n
     revenue += r
     s.stats.soldByCat[c] += n

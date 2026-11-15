@@ -1,7 +1,12 @@
+import { offworldSalesMul, wireAdActive } from './systems/late'
+import { hasFork } from './ventureForks'
+export { annexSeatCap } from './staffAnnex'
 import { valueMul } from './systems/network'
+import { freshWaySpoilMul, tunnelFreshAgeMul } from './systems/cold'
 import { rivalDemandMul } from './systems/rivals'
 import { statCut, statMul } from './systems/stats'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../content/categories'
+import { FACING_BY_ID, policyOf } from '../content/depth'
 import { ROLES, STAFF_TRAITS, type RoleId, type StaffTraitId } from '../content/staff'
 import {
   UPGRADE_BY_ID,
@@ -22,14 +27,17 @@ import {
   COLD,
   COUPON_WAR,
   DEMAND,
+  DEPTH,
   DOCTRINE_EFFECTS,
   ENDCAP,
   EMPIRE,
   FLEET,
   HOURS,
+  HORIZON,
   HUNGRY_LAWS,
   INSPECTION,
   INVEST,
+  LATE,
   LOYALTY,
   MARKETING,
   MORALE,
@@ -68,6 +76,8 @@ export function hasMutator(s: GameState, id: PrestigeMutatorId) {
 export function demandElasticity(s: GameState) {
   let e = hasMutator(s, 'weirdElasticity') ? HUNGRY_LAWS.weirdElasticity : DEMAND.elasticity
   if ((s.doctrines['edlp'] ?? 0) > 0) e *= DOCTRINE_EFFECTS.edlpElasticityMul
+  if (s.horizon?.clauses?.includes('one-price')) e = Math.max(1.05, e - 0.15)
+  if (memo(s, 'one-price-draft')) e = Math.max(1.05, e - 0.01)
   return e
 }
 
@@ -170,6 +180,9 @@ export function shelfCap(s: GameState) {
   if (front >= 2) cap += 20
   if (front >= 3) cap += 60
   if (front >= 4) cap += 200
+  if (front >= 8) cap += 400
+  if (front >= 9) cap += 800
+  if (front >= 10) cap += 1600
   if (s.expansions['side-yard']) cap += 30
   // One Perfect Aisle: shelf growth from nesting stops; Wall of Cans adds asymptotic capacity.
   const nest = up(s, 'one-perfect-aisle') > 0 ? 0 : up(s, 'basket-nesting') * 0.03
@@ -182,6 +195,9 @@ export function backroomCap(s: GameState) {
   let cap = BACKROOM.baseCap + up(s, 'racks') * BACKROOM.perRackLevel
   if (st >= 2) cap += 60
   if (st >= 3) cap += 400
+  if (st >= 5) cap += 2000
+  if (st >= 6) cap += 5000
+  if (st >= 7) cap += 8000
   if (s.expansions['side-yard']) cap += 40
   if (memo(s, 'dock-plate')) cap += 20
   return Math.floor(cap * (1 + up(s, 'case-cube') * 0.03) * statMul(s, 'backroom'))
@@ -221,15 +237,42 @@ export function wholesaleMul(s: GameState) {
   return Math.max(0.5, 1 - haggle - vendor) * (memo(s, 'buying-club') ? 0.9 : 1) * dip
 }
 
+export function featuredFacing(s: GameState, cat: CategoryId) {
+  const id = s.depth?.facings?.[cat]
+  return id ? FACING_BY_ID[id] ?? null : null
+}
+
+export function facingPullMul(s: GameState, cat: CategoryId) {
+  return featuredFacing(s, cat)?.pullMul ?? DEPTH.facingPullDefault
+}
+
+export function facingMarginMul(s: GameState, cat: CategoryId) {
+  return featuredFacing(s, cat)?.marginMul ?? 1
+}
+
+export function facingSpoilMul(s: GameState, cat: CategoryId) {
+  return featuredFacing(s, cat)?.spoilMul ?? 1
+}
+
 export function unitCost(s: GameState, cat: CategoryId, supplier: SupplierId = s.supplier) {
-  const base =
+  let base =
     WHOLESALE.baseCanCost *
     s.wholesale.index *
     CATEGORIES[cat].costMul *
     wholesaleMul(s) *
     valueMul(s) *
     statCut(s, 'crateCut')
-  return supplier === 'b' ? base * WHOLESALE.supplierB.discount : base
+  if (supplier === 'b') base *= WHOLESALE.supplierB.discount
+  if (
+    cat === DEPTH.greengrocer.cat &&
+    s.depth?.contracts?.greengrocer
+  ) {
+    base *= DEPTH.greengrocer.discount
+  }
+  if (cat === 'import' && s.depth?.contracts?.portBroker) {
+    base *= DEPTH.portBrokerDiscount
+  }
+  return base
 }
 
 export function crateCost(s: GameState, cat: CategoryId, supplier: SupplierId = s.supplier) {
@@ -254,6 +297,10 @@ export function deliveryTime(s: GameState, supplier: SupplierId) {
   else if (transit >= 1) t *= 0.75
   if (memo(s, 'dock-plate')) t *= 0.6
   if (hasDoctrine(s, 'route-density')) t *= DOCTRINE_EFFECTS.routeDensityDeliveryMul
+  const receivers = roleCount(s, 'receiver')
+  if (receivers > 0) {
+    t *= Math.max(0.4, Math.pow(DEPTH.receiverEtaMul, Math.min(3, receivers)))
+  }
   return Math.max(1, t)
 }
 
@@ -286,7 +333,8 @@ export function adMul(s: GameState) {
       (hasDoctrine(s, 'hi-lo') ? DOCTRINE_EFFECTS.hiLoAdBonus : 0) +
       (memo(s, 'weekly-circular') ? 0.04 : 0)) *
       saintCut
-  return Math.pow(per, s.ads - 1)
+  // Era 10+ wire ad: a paid spot on the signal desk lifts the whole ad stack while it runs.
+  return Math.pow(per, s.ads - 1) * (wireAdActive(s) ? LATE.wireAdMul : 1)
 }
 
 export function weatherDemand(s: GameState, w: WeatherId = s.weather.now) {
@@ -334,7 +382,10 @@ export function hoursDemand(s: GameState) {
   const dayPart = Math.min(h, HOURS.max) - 1
   const nightPart = Math.max(0, h - HOURS.max)
   const sunday = memo(s, 'sunday-hours') ? 1.02 : 1
-  return (1 + dayPart * 0.8 + nightPart * nightEff) * sunday
+  let hours = (1 + dayPart * 0.8 + nightPart * nightEff) * sunday
+  if (s.horizon?.clauses?.includes('night-bell')) hours *= s.hours > 1 ? 1.15 : 0.95
+  if (memo(s, 'night-bell-draft') && s.hours > 1) hours *= 1.01
+  return hours
 }
 
 export function reputationMul(s: GameState) {
@@ -343,12 +394,12 @@ export function reputationMul(s: GameState) {
 
 export function storefrontMul(s: GameState) {
   const f = s.builds.storefront ?? 1
-  return [1, 1, 1.15, 1.25, 1.4, 1.6, 1.8, 2][f] ?? 1
+  return [1, 1, 1.15, 1.25, 1.4, 1.6, 1.8, 2, 2.15, 2.3, 2.5][f] ?? 2.5
 }
 
 export function civicMul(s: GameState) {
   const c = s.builds.civic ?? 0
-  return [1, 1.08, 1.15][Math.min(c, 2)] ?? 1.15
+  return [1, 1.08, 1.15, 1.18, 1.22, 1.25, 1.3, 1.35][Math.min(c, 7)] ?? 1.35
 }
 
 export function loyaltyMul(s: GameState) {
@@ -368,6 +419,8 @@ export function memoDemandMul(s: GameState) {
   if (memo(s, 'window-lettering')) m *= 1.08
   if (memo(s, 'bike-rack')) m *= 1.02
   if (memo(s, 'community-board')) m *= 1.03
+  // Horizon clause drafts: tiny permanent crumbs that match their effect line.
+  if (memo(s, 'open-hours-draft')) m *= 1.01
   return m
 }
 
@@ -388,11 +441,51 @@ export function ventureTrafficMul(s: GameState) {
   for (const id of Object.keys(s.ventures)) {
     if ((s.ventures[id]?.level ?? 0) > 0) open += 1
   }
-  return 1 + Math.min(VENTURE_TRAFFIC.cap, open * VENTURE_TRAFFIC.perOpen)
+  // Duty-Free Tourist fork: passing crews and tourists browse the flagship too.
+  const tourist = hasFork(s, 'dutyfreeTourist') ? 1 + LATE.dutyfreeTouristDemand : 1
+  return (1 + Math.min(VENTURE_TRAFFIC.cap, open * VENTURE_TRAFFIC.perOpen)) * tourist
 }
 
 export function wordOfMouthMul(s: GameState) {
   return 1 + WORD_OF_MOUTH.perDecade * Math.log10(1 + Math.max(0, s.baskets) / WORD_OF_MOUTH.scale)
+}
+
+/** Ramp earlyDemandMulStart → End from facing + regular satisfies. */
+export function earlyDemandMul(s: GameState) {
+  if (s.era >= 2) return DEPTH.earlyDemandMulEnd
+  const facing = s.depth?.facings?.cans ? 0.45 : 0
+  const regs = Math.min(1, (s.depth?.regularSatisfied ?? 0) / Math.max(1, DEPTH.era1RegularNeed)) * 0.55
+  const t = Math.min(1, facing + regs)
+  return DEPTH.earlyDemandMulStart + (DEPTH.earlyDemandMulEnd - DEPTH.earlyDemandMulStart) * t
+}
+
+/**
+ * Star Board soft-cap on demand.
+ * 5.0 → ~1.15 · 3.5 → 1.0 · 3.0 → ~0.91 · 1.0 → 0.70.
+ */
+export function starDemandMul(s: GameState) {
+  const stars = s.depth?.stars ?? DEPTH.starsStart
+  const t = (stars - DEPTH.starsMin) / (DEPTH.starsMax - DEPTH.starsMin)
+  return Math.max(0.7, Math.min(1.15, 0.7 + t * 0.45))
+}
+
+/** Higher stars slow franchise loyalty drift (resist multiplier). */
+export function starLoyaltyResist(s: GameState) {
+  const stars = s.depth?.stars ?? DEPTH.starsStart
+  const t = (stars - DEPTH.starsMin) / (DEPTH.starsMax - DEPTH.starsMin)
+  return Math.max(0.55, Math.min(1.28, 0.55 + t * 0.73))
+}
+
+export function openUnstaffedDemandMul(s: GameState) {
+  // Lazy import avoided — inline the same Open-third check as systems/regulars.
+  const daySec = DEPTH.shiftDaySec
+  const phase = (((s.time % daySec) + daySec) % daySec) / daySec
+  const isOpen = phase < 1 / 3
+  const covered = (s.depth?.shifts?.open?.length ?? 0) > 0
+  if (isOpen && !covered && s.depth?.open !== false && s.staff.length > 0) {
+    return DEPTH.unstaffedOpenDemandMul
+  }
+  return 1
 }
 
 /** Every multiplier except price, broken out for the Books explainer. */
@@ -448,10 +541,33 @@ export function demandBreakdown(s: GameState) {
     ventures: ventureTrafficMul(s),
     /** 2.0: lifetime baskets bring shoppers back. */
     wordOfMouth: wordOfMouthMul(s),
-    /** 2.0: independent rival chains pull shoppers away. */
-    rivals: rivalDemandMul(s),
+    /** 2.0: independent rival chains pull shoppers away. Keel convoys use the same shape. */
+    rivals: rivalDemandMul(s) * keelDemandMul(s),
     /** 2.0 stat engine: trees, doctrines, rank rewards, projects. */
     trees: statMul(s, 'demand'),
+    /** Open/Close card — closed store cuts foot traffic. */
+    open: s.depth && s.depth.open === false ? DEPTH.closedDemandMul : 1,
+    /** Early campaign ramp: facing + regulars unlock full foot traffic. */
+    early: earlyDemandMul(s),
+    /** Star board soft-caps demand (3.5 ≈ 1.0). */
+    stars: starDemandMul(s),
+    /** Penny counter-flyer pressure until the desk answers. */
+    counterFlyer:
+      s.depth?.counterFlyerNeeded ? DEPTH.counterFlyerDemandMul : 1,
+    /** Missed regular temporary cut. */
+    regularMiss:
+      s.depth && s.time < (s.depth.regularMissUntil ?? 0) ? DEPTH.regularMissDemandMul : 1,
+    /** Unstaffed Open shift while the day is in Open third. */
+    openShift: openUnstaffedDemandMul(s),
+    /** Bruised produce pulls a bit harder. */
+    produceGrade: s.depth?.produceGrade === 'bruised' ? 1.06 : 1,
+    /** Chain Push policy — volume first. */
+    chainPolicy: s.depth?.departments?.chain?.policy === 'push' ? DEPTH.chainPushDemandMul : 1,
+    /** Era 6 ration week ending clock taxes income/demand. */
+    rationWeek:
+      s.era >= 6 && (s.depth?.rationWeekUntil ?? 0) > 0 && s.time < (s.depth?.rationWeekUntil ?? 0)
+        ? DEPTH.rationTaxMul * (1 - upgradeEffect(s, 'stipend-pad') * 0.15)
+        : 1,
   }
   let total = 1
   for (const v of Object.values(parts)) total *= v
@@ -460,6 +576,15 @@ export function demandBreakdown(s: GameState) {
 
 export function priceFactor(s: GameState, price = s.price) {
   return Math.pow(DEMAND.refPrice / Math.max(0.01, price), demandElasticity(s))
+}
+
+/** Keel & Sons convoys, same shape as rival stores. Bought Keel stops cutting demand. */
+export function keelDemandMul(s: GameState): number {
+  const keel = s.horizon?.keel
+  if (!keel || keel.bought || keel.convoys <= 0) return 1
+  // Courier Co-op Keel fork: the co-op undercuts their route.
+  const courier = hasFork(s, 'courierKeel') ? LATE.courierKeelCutMul : 1
+  return 1 / (1 + keel.convoys * HORIZON.keelDemandCut * statCut(s, 'rivalCut') * courier)
 }
 
 export function basketUnits(s: GameState) {
@@ -522,6 +647,19 @@ export function categoryWeights(s: GameState): Partial<Record<CategoryId, number
       standingOrderMagnitude(s, 'extra-facing-hour', 0.2)) *
     wallDull
   const posture = MARKETING.postures[marketingPosture(s)]
+  const flyer = s.depth?.flyer
+  const flyerActive = flyer && flyer.until > s.time
+  const circ = s.depth?.circular
+  const circActive = !flyerActive && circ && circ.until > s.time
+  const flyerAisles = flyerActive ? flyer!.aisles : circActive ? circ!.aisles : null
+  const flyerBandMul =
+    flyerActive && flyer!.discount === 'deep'
+      ? 1.1
+      : flyerActive && flyer!.discount === 'mid'
+        ? 1.04
+        : flyerActive && flyer!.discount === 'soft'
+          ? 0.98
+          : 1
   for (const c of CATEGORY_IDS) {
     if (!s.categories[c]) continue
     let weight = CATEGORIES[c].weight
@@ -529,9 +667,38 @@ export function categoryWeights(s: GameState): Partial<Record<CategoryId, number
     if (wx === 'rain' && c === 'cans') weight *= 1.22
     if (wx === 'heat' && c === 'dairy') weight *= 1.18
     if (featured.includes(c)) weight *= featureMul
+    weight *= facingPullMul(s, c)
+    // Fresh department Turn/Pile policy on produce/dairy/meat/deli.
+    if (c === 'produce' || c === 'dairy' || c === 'meat' || c === 'deli') {
+      const pol = policyOf('fresh', s.depth?.departments?.fresh?.policy)
+      if (pol) weight *= pol.pullMul
+    }
+    // Bakery: strong until midday of the open cycle, then weak.
+    if (c === 'bakery') {
+      const phase = (s.time % DEPTH.bakeryCycleSec) / DEPTH.bakeryCycleSec
+      weight *= phase < 0.5 ? DEPTH.bakeryMorningMul : DEPTH.bakeryAfternoonMul
+    }
+    // Frozen needs cold coverage (plant or tunnel) or pull softens.
+    if (c === 'frozen') {
+      const coldOk = (s.cold?.plants ?? 0) > 0 || (s.builds.cold ?? 0) >= 2
+      if (!coldOk) weight *= DEPTH.frozenNoColdWeightMul
+    }
+    // Flyer / circular featured aisles.
+    if (flyerAisles?.includes(c)) weight *= DEPTH.circularDemandMul * flyerBandMul
+    // Penny aisle lock dulls that cat's pull.
+    if (s.depth?.rivalLockCat === c) weight *= 0.55
     let plMul = posture.privateLabelWeightMul
     if (memo(s, 'dry-empire')) plMul *= 1.08
     if (c === 'privateLabel') weight *= plMul
+    // Era 6 ration week: bias ration + one fresh + one import.
+    if (
+      s.era >= 6 &&
+      (s.depth?.rationWeekUntil ?? 0) > s.time
+    ) {
+      if (c === 'ration') weight *= DEPTH.rationDemandMul * (1 + upgradeEffect(s, 'ration-pull'))
+      if (c === 'produce' || c === 'dairy' || c === 'meat') weight *= DEPTH.rationFreshBiasMul
+      if (c === 'import') weight *= DEPTH.rationImportBiasMul
+    }
     // Cold Momentum pulls dairy/meat; brownout softens them.
     if ((c === 'dairy' || c === 'meat') && coldLineActive(s)) {
       if (coldBrownout(s)) {
@@ -612,6 +779,12 @@ export function varietyMul(s: GameState) {
 export function checkoutCap(s: GameState) {
   const cashiers = roleStrength(s, 'cashier')
   let cap = CHECKOUT.basePerSec + cashiers * CHECKOUT.perCashier
+  // Mid shift eases the lunch bottleneck during the middle third of a store day.
+  const day = DEPTH.shiftDaySec
+  const phase = day > 0 ? (s.time % day) / day : 0
+  if (phase >= 1 / 3 && phase < 2 / 3 && (s.depth?.shifts?.mid?.length ?? 0) > 0) {
+    cap *= DEPTH.midShiftCheckoutMul ?? 1.12
+  }
   cap += chainCheckoutBonus(s)
   if (memo(s, 'express-lane')) cap *= CHECKOUT.expressLaneMul
   cap *= 1 + up(s, 'two-way-radio') * 0.03 + upgradeMagnitude(s, 'register-glance')
@@ -621,16 +794,18 @@ export function checkoutCap(s: GameState) {
 
 /** What one unit of `cat` actually rings up for at the register (value ladder included). */
 export function shelfPrice(s: GameState, cat: CategoryId, price = s.price) {
-  return price * CATEGORIES[cat].priceRatio * valueMul(s)
+  return price * CATEGORIES[cat].priceRatio * valueMul(s) * facingMarginMul(s, cat)
 }
 
 export function revenueMul(s: GameState) {
   return (
     (1 + up(s, 'label-gun') * 0.01) *
     (memo(s, 'price-gun') ? 1.01 : 1) *
+    (memo(s, 'fair-stamp-draft') ? 1.01 : 1) *
     chainRevenueMul(s) *
     marketingRevenueMul(s) *
     valueMul(s) *
+    offworldSalesMul(s) *
     statMul(s, 'margin')
   )
 }
@@ -673,20 +848,28 @@ export function hireCost(s: GameState, role: RoleId) {
 
 export function wagesPerSec(s: GameState) {
   let w = 0
-  const eraWage = 1 + Math.min(3, s.era) * 0.08
+  // Era wage keeps climbing past Era 3 so a full org lands ~15–25% of revenue.
+  const eraWage = 1 + Math.max(0, s.era) * DEPTH.payroll.eraWagePerEra
   for (const m of s.staff) {
     w += ROLES[m.role].wagePerMin * (1 + (m.level - 1) * 0.04) * eraWage * traitWage(m.traitId)
   }
   const hoursMul = Math.max(0.5, s.hours)
   // House Crew softens the wage floor; Traveling Team leaves wages alone.
   const wageCut = up(s, 'wage-eff') * 0.04 + upgradeMagnitude(s, 'house-crew') * 0.15
-  return (
+  let wage =
     (w / 60) *
     hoursMul *
     Math.max(0.6, 1 - wageCut) *
     (memo(s, 'open-book-accounting') ? 0.98 : 1) *
     statCut(s, 'wageCut')
-  )
+  if (s.depth && s.depth.open === false) wage *= DEPTH.closedWageMul
+  // Soft-cap: total wage burden cannot exceed ~30% of recent revenue forever.
+  const rev = Math.max(0, s.rates?.revenuePerSec ?? 0)
+  if (rev > 1e-9) {
+    const cap = rev * DEPTH.payroll.softCapFrac
+    if (wage > cap) wage = cap
+  }
+  return wage
 }
 
 export function staffLevelCap(s: GameState) {
@@ -705,6 +888,7 @@ export function staffSeatCap(s: GameState) {
   const stores = Math.max(0, s.stores.length - 1)
   seats += stores * STAFF_SEATS.perExtraStore
   seats += Math.floor(up(s, 'shift-lead') / STAFF_SEATS.shiftLeadPerRanks)
+  seats += roleCount(s, 'shiftLead') * DEPTH.shiftLeadSeatBonus
   seats += Math.floor(up(s, 'district-lead') / 3)
   seats += Math.floor(upgradeMagnitude(s, 'traveling-team') * 8)
   seats += perk(s, 'extra-seat')
@@ -775,6 +959,18 @@ export function lifeMul(s: GameState, cat: CategoryId) {
   if (memo(s, 'cold-vault')) m *= 1.04
   if (memo(s, 'spoil-log')) m *= 1.03
   if (s.board?.rndUntil > s.time) m *= 1.1
+  if (cat === 'meat' && roleCount(s, 'butcher') > 0) m *= DEPTH.butcherMeatLifeMul
+  if (cat === 'dairy' && roleCount(s, 'dairyClerk') > 0) m *= DEPTH.dairyClerkLifeMul
+  {
+    const daySec = DEPTH.shiftDaySec
+    const phase = (((s.time % daySec) + daySec) % daySec) / daySec
+    const isOpen = phase < 1 / 3
+    const covered = (s.depth?.shifts?.open?.length ?? 0) > 0
+    if (isOpen && !covered && s.staff.length > 0) m /= DEPTH.unstaffedOpenSpoilMul
+  }
+  // Facing spoilMul shortens life when > 1 (faster spoil).
+  const spoil = facingSpoilMul(s, cat)
+  if (spoil > 0) m /= spoil
   // Cold chain: healthy freshness + Momentum stretch perishable life; sagging freshness / brownout shortens it.
   if (CATEGORIES[cat].life != null && coldLineActive(s)) {
     const f = s.cold.freshness
@@ -822,8 +1018,39 @@ export function agingMul(s: GameState, where: 'shelf' | 'backroom', cat?: Catego
   if (cat && featuredCategories(s).includes(cat) && CATEGORIES[cat].life != null) {
     m *= VARIETY.featureSpoilMul
   }
+  if (cat === 'produce' || cat === 'dairy' || cat === 'meat' || cat === 'deli') {
+    const pol = policyOf('fresh', s.depth?.departments?.fresh?.policy)
+    if (pol) m *= pol.ageMul
+  }
+  // Tunnel cold + staffed Fresh / cold driver slows fresh aisle aging.
+  if (cat === 'produce' || cat === 'dairy' || cat === 'meat' || cat === 'deli') {
+    m *= tunnelFreshAgeMul(s)
+  }
+  // FreshWay spoils featured fresh facing unless tunnel + recent signed cooler log.
+  if (
+    cat &&
+    (cat === 'produce' || cat === 'dairy' || cat === 'meat' || cat === 'deli') &&
+    featuredCategories(s).includes(cat)
+  ) {
+    const fw = freshWaySpoilMul(s)
+    if (fw > 1) m *= fw
+  }
   // Brownout: warm aisles age faster (perishables only).
   if (coldBrownout(s) && (!cat || CATEGORIES[cat].life != null)) m *= COLD.brownoutAgingMul
+  // Deep flyer band: featured perishables age faster (margin choice risk).
+  if (
+    cat &&
+    CATEGORIES[cat].life != null &&
+    (s.depth?.flyer?.until ?? 0) > s.time &&
+    s.depth?.flyer?.discount === 'deep' &&
+    (s.depth.flyer.aisles ?? []).includes(cat)
+  ) {
+    m *= 1.12
+  }
+  // Bonded Sealed fork eases the backroom; Ghost Rush bags sit warm on every perishable.
+  if (where === 'backroom' && hasFork(s, 'bondedSealed')) m *= LATE.bondedSealedAgeMul
+  if (hasFork(s, 'ghostRush') && (!cat || CATEGORIES[cat].life != null)) m *= LATE.ghostRushAgeMul
+  if (memo(s, 'cold-law-draft')) m *= 0.99
   return m * statCut(s, 'spoilCut')
 }
 
@@ -836,6 +1063,8 @@ export function shrinkMul(s: GameState) {
   m *= 1 - up(s, 'shrink-sense') * SHRINK.senseCutPerLevel
   m *= Math.max(0.5, 1 - upgradeMagnitude(s, 'count-night'))
   m *= Math.max(0.5, 1 - standingOrderMagnitude(s, 'crate-recount', 0.2))
+  // Close shift on the board cuts night shrink (bodies on the floor after dark).
+  if ((s.depth?.shifts?.close?.length ?? 0) > 0) m *= DEPTH.closeShiftShrinkMul ?? 0.92
   const pricePerception = Math.pow(Math.max(0.5, s.price / DEMAND.refPrice), 0.3)
   return m * pricePerception * chainShrinkMul(s)
 }

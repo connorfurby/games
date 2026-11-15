@@ -1,7 +1,9 @@
-import { POLITICS } from '../balance'
+import { emptyBills, type BillId, BILL_DEFS } from '../../content/depth'
+import { DEPTH, POLITICS } from '../balance'
 import { clamp, log, round2, setEra, unlockMenu } from '../helpers'
 import { chance } from '../rng'
 import type { GameState } from '../state'
+import { plantCountOf } from './cold'
 
 export function openPolitics(s: GameState) {
   if (s.politics.capital <= 0) s.politics.capital = POLITICS.capitalStart
@@ -53,7 +55,6 @@ export function acquireRegion(s: GameState) {
   )
   log(s, `Acquired a neighbor (#${s.politics.acquisitions}). Monopoly risk ${Math.round(s.politics.monopolyRisk * 100)}%.`, 'good')
 
-  // Soft monopoly fine — caps cash hit, never bricks
   if (s.politics.monopolyRisk > 0.55 && chance(s, s.politics.monopolyRisk * 0.15)) {
     const fine = Math.min(
       s.cash * POLITICS.monopolyFineCashFrac,
@@ -66,13 +67,69 @@ export function acquireRegion(s: GameState) {
   }
 }
 
+export function billsPassed(s: GameState): number {
+  if (!s.politics.bills) return 0
+  return Object.values(s.politics.bills).filter(Boolean).length
+}
+
+export function billCost(s: GameState): { cash: number; capital: number } {
+  const n = billsPassed(s)
+  return {
+    cash: Math.ceil(POLITICS.billCash * Math.pow(POLITICS.billGrowth, n)),
+    capital: Math.ceil(POLITICS.billCapital * Math.pow(1.15, n)),
+  }
+}
+
+export function canPassBill(s: GameState, id: BillId): string | null {
+  if (s.era < 3 && !(s.memos['monopoly-watch'] > 0)) return 'Politics locked.'
+  if (!BILL_DEFS[id]) return 'Unknown bill.'
+  if (!s.politics.bills) s.politics.bills = emptyBills()
+  if (s.politics.bills[id]) return 'Already passed.'
+  const { cash, capital } = billCost(s)
+  if (s.cash < cash) return `Need $${cash.toFixed(0)}.`
+  if (s.politics.capital < capital) return `Need ${capital} Political Capital.`
+  return null
+}
+
+export function passBill(s: GameState, id: BillId) {
+  if (!s.politics.bills) s.politics.bills = emptyBills()
+  const { cash, capital } = billCost(s)
+  s.cash = round2(s.cash - cash)
+  s.politics.capital = round2(s.politics.capital - capital)
+  s.politics.bills[id] = true
+  // Map bills to acquisitions counter for council seats later
+  s.politics.acquisitions = Math.max(s.politics.acquisitions, billsPassed(s))
+  s.politics.monopolyRisk = clamp(
+    s.politics.monopolyRisk + POLITICS.monopolyPerAcquire * 0.5,
+    0,
+    POLITICS.monopolyCap,
+  )
+  unlockMenu(s, 'politics')
+  log(s, `Passed the ${BILL_DEFS[id].name}.`, 'good')
+}
+
 export function canLeaveRegion(s: GameState): string | null {
   if (s.politics.leftRegion || s.era >= 4) return 'Already left the region.'
   if (s.cold.yieldLeft > POLITICS.leaveYieldNeed) return 'Empty regional yield first.'
+  if (billsPassed(s) < POLITICS.leaveBillsNeed) {
+    return `Pass ${POLITICS.leaveBillsNeed} bills first (${billsPassed(s)}/${POLITICS.leaveBillsNeed}).`
+  }
   if (s.politics.capital < POLITICS.leaveCapitalNeed) {
     return `Need ${POLITICS.leaveCapitalNeed} Political Capital to file departure.`
   }
   if (!(s.memos['leave-region'] > 0) && s.era < 3) return 'Leave the Region memo first.'
+  const logs = s.depth?.cooler?.logsSigned ?? 0
+  if (logs < DEPTH.coolerLogNeed) {
+    return `Sign ${DEPTH.coolerLogNeed} cooler logs (${logs}/${DEPTH.coolerLogNeed}).`
+  }
+  if (plantCountOf(s, 'blast') < 1) return 'Need a blast freezer plant.'
+  if (plantCountOf(s, 'tunnel') < 1) return 'Need a tunnel cold plant.'
+  if (!s.depth?.leadsOnBoard?.fresh || !s.depth?.leadsOnBoard?.cold) {
+    return 'Put Fresh and Cold leads on the Shift Board at least once.'
+  }
+  if ((s.depth?.stars ?? 0) < DEPTH.leaveStarMin) {
+    return `Need stars ≥ ${DEPTH.leaveStarMin}.`
+  }
   return null
 }
 
@@ -89,18 +146,17 @@ export function tickPolitics(s: GameState, dt: number) {
   if (s.era < 3) return
   if (!(s.memos['lobby-office'] > 0) && s.politics.capital <= 0 && s.politics.lobby <= 0) return
 
-  // Leak stays flat. Lobbyists add capital; they do not make the wallet leak faster.
   if (s.politics.capital > 0) {
     const leak = POLITICS.leakPerSec * dt
     s.politics.capital = Math.max(0, round2(s.politics.capital - leak))
   }
-  if (s.politics.lobby > 0) {
-    s.politics.capital = round2(
-      s.politics.capital + POLITICS.lobbyGainPerSec * s.politics.lobby * dt,
-    )
+  let lobby = s.politics.lobby
+  // Cold-desk lobbyistPerson counts as a retainer
+  if (s.staff.some((m) => m.role === 'lobbyistPerson')) lobby += 1
+  if (lobby > 0) {
+    s.politics.capital = round2(s.politics.capital + POLITICS.lobbyGainPerSec * lobby * dt)
   }
 
-  // Brand regenerates; never a brick
   if (s.brand < 1) {
     s.brand = clamp(s.brand + POLITICS.brandRegenPerSec * dt, 0, 1)
   }

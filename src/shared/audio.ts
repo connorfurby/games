@@ -51,11 +51,42 @@ export function playUnpackFx(muted: boolean) {
   playBeep({ muted, freq: 420, ms: 40, gain: 0.025 })
 }
 
-/** Soft till chirp when a basket lands. */
+/** Sales can land several times a second; the till chirp is capped at 2 per second. */
+const SALE_MIN_GAP_MS = 500
+let lastSaleAt = -Infinity
+
+/** Soft till chirp when a basket lands. Throttled to at most 2/sec. */
 export function playSaleFx(muted: boolean) {
-  playBeep({ muted, freq: 740, ms: 45, gain: 0.022 })
   if (muted) return
+  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  if (now - lastSaleAt < SALE_MIN_GAP_MS) return
+  lastSaleAt = now
+  playBeep({ muted, freq: 740, ms: 45, gain: 0.022 })
   window.setTimeout(() => playBeep({ muted: false, freq: 920, ms: 35, gain: 0.016 }), 40)
+}
+
+/** Short low-high "ka-ching" when something is bought. */
+export function playPurchaseFx(muted: boolean) {
+  if (muted) return
+  playBeep({ muted: false, freq: 520, ms: 50, gain: 0.025 })
+  window.setTimeout(() => playBeep({ muted: false, freq: 780, ms: 70, gain: 0.02 }), 55)
+}
+
+/** Rising three-note chime when a menu / upgrade / feature unlocks. */
+export function playUnlockFx(muted: boolean) {
+  if (muted) return
+  playBeep({ muted: false, freq: 523, ms: 70, gain: 0.03 })
+  window.setTimeout(() => playBeep({ muted: false, freq: 659, ms: 70, gain: 0.028 }), 80)
+  window.setTimeout(() => playBeep({ muted: false, freq: 784, ms: 110, gain: 0.026 }), 160)
+}
+
+/** Milestone sting: small = one note, medium = two, large = a short arpeggio. */
+export function playCelebrateFx(muted: boolean, kind: 'small' | 'medium' | 'large' = 'medium') {
+  if (muted) return
+  const notes = kind === 'small' ? [880] : kind === 'medium' ? [660, 990] : [523, 659, 784, 1047]
+  notes.forEach((freq, i) => {
+    window.setTimeout(() => playBeep({ muted: false, freq, ms: kind === 'large' ? 120 : 90, gain: 0.035 }), i * 95)
+  })
 }
 
 /** Quiet paper shuffle when a memo stamps. */

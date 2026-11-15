@@ -137,8 +137,8 @@ MEMOS TO PRIORITIZE
   chalkboard / flyers lightly, then categories and the Back-Office Desk.
 
 EXIT TO ERA 1
-  Soft — staff, produce, Attention desk, and neighborhood systems layer in.
-  You do not “beat” Era 0; you outgrow it.`,
+  Feature cans · satisfy regulars · three Market Bell dips · staff Open (or 800+ baskets)
+  · Star Board ≥ 3.5. You do not “beat” Era 0; you outgrow it.`,
   },
   {
     id: 'walk-e1',
@@ -157,22 +157,22 @@ PRODUCE / SPOIL
   Buy PRD crates on purpose. FIFO: oldest first. Dump Cooler if rot chokes the shelf.
   Mist / cooler memos buy time — they do not replace buying cans for stable fill.
 
-STAFF
-  Clerk for Unpack. Stocker for produce. Cashier for checkout cap. Security vs shrink.
-  Morale is soft; fix wages / staff room rather than panic-firing.
+STAFF · SHIFT BOARD
+  Clerk for Unpack. Assign Open / Mid / Close. Unstaffed Open hurts spoil.
+  Produce Lead on the board feeds the side-yard gate.
 
-MARKETING
-  A few ad levels early, then stop. Cost doubles; pull rises slowly.
+INVOICE BOOK · PLANOGRAM
+  Pay invoices on time (Suppliers / Books). Practice the flagship planogram twice,
+  then file ≥0.72 for credit before the side yard.
 
 LAND
-  Survey memo → Land menu → Side Yard / Lot when cash + calm allow.
+  Survey memo → Land menu → Side Yard when regulars, invoices, Open days, and planogram clear.
   Side yard / lot gate Era 2.
 
 CHECKPOINTS
   □ Back office open · Archives ≥ 2 before fat Att memos
-  □ Produce without constant dump panic
-  □ Coffee or meal kits for side cash
-  □ Passbook parking idle cash
+  □ Regulars + Open days + on-time invoices
+  □ Flagship planogram credited
   □ Lot / side yard bought`,
   },
   {
@@ -460,6 +460,8 @@ ORDER OF OPERATIONS (EARLY)
     body: `ROLES
   Clerk — Unpack. Cashier — checkout cap. Stocker — perishables. Security — shrink.
   Hire when wage share fits revenue. Overstaffing idles cash.
+  Department roles (Fresh, Chain, Cold…) sit in their own seat pools — they do not
+  eat floor seats. Wages soft-cap near 30% of recent revenue.
 
 XP / LEVELS
   Staff level with time on the job. Training upgrades accelerate.
@@ -611,6 +613,42 @@ IDLE
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // DEPTH LOOPS (eight systems)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'sys-depth-eight',
+    title: 'Eight depth systems',
+    era: 0,
+    topic: 'systems',
+    blurb: 'Regulars → Shift Board → Planogram → Invoices → Stars → Flyer → Cooler/Dispatch → Pocket/Hearing.',
+    body: `REGULARS (Floor)
+  Named shoppers with facing wants and patience. Serve for stars; miss and demand dips.
+  Era 1 and the side yard need counted satisfies — not one visit.
+
+SHIFT BOARD (Staff)
+  Open / Mid / Close. Unstaffed Open hurts spoil. Side yard wants Open days;
+  cold wants Open+Close; barges want Orbit on Mid.
+
+FLAGSHIP PLANOGRAM (Floor)
+  Practice twice, then credit ≥0.72. Chain/globe refiles after new aisles.
+
+INVOICE BOOK (Suppliers / Books)
+  Due timers, early-pay discount, late fees that hit stars. Lot Survey and leave care.
+
+STAR BOARD (HUD chip)
+  1.0–5.0 next to Next-goal. Soft-caps demand and franchise loyalty; freezes in ration week.
+
+FLYER DESK (Marketing)
+  Weekly craft with cooldown. Cold permit wants three completed weeks, not one Circular.
+
+COOLER LOG + DISPATCH (Cold / Logistics)
+  Sign timed logs for leave. Match lane cargo for clean manifests before the barge.
+
+POCKET OPS + HEARING DOCKET (Fleet / Charter)
+  Hauler ETAs clear pockets (trips open Era 6). Concord hearings (3 sessions) before the stamp.`,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // ERA 2+ DETAIL
   // ═══════════════════════════════════════════════════════════════════════════
   {
@@ -618,10 +656,14 @@ IDLE
     title: 'Era 2 systems detail',
     era: 2,
     topic: 'era2',
-    blurb: 'Stores, depot, board, Read, Autonomous.',
+    blurb: 'Stores, Flyer Desk, depot, board, Autonomous.',
     body: `ATTENTION SPLIT
   Each store wants share. Drift raises spoil/shrink/inspection on neglected doors.
   Store XP from sales share softens the tax.
+
+FLYER DESK
+  Print a week (2 aisles + promise). Wait it out, cool down, repeat ×3 for the cold permit.
+  Penny can force a counter-flyer — clear it from the desk.
 
 DEPOT
   Before five stores. Demand buff, Ghost Kitchen, Autonomous prerequisite.
@@ -640,8 +682,12 @@ AUTONOMOUS
     title: 'Era 3 systems detail',
     era: 3,
     topic: 'era3',
-    blurb: 'Cold math and politics pressure.',
-    body: `SURPLUS
+    blurb: 'Cooler Log, cold math, and politics pressure.',
+    body: `COOLER LOG
+  Temp checks on a timer. Plant Operator on the current shift auto-signs.
+  Leave Region wants signed logs + blast/tunnel + bills — not yield alone.
+
+SURPLUS
   Plants (+quadratic) + tanks − demand. Negative → brownout floor + Momentum pause.
 
 AUTO-SHED
@@ -656,15 +702,39 @@ POLITICAL CAPITAL
     title: 'Era 4–6 systems detail',
     era: 4,
     topic: 'late',
-    blurb: 'Fuel, Charter, endings.',
-    body: `LANES / FUEL / CONTROL
+    blurb: 'Dispatch, Pocket Ops, endings.',
+    body: `DISPATCH BOARD
+  Match wet cargo, then swear the exam hold before it slips. Clean manifests + exams gate the berth.
+  MegaMart snipes unassigned lanes.
+
+LANES / FUEL / CONTROL
   Wet lanes work. Dry lanes idle. Control spends like late-game cash.
 
-CHARTER
-  Allocate before hard launches. Guardian once per pressure cycle. Reboot to respec.
-  Legacy from drift war raises Charter cap.
+POCKET OPS
+  Haulers travel on ETAs and rest at the berth after arrival — turnarounds count toward Era 6.
+  Wrong ration wastes the trip. Four cleared pockets + Orbit Mid + Hold + ration facing open Era 6.
 
 ENDINGS
-  Accept = prestige soft-reset. Reject = ordered silence. Both are valid closings.`,
+  Ration week freezes the Star Board. Stamp the ration ledger once per shift-day before Continue.
+  Accept = prestige soft-reset. Reject = ordered silence.`,
+  },
+  {
+    id: 'late-worlds',
+    title: 'Eras 7–12 · Worlds puzzles',
+    era: 7,
+    topic: 'late',
+    blurb: 'Practice filings, climate/settlement/haul, seating, rehearsal.',
+    body: `PRACTICE THEN CREDIT
+  First two filings per layer are practice — they stock but do not open the next era.
+  Standard (~0.72) is the slow gate; clever (~0.85) is the fast gate.
+
+ERA LOOPS
+  Serve climate neighbors on stocked worlds (Era 8). Settle each credited stop (Era 9).
+  Season chore arms a yield haul — bring it in before the season turns (Era 10).
+  Habit watches finish after each credited phrase (Era 11). Seat each kept clause, then wait the gap (Era 12).
+
+CHARTER → LAST AISLE
+  Keep four clauses (serial seating), clear Concord’s hearing docket (3 sessions), then stamp.
+  Finish list practice, rehearse Accept (desk gap), then Accept — Reject is unchanged.`,
   },
 ]

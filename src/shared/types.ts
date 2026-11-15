@@ -62,7 +62,7 @@ export interface PlayerSettings {
   pinnedMenu?: string | null
   /** Alternate accent set for color vision deficiency. */
   colorblind: boolean
-  /** Next-buy tip strip + rail mark (off by default). */
+  /** Next-buy tip strip + rail mark (on by default). */
   suggestNext: boolean
 }
 
@@ -79,7 +79,7 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
   speedUnlock: false,
   pinnedMenu: null,
   colorblind: false,
-  suggestNext: false,
+  suggestNext: true,
 }
 
 export const DEFAULT_META: MetaSave = {

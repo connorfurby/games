@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FLEET, POLITICS } from './balance'
+import { DEPTH, FLEET, POLITICS } from './balance'
 import { can, run } from './commands'
 import { createInitialState } from './state'
 import { tickFleet } from './systems/fleet'
@@ -35,8 +35,18 @@ describe('late eras smoke (3–6)', () => {
     s.cash = 1_000_000
     s.memos['lobby-office'] = 1
     s.memos['leave-region'] = 1
+    s.memos['monopoly-watch'] = 1
     s.cold.yieldLeft = 0
-    s.politics.capital = POLITICS.leaveCapitalNeed + 5
+    s.politics.capital = POLITICS.leaveCapitalNeed + 50
+    s.politics.bills = { hours: true, waste: true, labor: false, tax: false }
+    s.cold.plantList = [
+      { id: 'p1', kind: 'blast' },
+      { id: 'p2', kind: 'tunnel' },
+    ]
+    s.cold.plants = 2
+    s.depth.leadsOnBoard = { fresh: true, cold: true }
+    s.depth.stars = 3.5
+    s.depth.cooler = { logsSigned: 6, nextDueAt: 0, missed: 0, lastSignedAt: 0 }
 
     expect(can(s, { type: 'hireLobby' }).ok).toBe(true)
     expect(run(s, { type: 'hireLobby' }).ok).toBe(true)
@@ -59,6 +69,27 @@ describe('late eras smoke (3–6)', () => {
     s.cash = FLEET.bargeLaunchCash * 2
     s.read = FLEET.bargeLaunchRead + 2
     s.memos['barge-berth'] = 1
+    s.categories.import = true
+    s.depth.contracts.portBroker = true
+    s.depth.flagship.globeCredited = true
+    s.depth.stars = 3.5
+    s.depth.defectionsHandled = 1
+    s.depth.dispatch = {
+      cleanManifests: DEPTH.cleanManifestsNeed,
+      lastCycleAt: 0,
+      examLaneId: null,
+      examMix: null,
+      examUntil: 0,
+      examsHeld: DEPTH.examHoldNeed,
+    }
+    s.staff.push({
+      id: 80,
+      role: 'dispatcher',
+      name: 'Disp',
+      level: 1,
+      xp: 0,
+      hiredAt: 0,
+    })
 
     expect(can(s, { type: 'launchBarge' }).ok).toBe(true)
     expect(run(s, { type: 'launchBarge' }).ok).toBe(true)
@@ -76,6 +107,8 @@ describe('late eras smoke (3–6)', () => {
     s.fleet.biomass = 0
     s.fleet.launched = true
     s.endingChoice = null
+    s.depth.stewardId = 1
+    s.board.lastResolvedAt = 1
 
     expect(can(s, { type: 'acceptEnding' }).ok).toBe(true)
     expect(run(s, { type: 'acceptEnding' }).ok).toBe(true)
@@ -95,6 +128,8 @@ describe('late eras smoke (3–6)', () => {
     s.fleet.biomass = 0
     s.fleet.launched = true
     s.endingChoice = null
+    s.depth.stewardId = 1
+    s.board.lastResolvedAt = 1
     run(s, { type: 'acceptEnding' })
     expect(run(s, { type: 'confirmHungryLaws' }).ok).toBe(true)
     expect(s.pendingAccept).toBe(false)
@@ -107,6 +142,8 @@ describe('late eras smoke (3–6)', () => {
     s.fleet.biomass = 0
     s.fleet.launched = true
     s.endingChoice = null
+    s.depth.stewardId = 1
+    s.board.lastResolvedAt = 1
 
     expect(can(s, { type: 'rejectEnding' }).ok).toBe(true)
     expect(run(s, { type: 'rejectEnding' }).ok).toBe(true)

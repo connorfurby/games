@@ -1,7 +1,9 @@
-import { formatBN, type NumberFormat } from '@/shared/bn'
+import { cashLabel, formatBN, type NumberFormat } from '@/shared/bn'
 
 export function money(n: number, fmt: NumberFormat = 'named'): string {
   if (!Number.isFinite(n)) return '$0.00'
+  // Named is the default idle read; cashLabel covers the under-1k case too.
+  if (fmt === 'named') return cashLabel(n)
   const sign = n < 0 ? '-' : ''
   const abs = Math.abs(n)
   // Fixed decimals under 1k so buy buttons don't jitter width as cash ticks.

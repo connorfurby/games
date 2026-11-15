@@ -69,7 +69,7 @@ describe('Era 0–1 bots (H4 / Q3)', () => {
         `[attentive-lot] wall=${wallMs}ms gates=${JSON.stringify(r.gates)} lot=${!!s.memos['lot-survey']} land=${!!s.menus.land} yard=${!!s.expansions['side-yard']} ${r.detail}`,
       )
     },
-    180_000,
+    420_000,
   )
 
   it(

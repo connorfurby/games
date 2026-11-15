@@ -1,0 +1,378 @@
+/*
+ * Phase 6b department screens (Suppliers, Cold, Logistics, Staff, Marketing, Rivals, Ventures).
+ * Layout glue around the kit only: tokens, no hex values. Mobile first (390px).
+ */
+@layer panels {
+  .p6-primary-slot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+  .p6-primary-slot .gk-btn {
+    width: 100%;
+  }
+
+  .p6 .gk-screen-head__title {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .p6-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: var(--s-3);
+    align-items: start;
+  }
+  .p6-grid--wide {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  }
+  .p6-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+  }
+  .p6-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+  .p6-copy {
+    margin: 0;
+    font-size: var(--t-sm);
+    line-height: var(--t-sm-lh);
+    color: var(--ge-ink-muted);
+  }
+  .p6-muted {
+    margin: 0;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    color: var(--ge-muted);
+  }
+  .p6-warn {
+    margin: 0;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    color: var(--ge-warn);
+  }
+  .p6-title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .p6-title > strong {
+    font-size: var(--t-md);
+    line-height: var(--t-md-lh);
+  }
+  .p6-title > span {
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    font-weight: 400;
+    color: var(--ge-muted);
+  }
+  .p6-aside {
+    flex: none;
+    font-size: var(--t-xs);
+    font-weight: 400;
+  }
+  .p6-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-5);
+  }
+  .p6-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+  .p6-field input[type='number'] {
+    min-height: 40px;
+    width: 8rem;
+    padding: 0 var(--s-2);
+    border: 1px solid var(--ge-line-strong);
+    border-radius: var(--r-sm);
+    background: var(--ge-sunken);
+    color: var(--ge-ink);
+    font: inherit;
+    font-size: var(--t-sm);
+  }
+
+  /* Suppliers ----------------------------------------------------- */
+  .p6-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 2.25rem;
+    min-width: 6rem;
+  }
+  .p6-spark > span {
+    flex: 1;
+    min-width: 2px;
+    border-radius: 1px;
+    background: var(--ge-accent);
+    opacity: 0.7;
+  }
+  .p6-step {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    gap: var(--s-3);
+    align-items: start;
+  }
+  .p6-step__n {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--r-pill);
+    background: var(--ge-tag);
+    color: var(--ge-tag-ink);
+    font-size: var(--t-xs);
+    font-weight: 700;
+  }
+  .p6-step.is-done .p6-step__n {
+    background: var(--ge-success);
+  }
+  .p6-step__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-2);
+    margin-bottom: var(--s-2);
+    font-size: var(--t-sm);
+    font-weight: 700;
+    color: var(--ge-ink);
+  }
+  .p6-trucks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    gap: var(--s-2);
+  }
+  .p6-choice {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 44px;
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--ge-line-strong);
+    border-radius: var(--r-sm);
+    background: var(--ge-sunken);
+    color: var(--ge-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .p6-choice > strong {
+    font-size: var(--t-sm);
+  }
+  .p6-choice > span {
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+  .p6-choice > em {
+    font-size: var(--t-xs);
+    font-style: normal;
+    color: var(--ge-accent);
+  }
+  .p6-choice--row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .p6-choice--row > span {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+  .p6-choice.is-on {
+    border-color: var(--ge-tag);
+    box-shadow: 0 0 0 1px var(--ge-tag);
+  }
+  .p6-choice:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .p6-choice:focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 2px;
+  }
+  .p6-receipt {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+    gap: var(--s-2) var(--s-3);
+  }
+  .p6-receipt > div {
+    display: flex;
+    flex-direction: column;
+  }
+  .p6-receipt span {
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+  .p6-receipt strong {
+    font-size: var(--t-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  .p6-orders {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .p6-orders > li {
+    display: grid;
+    gap: var(--s-1);
+    font-size: var(--t-sm);
+  }
+  .p6-orders__top {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-2);
+  }
+  .p6-orders__top span {
+    color: var(--ge-muted);
+  }
+
+  /* Staff ---------------------------------------------------------- */
+  .p6-roster {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .p6-roster > li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'icon who' 'icon xp' 'acts acts';
+    gap: var(--s-1) var(--s-3);
+    align-items: center;
+    padding: var(--s-2) 0;
+    border-bottom: 1px solid var(--ge-line);
+  }
+  .p6-roster > li:last-child {
+    border-bottom: 0;
+  }
+  .p6-roster__icon {
+    grid-area: icon;
+  }
+  .p6-roster__who {
+    grid-area: who;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .p6-roster__who > strong {
+    font-size: var(--t-sm);
+  }
+  .p6-roster__who > span {
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+  .p6-roster__xp {
+    grid-area: xp;
+  }
+  .p6-roster__acts {
+    grid-area: acts;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .p6-role-top {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .p6-hours {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    min-width: min(100%, 12rem);
+    flex: 1;
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+  .p6-hours input[type='range'] {
+    width: 100%;
+    min-height: 32px;
+    accent-color: var(--ge-accent);
+  }
+
+  /* Marketing ------------------------------------------------------ */
+  .p6-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: var(--s-2) var(--s-3);
+  }
+
+  /* Rivals --------------------------------------------------------- */
+  .p6-rv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  /* Ventures ------------------------------------------------------- */
+  .p6-venture-art {
+    display: block;
+    width: 100%;
+  }
+  .p6-check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-height: 40px;
+    font-size: var(--t-sm);
+    color: var(--ge-ink);
+  }
+  .p6-check input {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--ge-accent);
+  }
+
+  /* One-line status. Button opens a sheet; --static is a row with its own control. */
+  .p6-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    width: 100%;
+    min-height: 2.75rem;
+    margin: 0;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--ge-line);
+    border-radius: var(--r-md);
+    background: var(--ge-raised);
+    color: var(--ge-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .p6-line--static {
+    cursor: default;
+  }
+  .p6-line > span {
+    flex: 1 1 10rem;
+    min-width: 0;
+    font-size: var(--t-sm);
+    line-height: var(--t-sm-lh);
+  }
+  .p6-line:focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 2px;
+  }
+  .p6-lines {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+}

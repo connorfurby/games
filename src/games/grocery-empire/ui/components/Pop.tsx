@@ -23,6 +23,7 @@ function formatDelta(delta: number): string | null {
 export function useSalePops(baskets: number, reducedMotion: boolean, muted = true): PopItem[] {
   const prevRef = useRef(baskets)
   const [pops, setPops] = useState<PopItem[]>([])
+  const timers = useRef<Map<number, number>>(new Map())
 
   useEffect(() => {
     const prev = prevRef.current
@@ -35,11 +36,21 @@ export function useSalePops(baskets: number, reducedMotion: boolean, muted = tru
     if (!text) return
     const id = popSeq++
     setPops((p) => [...p.slice(-5), { id, text, x: 18 + Math.random() * 50 }])
+    // Keep each pop's removal timer alive across re-renders; only clear on unmount.
     const t = window.setTimeout(() => {
+      timers.current.delete(id)
       setPops((p) => p.filter((x) => x.id !== id))
     }, 750)
-    return () => clearTimeout(t)
+    timers.current.set(id, t)
   }, [baskets, reducedMotion, muted])
+
+  useEffect(
+    () => () => {
+      for (const t of timers.current.values()) window.clearTimeout(t)
+      timers.current.clear()
+    },
+    [],
+  )
 
   return pops
 }

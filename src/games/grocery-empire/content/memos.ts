@@ -1,16 +1,51 @@
-import { LOT_SURVEY_LIFETIME } from '../sim/balance'
+import { DEPTH, LOT_SURVEY_LIFETIME } from '../sim/balance'
 import { rebootFee } from '../sim/formulas'
 import { LATE_MEMOS } from './lateEras'
 import { AMEND_MINUTES, STANDING_ORDERS } from '../sim/balance'
 import { log, queueTutorial, setEra, unlockMenu } from '../sim/helpers'
 import type { GameState } from '../sim/state'
+import { matchedStoreCount } from '../sim/systems/chain'
 import { enableMomentum, enableQuadratic } from '../sim/systems/cold'
 import { acceptEnding, rejectEnding } from '../sim/systems/endings'
 import { applyGuardianPreset, rebootFleet, startDriftWar } from '../sim/systems/fleet'
 import { leaveRegion, openPolitics } from '../sim/systems/politics'
 import { ERA2_MEMOS } from './era2'
+import { HORIZON_MEMOS } from './horizonMemos'
 import { FLAVOR_MEMOS } from './flavorMemos'
 import { FLAVOR_MEMOS_MORE } from './flavorMemosMore'
+
+function starMemoBlock(s: GameState): string | null {
+  if ((s.depth?.stars ?? 0) < DEPTH.starMemoFloor) {
+    return `Need stars ≥ ${DEPTH.starMemoFloor}.`
+  }
+  return null
+}
+
+function coldPermitBlocked(s: GameState): string | null {
+  const starFloor = starMemoBlock(s)
+  if (starFloor) return starFloor
+  if ((s.depth?.stars ?? 0) < DEPTH.coldPermitStarMin) {
+    return `Need stars ≥ ${DEPTH.coldPermitStarMin}.`
+  }
+  if ((s.depth?.flyerWeeks ?? 0) < DEPTH.flyerWeeksNeed) {
+    return `Need ${DEPTH.flyerWeeksNeed} band-held flyer weeks.`
+  }
+  if ((s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed) {
+    return `Need ${DEPTH.hotTraitWalkNeed} hot-trait walks.`
+  }
+  if (matchedStoreCount(s) < DEPTH.matchedStoresNeed) {
+    return `Need ${DEPTH.matchedStoresNeed} matched stores.`
+  }
+  if (!s.depot && !s.depth?.contracts?.commissary) {
+    return 'Need depot or commissary.'
+  }
+  if (!s.depth?.flagship?.chainCredited) {
+    return 'Refile flagship planogram after deli + bakery.'
+  }
+  if ((s.builds.cold ?? 0) < 2) return 'Need a walk-in (cold build ×2).'
+  if (s.stores.length < 3) return 'Need at least three stores.'
+  return null
+}
 
 export interface MemoCost {
   cash?: number
@@ -37,6 +72,8 @@ export interface MemoDef {
   max?: number
   /** Operational standing order (shown on the Standing tab). */
   standing?: boolean
+  /** Reset or replacement you can buy again. Lives on the Again tab, not the desk. */
+  again?: boolean
   /** Written to the ledger after the memo completes. */
   done: string
 }
@@ -658,6 +695,45 @@ export const MEMOS: MemoDef[] = [
     },
     done: 'Butcher block installed. Meat counter open.',
   },
+  {
+    id: 'deli-case',
+    name: 'Deli Case',
+    voice: 'Sliced to order. The board wilts if you blink.',
+    effect: 'Unlocks Deli. High margin, spoils in about 2 minutes.',
+    era: 2,
+    cost: c(800),
+    visible: (s) => s.era >= 2 && s.categories.meat,
+    run: (s) => {
+      s.categories.deli = true
+    },
+    done: 'Deli case lit. Knives out.',
+  },
+  {
+    id: 'bakery-oven',
+    name: 'Bakery Oven',
+    voice: 'Bread sells itself until noon. Then it is just bread.',
+    effect: 'Unlocks Bakery. Strong morning pull, quiet afternoon.',
+    era: 2,
+    cost: c(900),
+    visible: (s) => s.era >= 2 && (s.categories.produce || s.stores.length >= 2),
+    run: (s) => {
+      s.categories.bakery = true
+    },
+    done: 'Oven fired. Pastries until midday.',
+  },
+  {
+    id: 'frozen-aisle',
+    name: 'Frozen Aisle',
+    voice: 'Quiet bags that never wilt — if the cold holds.',
+    effect: 'Unlocks Frozen. Needs plant or tunnel coverage for full pull.',
+    era: 3,
+    cost: c(12_000),
+    visible: (s) => s.era >= 3 || had(s, 'cold-plant-permit'),
+    run: (s) => {
+      s.categories.frozen = true
+    },
+    done: 'Frozen doors fogging. Stock the tunnel.',
+  },
 
   // ── Era 1: ideas memos ────────────────────────────────────────────────────
   {
@@ -721,6 +797,10 @@ export const MEMOS: MemoDef[] = [
     era: 1,
     cost: c(500, 5000),
     visible: (s) => s.compute.unlocked && s.lifetimeRevenue >= LOT_SURVEY_LIFETIME,
+    blocked: (s) =>
+      (s.depth?.invoicesOnTime ?? 0) >= DEPTH.invoiceOnTimeNeedLot
+        ? null
+        : `Pay ${DEPTH.invoiceOnTimeNeedLot} invoices on time first (${s.depth?.invoicesOnTime ?? 0}/${DEPTH.invoiceOnTimeNeedLot}).`,
     run: (s) => {
       unlockMenu(s, 'land')
       queueTutorial(s, 'land')
@@ -743,7 +823,17 @@ export const MEMOS: MemoDef[] = [
     effect: 'Unlock Cold menu and plant builds.',
     era: 3,
     cost: c(150_000, 4000),
-    visible: (s) => s.autonomous || ((s.builds.cold ?? 0) >= 2 && s.stores.length >= 3),
+    visible: (s) => {
+      if (s.autonomous) return true
+      if ((s.builds.cold ?? 0) < 2 || s.stores.length < 3) return false
+      if ((s.depth?.flyerWeeks ?? 0) < DEPTH.flyerWeeksNeed) return false
+      if ((s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed) return false
+      if (matchedStoreCount(s) < DEPTH.matchedStoresNeed) return false
+      if ((s.depth?.stars ?? 0) < DEPTH.coldPermitStarMin) return false
+      if (!s.depot && !s.depth?.contracts?.commissary) return false
+      return true
+    },
+    blocked: (s) => coldPermitBlocked(s),
     run: (s) => {
       setEra(s, 3)
       unlockMenu(s, 'cold')
@@ -820,7 +910,23 @@ export const MEMOS: MemoDef[] = [
     era: 3,
     cost: c(30_000_000, 10_000, 50),
     visible: (s) => had(s, 'monopoly-watch') && s.cold.yieldLeft <= 0,
-    blocked: (s) => (s.politics.capital >= 15 ? null : 'Need 15 Political Capital.'),
+    blocked: (s) => {
+      if (s.politics.capital < 15) return 'Need 15 Political Capital.'
+      if ((s.depth?.cooler?.logsSigned ?? 0) < DEPTH.coolerLogNeed) {
+        return `Sign ${DEPTH.coolerLogNeed} cooler logs.`
+      }
+      const blasts = (s.cold.plantList ?? []).filter((p) => p.kind === 'blast').length
+      const tunnels = (s.cold.plantList ?? []).filter((p) => p.kind === 'tunnel').length
+      if (blasts < 1) return 'Need a blast freezer plant.'
+      if (tunnels < 1) return 'Need a tunnel cold plant.'
+      if (!s.depth?.leadsOnBoard?.fresh || !s.depth?.leadsOnBoard?.cold) {
+        return 'Put Fresh and Cold leads on the Shift Board at least once.'
+      }
+      if ((s.depth?.stars ?? 0) < DEPTH.leaveStarMin) {
+        return `Need stars ≥ ${DEPTH.leaveStarMin}.`
+      }
+      return null
+    },
     run: (s) => leaveRegion(s),
     done: 'Left the region. The map gets bigger.',
   },
@@ -848,8 +954,14 @@ export const MEMOS: MemoDef[] = [
     visible: (s) => s.era >= 4 || s.politics.leftRegion,
     run: (s) => {
       unlockMenu(s, 'logistics')
+      s.categories.import = true
       if (s.fleet.lanes < 1) {
-        s.fleet.lanes = 1
+        if (!s.fleet.laneList) s.fleet.laneList = []
+        if (!s.fleet.nextLaneId) s.fleet.nextLaneId = 1
+        const id = `lane-${s.fleet.nextLaneId++}`
+        s.fleet.laneList.push({ id, route: 'spice-route', fuel: 40 })
+        s.fleet.lanes = s.fleet.laneList.length
+        // Manifest assigned on the Dispatch Board — no auto-match.
         s.fuel = Math.max(s.fuel, 60)
       }
       queueTutorial(s, 'logistics')
@@ -899,6 +1011,29 @@ export const MEMOS: MemoDef[] = [
     era: 5,
     cost: c(3_000_000_000, 12_000, 100),
     visible: (s) => s.era >= 4 && (s.autonomous || s.fleet.lanes >= 1 || s.control >= 5),
+    blocked: (s) => {
+      const star = starMemoBlock(s)
+      if (star) return star
+      if ((s.depth?.stars ?? 0) < DEPTH.bargeStarMin) {
+        return `Need stars ≥ ${DEPTH.bargeStarMin}.`
+      }
+      if ((s.depth?.dispatch?.cleanManifests ?? 0) < DEPTH.cleanManifestsNeed) {
+        return `Need ${DEPTH.cleanManifestsNeed} clean manifests.`
+      }
+      if (!s.staff.some((m) => m.role === 'dispatcher' || m.role === 'purser')) {
+        return 'Hire a Dispatcher or Purser.'
+      }
+      const handled = s.depth?.defectionsHandled ?? 0
+      const loyal = (s.fleet.franchiseList ?? []).filter((f) => !f.defected).length
+      if (handled < 1 && loyal < 1) return 'Win back a defection, or hold one franchise.'
+      if (!s.categories.import) return 'Unlock Import first.'
+      if (!s.depth?.contracts?.portBroker) return 'Unlock Port Broker.'
+      if ((s.depth.invoices ?? []).some((i) => !i.paid && i.cat === 'import')) {
+        return 'Clear import invoices.'
+      }
+      if (!s.depth?.flagship?.globeCredited) return 'Refile flagship after Import.'
+      return null
+    },
     run: (s) => {
       setEra(s, 5)
       unlockMenu(s, 'fleet')
@@ -963,6 +1098,7 @@ export const MEMOS: MemoDef[] = [
     visible: (s) => s.fleet.launched,
     run: (s) => rebootFleet(s),
     repeatable: true,
+    again: true,
     done: 'Fleet rebooted. Charter refunded.',
   },
   {
@@ -1150,6 +1286,7 @@ export const MEMOS: MemoDef[] = [
     }),
     visible: (s) => s.compute.ideasUnlocked && FORK_IDS.some((f) => FORK_IDS_OWNED(s, f)),
     blocked: (s) => (FORK_IDS.some((f) => FORK_IDS_OWNED(s, f)) ? null : 'No standing-order fork filed.'),
+    again: true,
     run: (s) => {
       // Clear the first owned fork found (player can file Amend again for others).
       for (const fork of FORK_IDS) {
@@ -1166,6 +1303,9 @@ export const MEMOS: MemoDef[] = [
     repeatable: true,
     done: 'Minutes amended. File the other standing order when ready.',
   },
+
+  // Eras 7–12 — survey, freight, seed, signal, seal, the list
+  ...HORIZON_MEMOS,
 
   // Standing orders — repeatable operational ranks
   ...STANDING_ORDER_MEMOS,

@@ -30,6 +30,11 @@ export const STAT_IDS = [
   'crateCut',
   'rivalCut',
   'dealCut',
+  'planet',
+  'freight',
+  'seed',
+  'signal',
+  'seal',
 ] as const
 export type StatId = (typeof STAT_IDS)[number]
 
@@ -58,6 +63,11 @@ export const STAT_INFO: Record<StatId, { label: string; kind: 'boost' | 'cut' }>
   crateCut: { label: 'crate prices', kind: 'cut' },
   rivalCut: { label: 'rival pull', kind: 'cut' },
   dealCut: { label: 'buyout prices', kind: 'cut' },
+  planet: { label: 'planet shelves', kind: 'boost' },
+  freight: { label: 'freight routes', kind: 'boost' },
+  seed: { label: 'seed beds', kind: 'boost' },
+  signal: { label: 'signal relays', kind: 'boost' },
+  seal: { label: 'charter seal', kind: 'boost' },
 }
 
 export interface StatEffect {

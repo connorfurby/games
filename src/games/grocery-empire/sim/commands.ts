@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { valueMul } from './systems/network'
 import { buyout, canBuyout, canPriceWar, priceWar } from './systems/rivals'
 import type { RivalId } from '../content/rivals'
@@ -9,13 +10,17 @@ import { MEMO_BY_ID, MEMOS } from '../content/memos'
 import { PROJECT_BY_ID } from '../content/projects'
 import { empireUnlocked } from '../content/empireRewards'
 import { PERK_BY_ID } from '../content/perks'
-import { ROLE_IDS, traitForStaffId, type RoleId } from '../content/staff'
+import { ROLE_IDS, ROLES, isDeptRole, isHorizonRole, traitForStaffId, type RoleId } from '../content/staff'
+import { annexSeatBlock, floorHeadcount } from './staffAnnex'
+import { deptSeatBlock, syncDeptRoster } from './staffDept'
+import { postureFee } from './lateCost'
 import { TIP_BY_ID } from '../content/tips'
 import {
   UPGRADE_BY_ID,
   forkBlockedBy,
   isUpgradeVisible,
   requirementsMet,
+  type TreeId,
 } from '../content/upgrades'
 import { VENTURE_BY_ID, ventureLevelCost } from '../content/ventures'
 import {
@@ -26,7 +31,6 @@ import {
   ENDCAP,
   HOURS,
   LOYALTY,
-  MARKETING,
   PERK_RESPEC,
   PRICE,
   PRICE_LOCK,
@@ -37,6 +41,7 @@ import {
   adCostGrowth,
   attentionCap,
   backroomCap,
+  bestPrice,
   crateCost,
   crateSize,
   deliveryTime,
@@ -100,6 +105,7 @@ import {
   orderPizza,
 } from './systems/events'
 import { collectVenture } from './systems/growth'
+import { hasAffordableUpgrade, hasAffordableVenture, planAffordableUpgrades, planAffordableVentures } from './upgradePlan'
 import { unpackUnits, staffName } from './systems/people'
 import {
   applyBailout,
@@ -115,10 +121,14 @@ import {
   perishableQty,
   type DumpWhere,
 } from './systems/recovery'
-import { canWalkStore, ensureFlagshipStore, walkStore } from './systems/chain'
+import { canWalkStore, checkFlyerBandLock, ensureFlagshipStore, walkStore } from './systems/chain'
 import { debtCovenantBreached } from './systems/capital'
 import { era2Handlers } from './commandsEra2'
 import { eraLateHandlers } from './commandsEraLate'
+import { horizonHandlers } from './commandsHorizon'
+import { depthHandlers } from './commandsDepth'
+import { DEPTH } from './balance'
+import { emptyDepth } from '../content/depth'
 
 export interface Check {
   ok: boolean
@@ -146,6 +156,9 @@ export type Command =
   | { type: 'dumpCoolerPartial'; cat: CategoryId; qty: number; where?: DumpWhere }
   | { type: 'buyMemo'; id: string }
   | { type: 'buyUpgrade'; id: string; count?: number }
+  /** Buy the best affordable ranks, one at a time, up to the sweep limit. */
+  | { type: 'buyUpgradeSweep'; tree?: TreeId | 'all' }
+  | { type: 'levelVentureSweep' }
   | { type: 'buyBuild'; track?: string; id?: BuildFilter }
   | { type: 'sellBuild'; track?: string; id?: BuildFilter }
   | { type: 'buyEndcap' }
@@ -159,7 +172,16 @@ export type Command =
   | { type: 'startProject'; id: string }
   | { type: 'priceWar'; id: RivalId }
   | { type: 'evenAttention' }
-  | { type: 'syncRelics'; wings: string[]; count: number; unlocked: boolean; owned?: Record<string, number> }
+  | {
+      type: 'syncRelics'
+      wings: string[]
+      count: number
+      unlocked: boolean
+      owned?: Record<string, number>
+      levels?: Record<string, number>
+      sockets?: string[]
+      dust?: number
+    }
   | { type: 'walkDrifting' }
   | { type: 'buyoutRival'; id: RivalId }
   | { type: 'respecPerks' }
@@ -176,6 +198,34 @@ export type Command =
   | { type: 'setAutoRestock'; enabled: boolean; maxCost?: number; minUnits?: number }
   | { type: 'setMix'; cat: CategoryId; weight: number }
   | { type: 'setOrderCat'; cat: CategoryId }
+  | { type: 'setFacing'; cat: CategoryId; facingId: string }
+  | { type: 'setOpen'; open: boolean }
+  | { type: 'setDeptPolicy'; dept: string; policy: string }
+  | { type: 'promoteStaff'; staffId: number; toRole: RoleId }
+  | { type: 'morningWriteOff'; mode: 'dump' | 'discount' }
+  | { type: 'unlockContract'; id: string }
+  | { type: 'setContract'; id: string; on: boolean }
+  | { type: 'setCircular'; aisles: [CategoryId, CategoryId] }
+  | {
+      type: 'printFlyerWeek'
+      aisles: [CategoryId, CategoryId] | [CategoryId, CategoryId, CategoryId]
+      discountBand: 'soft' | 'mid' | 'deep'
+      promise: 'hours' | 'facing'
+    }
+  | { type: 'runBrownoutDrill' }
+  | { type: 'signCoolerLog' }
+  | { type: 'assignShift'; slot: import('../content/depth').ShiftSlot; staffId: number }
+  | { type: 'clearShift'; slot: import('../content/depth').ShiftSlot; staffId?: number }
+  | { type: 'serveRegular' }
+  | { type: 'dockCheckIn'; aisle?: import('../content/categories').CategoryId; short?: boolean }
+  | { type: 'payInvoice'; id: number }
+  /** Clear oldest unpaid invoice without cash (softlock rail / collections). */
+  | { type: 'writeOffInvoice' }
+  | { type: 'setFlagshipSlot'; index: number; cat: CategoryId | '' }
+  | { type: 'fileFlagshipPlanogram' }
+  | { type: 'fileStandardFlagship' }
+  | { type: 'setProduceGrade'; grade: 'good' | 'bruised' | null }
+  | { type: 'passBill'; id: import('../content/depth').BillId }
   | { type: 'toggleFavoriteMemo'; id: string }
   | { type: 'dismissOfflineReceipt' }
   | { type: 'skipTutorial' }
@@ -212,25 +262,112 @@ export type Command =
   | { type: 'walkStore'; storeId: string }
   | { type: 'trainStore'; storeId: string }
   // Era 3–6
-  | { type: 'buyPlant' }
+  | { type: 'buyPlant'; kind?: import('./state').PlantKind }
+  | { type: 'setPlantPower'; kinds: import('./state').PlantKind[] }
   | { type: 'buyTank' }
   | { type: 'decommissionPlant' }
   | { type: 'hireLobby' }
   | { type: 'acquireRegion' }
   | { type: 'leaveRegion' }
-  | { type: 'openLane' }
+  | { type: 'openLane'; route?: string }
   | { type: 'buyFuel' }
   | { type: 'openFranchise' }
-  | { type: 'launchBarge' }
+  | { type: 'winBackFranchise'; franchiseId: string }
+  | { type: 'setManifest'; laneId: string; mix: string }
+  | { type: 'swearExam' }
+  | { type: 'stampLedger' }
+  | { type: 'launchBarge'; class?: 'hauler' | 'replicator' | 'ark' }
+  | {
+      type: 'dispatchHauler'
+      bargeId?: string
+      pocketId: string
+      class?: 'hauler' | 'replicator' | 'ark'
+      /** When set, load this ration onto the Hauler before the trip. */
+      loadRation?: string
+    }
   | { type: 'buyCharter' }
   | { type: 'setCharterAxis'; axis: string; delta: number }
   | { type: 'applyGuardian' }
   | { type: 'rebootFleet' }
   | { type: 'startDriftWar' }
+  | { type: 'advanceDriftWar' }
+  | { type: 'promoteSteward'; staffId: number }
   | { type: 'acceptEnding' }
   | { type: 'rejectEnding' }
   | { type: 'clearPendingAccept' }
   | { type: 'confirmHungryLaws'; mutators?: PrestigeMutatorId[] }
+  // Era 7–12 horizon
+  | { type: 'continueHorizon' }
+  | { type: 'unsealHorizon' }
+  | { type: 'launchProbe' }
+  | { type: 'setPlanogram'; planetId: string; slots: string[] }
+  | { type: 'fileStandardPlanogram'; planetId: string }
+  | { type: 'setPlanetPrice'; planetId: string; price: number | null }
+  | { type: 'nameCluster'; name: string; policy: 'volume' | 'margin' | 'fresh' }
+  | { type: 'openCircuit' }
+  | {
+      type: 'setConvoy'
+      origin: string
+      stop: string
+      dest: string
+      good: string
+      load?: string[]
+      index?: number
+    }
+  | { type: 'fileStandardConvoy'; origin?: string; stop?: string; dest?: string; good?: string }
+  | { type: 'setStandingRoute'; index: number }
+  | { type: 'clearCircuit'; index: number }
+  | { type: 'priceWarKeel' }
+  | { type: 'buyoutKeel' }
+  | { type: 'buyGreenhouse' }
+  | { type: 'plantCross'; index: number; a: string; b: string }
+  | { type: 'fileStandardCross'; index?: number }
+  | { type: 'harvestPlot'; index: number }
+  | { type: 'setTaster'; taster: 'quality' | 'volume' }
+  | { type: 'buyRelay' }
+  | { type: 'commitPhrase'; symbols: string[] }
+  | { type: 'fileStandardPhrase' }
+  | { type: 'hireAgent'; habit?: 'price' | 'stock' | 'route' | 'taste' }
+  | { type: 'setAgentHabit'; id: number; habit: 'price' | 'stock' | 'route' | 'taste' }
+  | { type: 'fireAgent'; id: number }
+  | { type: 'toggleClause'; id: string }
+  | { type: 'setCharter'; charter: 'standard' | 'boutique' | 'coop' }
+  | { type: 'openEmbassy' }
+  | { type: 'fillLastLine'; index: number; filled: string }
+  | { type: 'fileStandardList' }
+  | { type: 'acceptLastAisle' }
+  | { type: 'rejectLastAisle' }
+  | { type: 'helpHeadline' }
+  | { type: 'ignoreHeadline' }
+  | { type: 'setVenturePolicy'; id: string; policy: 'a' | 'b' }
+  | { type: 'setDeputy'; staffId: number; on: boolean }
+  | { type: 'queueBuild'; id: string }
+  | { type: 'cancelQueue' }
+  | { type: 'socketRelic'; id: string }
+  | { type: 'unsocketRelic'; id: string }
+  | { type: 'dustRelic'; id: string }
+  | { type: 'setAutoDust'; rarityCeiling: string | null }
+  | { type: 'levelRelic'; id: string; count?: number }
+  | { type: 'doSeasonChore'; chore: 'water' | 'cover' | 'harvest' | 'rest' }
+  | { type: 'serveClimateNeighbor' }
+  | { type: 'settleStop' }
+  | { type: 'haulYield' }
+  | { type: 'seatClause' }
+  | { type: 'rehearseAccept' }
+  | { type: 'answerHearing' }
+  | { type: 'clearHorizonRival'; kind: 'drift' | 'keelmark' | 'verdant' | 'static' | 'ration' }
+  | { type: 'proposePlanogram'; planetId: string }
+  // Era 7–12 late hub
+  | { type: 'restockOffworld' }
+  | { type: 'unpackBonded'; count?: number; kind?: 'dry' | 'chill' | 'fragile' }
+  | { type: 'vaultSeed'; amount: number }
+  | { type: 'jumpLane' }
+  | { type: 'openPlanetFranchise' }
+  | { type: 'buyInstrument'; id: string }
+  | { type: 'coopOrder'; cat?: CategoryId }
+  | { type: 'cryoTreaty' }
+  | { type: 'broadcast'; climate: string }
+  | { type: 'wireAd' }
 
 function buildTrackId(cmd: { track?: string; id?: string }): BuildFilter | null {
   const raw = cmd.track ?? cmd.id
@@ -245,6 +382,7 @@ type Handler = {
 
 const ok: Check = { ok: true }
 const no = (reason: string): Check => ({ ok: false, reason })
+const needCash = (cost: number): Check => no(`Need ${cashLabel(cost)}.`)
 
 function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
   if (!s.categories[cat]) return no('Category locked.')
@@ -254,12 +392,16 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
       return no(`Supplier B needs at least ${WHOLESALE.supplierB.minSpools} crates.`)
     }
   }
+  if (!s.depth) s.depth = emptyDepth()
+  const unpaid = s.depth.invoices.filter((i) => !i.paid).length
+  if (unpaid >= DEPTH.invoiceUnpaidCap) {
+    return no('Invoice book full — pay an invoice first.')
+  }
   const costEach = crateCost(s, cat, supplier)
   const total = round2(costEach * crates)
-  if (s.cash < total) return no(`Need $${total.toFixed(2)}.`)
   const unitsEach = crateSize(s)
   let qty = unitsEach * crates
-  let paid = total
+  let amount = total
   let unit = unitCost(s, cat, supplier)
   if (supplier === 'b' && chance(s, shortShipChance(s))) {
     const keptFrac = Math.min(0.95, WHOLESALE.supplierB.shortShipFrac + up(s, 'claim-window') * 0.03)
@@ -267,17 +409,30 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
     const refundUnits = qty - kept
     qty = kept
     const refund = round2(refundUnits * unit)
-    paid = round2(paid - refund)
+    amount = round2(amount - refund)
     s.stats.shortShips += 1
-    log(s, `Short ship: crate light by ${refundUnits}. $${refund.toFixed(2)} credited.`, 'warn')
+    log(s, `Short ship: crate light by ${refundUnits}. Invoice cut $${refund.toFixed(2)}.`, 'warn')
   }
   const firstOrder = s.stats.ordersPlaced <= 0
-  s.cash -= paid
-  s.stats.wholesaleSpent += paid
+  // Invoice float: goods arrive on ETA; cash settles via payInvoice.
   s.stats.ordersPlaced += 1
   if (s.wholesale.index < 0.85) s.stats.ordersBelow85 += 1
   s.wholesale.drift = Math.min(1.35, s.wholesale.drift + WHOLESALE.buyBump * crates)
   s.wholesale.idleSec = 0
+  const tip = Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index
+  if (s.wholesale.index <= tip * DEPTH.marketBellIndex) {
+    s.depth.marketBellDipAt = s.time
+    s.depth.marketBellDips += 1
+  }
+  const invId = s.depth.nextInvoiceId++
+  s.depth.invoices.push({
+    id: invId,
+    cat,
+    amount,
+    dueAt: s.time + DEPTH.invoiceDueSec,
+    paid: false,
+    onTime: false,
+  })
   const eta = deliveryTime(s, supplier)
   s.orders.push({
     id: s.nextOrderId++,
@@ -288,7 +443,9 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
     unitCost: unit,
   })
   if (firstOrder) {
-    log(s, 'Truck inbound. Crates land in the backroom — Unpack them before the shelf goes bare.', 'story')
+    log(s, 'Truck inbound. Pay the invoice when you can — early pays discount.', 'story')
+  } else {
+    log(s, `Invoice #${invId} filed for $${amount.toFixed(2)} (due in ${DEPTH.invoiceDueSec}s).`, 'info')
   }
   const room = backroomCap(s) - sumQty(s.backroom)
   if (room < qty * 0.25) {
@@ -418,17 +575,43 @@ function applyTutorialAction(s: GameState, action: { type: string; params?: Reco
       break
     }
     case 'buyPlant':
-    case 'buyColdPlant':
-      run(s, { type: 'buyPlant' })
+    case 'buyColdPlant': {
+      const kind =
+        p.kind === 'tunnel' || p.kind === 'blast' || p.kind === 'compressor' ? p.kind : 'compressor'
+      run(s, { type: 'buyPlant', kind })
       break
+    }
     case 'hireLobby':
       run(s, { type: 'hireLobby' })
       break
     case 'openLane':
-      run(s, { type: 'openLane' })
+      run(s, {
+        type: 'openLane',
+        route: typeof p.route === 'string' ? p.route : 'spice-route',
+      })
       break
     case 'launchBarge':
-      run(s, { type: 'launchBarge' })
+      run(s, {
+        type: 'launchBarge',
+        class:
+          p.class === 'replicator' || p.class === 'ark' || p.class === 'hauler'
+            ? p.class
+            : 'hauler',
+      })
+      break
+    case 'dispatchHauler':
+      if (typeof p.pocketId === 'string') {
+        run(s, {
+          type: 'dispatchHauler',
+          pocketId: p.pocketId,
+          bargeId: typeof p.bargeId === 'string' ? p.bargeId : undefined,
+          class:
+            p.class === 'replicator' || p.class === 'ark' || p.class === 'hauler'
+              ? p.class
+              : undefined,
+          loadRation: typeof p.loadRation === 'string' ? p.loadRation : undefined,
+        })
+      }
       break
     case 'applyGuardian':
     case 'guardianPreset':
@@ -448,6 +631,39 @@ function applyTutorialAction(s: GameState, action: { type: string; params?: Reco
       break
     case 'pulseScanner':
       run(s, { type: 'pulseScanner' })
+      break
+    case 'launchProbe':
+      run(s, { type: 'launchProbe' })
+      break
+    case 'fileStandardPlanogram': {
+      const id =
+        typeof p.planetId === 'string'
+          ? p.planetId
+          : (s.horizon.planets.find((pl) => pl.revealed && !pl.stocked)?.id ??
+            s.horizon.planets.find((pl) => pl.revealed)?.id)
+      if (id) run(s, { type: 'fileStandardPlanogram', planetId: id })
+      break
+    }
+    case 'fileStandardConvoy':
+      run(s, { type: 'fileStandardConvoy' })
+      break
+    case 'fileStandardCross':
+      run(s, { type: 'fileStandardCross', index: typeof p.index === 'number' ? p.index : undefined })
+      break
+    case 'fileStandardPhrase':
+      run(s, { type: 'fileStandardPhrase' })
+      break
+    case 'fileStandardList':
+      run(s, { type: 'fileStandardList' })
+      break
+    case 'toggleClause':
+      if (typeof p.id === 'string') run(s, { type: 'toggleClause', id: p.id })
+      break
+    case 'setCharter':
+      run(s, {
+        type: 'setCharter',
+        charter: p.charter === 'boutique' ? 'boutique' : p.charter === 'coop' ? 'coop' : 'standard',
+      })
       break
     default:
       break
@@ -482,6 +698,7 @@ const coreHandlers = {
       s.price = p
       if (p > s.stats.peakPrice) s.stats.peakPrice = p
       if (p < s.stats.minPrice) s.stats.minPrice = p
+      checkFlyerBandLock(s, bestPrice(s))
     },
   },
   buyWholesale: {
@@ -490,8 +707,9 @@ const coreHandlers = {
       const cat = c.cat ?? s.orderCat
       const crates = Math.max(1, Math.floor(c.crates ?? c.qty ?? 1))
       if (!s.categories[cat]) return no('Category locked.')
-      const total = round2(crateCost(s, cat) * crates)
-      if (s.cash < total) return no(`Need $${total.toFixed(2)}.`)
+      if (!s.depth) s.depth = emptyDepth()
+      const unpaid = s.depth.invoices.filter((i) => !i.paid).length
+      if (unpaid >= DEPTH.invoiceUnpaidCap) return no('Invoice book full — pay an invoice first.')
       if (s.supplier === 'b' && crates < WHOLESALE.supplierB.minSpools) {
         return no(`Supplier B needs ≥${WHOLESALE.supplierB.minSpools} crates.`)
       }
@@ -517,14 +735,25 @@ const coreHandlers = {
     can: (s, cmd) => {
       const role = (cmd as Extract<Command, { type: 'hire' }>).role
       if (!ROLE_IDS.includes(role)) return no('Unknown role.')
+      const roleDef = ROLES[role]
+      if (roleDef.era && s.era < roleDef.era) return no(`${roleDef.name} hires in Era ${roleDef.era}.`)
+      if (role === 'shiftLead') return no('Promote a clerk to Shift Lead.')
       if (role === 'night' && !s.memos['night-latch']) return no('Night Latch memo first.')
       if (!s.menus.staff && !s.memos['help-wanted']) return no('Staff not unlocked.')
-      const seats = staffSeatCap(s)
-      if (s.staff.length >= seats) {
-        return no(`Staff seats full (${seats}). Grow the storefront or buy Shift Lead.`)
+      if (isHorizonRole(role)) {
+        const full = annexSeatBlock(s)
+        if (full) return no(full)
+      } else if (isDeptRole(role)) {
+        const full = deptSeatBlock(s, role)
+        if (full) return no(full)
+      } else {
+        const seats = staffSeatCap(s)
+        if (floorHeadcount(s) >= seats) {
+          return no(`Staff seats full (${seats}). Grow the storefront or buy Shift Lead.`)
+        }
       }
       const cost = hireCost(s, role)
-      if (s.cash < cost) return no(`Need $${cost}.`)
+      if (s.cash < cost) return needCash(cost)
       return ok
     },
     run: (s, cmd) => {
@@ -544,6 +773,7 @@ const coreHandlers = {
       })
       s.stats.hires += 1
       log(s, `Hired ${staffName(id)} as ${role}.`, 'staff')
+      if (isDeptRole(role)) syncDeptRoster(s)
     },
   },
   fire: {
@@ -558,12 +788,13 @@ const coreHandlers = {
       if (i < 0) return
       const [gone] = s.staff.splice(i, 1)
       log(s, `${gone.name} left the store.`, 'staff')
+      if (isDeptRole(gone.role)) syncDeptRoster(s)
     },
   },
   buyAd: {
     can: (s) => {
       if (!s.menus.marketing && s.era < 1) return no('Marketing locked.')
-      if (s.cash < s.adCost) return no(`Need $${s.adCost}.`)
+      if (s.cash < s.adCost) return needCash(s.adCost)
       return ok
     },
     run: (s) => {
@@ -599,16 +830,22 @@ const coreHandlers = {
         return no('Unknown posture.')
       }
       if (s.marketingPosture === posture) return no('Already set.')
-      if (s.cash < MARKETING.switchFee) return no(`Need $${MARKETING.switchFee}.`)
+      const fee = postureFee(s)
+      if (s.cash < fee) return needCash(fee)
       return ok
     },
     run: (s, cmd) => {
       const posture = (cmd as Extract<Command, { type: 'setMarketingPosture' }>).posture
-      s.cash -= MARKETING.switchFee
+      const fee = postureFee(s)
+      s.cash -= fee
       s.marketingPosture = posture
+      if (s.depth?.rivalLockCat) {
+        s.depth.rivalLockCat = null
+        log(s, 'Posture change cleared Penny’s aisle lock.', 'good')
+      }
       const label =
         posture === 'circular' ? 'Circular' : posture === 'houseBrand' ? 'House brand' : 'Neighborhood'
-      log(s, `Marketing posture → ${label} (−$${MARKETING.switchFee}).`, 'info')
+      log(s, `Marketing posture → ${label} (−$${fee}).`, 'info')
     },
   },
   lockWholesalePrice: {
@@ -618,7 +855,7 @@ const coreHandlers = {
         return no(`Already locked (${Math.ceil(s.priceLockUntil - s.time)}s).`)
       }
       const cost = crateCost(s, s.orderCat) * PRICE_LOCK.cratesCost
-      if (s.cash < cost) return no(`Need $${cost.toFixed(0)}.`)
+      if (s.cash < cost) return needCash(cost)
       return ok
     },
     run: (s) => {
@@ -715,7 +952,7 @@ const coreHandlers = {
       const blocked = def.blocked?.(s)
       if (blocked) return no(blocked)
       const cost = def.cost(s)
-      if ((cost.cash ?? 0) > s.cash) return no(`Need $${cost.cash}.`)
+      if ((cost.cash ?? 0) > s.cash) return needCash(cost.cash ?? 0)
       if ((cost.attention ?? 0) > s.compute.attention) return no(`Need ${cost.attention} Attention.`)
       if ((cost.ideas ?? 0) > s.compute.ideas) return no(`Need ${cost.ideas} Ideas.`)
       return ok
@@ -740,7 +977,15 @@ const coreHandlers = {
     can: () => ok,
     run: (s, cmd) => {
       const c = cmd as Extract<Command, { type: 'syncRelics' }>
-      s.relics = { wings: [...c.wings], count: Math.max(0, Math.floor(c.count)), owned: { ...(c.owned ?? {}) } }
+      s.relics = {
+        wings: [...c.wings],
+        count: Math.max(0, Math.floor(c.count)),
+        owned: { ...(c.owned ?? {}) },
+        levels: { ...(c.levels ?? {}) },
+        sockets: [...(c.sockets ?? [])],
+        dust: Math.max(0, Math.floor(c.dust ?? 0)),
+        autoDust: s.relics.autoDust ?? null,
+      }
       if (c.unlocked) s.menus.relics = true
     },
   },
@@ -803,7 +1048,7 @@ const coreHandlers = {
       if (s.projects.active.some((a) => a.id === id)) return no('Already under way.')
       const crews = empireUnlocked(s.empire.level, 'second-project') ? 2 : 1
       if (s.projects.active.length >= crews) return no(crews > 1 ? 'Both crews are busy.' : 'The crew is busy.')
-      if (s.cash < def.cash) return no(`Need $${Math.ceil(def.cash)}.`)
+      if (s.cash < def.cash) return needCash(Math.ceil(def.cash))
       return ok
     },
     run: (s, cmd) => {
@@ -834,7 +1079,7 @@ const coreHandlers = {
       const count = Math.min(want, def.max - lvl, rankCap - lvl, 50)
       if (count < 1) return no('Maxed.')
       const cost = upgradeBulkCost(s, id, count)
-      if (s.cash < cost) return no(`Need $${cost}.`)
+      if (s.cash < cost) return needCash(cost)
       return ok
     },
     run: (s, cmd) => {
@@ -854,6 +1099,52 @@ const coreHandlers = {
       s.empire.xp += EMPIRE.xpPerUpgrade * count
     },
   },
+  buyUpgradeSweep: {
+    can: (s, cmd) => {
+      const tree = (cmd as Extract<Command, { type: 'buyUpgradeSweep' }>).tree ?? 'all'
+      if (!hasAffordableUpgrade(s, tree)) return no('Nothing affordable there. Capstones stay a choice.')
+      return ok
+    },
+    run: (s, cmd) => {
+      const tree = (cmd as Extract<Command, { type: 'buyUpgradeSweep' }>).tree ?? 'all'
+      const plan = planAffordableUpgrades(s, tree)
+      let ranks = 0
+      let stop = false
+      for (const step of plan) {
+        for (let i = 0; i < step.count; i++) {
+          if (!run(s, { type: 'buyUpgrade', id: step.id, count: 1 }).ok) {
+            stop = true
+            break
+          }
+          ranks += 1
+        }
+        if (stop) break
+      }
+      if (ranks > 0) log(s, `Bought ${ranks} upgrade ranks, best value first.`, 'good')
+    },
+  },
+  levelVentureSweep: {
+    can: (s) => {
+      if (!hasAffordableVenture(s)) return no('No open till can be raised right now.')
+      return ok
+    },
+    run: (s) => {
+      const plan = planAffordableVentures(s)
+      let n = 0
+      let stop = false
+      for (const step of plan) {
+        for (let i = 0; i < step.count; i++) {
+          if (!run(s, { type: 'levelVenture', id: step.id }).ok) {
+            stop = true
+            break
+          }
+          n += 1
+        }
+        if (stop) break
+      }
+      if (n > 0) log(s, `Raised ${n} venture levels, best income per dollar first.`, 'good')
+    },
+  },
   buyBuild: {
     can: (s, cmd) => {
       const id = buildTrackId(cmd as { track?: string; id?: string })
@@ -864,7 +1155,7 @@ const coreHandlers = {
       const next = track.tiers[lvl + 1]
       if (!next) return no('Max tier.')
       if (next.era > s.era) return no(`Needs era ${next.era}.`)
-      if (s.cash < next.cost) return no(`Need $${next.cost}.`)
+      if (s.cash < next.cost) return needCash(next.cost)
       return ok
     },
     run: (s, cmd) => {
@@ -902,7 +1193,7 @@ const coreHandlers = {
     can: (s) => {
       if (s.endcaps >= ENDCAP.max) return no('Max endcaps.')
       const cost = Math.ceil(ENDCAP.base * Math.pow(ENDCAP.growth, s.endcaps))
-      if (s.cash < cost) return no(`Need $${cost}.`)
+      if (s.cash < cost) return needCash(cost)
       return ok
     },
     run: (s) => {
@@ -926,7 +1217,7 @@ const coreHandlers = {
       if (!def) return no('Unknown venture.')
       if (!def.available(s)) return no('Not available.')
       if (s.ventures[id]?.level) return no('Already open.')
-      if (s.cash < def.openCost) return no(`Need $${def.openCost}.`)
+      if (s.cash < def.openCost) return needCash(def.openCost)
       return ok
     },
     run: (s, cmd) => {
@@ -945,7 +1236,7 @@ const coreHandlers = {
       if (!def || !vs) return no('Venture closed.')
       if (vs.level >= def.maxLevel) return no('Max level.')
       const cost = ventureLevelCost(def, vs.level)
-      if (s.cash < cost) return no(`Need $${cost}.`)
+      if (s.cash < cost) return needCash(cost)
       return ok
     },
     run: (s, cmd) => {
@@ -1066,11 +1357,43 @@ const coreHandlers = {
         if (era2.era > s.era) return no(`Needs era ${era2.era}.`)
         if (era2.requires && !era2.requires(s)) return no('Prerequisites not met.')
         if (debtCovenantBreached(s)) return no('Debt covenant blocks expansion.')
-        if (s.cash < era2.cost) return no(`Need $${era2.cost}.`)
+        if (s.cash < era2.cost) return needCash(era2.cost)
         return ok
       }
+      // Side yard / lot: sustained Era 1 loops before Era 2 opens.
+      if (id === 'side-yard' || id === 'lot') {
+        if ((s.depth?.writeOffs ?? 0) < DEPTH.writeOffNeedEra2) {
+          return no(`Survive ${DEPTH.writeOffNeedEra2} morning write-offs first.`)
+        }
+        const freshLead =
+          s.staff.some((m) => m.role === 'produceLead') ||
+          (s.depth?.departments?.fresh?.leadId ?? null) != null
+        if (!freshLead) return no('Hire a Produce Lead first.')
+        if ((s.builds.storefront ?? 1) < 2) return no('Upgrade to a Corner Store first.')
+        if (!s.categories.dairy) return no('Unlock Dairy first.')
+        if ((s.depth?.regularSatisfied ?? 0) < DEPTH.era2RegularNeed) {
+          return no(`Satisfy ${DEPTH.era2RegularNeed} regulars first.`)
+        }
+        if ((s.depth?.invoicesOnTime ?? 0) < DEPTH.invoiceOnTimeNeedSideYard) {
+          return no(`Pay ${DEPTH.invoiceOnTimeNeedSideYard} invoices on time first.`)
+        }
+        const flag =
+          !!s.depth?.flagship?.credited ||
+          ((s.depth?.flagship?.filings ?? 0) > DEPTH.flagshipPracticePerEra &&
+            (s.depth?.flagship?.score ?? 0) >= DEPTH.flagshipSlow)
+        if (!flag) return no('File a flagship planogram (≥0.72 after practice) first.')
+        if ((s.depth?.shifts?.daysCoveredOpen ?? 0) < DEPTH.openDaysNeedSideYard) {
+          return no(`Cover Open shift for ${DEPTH.openDaysNeedSideYard} days first.`)
+        }
+        if ((s.depth?.dockCheckIns ?? 0) < DEPTH.dockCheckInNeed) {
+          return no(`Check in at the dock ${DEPTH.dockCheckInNeed} times first.`)
+        }
+        if ((s.depth?.stars ?? 0) < DEPTH.era1StarMin) {
+          return no(`Need stars ≥ ${DEPTH.era1StarMin}.`)
+        }
+      }
       const cost = id === 'side-yard' ? 2500 : id === 'lot' ? 5000 : 5000
-      if (s.cash < cost) return no(`Need $${cost}.`)
+      if (s.cash < cost) return needCash(cost)
       return ok
     },
     run: (s, cmd) => {
@@ -1086,16 +1409,8 @@ const coreHandlers = {
         ensureFlagshipStore(s)
         unlockMenu(s, 'land')
         unlockMenu(s, 'strategy')
+        // One opener only — rest live in Coach catalog (player-pulled).
         queueTutorial(s, 'e2-second-store')
-        queueTutorial(s, 'e2-policies')
-        queueTutorial(s, 'e2-depot')
-        queueTutorial(s, 'e2-incorporate')
-        queueTutorial(s, 'e2-invest')
-        queueTutorial(s, 'e2-tournament')
-        queueTutorial(s, 'e2-board')
-        queueTutorial(s, 'e2-expansions')
-        queueTutorial(s, 'e2-ventures')
-        queueTutorial(s, 'e2-autonomous')
         log(s, 'Era 2 — Chain and capital. Attention splits; the book waits.', 'era')
       }
     },
@@ -1234,6 +1549,7 @@ const coreHandlers = {
       const id = s.tutorials.active!.id
       s.tutorials.done[id] = true
       s.tutorials.active = null
+      s.tutorials.calmUntil = s.time + 10
     },
   },
   completeTutorialStep: {
@@ -1395,6 +1711,24 @@ const handlers = {
   ),
   ...Object.fromEntries(
     Object.entries(eraLateHandlers).map(([k, h]) => [
+      k,
+      {
+        can: (s: GameState, cmd: Command) => h.can(s, cmd as never),
+        run: (s: GameState, cmd: Command) => h.run(s, cmd as never),
+      } satisfies Handler,
+    ]),
+  ),
+  ...Object.fromEntries(
+    Object.entries(horizonHandlers).map(([k, h]) => [
+      k,
+      {
+        can: (s: GameState, cmd: Command) => h.can(s, cmd as never),
+        run: (s: GameState, cmd: Command) => h.run(s, cmd as never),
+      } satisfies Handler,
+    ]),
+  ),
+  ...Object.fromEntries(
+    Object.entries(depthHandlers).map(([k, h]) => [
       k,
       {
         can: (s: GameState, cmd: Command) => h.can(s, cmd as never),

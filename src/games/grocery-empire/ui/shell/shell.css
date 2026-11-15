@@ -1,0 +1,106 @@
+/*
+ * Feel-overhaul shell chrome. Lives above legacy so HUD / hubs can slim down.
+ */
+@layer shell {
+  .g2-root {
+    --g2-hud-h: 72px;
+  }
+
+  .g2-hud {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'brand money controls';
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+    min-height: var(--g2-hud-h);
+    padding: var(--s-2) var(--s-3);
+  }
+
+  .g2-hud__brand {
+    grid-area: brand;
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .g2-hud__money {
+    grid-area: money;
+    min-width: 0;
+  }
+
+  .g2-hud .g2-goal {
+    grid-column: 1 / -1;
+  }
+
+  .g2-hud__controls {
+    grid-area: controls;
+    display: flex;
+    align-items: center;
+    gap: var(--s-1);
+  }
+
+  .g2-hubhead__title > p,
+  .g2-hubhead__title p {
+    display: block;
+    margin: 0.15rem 0 0;
+    font: 500 var(--t-sm) / var(--t-sm-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .g2-main .gk-screen-head__purpose,
+  .g2-main .gk-screen-head__title {
+    display: block;
+  }
+
+  /* Kill the fixed unpack dock — verbs live in PlayFrame tray. */
+  .g2-root .fl-dock {
+    display: none;
+  }
+
+  .g2-root .g2-main {
+    padding-bottom: calc(var(--g2-hubs-h, 64px) + var(--s-3));
+  }
+
+  @media (max-width: 720px) {
+    .g2-root {
+      --g2-hud-h: 72px;
+    }
+
+    .g2-hud {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'money controls'
+        'goal goal';
+      gap: var(--s-1) var(--s-2);
+      padding: var(--s-2);
+    }
+
+    .g2-hud__brand {
+      display: none;
+    }
+
+    .g2-hud .g2-goal {
+      grid-area: goal;
+    }
+
+    .g2-inbox-btn span:not(.g2-badge) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+  }
+
+  @media (min-width: 720px) {
+    .g2-hud {
+      grid-template-columns: auto minmax(0, 1.2fr) minmax(0, 1fr) auto;
+      grid-template-areas: 'brand money goal controls';
+    }
+
+    .g2-hud .g2-goal {
+      grid-area: goal;
+      grid-column: auto;
+    }
+  }
+}

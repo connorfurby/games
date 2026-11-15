@@ -36,6 +36,9 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Hypermarket', cost: 8e6, upkeepPerMin: 600, effect: '+60% demand', era: 3 },
       { name: 'Megastore', cost: 4e8, upkeepPerMin: 9000, effect: '+80% demand', era: 4 },
       { name: 'Autonomous Hub', cost: 5e10, upkeepPerMin: 0, effect: 'Runs itself', era: 4 },
+      { name: 'Probe Plaza', cost: 2e14, upkeepPerMin: 0, effect: 'Probe launches cheaper · +1 survey slot', era: 7 },
+      { name: 'Greenhouse Atrium', cost: 5e16, upkeepPerMin: 0, effect: 'Greenhouse plots yield more', era: 9 },
+      { name: 'The Last Aisle', cost: 2e19, upkeepPerMin: 0, effect: 'The aisle that closes the list', era: 12 },
     ],
   },
   {
@@ -50,6 +53,8 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Warehouse', cost: 20_000, upkeepPerMin: 8, effect: '+400 backroom', era: 2 },
       { name: 'Regional DC', cost: 1.5e6, upkeepPerMin: 200, effect: '+5k backroom', era: 3 },
       { name: 'Orbital Cache', cost: 1e10, upkeepPerMin: 0, effect: 'Space storage', era: 5 },
+      { name: 'Bonded Warehouse', cost: 8e14, upkeepPerMin: 0, effect: '+bonded crate room · imports keep', era: 8 },
+      { name: 'Seed Vault', cost: 3e16, upkeepPerMin: 0, effect: 'Vaulted seed never decays', era: 9 },
     ],
   },
   {
@@ -64,6 +69,7 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Cold Plant', cost: 2e6, upkeepPerMin: 500, effect: 'Freshness grid', era: 3 },
       { name: 'Tank Farm', cost: 5e7, upkeepPerMin: 2000, effect: 'Cold buffer', era: 3 },
       { name: 'Cryo Hub', cost: 1e11, upkeepPerMin: 0, effect: 'Deep cold', era: 5 },
+      { name: 'Cryo Ark', cost: 4e16, upkeepPerMin: 0, effect: 'Seed decay far slower', era: 9 },
     ],
   },
   {
@@ -78,6 +84,8 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Dairy', cost: 300_000, upkeepPerMin: 50, effect: 'Free dairy', era: 2 },
       { name: 'Pack Line', cost: 5e6, upkeepPerMin: 300, effect: 'Packaged goods', era: 3 },
       { name: 'Factory', cost: 8e7, upkeepPerMin: 2000, effect: 'Private label', era: 3 },
+      { name: 'Orbital Mill', cost: 3e14, upkeepPerMin: 0, effect: 'Off-world sales +10%', era: 7 },
+      { name: 'Relay Foundry', cost: 8e17, upkeepPerMin: 0, effect: 'Relay stations cast further', era: 10 },
     ],
   },
   {
@@ -93,6 +101,8 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Rail Slot', cost: 2e6, upkeepPerMin: 300, effect: 'Regional freight', era: 3 },
       { name: 'Freighter', cost: 1e8, upkeepPerMin: 3000, effect: 'Ocean lanes', era: 4 },
       { name: 'Barge Berth', cost: 1e11, upkeepPerMin: 0, effect: 'Seed barges', era: 5 },
+      { name: 'Convoy Gantry', cost: 1e15, upkeepPerMin: 0, effect: '+1 crate on the last convoy bay', era: 8 },
+      { name: 'Jump Berth', cost: 6e17, upkeepPerMin: 0, effect: 'Jump lanes haul more freight', era: 10 },
     ],
   },
   {
@@ -107,6 +117,8 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'HQ Wing', cost: 500_000, upkeepPerMin: 60, effect: 'Board seats', era: 2 },
       { name: 'Lobby Office', cost: 2e7, upkeepPerMin: 800, effect: 'Political capital', era: 3 },
       { name: 'Museum of Baskets', cost: 1e12, upkeepPerMin: 0, effect: 'Legacy sink', era: 6 },
+      { name: 'Embassy Annex', cost: 2e18, upkeepPerMin: 0, effect: 'Embassy seats count double', era: 11 },
+      { name: "Ivo's Plaque", cost: 5e19, upkeepPerMin: 0, effect: 'A name on the wall', era: 12 },
     ],
   },
 ]

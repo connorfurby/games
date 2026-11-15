@@ -26,10 +26,15 @@ const CAT_COLOR: Record<CategoryId, string> = {
   produce: 'var(--sc-produce)',
   dairy: 'var(--sc-dairy)',
   meat: 'var(--sc-meat)',
+  deli: 'var(--sc-meat)',
+  bakery: 'var(--sc-cans)',
+  frozen: 'var(--sc-dairy)',
   privateLabel: 'var(--sc-label)',
+  import: 'var(--sc-label)',
+  ration: 'var(--sc-cans)',
 }
 
-/** Facade geometry per storefront tier (1 = stall … 7 = autonomous hub). */
+/** Facade geometry per storefront tier (1 = stall … 10 = Last Aisle). */
 const FACADE = [
   { w: 150, h: 70, floors: 0, name: 'Stall' },
   { w: 150, h: 70, floors: 0, name: 'Stall' },
@@ -39,6 +44,9 @@ const FACADE = [
   { w: 440, h: 124, floors: 2, name: 'Hypermarket' },
   { w: 500, h: 128, floors: 2, name: 'Megastore' },
   { w: 540, h: 132, floors: 2, name: 'Autonomous Hub' },
+  { w: 580, h: 148, floors: 3, name: 'Probe Plaza' },
+  { w: 620, h: 162, floors: 3, name: 'Greenhouse Atrium' },
+  { w: 660, h: 176, floors: 3, name: 'The Last Aisle' },
 ] as const
 
 const SKY: { top: string; bottom: string }[] = [
@@ -49,6 +57,12 @@ const SKY: { top: string; bottom: string }[] = [
   { top: '#0d1430', bottom: '#28365a' }, // 4 harbor night
   { top: '#070b1f', bottom: '#1b2147' }, // 5 orbit
   { top: '#04060f', bottom: '#151236' }, // 6 universal
+  { top: '#120e2a', bottom: '#3a2418' }, // 7 survey
+  { top: '#0c1c2e', bottom: '#1e4a55' }, // 8 dock
+  { top: '#1a2430', bottom: '#3e4a32' }, // 9 season
+  { top: '#140e28', bottom: '#3a2060' }, // 10 mast
+  { top: '#1a140c', bottom: '#6a4a22' }, // 11 seal
+  { top: '#0a0a12', bottom: '#2a2418' }, // 12 list
 ]
 
 /** Daylight versions of each era's sky; the scene blends toward SKY at night. */
@@ -60,7 +74,15 @@ const DAY_SKY: { top: string; bottom: string }[] = [
   { top: '#3a5f8f', bottom: '#9fb2c4' },
   { top: '#2a3f73', bottom: '#7b86b3' },
   { top: '#1b2452', bottom: '#5a5a9a' },
+  { top: '#3a4e86', bottom: '#e7b48a' },
+  { top: '#2f5f78', bottom: '#d7c4a4' },
+  { top: '#4a6a48', bottom: '#e4c48a' },
+  { top: '#3a3068', bottom: '#c9b4e0' },
+  { top: '#6a5430', bottom: '#e6d2a4' },
+  { top: '#2a2838', bottom: '#d9c7a2' },
 ]
+
+const SEASON_TINT = ['#7d9a62', '#e0a15a', '#c46a3a', '#6a78b8'] as const
 
 function hex(c: string): [number, number, number] {
   const n = parseInt(c.slice(1), 16)
@@ -207,7 +229,7 @@ function Rain({ on }: { on: boolean }) {
   if (!on) return null
   return (
     <g className="sc-rain">
-      {Array.from({ length: 60 }, (_, i) => (
+      {Array.from({ length: 40 }, (_, i) => (
         <line
           key={i}
           x1={rnd(i + 700) * W}
@@ -277,7 +299,7 @@ function Snow({ on }: { on: boolean }) {
   if (!on) return null
   return (
     <g className="sc-snow">
-      {Array.from({ length: 70 }, (_, i) => (
+      {Array.from({ length: 40 }, (_, i) => (
         <circle
           key={i}
           cx={rnd(i + 1300) * W}
@@ -502,7 +524,7 @@ function Horizon({
 }
 
 function Facade({ s, x }: { s: GameState; x: number }) {
-  const tier = Math.max(1, Math.min(7, s.builds.storefront ?? 1))
+  const tier = Math.max(1, Math.min(FACADE.length - 1, s.builds.storefront ?? 1))
   const f = FACADE[tier]!
   const top = GROUND - f.h
   const cap = Math.max(1, shelfCap(s))
@@ -655,8 +677,8 @@ function Props({ s, x, w }: { s: GameState; x: number; w: number }) {
       {/* rooftop cold units */}
       {Array.from({ length: Math.min(4, cold) }, (_, i) => (
         <g key={i}>
-          <rect x={x + 20 + i * 34} y={GROUND - (FACADE[Math.max(1, Math.min(7, b.storefront ?? 1))]!.h) - 18} width={26} height={18} fill="#8a949c" />
-          <circle cx={x + 33 + i * 34} cy={GROUND - (FACADE[Math.max(1, Math.min(7, b.storefront ?? 1))]!.h) - 9} r={6} fill="#5d666e" />
+          <rect x={x + 20 + i * 34} y={GROUND - (FACADE[Math.max(1, Math.min(FACADE.length - 1, b.storefront ?? 1))]!.h) - 18} width={26} height={18} fill="#8a949c" />
+          <circle cx={x + 33 + i * 34} cy={GROUND - (FACADE[Math.max(1, Math.min(FACADE.length - 1, b.storefront ?? 1))]!.h) - 9} r={6} fill="#5d666e" />
         </g>
       ))}
       {/* garden plots */}
@@ -729,21 +751,195 @@ function Lamps({ xs }: { xs: number[] }) {
   )
 }
 
-function SceneInner({ s, museumOpen, view }: { s: GameState; museumOpen: boolean; view: View }) {
-  const era = Math.max(0, Math.min(6, s.era))
+/** Off-world crates by the door, tinted walkers, and a convoy shuttle from Era 8. */
+function LateStreetBits({
+  stocked,
+  circuits,
+  bay,
+  doorX,
+  paused,
+  bonded,
+  vaulted,
+  ivo,
+}: {
+  stocked: number
+  circuits: number
+  bay: number
+  doorX: number
+  paused: boolean
+  bonded: number
+  vaulted: number
+  ivo: boolean
+}) {
+  const tints = ['#6ea8c9', '#c45a3c', '#6a9a55', '#8d84c4', '#c6a15a', '#efe9dc']
+  const aliens = Math.min(6, stocked)
+  return (
+    <g className="sc-late-street" aria-hidden>
+      {Array.from({ length: Math.min(8, Math.max(bay, stocked)) }, (_, i) => (
+        <rect
+          key={`crate-${i}`}
+          x={doorX - 70 + (i % 4) * 16}
+          y={GROUND - 18 - Math.floor(i / 4) * 14}
+          width="12"
+          height="10"
+          rx="1"
+          fill={tints[i % tints.length]}
+          opacity="0.9"
+        />
+      ))}
+      {Array.from({ length: aliens }, (_, i) => (
+        <g
+          key={`alien-${i}`}
+          className="sc-shopper sc-shopper--in"
+          style={{
+            ['--door' as string]: `${doorX}px`,
+            animationDelay: `${i * 0.7}s`,
+            animationPlayState: paused ? 'paused' : 'running',
+            color: tints[i % tints.length],
+          }}
+          transform={`translate(${doorX - 120 - i * 28} ${GROUND - 8})`}
+        >
+          <ellipse cx="0" cy="8" rx="6" ry="2.5" fill="#000" opacity="0.3" />
+          <path d="M-5 0 Q0 8 5 0 V-6 H-5 Z" fill="currentColor" />
+          <circle cy="-10" r="4.5" fill="#e6c2a0" />
+          <circle cx="-1.5" cy="-11" r="1.2" fill="currentColor" />
+          <circle cx="1.5" cy="-11" r="1.2" fill="currentColor" />
+        </g>
+      ))}
+      {circuits > 0 ? (
+        <g transform={`translate(${doorX + 90} ${GROUND - 36})`}>
+          <rect width="48" height="22" rx="3" fill="#8fb6e0" />
+          <path d="M8 -4 L24 -14 L40 -4" fill="none" stroke="#efe9dc" strokeWidth="2" />
+          <circle cx="12" cy="24" r="5" fill="#1a1612" />
+          <circle cx="36" cy="24" r="5" fill="#1a1612" />
+        </g>
+      ) : null}
+      {bonded > 0 ? (
+        <g transform={`translate(${doorX - 150} ${GROUND - 48})`}>
+          <rect width="54" height="36" rx="2" fill="#2a2620" stroke="#c6a15a" strokeWidth="1.5" />
+          <path d="M6 8 H48 M6 16 H48 M6 24 H32" stroke="#c6a15a" strokeWidth="1.2" opacity="0.7" />
+          <text x="27" y="46" textAnchor="middle" fontSize="9" fill="#c6a15a">
+            {Math.min(99, Math.floor(bonded))} sealed
+          </text>
+        </g>
+      ) : null}
+      {vaulted > 0 ? (
+        <g transform={`translate(${doorX + 160} ${GROUND - 52})`}>
+          <rect width="44" height="40" rx="4" fill="#1a2830" stroke="#9fd4e4" strokeWidth="1.6" />
+          <ellipse cx="22" cy="18" rx="12" ry="8" fill="#9fd4e4" opacity="0.35" />
+          <text x="22" y="50" textAnchor="middle" fontSize="9" fill="#9fd4e4">
+            vault
+          </text>
+        </g>
+      ) : null}
+      {ivo ? (
+        <g
+          className="sc-shopper sc-shopper--in"
+          style={{
+            ['--door' as string]: `${doorX}px`,
+            animationPlayState: paused ? 'paused' : 'running',
+            color: '#efe9dc',
+          }}
+          transform={`translate(${doorX + 40} ${GROUND - 8})`}
+        >
+          <title>Ivo</title>
+          <ellipse cx="0" cy="8" rx="6" ry="2.5" fill="#000" opacity="0.3" />
+          <path d="M-5 0 Q0 8 5 0 V-6 H-5 Z" fill="#4a5560" />
+          <circle cy="-10" r="4.5" fill="#d4b896" />
+          <rect x="-8" y="-22" width="16" height="6" rx="1" fill="#c6a15a" />
+        </g>
+      ) : null}
+    </g>
+  )
+}
+
+function HorizonMarks({
+  era,
+  x,
+  w,
+  h,
+  season,
+}: {
+  era: number
+  x: number
+  w: number
+  h: number
+  season: number
+}) {
+  if (era < 7) return null
+  const roof = GROUND - h
+  const tint = SEASON_TINT[season] ?? SEASON_TINT[0]
+  return (
+    <g className="sc-horizon-marks" aria-hidden>
+      <g transform={`translate(${x + w * 0.62} ${roof - 28})`}>
+        <rect x={-2} y={0} width={4} height={22} fill="#d7d2c8" />
+        <ellipse cx={14} cy={4} rx={22} ry={9} fill="#e7e1d4" stroke="#8a8174" strokeWidth={1.4} />
+        <ellipse cx={14} cy={4} rx={8} ry={3} fill="#8a8174" opacity={0.35} />
+      </g>
+      {era >= 8 ? (
+        <g transform={`translate(${HARBOR_X - 78} ${GROUND - 46})`}>
+          <rect width={64} height={12} rx={1} fill="#6a543c" />
+          <rect x={8} y={-32} width={5} height={32} fill="#3e342c" />
+          <rect x={8} y={-36} width={36} height={5} fill="#3e342c" />
+          <rect x={36} y={-28} width={3} height={16} fill="#c45a3c" />
+        </g>
+      ) : null}
+      {era >= 9 ? <rect x={x - 8} y={roof - 16} width={w + 16} height={14} fill={tint} opacity={0.9} /> : null}
+      {era >= 10 ? (
+        <g transform={`translate(${x - 46} ${roof - 78})`}>
+          <rect width={4} height={78} fill="#2a2624" />
+          <rect x={4} y={0} width={18} height={3} fill="#2a2624" />
+          {[0, 1, 2, 3].map((i) => (
+            <circle key={i} cx={16} cy={10 + i * 16} r={5} fill="#f2d48a" />
+          ))}
+        </g>
+      ) : null}
+      {era >= 11 ? (
+        <g transform={`translate(${x + w + 28} ${roof + 28})`}>
+          <circle r={16} fill="none" stroke="#c6a15a" strokeWidth={2.4} />
+          <circle r={7} fill="#c6a15a" opacity={0.9} />
+        </g>
+      ) : null}
+      {era >= 12 ? (
+        <g transform={`translate(${x + 18} ${roof + 22})`}>
+          <rect width={22} height={32} rx={2} fill="#f4efe4" stroke="#2a241c" strokeWidth={1.2} />
+          <path d="M4 8 H18 M4 14 H18 M4 20 H12" stroke="#2a241c" strokeWidth={1.3} />
+        </g>
+      ) : null}
+    </g>
+  )
+}
+
+function SceneInner({
+  s,
+  museumOpen,
+  view,
+  reducedMotion = false,
+}: {
+  s: GameState
+  museumOpen: boolean
+  view: View
+  reducedMotion?: boolean
+}) {
+  const era = Math.max(0, Math.min(SKY.length - 1, s.era))
   const phase = dayPhase(s)
   const dark = darkness(phase)
   const sky = {
     top: mix(DAY_SKY[era]!.top, SKY[era]!.top, dark),
     bottom: mix(DAY_SKY[era]!.bottom, SKY[era]!.bottom, dark),
   }
+  if (s.era >= 9) {
+    const tint = SEASON_TINT[s.horizon?.season ?? 0] ?? SEASON_TINT[0]
+    sky.top = mix(sky.top, tint, 0.28)
+    sky.bottom = mix(sky.bottom, tint, 0.16)
+  }
   const net = networkBreakdown(s)
   const chainStores = Math.max(0, s.stores.length - 1) + (s.fleet?.franchises ?? 0)
   const sold = Math.max(0, s.rates.soldPerSec)
   const flagshipSold = sold / Math.max(1, net.total)
   const walkers = s.stats.sold <= 0 ? 0 : Math.max(1, Math.min(14, Math.round(1 + Math.log2(1 + flagshipSold * 3) * 3)))
-  const paused = !!s.paused
-  const tier = Math.max(1, Math.min(7, s.builds.storefront ?? 1))
+  const paused = !!s.paused || reducedMotion
+  const tier = Math.max(1, Math.min(FACADE.length - 1, s.builds.storefront ?? 1))
   const queueLen = salesBottleneck(s).kind === 'checkout' && s.stats.sold > 0 ? Math.round(3 + Math.log2(1 + flagshipSold) * 2) : 0
   // Keep the flagship centred so any screen shape (phone included) shows it.
   const facadeX = (era >= 4 ? 470 : 600) - FACADE[tier]!.w / 2
@@ -810,6 +1006,13 @@ function SceneInner({ s, museumOpen, view }: { s: GameState; museumOpen: boolean
       </g>
       <Props s={s} x={facadeX} w={FACADE[tier]!.w} />
       <Facade s={s} x={facadeX} />
+      <HorizonMarks
+        era={s.era}
+        x={facadeX}
+        w={FACADE[tier]!.w}
+        h={FACADE[tier]!.h}
+        season={s.horizon?.season ?? 0}
+      />
       <g className="sc-shoppers" style={{ ['--door' as string]: `${facadeX + FACADE[tier]!.w * 0.66 + 15}px` }}>
         {Array.from({ length: walkers }, (_, i) => (
           <Shopper key={`in-${i}`} i={i} lane="in" paused={paused} />
@@ -818,6 +1021,18 @@ function SceneInner({ s, museumOpen, view }: { s: GameState; museumOpen: boolean
           <Shopper key={`out-${i}`} i={i + 50} lane="out" paused={paused} />
         ))}
       </g>
+      {s.era >= 7 ? (
+        <LateStreetBits
+          stocked={s.horizon?.planets?.filter((p) => p.stocked).length ?? 0}
+          circuits={s.horizon?.circuits?.length ?? 0}
+          bay={s.offworld?.bay?.length ?? 0}
+          doorX={facadeX + FACADE[tier]!.w * 0.66}
+          paused={paused}
+          bonded={(s.builds.storage ?? 0) >= 6 ? (s.bonded?.crates ?? 0) : 0}
+          vaulted={(s.builds.storage ?? 0) >= 7 ? (s.seedVault?.held ?? 0) : 0}
+          ivo={(s.builds.civic ?? 0) >= 7 || s.era >= 12}
+        />
+      ) : null}
       <Queue n={queueLen} doorX={facadeX + FACADE[tier]!.w * 0.66} />
       <g transform={`translate(${view.x0} 0) scale(${view.w / W} 1)`}>
         <Rain on={s.weather.now === 'rain'} />
@@ -832,15 +1047,15 @@ function SceneInner({ s, museumOpen, view }: { s: GameState; museumOpen: boolean
 
 /** Where the flagship sits, shared by the static and live layers. */
 function layoutOf(s: GameState) {
-  const era = Math.max(0, Math.min(6, s.era))
-  const tier = Math.max(1, Math.min(7, s.builds.storefront ?? 1))
+  const era = Math.max(0, Math.min(SKY.length - 1, s.era))
+  const tier = Math.max(1, Math.min(FACADE.length - 1, s.builds.storefront ?? 1))
   const f = FACADE[tier]!
   const x = (era >= 4 ? 470 : 600) - f.w / 2
   return { era, tier, f, x, top: GROUND - f.h, doorX: x + f.w * 0.66 + 15 }
 }
 
 /** Re-render at most when something visible changed (not every 100 ms tick). */
-function sceneKey(s: GameState, museumOpen: boolean) {
+function sceneKey(s: GameState, museumOpen: boolean, reducedMotion: boolean) {
   const shelf = CATEGORY_IDS.map((c) => (s.categories[c] ? Math.round(sumQty(s.shelf, c) / 2) : -1)).join(',')
   return [
     s.era,
@@ -854,6 +1069,10 @@ function sceneKey(s: GameState, museumOpen: boolean) {
     s.cold?.plants,
     s.weather.now,
     s.paused,
+    reducedMotion ? 1 : 0,
+    s.offworld?.bay?.length ?? 0,
+    s.horizon?.planets?.filter((p) => p.stocked).length ?? 0,
+    s.horizon?.circuits?.length ?? 0,
     Math.round(Math.log2(1 + Math.max(0, s.rates.soldPerSec)) * 4),
     s.staff.length,
     s.builds.storage,
@@ -874,9 +1093,18 @@ function sceneKey(s: GameState, museumOpen: boolean) {
 }
 
 const Memo = memo(
-  ({ s, museumOpen, view }: { s: GameState; k: string; museumOpen: boolean; view: View }) => (
-    <SceneInner s={s} museumOpen={museumOpen} view={view} />
-  ),
+  ({
+    s,
+    museumOpen,
+    view,
+    reducedMotion,
+  }: {
+    s: GameState
+    k: string
+    museumOpen: boolean
+    view: View
+    reducedMotion: boolean
+  }) => <SceneInner s={s} museumOpen={museumOpen} view={view} reducedMotion={reducedMotion} />,
   (a, b) => a.k === b.k && a.view.w === b.view.w && a.view.x0 === b.view.x0,
 )
 
@@ -929,8 +1157,8 @@ function SceneLive({ s, reducedMotion, view }: { s: GameState; reducedMotion: bo
   })
 
   // Truck: appears 30 s out and drives to the loading dock.
-  const next = (s.orders ?? []).reduce<number | null>((m, o) => (m == null || o.eta < m ? o.eta : m), null)
-  const remaining = next == null ? null : next - s.time
+  // Order.eta is already remaining seconds (market ticks it down).
+  const remaining = (s.orders ?? []).reduce<number | null>((m, o) => (m == null || o.eta < m ? o.eta : m), null)
   const dockX = L.x - 70
   const truckX = remaining != null && remaining <= 30 ? dockX - (Math.max(0, remaining) / 30) * (dockX + 140) : null
 
@@ -1014,9 +1242,19 @@ export function StoreScene({
   const ref = useRef<HTMLDivElement>(null)
   const L = layoutOf(state)
   const view = useView(ref, L.x + L.f.w / 2 - 40)
+  const live = !reducedMotion && !state.paused
   return (
-    <div ref={ref} className={`sc-scene${dark > 0.55 ? ' is-night' : ''}`}>
-      <Memo s={state} k={sceneKey(state, museumOpen)} museumOpen={museumOpen} view={view} />
+    <div
+      ref={ref}
+      className={`sc-scene${dark > 0.55 ? ' is-night' : ''}${live ? ' is-live' : ''}${state.paused ? ' is-paused' : ''}`.trim()}
+    >
+      <Memo
+        s={state}
+        k={sceneKey(state, museumOpen, reducedMotion)}
+        museumOpen={museumOpen}
+        view={view}
+        reducedMotion={reducedMotion}
+      />
       <SceneLive s={state} reducedMotion={reducedMotion} view={view} />
     </div>
   )

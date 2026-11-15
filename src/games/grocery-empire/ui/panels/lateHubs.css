@@ -1,0 +1,222 @@
+/* Books / Invest / Politics (Phase 6c). New work lives in the `panels` layer; tokens only. */
+@layer panels {
+  .lh-primary-slot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+
+  .lh-hub__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    min-width: 0;
+  }
+  .lh-hub > .hub-stage {
+    margin-top: var(--s-3);
+  }
+  .lh-hub .gk-screen-head__stats {
+    gap: var(--s-3) var(--s-5);
+  }
+  .lh-hub .gk-screen-head__stats .gk-meter {
+    min-width: 7.5rem;
+    flex: 1 1 7.5rem;
+    max-width: 14rem;
+  }
+
+  .lh-split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--s-3);
+    align-items: start;
+  }
+  .lh-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    gap: var(--s-3);
+    align-items: stretch;
+  }
+  .lh-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+  .lh-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .lh-note {
+    margin: 0;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    color: var(--ge-ink-muted);
+  }
+  .lh-card-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+  }
+  .lh-card-title strong {
+    font-size: var(--t-md);
+  }
+  .lh-card-title span {
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+  }
+
+  .lh-callout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    border: 1px solid var(--ge-line-strong);
+    border-radius: var(--r-md);
+    background: var(--ge-raised);
+  }
+  .lh-callout--ready {
+    border-color: var(--ge-accent, var(--ge-focus));
+  }
+  .lh-callout--warn {
+    border-color: var(--ge-warn);
+  }
+  .lh-callout--danger {
+    border-color: var(--ge-danger);
+  }
+  .lh-callout__copy {
+    flex: 1 1 14rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+  .lh-callout__copy h3 {
+    margin: 0;
+    font-size: var(--t-md);
+    text-transform: capitalize;
+  }
+  .lh-callout__copy p {
+    margin: 0;
+    font-size: var(--t-sm);
+    line-height: var(--t-sm-lh);
+    color: var(--ge-ink-muted);
+  }
+
+  .lh-rows {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    font-variant-numeric: tabular-nums;
+  }
+  .lh-rows__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--s-3);
+    padding: var(--s-1) 0;
+    border-bottom: 1px solid var(--ge-line);
+    font-size: var(--t-sm);
+  }
+  .lh-rows__row:last-child {
+    border-bottom: 0;
+  }
+  .lh-rows dt {
+    color: var(--ge-ink-muted);
+  }
+  .lh-rows dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+  .lh-rows__row.is-muted dd {
+    font-weight: 400;
+    color: var(--ge-ink-muted);
+  }
+  .lh-neg {
+    color: var(--ge-danger);
+  }
+
+  /* Board meeting */
+  .lh-board {
+    border-color: var(--ge-danger);
+  }
+  .lh-board--calm {
+    border-color: var(--ge-line);
+  }
+  .lh-board__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: var(--s-2);
+  }
+  .lh-board__list li {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--s-2);
+    padding: var(--s-3);
+    border: 1px solid var(--ge-line);
+    border-radius: var(--r-sm);
+    background: var(--ge-surface);
+  }
+  .lh-board__list li.is-due {
+    border-color: var(--ge-line-strong);
+  }
+  .lh-board__list strong {
+    display: block;
+    font-size: var(--t-sm);
+  }
+  .lh-board__list span {
+    display: block;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    color: var(--ge-ink-muted);
+  }
+
+  .lh-spark {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  /* Worlds waterfall */
+  .lh-stackbar {
+    display: flex;
+    height: 1.1rem;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    background: var(--ge-sunken);
+  }
+  .lh-swatch {
+    font-weight: 600;
+  }
+}
+
+@layer panels {
+  .lh-alerts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+  .lh-alert {
+    font-size: var(--t-sm);
+    line-height: var(--t-sm-lh);
+    color: var(--ge-ink-muted);
+  }
+  .lh-alert--danger {
+    color: var(--ge-danger);
+  }
+  .lh-alert--warn {
+    color: var(--ge-warn);
+  }
+}

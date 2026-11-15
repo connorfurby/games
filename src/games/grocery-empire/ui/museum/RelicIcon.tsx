@@ -567,11 +567,16 @@ export const RelicIcon = memo(function RelicIcon({
   shadow = false,
   size = 64,
   className = '',
+  level = 0,
+  socketed = false,
 }: {
   id: string
   shadow?: boolean
   size?: number
   className?: string
+  /** Level ticks around the frame. 0 hides the ring. */
+  level?: number
+  socketed?: boolean
 }) {
   const r = RELIC_BY_ID[id]
   if (!r) return null
@@ -610,6 +615,13 @@ export const RelicIcon = memo(function RelicIcon({
       >
         {draw(c)}
       </g>
+      {!shadow && level > 0
+        ? Array.from({ length: Math.min(10, Math.max(0, Math.floor(level))) }, (_, i) => {
+            const a = -Math.PI / 2 + (i / 10) * Math.PI * 2
+            return <circle key={i} cx={50 + Math.cos(a) * 46} cy={50 + Math.sin(a) * 46} r="2.1" fill={rc.color} />
+          })
+        : null}
+      {!shadow && socketed ? <circle cx="50" cy="50" r="48" fill="none" stroke={rc.glow} strokeWidth="1.6" /> : null}
       {!shadow && marks > 0 ? (
         <g fill={rc.color}>
           {Array.from({ length: marks }, (_, i) => (

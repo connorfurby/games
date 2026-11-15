@@ -1,5 +1,5 @@
 import { EMPIRE_REWARDS } from '../../content/empireRewards'
-import { WING_BY_ID, type WingId } from '../../content/relics'
+import { WING_BY_ID, relicsInWing, type WingId } from '../../content/relics'
 import { relicEffects } from '../../content/relicPerks'
 import { RELIC_DEMAND_PER } from '../balance'
 import { PERKS } from '../../content/perks'
@@ -35,7 +35,21 @@ function signature(s: GameState): string {
   let pk = 0
   for (const v of Object.values(s.empire.perks)) pk = pk * 31 + (v ?? 0)
   const pj = Object.keys(s.projects?.done ?? {}).length
-  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}|${s.relics?.count ?? 0}|${s.relics?.wings?.length ?? 0}|${relicCopies(s)}|${s.weather?.now}|${s.era}`
+  let lv = 0
+  for (const v of Object.values(s.relics?.levels ?? {})) lv = lv * 31 + (v ?? 0)
+  const sockets = (s.relics?.sockets ?? []).join(',')
+  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}|${s.relics?.count ?? 0}|${s.relics?.wings?.length ?? 0}|${relicCopies(s)}|${lv}|${sockets}|${s.weather?.now}|${s.era}|${s.horizon?.clauses?.join('.') ?? ''}|${s.horizon?.charter ?? ''}`
+}
+
+function wingRankMul(s: GameState, wing: WingId): number {
+  const rows = relicsInWing(wing)
+  if (rows.length === 0 || rows.some((r) => (s.relics.owned[r.id] ?? 0) <= 0)) return 1
+  let min = 10
+  for (const r of rows) min = Math.min(min, s.relics.levels[r.id] ?? 1)
+  if (min >= 10) return 1.5
+  if (min >= 6) return 1.25
+  if (min >= 3) return 1.1
+  return 1
 }
 
 export function treeRanks(s: GameState): Record<string, number> {
@@ -77,13 +91,18 @@ export function statSources(s: GameState): StatSource[] {
   // Relic Museum: each finished wing, plus a little per relic on the wall.
   for (const w of s.relics?.wings ?? []) {
     const def = WING_BY_ID[w as WingId]
-    if (def) sources.push({ effects: [{ stat: def.bonus.stat, per: def.bonus.per }], rank: 1 })
+    if (def) sources.push({ effects: [{ stat: def.bonus.stat, per: def.bonus.per * wingRankMul(s, def.id) }], rank: 1 })
   }
   if ((s.relics?.count ?? 0) > 0) {
     sources.push({ effects: [{ stat: 'demand', per: RELIC_DEMAND_PER }], rank: s.relics.count })
   }
+  // Charter clauses are flat stat adds. They soft-cap with everything else.
+  const clauses = s.horizon?.clauses ?? []
+  if (clauses.includes('open-hours')) sources.push({ effects: [{ stat: 'demand', per: 0.08 }], rank: 1 })
+  if (clauses.includes('cold-law')) sources.push({ effects: [{ stat: 'spoilCut', per: 0.1 }], rank: 1 })
+  if (clauses.includes('fair-stamp')) sources.push({ effects: [{ stat: 'margin', per: 0.06 }], rank: 1 })
   // Every relic's own perk (weather-, era-, copy- and twin-aware).
-  for (const src of relicEffects(s, s.relics?.owned ?? {})) sources.push(src)
+  for (const src of relicEffects(s, s.relics?.owned ?? {}, s.relics?.levels ?? {}, s.relics?.sockets ?? [])) sources.push(src)
   for (const pj of PROJECTS) {
     if (s.projects?.done?.[pj.id]) sources.push({ effects: pj.effects, rank: 1 })
   }

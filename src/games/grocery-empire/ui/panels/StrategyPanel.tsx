@@ -1,75 +1,82 @@
-import { DOCTRINES } from '../../content/era2'
+import { DOCTRINES, doctrinesAtEra } from '../../content/era2'
 import { doctrineCost, tournamentReadPayout } from '../../sim/systems/capital'
 import { CAPITAL } from '../../sim/balance'
 import { useGame } from '../GameContext'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
 import { Line } from '../components/Line'
-import { Panel } from '../components/Panel'
 import { Icon } from '../icons/Icon'
+import { Button, Card, Disclosure, ScreenHeader, Stat } from '../kit'
 
 export function StrategyPanel() {
-  const { state: s, dispatch } = useGame()
+  const { state: s, dispatch, reducedMotion } = useGame()
   const owned = DOCTRINES.filter((d) => (s.doctrines[d.id] ?? 0) > 0).length
   const nextCost = doctrineCost(s, owned)
   const payout = tournamentReadPayout(s)
   const canTourny = s.compute.attention >= CAPITAL.tournamentAttention
   const readBank = Math.floor(s.read * 10) / 10
+  const doctrineList = doctrinesAtEra(s.era).filter((d) => d.order <= owned)
 
   return (
-    <Panel
-      title="Strategy"
-      purpose="Spend Attention → bank Read → buy doctrines."
-      lore="strategy"
-    >
-      <div className="ge-dept-callout">
-        <div className="ge-dept-callout__copy">
-          <h3>Read bank · {readBank}</h3>
-          <p>
-            Strategy currency — earn with tournaments, spend on doctrines (later Autonomous / Fleet).
-          </p>
-        </div>
-      </div>
+    <section className="ge-panel">
+      <ScreenHeader
+        hub
+        title="Strategy"
+        purpose="Turn Attention into Read, then buy a doctrine."
+        stats={<Stat size="sm" label="Read" value={readBank} title="Banked from tournaments. Cash never buys Read." />}
+      />
 
-      <ol className="ge-strategy-loop" aria-label="Strategy loop">
-        <li>
-          <strong>1 · Fill Attention</strong>
-          <span>Analysts in Memos / Back office fill the bar.</span>
-        </li>
-        <li>
-          <strong>2 · Run a tournament</strong>
-          <span>
-            Spend {CAPITAL.tournamentAttention} Att → bank ~{payout} Read
-            {s.stats.tournamentsRun > 0 ? ` · ${s.stats.tournamentsRun} run` : ''}.
-          </span>
-        </li>
-        <li>
-          <strong>3 · Buy a doctrine</strong>
-          <span>Next costs {nextCost} Read. Buy in order — each tweaks a real rule.</span>
-        </li>
-      </ol>
-
-      <div className="ge-chip-row">
-        <Btn
-          tone={canTourny ? 'primary' : 'ghost'}
-          coachId="strategy-tournament"
-          disabled={!canTourny}
-          title={
-            !canTourny ? `Need ${CAPITAL.tournamentAttention} Attention in the back office` : undefined
-          }
-          onClick={() => dispatch({ type: 'runTournament' })}
-        >
-          Tournament · −{CAPITAL.tournamentAttention} Att · +{payout} Read
-        </Btn>
-        <Btn
-          tone="ghost"
-          onClick={() => {
-            document.querySelector('.ge-memos-col')?.scrollIntoView({ block: 'nearest' })
-          }}
-        >
-          Jump to Memos (Attention)
-        </Btn>
-      </div>
+      <Card
+        state={canTourny ? 'affordable' : undefined}
+        header={
+          <>
+            <strong>Tournament</strong>
+            <span className="ge-muted"> Read bank · {readBank}</span>
+          </>
+        }
+        footer={
+          <div className="ge-chip-row">
+            <Button
+              tone={canTourny ? 'primary' : 'ghost'}
+              coachId="strategy-tournament"
+              disabled={!canTourny}
+              title={
+                !canTourny ? `Need ${CAPITAL.tournamentAttention} Attention in the back office` : undefined
+              }
+              onClick={() => dispatch({ type: 'runTournament' })}
+            >
+              Tournament · −{CAPITAL.tournamentAttention} Att · +{payout} Read
+            </Button>
+            <Button
+              tone="ghost"
+              onClick={() => {
+                document.querySelector('.ge-memos-col')?.scrollIntoView({
+                  block: 'nearest',
+                  behavior: reducedMotion ? 'auto' : 'smooth',
+                })
+              }}
+            >
+              Jump to Memos (Attention)
+            </Button>
+          </div>
+        }
+      >
+        <ol className="ge-strategy-loop" aria-label="Strategy loop">
+          <li>
+            <strong>1 · Fill Attention</strong>
+            <span>Analysts in Memos / Back office fill the bar.</span>
+          </li>
+          <li>
+            <strong>2 · Run a tournament</strong>
+            <span>
+              Spend {CAPITAL.tournamentAttention} Att → bank ~{payout} Read
+              {s.stats.tournamentsRun > 0 ? ` · ${s.stats.tournamentsRun} run` : ''}.
+            </span>
+          </li>
+          <li>
+            <strong>3 · Buy a doctrine</strong>
+            <span>Next costs {nextCost} Read. Buy in order — each tweaks a real rule.</span>
+          </li>
+        </ol>
+      </Card>
 
       {(s.upgrades['tourney-while-full'] ?? 0) >= 1 ? (
         <div className="ge-dept-callout">
@@ -84,28 +91,25 @@ export function StrategyPanel() {
             </p>
           </div>
           <div className="ge-chip-row">
-            <Btn
+            <Button
               tone="ghost"
               onClick={() => dispatch({ type: 'setAutoTourney', on: s.compute.autoTourney === false })}
             >
               {s.compute.autoTourney === false ? 'Resume auto-tournament' : 'Pause auto-tournament'}
-            </Btn>
+            </Button>
             {s.compute.ideasUnlocked ? (
-              <Btn tone="ghost" onClick={() => dispatch({ type: 'toggleIdeas' })}>
+              <Button tone="ghost" onClick={() => dispatch({ type: 'toggleIdeas' })}>
                 Ideas {s.compute.ideasOn ? 'on' : 'off'}
-              </Btn>
+              </Button>
             ) : null}
           </div>
         </div>
       ) : null}
 
-      <section className="ge-empire-block">
-        <header className="ge-empire-block__head">
-          <h3>Doctrines</h3>
-          <p>Spend Read. Owned doctrines also sweeten the next tournament payout.</p>
-        </header>
+      <Disclosure title="Doctrines" count={doctrineList.length} defaultOpen={owned < 2}>
+        <p className="ge-muted">Spend Read. Owned doctrines also sweeten the next tournament payout.</p>
         <div className="ge-card-grid">
-          {DOCTRINES.filter((d) => d.order <= owned).map((d) => {
+          {doctrineList.map((d) => {
             const have = (s.doctrines[d.id] ?? 0) > 0
             const canBuy = !have && s.read >= nextCost
             return (
@@ -118,7 +122,7 @@ export function StrategyPanel() {
                   <strong>{d.name}</strong>
                 </div>
                 <p className="ge-card__blurb">{d.blurb}</p>
-                <Btn
+                <Button
                   tone={canBuy ? 'primary' : 'ghost'}
                   coachId={`doctrine-${d.id}`}
                   disabled={have || s.read < nextCost}
@@ -126,18 +130,18 @@ export function StrategyPanel() {
                   onClick={() => dispatch({ type: 'buyDoctrine', id: d.id })}
                 >
                   {have ? 'Owned' : `Spend ${nextCost} Read`}
-                </Btn>
+                </Button>
               </article>
             )
           })}
         </div>
-        {DOCTRINES.length - owned - 1 > 0 ? (
+        {doctrinesAtEra(s.era).length - owned - 1 > 0 ? (
           <p className="ge-muted">
-            {DOCTRINES.length - owned - 1} doctrine
-            {DOCTRINES.length - owned - 1 === 1 ? '' : 's'} locked until you buy the one above.
+            {doctrinesAtEra(s.era).length - owned - 1} doctrine
+            {doctrinesAtEra(s.era).length - owned - 1 === 1 ? '' : 's'} locked until you buy the one above.
           </p>
         ) : null}
-      </section>
+      </Disclosure>
 
       <section className="ge-empire-block">
         <header className="ge-empire-block__head">
@@ -147,11 +151,6 @@ export function StrategyPanel() {
         <Line left="Autonomous" right={`Bank ${CAPITAL.autonomousReadNeed} on Empire`} muted />
         <Line left="Fleet / Charter" right="Late eras spend the surplus" muted />
       </section>
-
-      <HelpCard title="Read in one sentence">
-        Attention is office fuel. Tournaments turn Attention into Read. Doctrines (and late gates)
-        spend Read. Cash never buys Read.
-      </HelpCard>
-    </Panel>
+    </section>
   )
 }

@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
-import { PRICE_LOCK, WHOLESALE } from '../../sim/balance'
+import { DEPTH, PRICE_LOCK, WHOLESALE } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import {
   crateCost,
@@ -8,15 +9,13 @@ import {
   shortShipChance,
   unitCost,
 } from '../../sim/formulas'
-import { sumQty } from '../../sim/helpers'
+import { canCoopOrder, coopCrateCost } from '../../sim/systems/late'
 import { useGame } from '../GameContext'
-import { money, qty } from '../format'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
+import { clock, money, qty } from '../format'
 import { MixPriority } from '../components/MixPriority'
-import { Panel } from '../components/Panel'
-import { SuppliersBand } from '../scenes/DepartmentBands'
-import { DeptDiorama } from '../scenes/DeptDiorama'
+import { ActionRow, PlayFrame } from '../play'
+import { Badge, Button, Chip, Disclosure, EmptyState, Meter, Sheet, Toggle, Tooltip } from '../kit'
+import { DockScene } from '../scenes/live'
 
 function indexMood(index: number): { label: string; hint: string } {
   if (index < 0.88) return { label: 'Cheap', hint: 'Wholesale is soft — good time to buy.' }
@@ -25,15 +24,17 @@ function indexMood(index: number): { label: string; hint: string } {
 }
 
 export function SuppliersPanel() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
+  const [invoiceBook, setInvoiceBook] = useState(false)
+  const [dockSheet, setDockSheet] = useState(false)
   const cat = (s.orderCat in CATEGORIES ? s.orderCat : 'cans') as CategoryId
   const unlocked = CATEGORY_IDS.filter((c) => s.categories[c])
   const supplier = s.supplier === 'b' ? 'b' : 'a'
   const crates = supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
   const cost = crateCost(s, cat, supplier) * crates
   const units = crateSize(s) * crates
-  const hist = s.wholesale?.history ?? []
   const buyCheck = can(s, { type: 'buyWholesale', cat, crates })
+  const dockCheck = can(s, { type: 'dockCheckIn', aisle: cat })
   const emergencyCheck = can(s, { type: 'emergencyDelivery' })
   const mentorCheck = can(s, { type: 'mentorRestock' })
   const bailoutCheck = can(s, { type: 'bailout' })
@@ -43,20 +44,14 @@ export function SuppliersPanel() {
   const mood = indexMood(s.wholesale.index)
   const unit = unitCost(s, cat, supplier)
   const shortShip = supplier === 'b' ? Math.round(shortShipChance(s) * 100) : 0
-  const shelfUnits = sumQty(s.shelf)
-  const lockCost = crateCost(s, cat) * PRICE_LOCK.cratesCost
   const lockCheck = can(s, { type: 'lockWholesalePrice' })
   const lockLeft = s.priceLockUntil > s.time ? Math.ceil(s.priceLockUntil - s.time) : 0
-  const almanac = !!s.memos['market-almanac']
-  const sortedHist = [...hist].sort((a, b) => a - b)
-  const histMedian =
-    sortedHist.length === 0
-      ? null
-      : sortedHist.length % 2
-        ? sortedHist[(sortedHist.length - 1) / 2]
-        : (sortedHist[sortedHist.length / 2 - 1] + sortedHist[sortedHist.length / 2]) / 2
-  const tipIndex = Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index
-  const almanacRef = histMedian ?? tipIndex
+  const coopOn = s.era >= 7
+  const coopCheck = canCoopOrder(s, cat)
+  const coopCost = coopCrateCost(s, cat)
+  const expressCost = crateCost(s, cat, 'a')
+  const budgetCrates = WHOLESALE.supplierB.minSpools
+  const budgetCost = crateCost(s, cat, 'b') * budgetCrates
   const setAuto = (patch: { enabled?: boolean; maxCost?: number; minUnits?: number }) =>
     dispatch({
       type: 'setAutoRestock',
@@ -64,285 +59,349 @@ export function SuppliersPanel() {
       maxCost: patch.maxCost ?? s.autoRestock.maxCost,
       minUnits: patch.minUnits ?? s.autoRestock.minUnits,
     })
-  const recommend =
-    shelfUnits < 8
-      ? 'Shelf thin — Express keeps baskets moving.'
-      : s.wholesale.index > 1.05
-        ? `Index dear — Budget saves ~${money((crateCost(s, cat, 'a') - crateCost(s, cat, 'b')) * crates, numberFormat)} if you can wait.`
-        : 'Fair market — order what the shelf needs.'
+
+  const orders = s.orders ?? []
+  const safety: {
+    key: string
+    label: string
+    blurb: string
+    check: { ok: boolean; reason?: string }
+    run: () => void
+    coachId?: string
+  }[] = [
+    {
+      key: 'emergency',
+      label: 'Emergency delivery',
+      blurb: 'Rush crate for 1 Reputation, not cash.',
+      check: emergencyCheck,
+      run: () => dispatch({ type: 'emergencyDelivery' }),
+      coachId: 'emergency-delivery',
+    },
+    {
+      key: 'mentor',
+      label: 'Mentor restock',
+      blurb: 'Soft help when you are new and empty.',
+      check: mentorCheck,
+      run: () => dispatch({ type: 'mentorRestock' }),
+    },
+    {
+      key: 'bailout',
+      label: 'Bailout',
+      blurb: 'Cash float when you are broke.',
+      check: bailoutCheck,
+      run: () => dispatch({ type: 'bailout' }),
+    },
+  ]
+  const safetyReady = safety.some((n) => n.check.ok)
+  const openInvoices = (s.depth?.invoices ?? []).filter((i) => !i.paid)
+  const invoicesOnTime = s.depth?.invoicesOnTime ?? 0
+  const dockReady = s.era >= 1 && dockCheck.ok
 
   return (
-    <Panel
-      title="Suppliers"
-      purpose="Buy trucks. Cheap dips fill the backroom."
-      lore="suppliers"
-      scene={
-        <>
-          <SuppliersBand state={s} />
-          <DeptDiorama kind="suppliers" />
-        </>
-      }
-    >
-      <div className="ge-sup">
-        <section className="ge-sup-pulse">
-          <div className="ge-sup-pulse__copy">
-            <h3>
-              {mood.label}
+    <section className="ge-panel">
+      <PlayFrame
+        purpose="Buy stock and move it — trucks, cold chain, ocean lanes."
+        department="Suppliers"
+        room={<DockScene />}
+        tray={{
+          primary: dockReady
+            ? {
+                label: `Dock check-in · ${s.depth?.dockCheckIns ?? 0}/${DEPTH.dockCheckInNeed}`,
+                tone: 'free',
+                size: 'lg',
+                coachId: 'suppliers-dock-check',
+                onClick: () => setDockSheet(true),
+              }
+            : {
+                label: `Buy ${crates > 1 ? `${crates} crates` : 'crate'}`,
+                tone: 'primary',
+                size: 'lg',
+                coachId: 'floor-wholesale',
+                disabled: !buyCheck.ok,
+                title: !buyCheck.ok
+                  ? buyCheck.reason
+                  : `${qty(units)} ${CATEGORIES[cat]?.name ?? cat} · ${money(unit, numberFormat)} · ${eta.toFixed(0)}s${shortShip > 0 ? ` · ${shortShip}% short` : ''}`,
+                cost: money(cost, numberFormat),
+                feedback: true,
+                onClick: () => dispatch({ type: 'buyWholesale', cat, crates }),
+              },
+          failReason: dockReady ? undefined : buyCheck.reason,
+          secondaries: [
+            {
+              key: 'invoices',
+              label: 'Invoices',
+              fact: String(openInvoices.length),
+              coachId: 'suppliers-invoices',
+              onClick: () => setInvoiceBook(true),
+            },
+            ...(s.era >= 1
+              ? [
+                  {
+                    key: 'dock',
+                    label: 'Dock',
+                    fact: `${s.depth?.dockCheckIns ?? 0}/${DEPTH.dockCheckInNeed}`,
+                    coachId: 'suppliers-dock-check',
+                    onClick: () => setDockSheet(true),
+                  },
+                ]
+              : []),
+            ...(s.memos['price-lock']
+              ? [
+                  {
+                    key: 'lock',
+                    label: lockLeft > 0 ? `Locked ${lockLeft}s` : 'Lock price',
+                    disabled: !lockCheck.ok && lockLeft <= 0,
+                    title: !lockCheck.ok ? lockCheck.reason : `Freeze index ${PRICE_LOCK.durationSec}s`,
+                    onClick: () => dispatch({ type: 'lockWholesalePrice' }),
+                  },
+                ]
+              : []),
+          ],
+        }}
+      >
+        <div className="p6-row">
+          <Badge tone={mood.label === 'Cheap' ? 'success' : mood.label === 'Dear' ? 'warn' : 'muted'}>
+            <span data-coach-id="wholesale-index">
+              Index {mood.label}
               {lockLeft > 0 ? ` · locked ${lockLeft}s` : ''}
-            </h3>
-            <p>
-              {mood.hint} {recommend}
-              {almanac
-                ? s.wholesale.index < almanacRef - 0.02
-                  ? ` Almanac median ${almanacRef.toFixed(2)} — below, good buy.`
-                  : s.wholesale.index > almanacRef + 0.02
-                    ? ` Almanac median ${almanacRef.toFixed(2)} — above, wait if you can.`
-                    : ''
-                : ''}
-            </p>
-          </div>
-          <div className="ge-sup-pulse__spark" data-coach-id="wholesale-index" aria-hidden>
-            {hist.length >= 2
-              ? hist.slice(-28).map((v, i, slice) => {
-                  const min = Math.min(...slice)
-                  const max = Math.max(...slice)
-                  const h = max === min ? 50 : ((v - min) / (max - min)) * 100
-                  return <span key={i} style={{ height: `${Math.max(8, h)}%` }} />
-                })
-              : null}
-          </div>
-        </section>
+            </span>
+          </Badge>
+          {orders.length > 0 ? <Badge tone="muted">{orders.length} on the road</Badge> : null}
+          <Badge tone="muted">
+            {openInvoices.length} open · {invoicesOnTime} on time
+          </Badge>
+        </div>
 
-        <section className={`ge-sup-order${buyCheck.ok ? ' is-ready' : ''}`.trim()}>
-          <header className="ge-sup-order__head">
-            <h3>Place an order</h3>
-            <p>Pick an aisle and a truck. Crates land in the backroom — then Unpack.</p>
-          </header>
-
-          <div className="ge-sup-order__step">
-            <span className="ge-sup-order__n">1</span>
-            <div>
-              <strong>What aisle?</strong>
-              <div className="ge-chip-row">
-                {unlocked.map((c) => (
-                  <Btn
-                    key={c}
-                    tone={cat === c ? 'primary' : 'ghost'}
-                    title={CATEGORIES[c].role}
-                    onClick={() => dispatch({ type: 'setOrderCat', cat: c })}
-                  >
-                    {CATEGORIES[c].name}
-                  </Btn>
-                ))}
-              </div>
-              <p className="ge-muted">{CATEGORIES[cat]?.role}</p>
-            </div>
-          </div>
-
-          <div className="ge-sup-order__step">
-            <span className="ge-sup-order__n">2</span>
-            <div>
-              <strong>Which truck?</strong>
-              <div className="ge-sup-trucks">
-                <button
-                  type="button"
-                  className={`ge-sup-truck${supplier === 'a' ? ' is-on' : ''}`.trim()}
-                  onClick={() => dispatch({ type: 'setSupplier', supplier: 'a' })}
-                >
-                  <strong>Express</strong>
-                  <span>Faster · full price</span>
-                  <em>~{deliveryTime(s, 'a').toFixed(0)}s</em>
-                </button>
-                <button
-                  type="button"
-                  className={`ge-sup-truck${supplier === 'b' ? ' is-on' : ''}`.trim()}
-                  disabled={!hasB}
-                  title={hasB ? 'Cheaper, slower, sometimes short' : 'Unlock with Second Wholesaler memo'}
-                  onClick={() => dispatch({ type: 'setSupplier', supplier: 'b' })}
-                >
-                  <strong>Budget</strong>
-                  <span>
-                    {hasB
-                      ? `~${Math.round((1 - WHOLESALE.supplierB.discount) * 100)}% off · slower`
-                      : 'Locked · Second Wholesaler memo'}
-                  </span>
-                  <em>{hasB ? `~${deliveryTime(s, 'b').toFixed(0)}s` : '—'}</em>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="ge-sup-order__step">
-            <span className="ge-sup-order__n">3</span>
-            <div className="ge-sup-order__pay">
-              <div className="ge-sup-order__receipt">
-                <div>
-                  <span>You get</span>
-                  <strong>
-                    {qty(units)} {CATEGORIES[cat]?.name ?? cat}
-                  </strong>
-                </div>
-                <div>
-                  <span>Unit</span>
-                  <strong>{money(unit, numberFormat)}</strong>
-                </div>
-                <div>
-                  <span>ETA</span>
-                  <strong>{eta.toFixed(0)}s</strong>
-                </div>
-                {shortShip > 0 ? (
-                  <div>
-                    <span>Risk</span>
-                    <strong>{shortShip}% short-ship</strong>
-                  </div>
-                ) : null}
-              </div>
-              <Btn
-                tone={buyCheck.ok ? 'primary' : 'ghost'}
-                coachId="floor-wholesale"
-                disabled={!buyCheck.ok}
-                title={!buyCheck.ok ? buyCheck.reason : undefined}
-                onClick={() => dispatch({ type: 'buyWholesale', cat, crates })}
-              >
-                Buy {crates > 1 ? `${crates} crates` : 'crate'} · {money(cost, numberFormat)}
-              </Btn>
-            </div>
-          </div>
-        </section>
-
-        {s.memos['price-lock'] ? (
-          <section className="ge-sup-auto">
-            <header className="ge-sup-order__head">
-              <h3>Price lock</h3>
-              <p>Catch a dip, freeze the index for {PRICE_LOCK.durationSec}s. Costs ~{PRICE_LOCK.cratesCost} crates.</p>
-            </header>
-            <Btn
-              tone={lockCheck.ok ? 'primary' : 'ghost'}
-              disabled={!lockCheck.ok}
-              title={!lockCheck.ok ? lockCheck.reason : undefined}
-              onClick={() => dispatch({ type: 'lockWholesalePrice' })}
+        <div className="p6-row">
+          {unlocked.map((c) => (
+            <Chip key={c} selected={cat === c} onClick={() => dispatch({ type: 'setOrderCat', cat: c })}>
+              {CATEGORIES[c].short}
+            </Chip>
+          ))}
+        </div>
+        <div className="p6-row">
+          <button
+            type="button"
+            className={`p6-choice p6-choice--row${supplier === 'a' ? ' is-on' : ''}`}
+            aria-pressed={supplier === 'a'}
+            onClick={() => dispatch({ type: 'setSupplier', supplier: 'a' })}
+          >
+            <strong>Express</strong>
+            <em>{money(expressCost, numberFormat)}</em>
+          </button>
+          <button
+            type="button"
+            className={`p6-choice p6-choice--row${supplier === 'b' ? ' is-on' : ''}`}
+            aria-pressed={supplier === 'b'}
+            disabled={!hasB}
+            title={hasB ? 'Cheaper, slower, sometimes short' : 'Unlock with Second Wholesaler memo'}
+            onClick={() => dispatch({ type: 'setSupplier', supplier: 'b' })}
+          >
+            <strong>Budget</strong>
+            <em>{hasB ? money(budgetCost, numberFormat) : '—'}</em>
+          </button>
+          {coopOn ? (
+            <Button
+              tone="ghost"
+              size="sm"
+              disabled={!!coopCheck}
+              title={coopCheck ?? 'Co-op truck'}
+              onClick={() => dispatch({ type: 'coopOrder', cat })}
             >
-              {lockLeft > 0
-                ? `Locked · ${lockLeft}s`
-                : `Lock index · ${money(lockCost, numberFormat)}`}
-            </Btn>
-          </section>
+              Co-op · {money(coopCost, numberFormat)}
+            </Button>
+          ) : null}
+        </div>
+
+        {orders.length > 0 ? (
+          <ul className="p6-orders">
+            {orders.map((o) => {
+              const total = Math.max(1, deliveryTime(s, o.supplier === 'b' ? 'b' : 'a'))
+              const left = Math.max(0, o.eta)
+              return (
+                <li key={o.id}>
+                  <div className="p6-orders__top">
+                    <strong>
+                      {CATEGORIES[o.cat]?.name ?? o.cat} ×{qty(o.qty)}
+                    </strong>
+                    <span>{o.supplier === 'b' ? 'Budget' : 'Express'}</span>
+                  </div>
+                  <Meter value={total - left} max={total} tone="success" eta={clock(left)} />
+                </li>
+              )
+            })}
+          </ul>
         ) : null}
 
-        <section className="ge-sup-auto">
-          <header className="ge-sup-order__head">
-            <h3>Auto-restock</h3>
-            <p>
+        {safetyReady
+          ? safety.map((n) =>
+              n.check.ok ? (
+                <Tooltip key={n.key} content={n.blurb}>
+                  <Button tone="free" size="sm" coachId={n.coachId} onClick={n.run}>
+                    {n.label}
+                  </Button>
+                </Tooltip>
+              ) : null,
+            )
+          : null}
+
+        <Disclosure
+          title="Auto-restock"
+          actions={
+            <div data-coach-id="suppliers-autorestock">
+              <Toggle
+                checked={!!s.autoRestock?.enabled}
+                disabled={!autoOn}
+                title={autoOn ? undefined : 'Buy the Auto-order memo to unlock'}
+                onChange={(enabled) => setAuto({ enabled })}
+              >
+                {autoOn ? 'On' : 'Locked'}
+              </Toggle>
+            </div>
+          }
+        >
+          <div className="p6-stack">
+            <p className="p6-copy">
               {autoOn
-                ? 'Spends cash to protect baskets — orders the aisle furthest under your Restock priority when backroom runs low.'
+                ? 'Reorders the aisle furthest under your Restock priority when the backroom runs low.'
                 : 'Buy the Auto-order memo to let the desk reorder for you.'}
             </p>
-          </header>
-          <label className="ge-check" data-coach-id="suppliers-autorestock">
-            <input
-              type="checkbox"
-              checked={!!s.autoRestock?.enabled}
-              onChange={(e) => setAuto({ enabled: e.target.checked })}
-              disabled={!autoOn}
-            />
-            {autoOn ? 'Enable auto-restock' : 'Locked until Auto-order memo'}
-          </label>
-          {autoOn ? (
-            <>
-              <div className="ge-chip-row">
-                <label className="ge-muted">
-                  Max cost / unit{' '}
-                  <input
-                    className="ge-price__input"
-                    type="number"
-                    min={0.05}
-                    step={0.05}
-                    value={s.autoRestock.maxCost}
-                    onChange={(e) => {
-                      const v = Number(e.target.value)
-                      if (Number.isFinite(v) && v > 0) setAuto({ maxCost: v })
-                    }}
-                  />
-                </label>
-                <label className="ge-muted">
-                  Keep in back{' '}
-                  <input
-                    className="ge-price__input"
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={s.autoRestock.minUnits}
-                    onChange={(e) => {
-                      const v = Math.floor(Number(e.target.value))
-                      if (Number.isFinite(v) && v >= 1) setAuto({ minUnits: v })
-                    }}
-                  />
-                </label>
-              </div>
-              <p className="ge-muted">
-                Refuses crates above {money(s.autoRestock?.maxCost ?? 0, numberFormat)} / unit · reorders
-                when back is under {qty(s.autoRestock?.minUnits ?? 0)}.
-              </p>
-            </>
-          ) : null}
-          <MixPriority coachId="floor-mix" compact />
-        </section>
-
-        <section className="ge-sup-safety">
-          <header className="ge-sup-order__head">
-            <h3>Safety nets</h3>
-            <p>Only when the aisle is stuck — not a growth plan.</p>
-          </header>
-          <div className="ge-sup-safety__grid">
-            <div>
-              <Btn
-                coachId="emergency-delivery"
-                disabled={!emergencyCheck.ok}
-                title={!emergencyCheck.ok ? emergencyCheck.reason : undefined}
-                onClick={() => dispatch({ type: 'emergencyDelivery' })}
-              >
-                Emergency delivery
-              </Btn>
-              <span>
-                Rush crate — costs 1 Reputation when the desk is open, not cash.
-                {!emergencyCheck.ok && emergencyCheck.reason ? ` ${emergencyCheck.reason}` : ''}
-              </span>
-            </div>
-            <div>
-              <Btn
-                disabled={!mentorCheck.ok}
-                title={!mentorCheck.ok ? mentorCheck.reason : undefined}
-                onClick={() => dispatch({ type: 'mentorRestock' })}
-              >
-                Mentor restock
-              </Btn>
-              <span>
-                Soft help when you’re new and empty.
-                {!mentorCheck.ok && mentorCheck.reason ? ` ${mentorCheck.reason}` : ''}
-              </span>
-            </div>
-            <div>
-              <Btn
-                disabled={!bailoutCheck.ok}
-                title={!bailoutCheck.ok ? bailoutCheck.reason : undefined}
-                onClick={() => dispatch({ type: 'bailout' })}
-              >
-                Bailout
-              </Btn>
-              <span>
-                Cash float when you’re broke.
-                {!bailoutCheck.ok && bailoutCheck.reason ? ` ${bailoutCheck.reason}` : ''}
-              </span>
-            </div>
+            {autoOn ? (
+              <>
+                <div className="p6-row">
+                  <label className="p6-field">
+                    Max cost / unit
+                    <input
+                      type="number"
+                      min={0.05}
+                      step={0.05}
+                      value={s.autoRestock.maxCost}
+                      onChange={(e) => {
+                        const v = Number(e.target.value)
+                        if (Number.isFinite(v) && v > 0) setAuto({ maxCost: v })
+                      }}
+                    />
+                  </label>
+                  <label className="p6-field">
+                    Keep in back
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={s.autoRestock.minUnits}
+                      onChange={(e) => {
+                        const v = Math.floor(Number(e.target.value))
+                        if (Number.isFinite(v) && v >= 1) setAuto({ minUnits: v })
+                      }}
+                    />
+                  </label>
+                </div>
+              </>
+            ) : null}
           </div>
-        </section>
+        </Disclosure>
 
-        <HelpCard title="Express vs Budget vs Lock vs Auto">
-          Express: faster, full price. Budget: cheaper and slower, may ship short. Price lock freezes
-          the wholesale index for a while — buy during a dip. Auto-restock reorders for you within
-          your max cost and keep-in-back limits.
-        </HelpCard>
-      </div>
-    </Panel>
+        <MixPriority coachId="floor-mix" compact />
+      </PlayFrame>
+
+      <Sheet
+        open={invoiceBook}
+        onClose={() => setInvoiceBook(false)}
+        title={`Invoice book · ${openInvoices.length} open`}
+        reducedMotion={reducedMotion}
+        footer={
+          <Button tone="ghost" onClick={() => setInvoiceBook(false)}>
+            Done
+          </Button>
+        }
+      >
+        {openInvoices.length === 0 ? (
+          <EmptyState
+            title="No open invoices"
+            body="Pay early for a discount; late fees hit stars."
+          />
+        ) : (
+          <div className="p6-stack">
+            <p className="p6-copy">
+              Pay now (×{DEPTH.invoiceEarlyDisc}) keeps the greengrocer deal. Float (×{DEPTH.invoiceLateFee}) ages
+              produce.
+            </p>
+            {openInvoices.map((inv) => {
+              const early = s.time <= inv.dueAt
+              const due = inv.amount * (early ? DEPTH.invoiceEarlyDisc : DEPTH.invoiceLateFee)
+              const left = Math.max(0, Math.ceil(inv.dueAt - s.time))
+              const check = can(s, { type: 'payInvoice', id: inv.id })
+              return (
+                <ActionRow
+                  key={inv.id}
+                  label={`#${inv.id} ${CATEGORIES[inv.cat]?.name ?? inv.cat}`}
+                  fact={`${early ? `${left}s left` : 'late'} · ${money(due, numberFormat)}`}
+                  disabled={!check.ok}
+                  title={check.reason}
+                  onClick={() => dispatch({ type: 'payInvoice', id: inv.id })}
+                />
+              )
+            })}
+          </div>
+        )}
+      </Sheet>
+
+      <Sheet
+        open={dockSheet}
+        onClose={() => setDockSheet(false)}
+        title="Dock check-in"
+        reducedMotion={reducedMotion}
+        footer={
+          <Button tone="ghost" onClick={() => setDockSheet(false)}>
+            Done
+          </Button>
+        }
+      >
+        <div className="p6-stack" data-coach-id="suppliers-dock-check">
+          <p className="p6-copy">
+            Put the crate into an aisle’s back stock. Full crate is slower; short-ship is faster with fewer units.
+            {(s.depth?.nextDockAt ?? 0) > s.time
+              ? ` Next in ${Math.ceil((s.depth?.nextDockAt ?? 0) - s.time)}s.`
+              : ''}
+            {s.depth?.lastDockAisle ? ` Last → ${CATEGORIES[s.depth.lastDockAisle as CategoryId]?.short ?? s.depth.lastDockAisle}.` : ''}
+          </p>
+          <div className="p6-row">
+            {unlocked.map((aisle) => {
+              const full = can(s, { type: 'dockCheckIn', aisle })
+              const short = can(s, { type: 'dockCheckIn', aisle, short: true })
+              return (
+                <div key={aisle} className="p6-stack" style={{ gap: '0.35rem' }}>
+                  <strong>{CATEGORIES[aisle].short}</strong>
+                  <Button
+                    tone="free"
+                    size="sm"
+                    disabled={!full.ok}
+                    title={full.ok ? 'Full crate' : full.reason}
+                    onClick={() => {
+                      dispatch({ type: 'dockCheckIn', aisle })
+                      setDockSheet(false)
+                    }}
+                  >
+                    Full
+                  </Button>
+                  <Button
+                    tone="ghost"
+                    size="sm"
+                    disabled={!short.ok}
+                    title={short.ok ? 'Short-ship · faster, fewer units' : short.reason}
+                    onClick={() => {
+                      dispatch({ type: 'dockCheckIn', aisle, short: true })
+                      setDockSheet(false)
+                    }}
+                  >
+                    Short
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </Sheet>
+    </section>
   )
 }

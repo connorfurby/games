@@ -1,0 +1,147 @@
+/* Build panel (Phase 6a). `bd-` prefix keeps clear of legacy `ge-card*` / `ge-dept-*`. */
+@layer panels {
+  .bd-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .bd-title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+  .bd-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    font-weight: 500;
+    color: var(--ge-ink-muted);
+  }
+  .bd-note {
+    margin: 0;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    color: var(--ge-ink-muted);
+  }
+  .bd-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  /* Primary: starter corner */
+  .bd-primary__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2) var(--s-3);
+  }
+  .bd-primary__row p {
+    flex: 1 1 14rem;
+    margin: 0;
+    min-width: 0;
+  }
+
+  /* Queue timeline: cash now -> bar -> queued tier */
+  .bd-timeline {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .bd-node {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    color: var(--ge-ink-muted);
+  }
+  .bd-node strong {
+    font-size: var(--t-sm);
+    color: var(--ge-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .bd-node--goal {
+    text-align: right;
+  }
+
+  /* Filter chips */
+  .bd-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .bd-chip.is-hot .gk-chip__main::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ge-tag);
+  }
+  .bd-chip.is-suggested {
+    box-shadow: 0 0 0 1px var(--ge-tag);
+  }
+  .bd-chip em {
+    font-style: normal;
+    opacity: 0.7;
+  }
+
+  /* Cards */
+  .bd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--s-3);
+    align-items: stretch;
+  }
+  .bd-card .gk-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+  .bd-facts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2px var(--s-3);
+    margin: 0;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+  }
+  .bd-facts dt {
+    color: var(--ge-ink-muted);
+  }
+  .bd-facts dd {
+    margin: 0;
+    min-width: 0;
+    color: var(--ge-ink);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .bd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+    width: 100%;
+  }
+  .bd-actions .bd-buy {
+    flex: 1 1 8rem;
+  }
+
+  @media (max-width: 720px) {
+    .bd-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .bd-timeline {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--s-2);
+    }
+    .bd-node--goal {
+      text-align: left;
+    }
+  }
+}

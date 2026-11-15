@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import type { MenuId } from '../../content/menus'
 import { Icon } from '../icons/Icon'
+import { HubStage } from './HubStage'
 
 /**
- * Department shell: title + one job line + optional status strip.
+ * Department shell: title + one job line + HubStage (scene | body).
  * Lore flavor lives in unlock dialogue / guide — not a second subtitle fighting the purpose.
  */
 export function Panel({
@@ -33,8 +34,9 @@ export function Panel({
           {purpose ? <p className="ge-panel__purpose">{purpose}</p> : null}
         </div>
       </header>
-      {scene ? <div className="ge-panel__scene">{scene}</div> : null}
-      <div className="ge-panel__body">{children}</div>
+      <HubStage scene={scene} bodyClassName="ge-panel__body">
+        {children}
+      </HubStage>
     </section>
   )
 }

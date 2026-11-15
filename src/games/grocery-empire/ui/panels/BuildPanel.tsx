@@ -7,14 +7,12 @@ import { upkeepPerSec } from '../../sim/formulas'
 import type { GameState } from '../../sim/state'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
-import { Btn } from '../components/Btn'
-import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { HelpCard } from '../components/HelpCard'
-import { Panel } from '../components/Panel'
 import type { ExtraIcon } from '../icons/Icon'
 import { Icon } from '../icons/Icon'
-import { BuildBand } from '../scenes/DepartmentBands'
-import { DeptDiorama } from '../scenes/DeptDiorama'
+import { BuildSiteScene } from '../scenes/live/BuildSiteScene'
+import { Button, Card, EmptyState, Meter, SegmentedControl, useConfirm, type CardState } from '../kit'
+import { PlayFrame } from '../play'
+import './build.css'
 
 /** Convenience one-click: early builds in order, skip any that aren't affordable. */
 const STARTER_CORNER: Command[] = [
@@ -42,8 +40,6 @@ function runBestEffort(cmds: Command[]) {
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100
-const perMin = (n: number, fmt: Parameters<typeof money>[1]) =>
-  n > 0 ? `${money(n, fmt)}/min` : 'free'
 
 /** Cold-track prerequisite lines tied to the dairy / meat memos. */
 function coldPrereq(s: GameState, nextIndex: number): string | null {
@@ -72,6 +68,8 @@ function BuildTrackCard({
   numberFormat,
   onBuy,
   onSell,
+  onQueue,
+  queued,
 }: {
   track: (typeof BUILD_TRACKS)[number]
   lvl: number
@@ -83,111 +81,81 @@ function BuildTrackCard({
   numberFormat: Parameters<typeof money>[1]
   onBuy: () => void
   onSell: () => void
+  onQueue?: () => void
+  queued?: boolean
 }) {
   const sid = `build-${track.id}`
   const suggested = useIsSuggested(sid)
+  const maxTier = Math.max(1, track.tiers.length - 1)
+  const state: CardState | undefined = lockedEra
+    ? 'locked'
+    : !next
+      ? 'maxed'
+      : suggested
+        ? 'suggested'
+        : canBuy
+          ? 'affordable'
+          : undefined
+
   return (
-    <article
+    <Card
       data-suggest-id={sid}
-      className={`ge-card${lvl > 0 ? ' ge-card--owned' : ''}${canBuy ? ' is-ready' : ''}${
-        suggested ? ' is-suggested' : ''
-      }`.trim()}
-    >
-      <div className="ge-card__head">
-        <Icon name={BUILD_ICON[track.id]} size={20} tone="accent" />
-        <div>
-          <strong>{track.name}</strong>
-          <p className="ge-muted">{current?.name ?? 'Empty lot'}</p>
-        </div>
-      </div>
-      <p className="ge-card__blurb">{track.blurb}</p>
-      {current?.effect || (current && current.upkeepPerMin > 0) ? (
-        <div className="ge-card__meta">
-          {current.effect ? (
-            <div className="ge-card__meta-row">
-              <span>Now</span>
-              <strong>{current.effect}</strong>
-            </div>
-          ) : null}
-          <div className="ge-card__meta-row">
-            <span>Upkeep now</span>
-            <strong>{perMin(current.upkeepPerMin, numberFormat)}</strong>
-          </div>
-        </div>
-      ) : null}
-
-      {prereq && next ? <p className="ge-muted" style={{ margin: 0, fontSize: '0.72rem' }}>{prereq}</p> : null}
-
-      {next && !lockedEra ? (
-        <>
-          <div className="ge-card__meta">
-            <div className="ge-card__meta-row">
-              <span>Next</span>
-              <strong>{next.name}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Effect</span>
-              <strong>{next.effect || '—'}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Next upkeep</span>
-              <strong>
-                {perMin(next.upkeepPerMin, numberFormat)}
-                {current && next.upkeepPerMin > current.upkeepPerMin
-                  ? ` (+${money(next.upkeepPerMin - current.upkeepPerMin, numberFormat)})`
-                  : ''}
-              </strong>
-            </div>
-          </div>
-          <div className="ge-card__actions">
-            <Btn
-              tone={canBuy ? 'primary' : 'ghost'}
-              coachId={track.id === 'storefront' ? 'build-storefront' : sid}
-              disabled={!canBuy}
-              title={!canBuy && next ? `Need ${money(next.cost, numberFormat)}` : undefined}
+      className="bd-card"
+      state={state}
+      header={
+        <span className="bd-title">
+          <Icon name={BUILD_ICON[track.id]} size={14} /> {track.name}
+          <em>
+            · {lvl}/{maxTier}
+          </em>
+        </span>
+      }
+      footer={
+        <div className="bd-actions">
+          {next ? (
+            <Button
+              tone="primary"
+              size="sm"
+              className="bd-buy"
+              feedback
+              affordable={canBuy}
+              cost={money(next.cost, numberFormat)}
+              disabled={lockedEra}
+              title={lockedEra ? `Needs Era ${next.era}` : prereq ?? undefined}
               onClick={onBuy}
             >
-              <Icon name={BUILD_ICON[track.id]} size={14} />
-              Build · {money(next.cost, numberFormat)}
-            </Btn>
-            {lvl > 0 ? (
-              <Btn tone="ghost" onClick={onSell}>
-                Sell
-              </Btn>
-            ) : (
-              <span />
-            )}
-          </div>
-        </>
-      ) : next && lockedEra ? (
-        <>
-          <p className="ge-muted">Next chapter (era {next.era}) · {next.name}</p>
-          {lvl > 0 ? (
-            <div className="ge-card__actions">
-              <span />
-              <Btn tone="ghost" onClick={onSell}>
-                Sell
-              </Btn>
-            </div>
+              Build {next.name}
+            </Button>
+          ) : (
+            <Button tone="ghost" size="sm" disabled>
+              Maxed
+            </Button>
+          )}
+          {onQueue && next && !queued ? (
+            <Button tone="ghost" size="sm" onClick={onQueue}>
+              Queue
+            </Button>
           ) : null}
-        </>
-      ) : lvl > 0 ? (
-        <div className="ge-card__actions">
-          <span />
-          <Btn tone="ghost" onClick={onSell}>
-            Sell
-          </Btn>
+          {lvl > 0 ? (
+            <Button tone="ghost" size="sm" onClick={onSell}>
+              Sell
+            </Button>
+          ) : null}
         </div>
-      ) : null}
-    </article>
+      }
+    >
+      <p className="bd-note">{track.blurb}</p>
+      {prereq ? <p className="bd-note is-warn">{prereq}</p> : null}
+      {queued ? <p className="bd-note">Queued</p> : null}
+      <Meter value={lvl} max={maxTier} tone="accent" label="Tier" />
+    </Card>
   )
 }
 
 export function BuildPanel() {
-  const { state: s, tick, dispatch, numberFormat, suggestions, focusNonce, focusTarget, reducedMotion } =
-    useGame()
-  const [filter, setFilter] = useState<BuildFilter | 'all'>('all')
-  const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
+  const { state: s, tick, dispatch, numberFormat, suggestions, focusNonce, focusTarget } = useGame()
+  const confirm = useConfirm()
+  const [filter, setFilter] = useState<BuildFilter>('storefront')
 
   const visibleTracks = useMemo(
     () =>
@@ -201,8 +169,19 @@ export function BuildPanel() {
     [tick, s],
   )
 
-  const tracks = visibleTracks.filter((t) => filter === 'all' || t.id === filter)
+  useEffect(() => {
+    if (!focusTarget?.startsWith('build-')) return
+    const id = focusTarget.replace(/^build-/, '') as BuildFilter
+    if (visibleTracks.some((t) => t.id === id)) setFilter(id)
+  }, [focusNonce, focusTarget, visibleTracks])
 
+  useEffect(() => {
+    if (!visibleTracks.some((t) => t.id === filter) && visibleTracks[0]) {
+      setFilter(visibleTracks[0].id)
+    }
+  }, [visibleTracks, filter])
+
+  const track = visibleTracks.find((t) => t.id === filter) ?? visibleTracks[0]
   const endcapCost = Math.ceil(ENDCAP.base * Math.pow(ENDCAP.growth, s.endcaps))
   const canEndcap = s.endcaps < ENDCAP.max && s.cash >= endcapCost
   const endcapRefund =
@@ -211,187 +190,163 @@ export function BuildPanel() {
       : 0
   const upkeepMin = upkeepPerSec(s, BUILD_TRACKS) * 60
   const starterAny = STARTER_CORNER.some((cmd) => engine.can(cmd).ok)
+  const queuedId = s.era >= 7 ? s.horizon.buildQueue : null
+  const queuedTrack = queuedId ? BUILD_TRACKS.find((t) => t.id === queuedId) : undefined
+  const queuedNext = queuedTrack ? queuedTrack.tiers[buildLevel(s, queuedTrack.id) + 1] : undefined
 
-  const readyByTrack = useMemo(() => {
-    const map = new Map<string, boolean>()
-    for (const track of visibleTracks) {
-      const lvl = buildLevel(s, track.id)
-      const next = track.tiers[lvl + 1]
-      map.set(track.id, !!next && s.cash >= next.cost && s.era >= next.era)
-    }
-    return map
-  }, [tick, s, visibleTracks])
-
-  useEffect(() => {
-    if (!focusTarget?.startsWith('build-')) return
-    const id = focusTarget.replace(/^build-/, '') as BuildFilter
-    if (visibleTracks.some((t) => t.id === id)) setFilter(id)
-  }, [focusNonce, focusTarget, visibleTracks])
+  const lvl = track ? buildLevel(s, track.id) : 0
+  const next = track?.tiers[lvl + 1]
+  const current = track?.tiers[lvl]
+  const canBuy = !!next && s.cash >= next.cost && s.era >= next.era
+  const lockedEra = !!next && s.era < next.era
+  const prereq = track?.id === 'cold' ? coldPrereq(s, lvl + 1) : null
 
   return (
-    <Panel
-      title="Build"
-      purpose="Spend cash to grow capacity — shelf, cold, seats, trucks."
-      lore="build"
-      scene={
-        <>
-          <BuildBand state={s} />
-          <DeptDiorama kind="build" />
-        </>
-      }
-    >
+    <section className="ge-panel bd">
+      <PlayFrame
+        purpose="Raise the shell: storefront, storage, cold, and civic tracks."
+        department="Build"
+        room={<BuildSiteScene />}
+        tray={{
+          primary: next
+            ? {
+                label: `Build ${next.name}`,
+                tone: 'primary',
+                feedback: true,
+                affordable: canBuy,
+                cost: money(next.cost, numberFormat),
+                disabled: lockedEra || !canBuy,
+                title: lockedEra ? `Needs Era ${next.era}` : prereq ?? undefined,
+                onClick: () => track && dispatch({ type: 'buyBuild', id: track.id }),
+              }
+            : starterAny
+              ? {
+                  label: 'Starter pack',
+                  tone: 'primary',
+                  onClick: () => runBestEffort(STARTER_CORNER),
+                }
+              : {
+                  label: 'Track maxed',
+                  tone: 'ghost',
+                  disabled: true,
+                },
+          failReason: lockedEra ? `Needs Era ${next?.era}` : !canBuy && next ? 'Not enough cash' : undefined,
+          secondaries: [
+            {
+              key: 'endcap',
+              label: 'Endcap',
+              fact: `${s.endcaps}/${ENDCAP.max}`,
+              disabled: !canEndcap,
+              onClick: () => dispatch({ type: 'buyEndcap' }),
+            },
+            ...(starterAny
+              ? [{ key: 'starter', label: 'Starter pack', onClick: () => runBestEffort(STARTER_CORNER) }]
+              : []),
+            ...(upkeepMin > 0
+              ? [{ key: 'upkeep', label: 'Upkeep', fact: `${money(upkeepMin, numberFormat)}/min`, disabled: true, onClick: () => {} }]
+              : []),
+          ],
+        }}
+      >
+        {visibleTracks.length > 0 ? (
+          <SegmentedControl
+            value={filter}
+            onChange={(v) => setFilter(v as BuildFilter)}
+            options={visibleTracks.map((t) => ({
+              value: t.id,
+              label: t.name,
+              badge: suggestions[0]?.target === `build-${t.id}` ? 1 : undefined,
+            }))}
+          />
+        ) : (
+          <EmptyState title="No build tracks unlocked" />
+        )}
 
-      <div className="ge-dept-callout">
-        <div className="ge-dept-callout__copy">
-          <h3>Starter Corner</h3>
-          <p>
-            Buys affordable early tiers in order
-            {upkeepMin > 0 ? ` · shell upkeep ${money(upkeepMin, numberFormat)}/min` : ''}.
-          </p>
-        </div>
-        <Btn tone="primary" disabled={!starterAny} onClick={() => runBestEffort(STARTER_CORNER)}>
-          Build starter pack
-        </Btn>
-      </div>
-
-      <div className="ge-dept-toolbar">
-        <div className="ge-dept-tabs" role="tablist" aria-label="Build tracks">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={filter === 'all'}
-            className={`ge-dept-tab${filter === 'all' ? ' is-on' : ''}`.trim()}
-            onClick={() => setFilter('all')}
-          >
-            All
-            <em>{visibleTracks.length}</em>
-          </button>
-          {visibleTracks.map((t) => {
-            const hot = readyByTrack.get(t.id)
-            const suggest = suggestions[0]?.target === `build-${t.id}`
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={filter === t.id}
-                className={`ge-dept-tab${filter === t.id ? ' is-on' : ''}${hot ? ' is-hot' : ''}${
-                  suggest ? ' is-suggested' : ''
-                }`.trim()}
-                onClick={() => setFilter(t.id)}
-              >
-                <Icon name={BUILD_ICON[t.id]} size={13} />
-                {t.name}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {tracks.length === 0 ? <p className="ge-empty">No build tracks unlocked.</p> : null}
-
-      <div className="ge-card-grid">
-        {tracks.map((track) => {
-          const lvl = buildLevel(s, track.id)
-          const next = track.tiers[lvl + 1]
-          const current = track.tiers[lvl]
-          const canBuy = !!next && s.cash >= next.cost && s.era >= next.era
-          const lockedEra = !!next && s.era < next.era
-          return (
-            <BuildTrackCard
-              key={track.id}
-              track={track}
-              lvl={lvl}
-              next={next}
-              current={current}
-              prereq={track.id === 'cold' ? coldPrereq(s, lvl + 1) : null}
-              canBuy={canBuy}
-              lockedEra={lockedEra}
-              numberFormat={numberFormat}
-              onBuy={() => dispatch({ type: 'buyBuild', id: track.id })}
-              onSell={() => {
-                const frac = refundFrac(s)
-                const refund = round2((current?.cost ?? 0) * frac)
-                setConfirm({
-                  title: `Sell ${current?.name ?? track.name}?`,
-                  body: `Refunds exactly ${money(refund, numberFormat)} (${Math.round(frac * 100)}% of ${money(
-                    current?.cost ?? 0,
-                    numberFormat,
-                  )}). Effects from that tier drop immediately.`,
-                  detail:
-                    frac < 1
-                      ? 'Refunds rise to 100% from Era 3.'
-                      : undefined,
-                  confirmLabel: `Sell · +${money(refund, numberFormat)}`,
-                  tone: 'danger',
-                  onConfirm: () => dispatch({ type: 'sellBuild', id: track.id }),
-                })
-              }}
+        {s.era >= 7 && queuedTrack && queuedNext ? (
+          <div className="bd-timeline" title="Queued until you can pay.">
+            <Meter
+              value={s.cash}
+              max={Math.max(1, queuedNext.cost)}
+              tone={s.cash >= queuedNext.cost ? 'success' : 'accent'}
+              label={`Queue · ${queuedTrack.name}`}
+              eta={money(queuedNext.cost, numberFormat)}
             />
-          )
-        })}
-      </div>
-
-      <section className="ge-empire-block" style={{ marginTop: '1rem' }}>
-        <header className="ge-empire-block__head">
-          <h3>Endcaps</h3>
-          <p>Facing space that pulls demand. Soft cap {ENDCAP.max}.</p>
-        </header>
-        <div className="ge-dept-callout">
-          <div className="ge-dept-callout__copy">
-            <h3>
-              Owned <strong style={{ fontFamily: 'var(--ge-font-mono)' }}>{s.endcaps}</strong>
-            </h3>
-            <p>Each endcap is a small permanent demand bump.</p>
+            <Button tone="ghost" size="sm" onClick={() => dispatch({ type: 'cancelQueue' })}>
+              Cancel
+            </Button>
           </div>
-          <div className="ge-chip-row">
-            <Btn
-              tone={canEndcap ? 'primary' : 'ghost'}
-              disabled={!canEndcap}
-              title={
-                !canEndcap
-                  ? s.endcaps >= ENDCAP.max
-                    ? `Soft cap ${ENDCAP.max}`
-                    : `Need ${money(endcapCost, numberFormat)}`
-                  : undefined
-              }
-              onClick={() => dispatch({ type: 'buyEndcap' })}
-            >
-              Buy · {money(endcapCost, numberFormat)}
-            </Btn>
-            <Btn
-              tone="ghost"
-              disabled={s.endcaps <= 0}
-              title={s.endcaps <= 0 ? 'No endcaps owned' : undefined}
-              onClick={() =>
-                setConfirm({
-                  title: 'Sell one endcap?',
-                  body: `Refunds exactly ${money(endcapRefund, numberFormat)}. Demand pull drops by one.`,
-                  confirmLabel: `Sell · +${money(endcapRefund, numberFormat)}`,
-                  tone: 'danger',
-                  onConfirm: () => dispatch({ type: 'sellEndcap' }),
-                })
-              }
-            >
-              Sell one
-            </Btn>
-          </div>
-        </div>
-      </section>
+        ) : null}
 
-      <HelpCard title="Build the shell first">
-        Storefront sets shelf pull and staff seats. Storage, cold, and transit change capacity and
-        spoil. Era-locked tiers wait for the next chapter — upkeep is the cost of a bigger shell. The
-        Shell is every track you hold added together: it sets what the store can hold, keep fresh, and
-        pull in, and it bills upkeep every minute.
-      </HelpCard>
+        {track ? (
+          <BuildTrackCard
+            track={track}
+            lvl={lvl}
+            next={next}
+            current={current}
+            prereq={prereq}
+            canBuy={canBuy}
+            lockedEra={lockedEra}
+            numberFormat={numberFormat}
+            onBuy={() => dispatch({ type: 'buyBuild', id: track.id })}
+            onQueue={s.era >= 7 ? () => dispatch({ type: 'queueBuild', id: track.id }) : undefined}
+            queued={s.horizon.buildQueue === track.id}
+            onSell={() => {
+              const frac = refundFrac(s)
+              const refund = round2((current?.cost ?? 0) * frac)
+              void confirm({
+                title: `Sell ${current?.name ?? track.name}?`,
+                body: `Refunds exactly ${money(refund, numberFormat)} (${Math.round(frac * 100)}% of ${money(
+                  current?.cost ?? 0,
+                  numberFormat,
+                )}). Effects from that tier drop immediately.`,
+                confirmLabel: `Sell · +${money(refund, numberFormat)}`,
+                tone: 'danger',
+              }).then((ok) => {
+                if (ok) dispatch({ type: 'sellBuild', id: track.id })
+              })
+            }}
+          />
+        ) : null}
 
-      <ConfirmModal
-        open={!!confirm}
-        spec={confirm}
-        reducedMotion={reducedMotion}
-        onClose={() => setConfirm(null)}
-      />
-    </Panel>
+        <Card
+          aria-label="Endcaps"
+          header={<span className="bd-title">Endcaps · {s.endcaps}</span>}
+          footer={
+            <div className="bd-actions">
+              <Button
+                tone="primary"
+                size="sm"
+                feedback
+                affordable={canEndcap}
+                cost={money(endcapCost, numberFormat)}
+                disabled={s.endcaps >= ENDCAP.max}
+                onClick={() => dispatch({ type: 'buyEndcap' })}
+              >
+                Buy endcap
+              </Button>
+              <Button
+                tone="ghost"
+                size="sm"
+                disabled={s.endcaps <= 0}
+                onClick={() => {
+                  void confirm({
+                    title: 'Sell one endcap?',
+                    body: `Refunds exactly ${money(endcapRefund, numberFormat)}. Demand pull drops by one.`,
+                    confirmLabel: `Sell · +${money(endcapRefund, numberFormat)}`,
+                    tone: 'danger',
+                  }).then((ok) => {
+                    if (ok) dispatch({ type: 'sellEndcap' })
+                  })
+                }}
+              >
+                Sell one
+              </Button>
+            </div>
+          }
+        >
+          <Meter value={s.endcaps} max={ENDCAP.max} tone="accent" label="Owned" eta={`${s.endcaps} / ${ENDCAP.max}`} />
+        </Card>
+      </PlayFrame>
+    </section>
   )
 }

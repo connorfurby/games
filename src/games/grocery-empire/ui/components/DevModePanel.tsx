@@ -23,6 +23,7 @@ import { DEV_FIELDS, devChain, devLoop, devRivals, devSet, devSetEra, devUpgrade
 import { demandBreakdown, salesBottleneck } from '../../sim/formulas'
 import { networkBreakdown, valueBreakdown } from '../../sim/systems/network'
 import { statTable } from '../../sim/systems/stats'
+import { KitGallery } from '../kit/KitGallery'
 
 /** DevMode sandbox tools: stage jumps, time skips, grants. Only shown on the dev save. */
 function DevPlay() {
@@ -138,7 +139,7 @@ function DevPlay() {
             onClick={act('Every relic revealed (sandbox only)', () =>
               museumStore.update((m) => {
                 m.unlocked = true
-                for (const r of RELICS) m.relics[r.id] ??= { at: Date.now(), n: 1 }
+                for (const r of RELICS) m.relics[r.id] ??= { at: Date.now(), n: 1, level: 1 }
               }),
             )}
           >
@@ -493,6 +494,7 @@ const TABS = [
   ['play', 'Play'],
   ['edit', 'Edit'],
   ['inspect', 'Inspect'],
+  ['kit', 'Kit'],
 ] as const
 
 export function DevModePanel() {
@@ -506,7 +508,7 @@ export function DevModePanel() {
           </button>
         ))}
       </div>
-      {tab === 'play' ? <DevPlay /> : tab === 'edit' ? <DevEdit /> : <DevInspect />}
+      {tab === 'play' ? <DevPlay /> : tab === 'edit' ? <DevEdit /> : tab === 'inspect' ? <DevInspect /> : <KitGallery />}
     </div>
   )
 }

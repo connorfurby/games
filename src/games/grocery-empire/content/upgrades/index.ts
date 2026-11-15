@@ -7,6 +7,9 @@ import { FLOOR_UPGRADES } from './floor'
 import { PEOPLE_UPGRADES } from './people'
 import { SPACE_UPGRADES } from './space'
 import { SUPPLY_UPGRADES } from './supply'
+import { HORIZON_UPGRADES } from './horizon'
+import { LATE_HUB_UPGRADES } from './lateHubs'
+import { DEEP_UPGRADES } from './deep'
 import { V2_UPGRADES } from './v2'
 import {
   BAND_IDS,
@@ -44,6 +47,9 @@ export const UPGRADES: UpgradeDef[] = [
   ...AUTOMATION_UPGRADES,
   ...SPACE_UPGRADES,
   ...V2_UPGRADES,
+  ...HORIZON_UPGRADES,
+  ...LATE_HUB_UPGRADES,
+  ...DEEP_UPGRADES,
 ]
 
 export const UPGRADE_BY_ID: Record<string, UpgradeDef> = Object.fromEntries(

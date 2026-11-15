@@ -16,6 +16,7 @@ import { openHotkeyMap } from '@/shell/AppMenu'
 import { useMeta } from '@/shell/MetaContext'
 import { SettingsModal } from '@/shell/SettingsModal'
 import { PLAYER_CHECKLIST } from '../../content/checklist'
+import { GAME_VERSION } from '../../content/news'
 import { engine } from '../../sim/engine'
 import { migrate } from '../../sim/migrate'
 import { canUndo } from '../../sim/undo'
@@ -25,7 +26,6 @@ import { clock, qty } from '../format'
 import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { DevModePanel } from '../components/DevModePanel'
-import { HelpCard } from '../components/HelpCard'
 import { Panel } from '../components/Panel'
 import { Sparkline } from '../components/Sparkline'
 
@@ -273,6 +273,22 @@ export function MoreSections({ only }: { only?: MoreSection }) {
               </select>
             </label>
             <label className="ge-more-field">
+              <span>Presentation</span>
+              <select
+                value={meta.settings.presentation}
+                onChange={(e) =>
+                  updateSettings({
+                    presentation: e.target.value as 'dense' | 'atmospheric' | 'map',
+                  })
+                }
+                aria-label="Presentation"
+              >
+                <option value="atmospheric">Atmospheric</option>
+                <option value="dense">Dense</option>
+                <option value="map">Map</option>
+              </select>
+            </label>
+            <label className="ge-more-field">
               <span>Speed</span>
               <select
                 value={String(meta.settings.speedUnlock)}
@@ -477,6 +493,10 @@ export function MoreSections({ only }: { only?: MoreSection }) {
               <strong>Home</strong>
               <span>The shelf of games</span>
             </Link>
+            <Link className="ge-more-link" to="/news">
+              <strong>News</strong>
+              <span>Bulletin · v{GAME_VERSION}</span>
+            </Link>
             <Link className="ge-more-link" to="/guide/grocery-empire">
               <strong>Guide</strong>
               <span>Ops Wiki and strategy</span>
@@ -498,23 +518,19 @@ export function MoreSections({ only }: { only?: MoreSection }) {
                 <strong>Campaign</strong>
                 <span>Leave the sandbox</span>
               </Link>
-            ) : (
+            ) : import.meta.env.DEV ? (
               <Link className="ge-more-link" to="/play/grocery-empire/dev">
                 <strong>Dev sandbox</strong>
                 <span>Separate save for testing</span>
               </Link>
-            )}
+            ) : null}
           </div>
+          <p className="ge-muted" style={{ marginTop: '0.65rem', fontSize: '0.75rem' }}>
+            Grocery Empire v{GAME_VERSION}
+          </p>
         </section>
         ) : null}
       </div>
-
-      {!only ? (
-        <HelpCard title="Soft edges of the run">
-          Saves, settings, and the guide live here. Export a save before big experiments; toggle Suggested next if the
-          tip strip feels loud.
-        </HelpCard>
-      ) : null}
 
       <SettingsModal open={allSettings} onClose={() => setAllSettings(false)} />
 

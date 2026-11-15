@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { STORE_TRAIT_BY_ID, isPlaceTraitId, policyMatchesTrait } from '../../content/depth'
 import { ERA2_EXPANSIONS } from '../../content/era2'
-import { CHAIN } from '../../sim/balance'
+import { CHAIN, DEPTH } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { attentionPerSec } from '../../sim/formulas'
 import {
@@ -9,15 +10,17 @@ import {
   chainAttentionDrainPerSec,
   openStoreCost,
   trainStoreCost,
+  traitOfStore,
 } from '../../sim/systems/chain'
+import { outposts } from '../../sim/systems/lateHubs'
 import { networkStores, storeEngineWeight } from '../../sim/systems/network'
 import type { StorePolicy } from '../../sim/state'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
-import { Panel } from '../components/Panel'
-import { LandBand } from '../scenes/DepartmentBands'
+import { HubStage } from '../components/HubStage'
+import { Line } from '../components/Line'
+import { Button, ScreenHeader, Stat } from '../kit'
+import { OutpostStreetScene } from '../scenes/live/OutpostStreetScene'
 import { LandStreet } from '../land/LandStreet'
 
 const EARLY = [
@@ -80,6 +83,9 @@ function LandExpansionCard({
   const sid = id === 'side-yard' ? 'land-side-yard' : `expand-${id}`
   const suggested = useIsSuggested(sid)
   const canBuy = !have && s.cash >= cost
+  if (have) {
+    return <Line left={name} right="Filed" muted className="" />
+  }
   return (
     <article
       data-suggest-id={sid}
@@ -99,22 +105,27 @@ function LandExpansionCard({
           <strong>{have ? 'Owned' : money(cost, numberFormat)}</strong>
         </div>
       </div>
-      <Btn
+      <Button
         tone={canBuy ? 'primary' : 'ghost'}
         coachId={sid}
         disabled={have || s.cash < cost}
         onClick={onBuy}
       >
         {have ? 'Deed filed' : 'Buy'}
-      </Btn>
+      </Button>
     </article>
   )
 }
 
 /** Era 2+ chain roster: one compact row per store, bulk actions on top. */
-function ChainRoster() {
-  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
-  const [focus, setFocus] = useState<string | null>(null)
+function ChainRoster({
+  focus,
+  onFocus,
+}: {
+  focus: string | null
+  onFocus: (id: string) => void
+}) {
+  const { state: s, dispatch, numberFormat } = useGame()
   const stores = s.stores ?? []
   const nextStoreCost = openStoreCost(s)
   const openBlock =
@@ -133,18 +144,25 @@ function ChainRoster() {
   const attDrain = chainAttentionDrainPerSec(s)
   const attNet = attGen - attDrain
 
+  const block = s.depth?.blockEvent
+  const blockLive = !!(block?.kind && (block.until ?? 0) > s.time)
   return (
     <section className="ld-chain" aria-label="Chain">
-      <LandStreet
-        state={s}
-        onPick={(id) => {
-          setFocus(id)
-          document.getElementById(`ld-${id}`)?.scrollIntoView({
-            block: 'nearest',
-            behavior: reducedMotion ? 'auto' : 'smooth',
-          })
-        }}
-      />
+      {blockLive ? (
+        <div className="ge-dept-callout" role="status">
+          <div className="ge-dept-callout__copy">
+            <h3>
+              {block!.kind === 'parade' ? 'Parade week' : block!.kind === 'payday' ? 'Payday rush' : 'Rain week'}
+            </h3>
+            <p>
+              {block!.traitBias && isPlaceTraitId(block!.traitBias)
+                ? `${STORE_TRAIT_BY_ID[block!.traitBias].name} doors pull hardest. `
+                : ''}
+              {Math.ceil((block!.until - s.time) / 60)}m left.
+            </p>
+          </div>
+        </div>
+      ) : null}
       <div className="ld-chain__top">
         <dl className="ld-chain__nums">
           <div>
@@ -234,12 +252,24 @@ function ChainRoster() {
           const trainBlock = canTrainStore(s, st.id)
           const driftTone = drift >= 0.7 ? 'is-bad' : drift >= CHAIN.driftWarn ? 'is-warn' : ''
           return (
-            <li id={`ld-${st.id}`} key={st.id} className={`ld-row ${driftTone}${focus === st.id ? ' is-focus' : ''}`} data-coach-id={i === Math.min(1, stores.length - 1) ? 'land-policy' : undefined}>
+            <li
+              id={`ld-${st.id}`}
+              key={st.id}
+              className={`ld-row ${driftTone}${focus === st.id ? ' is-focus' : ''}`}
+              data-coach-id={i === Math.min(1, stores.length - 1) ? 'land-policy' : undefined}
+              onClick={() => onFocus(st.id)}
+            >
               <div className="ld-row__who">
                 <strong>{st.name}</strong>
                 <span>
                   Lv {st.level}
                   {i === 0 ? ' · flagship' : ` · ×${weight.toFixed(2)}`}
+                  {(() => {
+                    const tid = traitOfStore(s, st.id)
+                    if (!tid || !isPlaceTraitId(tid)) return ''
+                    const match = policyMatchesTrait(st.policy, tid)
+                    return ` · ${STORE_TRAIT_BY_ID[tid].name}${match ? ' ✓' : ''}`
+                  })()}
                 </span>
               </div>
               <div className="ld-row__drift" title="Drift rises when a store gets less than its fair share of Attention. Walking it clears drift.">
@@ -306,39 +336,132 @@ function ChainRoster() {
   )
 }
 
+/** Era 7+: one read-only row per stocked world, with a charter button for the next unfranchised one. */
+function OutpostRoster() {
+  const { state: s, dispatch } = useGame()
+  const rows = outposts(s)
+  const charter = can(s, { type: 'openPlanetFranchise' })
+  return (
+    <section className="ge-empire-block" data-coach-id="land-outposts">
+      <header className="ge-empire-block__head">
+        <h3>Outposts</h3>
+        <p>
+          {rows.length === 0
+            ? 'Stock a world and it shows up here.'
+            : `${rows.filter((r) => r.franchised).length} of ${rows.length} stocked worlds carry your name.`}
+        </p>
+      </header>
+      {rows.length > 0 ? (
+        <ol className="ld-roster">
+          {rows.map((r) => (
+            <li key={r.id} className="ld-row">
+              <div className="ld-row__who">
+                <strong>{r.name}</strong>
+                <span>
+                  Score {Math.round(r.score * 100)}% · {r.franchised ? 'franchised' : 'stocked'}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      <div className="ge-chip-row">
+        <Button
+          tone={charter.ok ? 'primary' : 'ghost'}
+          disabled={!charter.ok}
+          title={charter.ok ? 'Put the name over the next outpost door.' : charter.reason}
+          onClick={() => dispatch({ type: 'openPlanetFranchise' })}
+        >
+          Charter an outpost
+        </Button>
+      </div>
+    </section>
+  )
+}
+
 export function LandPanel() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
   const owned = s.expansions ?? {}
+  const [focus, setFocus] = useState<string | null>(null)
+
+  const pickStore = (id: string) => {
+    setFocus(id)
+    document.getElementById(`ld-${id}`)?.scrollIntoView({
+      block: 'nearest',
+      behavior: reducedMotion ? 'auto' : 'smooth',
+    })
+  }
 
   return (
-    <Panel
-      title="Land"
-      purpose="Open doors. Attention is the cost of every key."
-      lore="land"
-      scene={s.era >= 2 ? undefined : <LandBand state={s} />}
-    >
-      {s.era >= 2 ? <ChainRoster /> : null}
+    <section className="ge-panel">
+      <ScreenHeader
+        hub
+        title="Land"
+        purpose="Buy the deed. Attention keeps the door managed."
+        stats={
+          <Stat
+            size="sm"
+            label="Filed"
+            value={Object.values(owned).filter(Boolean).length}
+            title="Buy the deed. Attention keeps the door managed."
+          />
+        }
+      />
+      <HubStage
+        scene={
+          s.era >= 7 ? (
+            <OutpostStreetScene />
+          ) : s.era >= 2 ? (
+            <LandStreet state={s} onPick={pickStore} />
+          ) : null
+        }
+        primary={
+          <section className="ge-empire-block" aria-label="Expansions">
+            {(s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time) ||
+            (s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed ? (
+              <p className="ge-muted" data-coach-id="land-hot-trait" style={{ marginBottom: '0.55rem' }}>
+                {s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time
+                  ? `Hot trait live — match a door policy to ${
+                      s.depth.blockEvent.traitBias
+                        ? STORE_TRAIT_BY_ID[s.depth.blockEvent.traitBias as keyof typeof STORE_TRAIT_BY_ID]
+                            ?.name ?? s.depth.blockEvent.traitBias
+                        : 'the rush'
+                    } before the window ends.`
+                  : `Hot-trait walks ${s.depth?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed} toward the cold permit.`}
+              </p>
+            ) : null}
+            <header className="ge-empire-block__head">
+              <h3>Expansions</h3>
+              <p>Deeds on the block. Buy once; they stick.</p>
+            </header>
+            <div className="ge-card-grid" data-coach-id="land-expansions-primary">
+              {EARLY.map((e) => (
+                <LandExpansionCard
+                  key={e.id}
+                  id={e.id}
+                  name={e.name}
+                  blurb={e.blurb}
+                  cost={e.cost}
+                  have={!!owned[e.id]}
+                  numberFormat={numberFormat}
+                  onBuy={() => dispatch({ type: 'expandLot', id: e.id })}
+                />
+              ))}
+            </div>
+          </section>
+        }
+      >
+      {s.era >= 2 ? <ChainRoster focus={focus} onFocus={pickStore} /> : null}
+      {s.era >= 7 ? <OutpostRoster /> : null}
 
+      {s.era >= 2 ? (
       <section className="ge-empire-block">
         <header className="ge-empire-block__head">
-          <h3>Expansions</h3>
-          <p>Deeds on the block. Buy once; they stick.</p>
+          <h3>Later deeds</h3>
+          <p>Era-gated parcels and metro slots.</p>
         </header>
         <div className="ge-card-grid" data-coach-id="land-expansions">
-          {EARLY.map((e) => (
-            <LandExpansionCard
-              key={e.id}
-              id={e.id}
-              name={e.name}
-              blurb={e.blurb}
-              cost={e.cost}
-              have={!!owned[e.id]}
-              numberFormat={numberFormat}
-              onBuy={() => dispatch({ type: 'expandLot', id: e.id })}
-            />
-          ))}
-          {s.era >= 2
-            ? (() => {
+          {(() => {
                 const ownedEra2 = ERA2_EXPANSIONS.filter((e) => !!owned[e.id])
                 const nextEra2 = ERA2_EXPANSIONS.find((e) => {
                   if (owned[e.id]) return false
@@ -352,23 +475,7 @@ export function LandPanel() {
                 return (
                   <>
                     {ownedEra2.map((e) => (
-                      <article key={e.id} className="ge-card ge-card--owned">
-                        <div className="ge-card__head">
-                          <div>
-                            <strong>{e.name}</strong>
-                            <p className="ge-muted">{ERA2_BLURB[e.id] ?? e.blurb}</p>
-                          </div>
-                        </div>
-                        <div className="ge-card__meta">
-                          <div className="ge-card__meta-row">
-                            <span>Status</span>
-                            <strong>Owned</strong>
-                          </div>
-                        </div>
-                        <Btn tone="ghost" disabled>
-                          Deed filed
-                        </Btn>
-                      </article>
+                      <Line key={e.id} left={e.name} right="Filed" muted />
                     ))}
                     {nextEra2
                       ? (() => {
@@ -392,14 +499,14 @@ export function LandPanel() {
                                   <strong>{money(nextEra2.cost, numberFormat)}</strong>
                                 </div>
                               </div>
-                              <Btn
+                              <Button
                                 tone={canBuy ? 'primary' : 'ghost'}
                                 disabled={!canBuy}
                                 title={!canBuy ? `Need ${money(nextEra2.cost, numberFormat)}` : undefined}
                                 onClick={() => dispatch({ type: 'expandLot', id: nextEra2.id })}
                               >
                                 Buy
-                              </Btn>
+                              </Button>
                             </article>
                           )
                         })()
@@ -411,15 +518,11 @@ export function LandPanel() {
                     ) : null}
                   </>
                 )
-              })()
-            : null}
+              })()}
         </div>
       </section>
-
-      <HelpCard title="Deeds before vanity">
-        Each deed changes a formula — seats, demand, or store cost. Extra stores only add baskets when
-        Attention keeps them managed; neglected doors barely help checkout.
-      </HelpCard>
-    </Panel>
+      ) : null}
+      </HubStage>
+    </section>
   )
 }

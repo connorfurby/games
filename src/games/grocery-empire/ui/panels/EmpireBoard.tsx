@@ -9,9 +9,13 @@ import { EMPIRE, REBRAND } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { empireXpToNext } from '../../sim/formulas'
 import { statSources, statTable } from '../../sim/systems/stats'
+import { HubStage } from '../components/HubStage'
 import { useGame } from '../GameContext'
+import { useTween } from '../fx'
 import { clock, money, qty } from '../format'
-import { EmpirePanel } from './EmpirePanel'
+import { Button, ScreenHeader, Stat, Tabs } from '../kit'
+import { RankHallScene } from '../scenes/live/RankHallScene'
+import { EmpireSections } from './EmpirePanel'
 
 function mulText(n: number) {
   if (n >= 100) return `×${qty(n)}`
@@ -22,8 +26,11 @@ export function EmpireBoard() {
   const { state: s, tick, dispatch, numberFormat, reducedMotion } = useGame()
   const lv = s.empire.level
   const need = Math.max(1, empireXpToNext(lv))
-  const fill = Math.max(0, Math.min(1, s.empire.xp / need))
+  const fillRaw = Math.max(0, Math.min(1, s.empire.xp / need))
+  const fill = useTween(fillRaw, { duration: reducedMotion ? 0 : 480, reducedMotion })
   const next = nextEmpireReward(lv)
+  const last = [...EMPIRE_REWARDS].reverse().find((r) => lv >= r.level) ?? null
+  const xpLeft = Math.max(0, need - s.empire.xp)
   const table = useMemo(() => statTable(s), [tick, s])
   const sourceCount = useMemo(() => statSources(s).length, [tick, s])
   const projectsOpen = empireUnlocked(lv, 'projects')
@@ -32,88 +39,105 @@ export function EmpireBoard() {
   const gain = pendingGoodwill(s)
   const rebrandBlock = canRebrand(s)
   const [confirm, setConfirm] = useState(false)
+  const [boardTab, setBoardTab] = useState<'rewards' | 'projects' | 'totals'>('rewards')
+  const showRebrand = s.era >= REBRAND.minEra || s.rebrand.count > 0
+  const eraProjects = PROJECTS.filter((p) => {
+    const owned = !!s.projects.done[p.id] || s.projects.active.some((a) => a.id === p.id)
+    return p.era === s.era || owned
+  })
 
   return (
     <div className="e2">
       <section className="ge-panel e2-hero">
-        <div className="e2-rank" style={{ ['--fill' as string]: String(fill) }}>
-          <span className="e2-rank__label">Empire</span>
-          <strong className="e2-rank__num">{lv}</strong>
-          <span className="e2-rank__of">of {EMPIRE.maxLevel}</span>
-        </div>
-        <div className="e2-hero__copy">
-          <h2 className="ge-panel__title">Your empire</h2>
-          <p className="ge-panel__purpose">
-            Baskets earn rank. Every level gives a trait point; every fifth level gives a lasting reward.
-          </p>
-          <div className="e2-xp" aria-label="Progress to next rank">
-            <span style={{ transform: `scaleX(${fill})` }} />
-          </div>
-          <p className="e2-hero__next">
-            {next ? (
-              <>
-                <strong>Empire {next.level}: {next.name}.</strong> {next.blurb}
-              </>
-            ) : (
-              'Every reward is yours.'
-            )}
-          </p>
-          <p className="e2-hero__points">
-            {s.empire.points > 0 ? `${s.empire.points} trait points to spend below.` : 'No trait points waiting.'}
-          </p>
-        </div>
+        <ScreenHeader
+          hub
+          title="Empire"
+          purpose="Baskets earn the next rank."
+          stats={
+            <>
+              <Stat
+                size="sm"
+                label="Rank"
+                value={`${lv}/${EMPIRE.maxLevel}`}
+                title={`${Math.round(fillRaw * 100)}% to next${xpLeft > 0 ? ` · ${xpLeft < 1000 ? Math.ceil(xpLeft) : qty(xpLeft)} XP left` : ''}`}
+              />
+              <Stat size="sm" label="Points" value={s.empire.points} title="Trait points for doctrines" />
+            </>
+          }
+          actions={
+            showRebrand ? (
+              <Button
+                tone="primary"
+                size="sm"
+                disabled={!!rebrandBlock}
+                title={
+                  rebrandBlock ??
+                  `Start over with Goodwill. Each point adds ${Math.round(REBRAND.valuePerGoodwill * 100)}% basket value${gain > 0 ? ` · +${gain} now` : ''}.`
+                }
+                cost={gain > 0 ? `+${gain}` : undefined}
+                onClick={() => setConfirm(true)}
+              >
+                {rebrandBlock ? 'Not yet' : 'Rebrand'}
+              </Button>
+            ) : null
+          }
+        />
+        <HubStage
+          className="e2-hero__stage"
+          scene={<RankHallScene />}
+          primary={
+            <aside className="e2-hero__side" aria-label="Rank actions">
+              <div className="e2-hero__copy" data-coach-id="empire-rank">
+                <div className="e2-xp" aria-label="Progress to next rank">
+                  <span style={{ transform: `scaleX(${fill})` }} />
+                </div>
+                <p className="e2-hero__next" title={next?.blurb}>
+                  {next ? `Next: Empire ${next.level}, ${next.name}.` : 'Every reward is yours.'}
+                  {last ? ` Last was ${last.name}.` : ''}
+                </p>
+              </div>
+            </aside>
+          }
+        />
+        <ConfirmModal
+          open={confirm}
+          reducedMotion={reducedMotion}
+          spec={{
+            title: 'Rebrand the store?',
+            body: `You'll start a fresh store with ${s.rebrand.goodwill + gain} Goodwill and keep Empire ${lv}.`,
+            detail: 'Cash, stores, upgrades, memos and projects reset. This can’t be undone.',
+            confirmLabel: 'Rebrand',
+            tone: 'danger',
+            onConfirm: () => {
+              engine.rebrand()
+            },
+          }}
+          onClose={() => setConfirm(false)}
+        />
       </section>
 
-      {s.era >= REBRAND.minEra || s.rebrand.count > 0 ? (
-        <section className="ge-panel e2-rebrand" aria-label="Rebrand">
-          <div>
-            <h3 className="e2-h3">Rebrand</h3>
-            <p className="ge-muted">
-              Start a fresh store under a new sign. You keep your Empire rank, trait points and doctrines; the store,
-              chain, upgrades and cash start over. Goodwill makes every basket worth more, forever.
-            </p>
-            <p className="e2-rebrand__now">
-              Goodwill {s.rebrand.goodwill}
-              {gain > 0 ? ` → ${s.rebrand.goodwill + gain} if you rebrand now (+${gain})` : ''}. Each point adds{' '}
-              {Math.round(REBRAND.valuePerGoodwill * 100)}% basket value and {Math.round(REBRAND.demandPerGoodwill * 100)}%
-              shoppers.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="g2-tag"
-            disabled={!!rebrandBlock}
-            title={rebrandBlock ?? 'Start over with Goodwill'}
-            onClick={() => setConfirm(true)}
-          >
-            <span className="g2-tag__price">+{gain} Goodwill</span>
-            <span className="g2-tag__label">{rebrandBlock ? 'Not yet' : 'Rebrand'}</span>
-          </button>
-          <ConfirmModal
-              open={confirm}
-              reducedMotion={reducedMotion}
-              spec={{
-                title: 'Rebrand the store?',
-                body: `You'll start a fresh store with ${s.rebrand.goodwill + gain} Goodwill and keep Empire ${lv}.`,
-                detail: 'Cash, stores, upgrades, memos and projects reset. This can’t be undone.',
-                confirmLabel: 'Rebrand',
-                tone: 'danger',
-                onConfirm: () => {
-                  engine.rebrand()
-                },
-              }}
-              onClose={() => setConfirm(false)}
-            />
-        </section>
-      ) : null}
+      <Tabs
+        aria-label="Empire board"
+        value={boardTab}
+        onChange={setBoardTab}
+        options={[
+          { value: 'rewards', label: 'Rewards' },
+          { value: 'projects', label: 'Projects', badge: eraProjects.length || undefined },
+          { value: 'totals', label: 'Totals' },
+        ]}
+      />
 
+      {boardTab === 'rewards' ? (
       <section className="ge-panel e2-rewards" aria-label="Rank rewards">
-        <h3 className="e2-h3">Rank rewards</h3>
         <ol className="e2-track">
           {EMPIRE_REWARDS.map((r) => {
             const got = lv >= r.level
             return (
-              <li key={r.level} className={`e2-reward${got ? ' is-got' : ''}${next?.level === r.level ? ' is-next' : ''}`} title={r.blurb}>
+              <li
+                key={r.level}
+                className={`e2-reward${got ? ' is-got' : ''}${next?.level === r.level ? ' is-next' : ''}`}
+                title={r.blurb}
+              >
                 <span className="e2-reward__lv">{r.level}</span>
                 <span className="e2-reward__name">{r.name}</span>
               </li>
@@ -121,18 +145,17 @@ export function EmpireBoard() {
           })}
         </ol>
       </section>
+      ) : null}
 
+      {boardTab === 'projects' ? (
       <section className="ge-panel e2-projects" aria-label="Projects">
-        <header className="e2-section-head">
-          <h3 className="e2-h3">Projects</h3>
-          <p className="ge-muted">
-            {projectsOpen
-              ? `Long builds that keep running while you're away. ${crews} crew${crews > 1 ? 's' : ''}.`
-              : 'The Projects board opens at Empire 15.'}
-          </p>
-        </header>
+        <p className="ge-muted">
+          {projectsOpen
+            ? `${crews} crew${crews > 1 ? 's' : ''} on this era's builds.`
+            : 'The Projects board opens at Empire 15.'}
+        </p>
         <div className="e2-project-grid">
-          {PROJECTS.filter((p) => p.era <= s.era + 1).map((p) => {
+          {eraProjects.map((p) => {
             const done = !!s.projects.done[p.id]
             const active = s.projects.active.find((a) => a.id === p.id)
             const check = can(s, { type: 'startProject', id: p.id })
@@ -156,15 +179,16 @@ export function EmpireBoard() {
                   ) : (
                     <>
                       <span className="u2-node__status">{clock(p.seconds)}</span>
-                      <button
-                        type="button"
-                        className="g2-tag g2-tag--small"
+                      <Button
+                        tone="secondary"
+                        size="sm"
                         disabled={!check.ok}
                         title={check.ok ? 'Start building' : check.reason}
+                        cost={money(p.cash, numberFormat)}
                         onClick={() => dispatch({ type: 'startProject', id: p.id })}
                       >
-                        <span className="g2-tag__price">{money(p.cash, numberFormat)}</span>
-                      </button>
+                        Start
+                      </Button>
                     </>
                   )}
                 </footer>
@@ -173,14 +197,13 @@ export function EmpireBoard() {
           })}
         </div>
       </section>
+      ) : null}
 
+      {boardTab === 'totals' ? (
       <section className="ge-panel e2-stats" aria-label="Your multipliers">
-        <header className="e2-section-head">
-          <h3 className="e2-h3">What everything adds up to</h3>
-          <p className="ge-muted">
-            {sourceCount} upgrades, doctrines, rewards and projects feed these multipliers.
-          </p>
-        </header>
+        <p className="ge-muted" title="Upgrades, doctrines, rewards, and projects.">
+          {sourceCount} sources feed these multipliers.
+        </p>
         {boosted.length === 0 ? (
           <p className="ge-muted">Buy an upgrade rank and it shows up here.</p>
         ) : (
@@ -194,10 +217,9 @@ export function EmpireBoard() {
           </dl>
         )}
       </section>
+      ) : null}
 
-      <div className="e2-legacy">
-        <EmpirePanel />
-      </div>
+      <EmpireSections />
     </div>
   )
 }

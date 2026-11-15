@@ -1,0 +1,20 @@
+/*
+ * Cascade order for Grocery Empire UI. Import this FIRST.
+ *
+ * Unlayered CSS is forbidden. New rules go in the layer that matches them.
+ * Legacy is the *lowest* layer so kit / shell / panels can win the redesign.
+ *
+ *   legacy  -> grocery.css / g2.css while they are being retired
+ *   reset   -> element resets
+ *   tokens  -> custom properties only (design/tokens.css)
+ *   base    -> element defaults inside .ge-root
+ *   kit     -> reusable components (ui/kit/kit.css, `gk-*`)
+ *   shell   -> HUD, hubs, chrome
+ *   panels  -> per-menu screens
+ *   scenes  -> RoomScene / live / horizon art
+ *   motion  -> keyframes and motion helpers
+ */
+@layer legacy, reset, tokens, base, kit, shell, panels, scenes, motion;
+
+@import '../grocery.css' layer(legacy);
+@import '../shell/g2.css' layer(legacy);

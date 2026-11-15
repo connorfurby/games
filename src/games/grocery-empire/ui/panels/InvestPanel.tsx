@@ -2,15 +2,23 @@ import { MEMOS } from '../../content/memos'
 import { INVEST } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { passbookCap, passbookRate, passbookYieldingBalance, investBookCap, investYieldingBalance } from '../../sim/formulas'
+import { INSTRUMENTS } from '../../content/instruments'
 import { investEngineCost } from '../../sim/systems/capital'
+import {
+  instrumentCost,
+  instrumentLotCap,
+  instrumentLots,
+  instrumentYieldPerSec,
+  scrutinyDrag,
+} from '../../sim/systems/lateHubs'
 import type { GameState, InvestRisk } from '../../sim/state'
+import { useState } from 'react'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
-import { Panel } from '../components/Panel'
-import { InvestBand } from '../scenes/DepartmentBands'
-import { DeptDiorama } from '../scenes/DeptDiorama'
+import { Button, Card, DataTable, Disclosure, Meter, Sheet, Stat } from '../kit'
+import type { Column } from '../kit'
+import { TickerScene } from '../scenes/live/TickerScene'
+import { HubCallout, LateHubShell, Rows } from './LateHubShell'
 
 const RISKS: InvestRisk[] = ['low', 'mid', 'high']
 
@@ -44,7 +52,8 @@ function memoCashShortfall(s: GameState): { name: string; need: number } | null 
 }
 
 export function InvestPanel() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
+  const [moveOpen, setMoveOpen] = useState(false)
   const bal = s.passbook?.balance ?? 0
   const rate = passbookRate(s)
   const pbCap = passbookCap(s)
@@ -90,211 +99,289 @@ export function InvestPanel() {
     if (amt > 0) dispatch({ type: 'withdrawInvest', amount: amt })
   }
 
+  const lotCap = instrumentLotCap(s)
+  const held = INSTRUMENTS.map((inst) => ({
+    inst,
+    lots: instrumentLots(s, inst.id),
+    perSec: instrumentYieldPerSec(s, inst.id),
+  })).filter((r) => r.lots > 0)
+  const totalLots = held.reduce((a, r) => a + r.lots, 0)
+  const drag = scrutinyDrag(s)
+
+  const positionCols: Column<(typeof held)[number]>[] = [
+    { key: 'name', header: 'Position', render: (r) => r.inst.name },
+    { key: 'lots', header: 'Lots', align: 'end', render: (r) => `${r.lots} / ${lotCap}` },
+    {
+      key: 'pays',
+      header: 'Pays',
+      align: 'end',
+      render: (r) => `+${r.perSec.toFixed(3)} ${r.inst.currency}/s`,
+    },
+  ]
+
+  const kpis = (
+    <>
+      <Stat size="sm" label="Passbook" value={money(bal, numberFormat)} title="Slow, safe interest inside the cap" />
+      <Stat size="sm" label="Interest" value={`${money(perHour, numberFormat)}/hr`} title="Projected from the yielding balance" />
+      {book.unlocked ? <Stat size="sm" label="Risk book" value={money(book.balance, numberFormat)} /> : null}
+      {s.era >= 7 ? <Stat size="sm" label="Lots held" value={totalLots} title="Instrument lots across all positions" /> : null}
+    </>
+  )
+
   return (
-    <Panel
+    <LateHubShell
       title="Invest"
       purpose="Park surplus cash inside a capped yield."
-      lore="invest"
-      scene={
+      stats={kpis}
+      scene={<TickerScene />}
+      primary={
         <>
-          <InvestBand state={s} />
-          <DeptDiorama kind="invest" />
+          {wantDeposit || wantWithdraw ? (
+            <HubCallout
+              coachId="invest-advisor"
+              tone="ready"
+              title={wantDeposit ? 'Surplus is idle' : 'Passbook is full'}
+              action={
+                wantDeposit ? (
+                  <Button tone="primary" onClick={() => dispatch({ type: 'depositPassbook', amount: depositSuggest })}>
+                    Deposit {money(depositSuggest, numberFormat)}
+                  </Button>
+                ) : (
+                  <Button tone="primary" onClick={() => dispatch({ type: 'withdrawPassbook', amount: withdrawSuggest })}>
+                    Withdraw {money(withdrawSuggest, numberFormat)}
+                  </Button>
+                )
+              }
+            >
+              {wantDeposit
+                ? `Park ${money(depositSuggest, numberFormat)} and keep ${money(reserve, numberFormat)} for bills.`
+                : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from the passbook.`}
+            </HubCallout>
+          ) : null}
+          <div className="lh-callout" data-coach-id="invest-passbook">
+            <div className="lh-callout__copy">
+              <h3>Passbook {money(bal, numberFormat)}</h3>
+              <p>
+                {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · cap {money(pbCap, numberFormat)}
+              </p>
+            </div>
+            <div className="lh-callout__action">
+              <Button size="sm" onClick={() => setMoveOpen(true)}>
+                Move cash
+              </Button>
+            </div>
+          </div>
+          <Sheet
+            open={moveOpen}
+            onClose={() => setMoveOpen(false)}
+            title="Passbook"
+            reducedMotion={reducedMotion}
+          >
+            <div className="lh-stack">
+              <Meter
+                tone={bal >= pbCap - 1 ? 'warn' : 'accent'}
+                value={pbYield}
+                max={pbCap}
+                label="Yielding"
+                eta={`${money(pbYield, numberFormat)} / ${money(pbCap, numberFormat)}`}
+              />
+              <Rows
+                rows={[
+                  { label: 'Balance', value: money(bal, numberFormat) },
+                  { label: 'Rate', value: `${(rate * 3600 * 100).toFixed(2)}% / hr` },
+                  {
+                    label: 'Time to cap',
+                    value: capRoom <= 0 ? 'at cap' : bal <= 0 ? 'deposit first' : duration(toCapSec),
+                    title: 'Interest alone; deposits get you there faster',
+                  },
+                  { label: 'Earned', value: money(s.stats?.interestEarned ?? 0, numberFormat) },
+                ]}
+              />
+              <div className="lh-actions">
+                <Button size="sm" tone="primary" onClick={() => deposit(0.25)} disabled={s.cash < 1}>
+                  In 25%
+                </Button>
+                <Button size="sm" onClick={() => deposit(0.5)} disabled={s.cash < 1}>
+                  In 50%
+                </Button>
+                <Button size="sm" onClick={() => withdraw(0.25)} disabled={bal < 1}>
+                  Out 25%
+                </Button>
+                <Button size="sm" onClick={() => withdraw(1)} disabled={bal < 0.01}>
+                  Out all
+                </Button>
+              </div>
+            </div>
+          </Sheet>
         </>
       }
     >
       {outgrown ? (
-        <p className="vt-small" role="note">
-          <span className="vt-small__label">Small change now.</span> A full passbook earns about{' '}
-          {money(pbCap * rate, numberFormat)}/s against {money(s.rates.revenuePerSec, numberFormat)}/s of sales. The
-          cap grows with Empire rank; it matters again early in a Rebrand.
+        <p className="lh-note" role="note">
+          <strong>Small change now.</strong> A full passbook earns about {money(pbCap * rate, numberFormat)}/s against{' '}
+          {money(s.rates.revenuePerSec, numberFormat)}/s of sales. The cap grows with Empire rank; it matters again
+          early in a Rebrand.
         </p>
       ) : null}
-      {wantDeposit || wantWithdraw ? (
-        <div className="ge-dept-callout" role="status" data-coach-id="invest-advisor">
-          <div className="ge-dept-callout__copy">
-            <h3>{wantDeposit ? 'Surplus is idle' : 'Passbook is full'}</h3>
-            <p>
-              {wantDeposit
-                ? `${money(s.cash, numberFormat)} cash, ${money(capRoom, numberFormat)} of cap room. Parking ${money(depositSuggest, numberFormat)} keeps ${money(reserve, numberFormat)} for bills.`
-                : `${shortfall?.name} wants ${money(shortfall?.need ?? 0, numberFormat)} and you have ${money(s.cash, numberFormat)}. The passbook is at its cap — pull ${money(withdrawSuggest, numberFormat)} out.`}
-            </p>
-          </div>
-          {wantDeposit ? (
-            <Btn
-              tone="primary"
-              onClick={() => dispatch({ type: 'depositPassbook', amount: depositSuggest })}
-            >
-              Deposit {money(depositSuggest, numberFormat)}
-            </Btn>
-          ) : (
-            <Btn
-              tone="primary"
-              onClick={() => dispatch({ type: 'withdrawPassbook', amount: withdrawSuggest })}
-            >
-              Withdraw {money(withdrawSuggest, numberFormat)}
-            </Btn>
-          )}
-        </div>
-      ) : null}
 
-      <div className="ge-dept-split">
-        <article className="ge-card ge-card--owned">
-          <header className="ge-empire-block__head">
-            <h3>Passbook</h3>
-            <p>Slow, safe interest — only the amount inside the Empire-scaled cap earns.</p>
-          </header>
-          <div className="ge-card__meta" data-coach-id="invest-passbook">
-            <div className="ge-card__meta-row">
-              <span>Balance</span>
-              <strong>{money(bal, numberFormat)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Yielding</span>
-              <strong>
-                {money(pbYield, numberFormat)} / {money(pbCap, numberFormat)}
-              </strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Rate</span>
-              <strong>{(rate * 3600 * 100).toFixed(2)}% / hr</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Projected</span>
-              <strong>{money(perHour, numberFormat)} / hr</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Time to cap</span>
-              <strong title="Interest alone; deposits get you there faster">
-                {capRoom <= 0 ? 'at cap' : bal <= 0 ? 'deposit first' : `${duration(toCapSec)} (interest only)`}
-              </strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Earned</span>
-              <strong>{money(s.stats?.interestEarned ?? 0, numberFormat)}</strong>
-            </div>
-          </div>
-          {bal > pbCap + 1 ? (
-            <p className="ge-muted">
-              Surplus above the cap sits idle — withdraw it to spend on baskets.
-            </p>
-          ) : null}
-          <div className="ge-chip-row">
-            <Btn tone="primary" onClick={() => deposit(0.25)} disabled={s.cash < 1}>
-              In 25%
-            </Btn>
-            <Btn onClick={() => deposit(0.5)} disabled={s.cash < 1}>
-              In 50%
-            </Btn>
-            <Btn onClick={() => withdraw(0.25)} disabled={bal < 1}>
-              Out 25%
-            </Btn>
-            <Btn onClick={() => withdraw(1)} disabled={bal < 0.01}>
-              Out all
-            </Btn>
-          </div>
-        </article>
-
+      <div className="lh-split">
         {book.unlocked ? (
-          <article className={`ge-card${book.circuitBreaker ? ' is-ready' : ''}`.trim()}>
-            <header className="ge-empire-block__head">
-              <h3>Risk book</h3>
-              <p>Yield only inside the cap. Engine raises the cap and a little of the mean.</p>
-            </header>
-            <div className="ge-card__meta" data-coach-id="invest-book">
-              <div className="ge-card__meta-row">
-                <span>Book</span>
-                <strong>{money(book.balance, numberFormat)}</strong>
+          <Card
+            state={book.circuitBreaker ? 'suggested' : undefined}
+            header={
+              <div className="lh-card-title">
+                <strong>Risk book</strong>
+                <span>Yield only inside the cap. Engine raises the cap and a little of the mean.</span>
               </div>
-              <div className="ge-card__meta-row">
-                <span>Yielding</span>
-                <strong>
-                  {money(bookYield, numberFormat)} / {money(bookCap, numberFormat)}
-                </strong>
-              </div>
-              <div className="ge-card__meta-row">
-                <span>Peak</span>
-                <strong>{money(book.peak, numberFormat)}</strong>
-              </div>
-              <div className="ge-card__meta-row">
-                <span>Engine</span>
-                <strong>L{book.engineLevel}</strong>
-              </div>
-              <div className="ge-card__meta-row">
-                <span>Breaker</span>
-                <strong>{book.circuitBreaker ? 'TRIPPED' : 'Clear'}</strong>
-              </div>
-            </div>
-            {book.balance > bookCap + 1 ? (
-              <p className="ge-muted">
-                Yielding on {money(bookCap, numberFormat)} of {money(book.balance, numberFormat)}.
-                Withdraw surplus to buy throughput.
-              </p>
-            ) : null}
-            <div className="ge-chip-row">
-              {RISKS.map((r) => {
-                const check = can(s, { type: 'setInvestRisk', risk: r })
-                const gate = r === 'mid' ? INVEST.riskGate.mid : r === 'high' ? INVEST.riskGate.high : 0
-                const locked = gate > 0 && book.engineLevel < gate
-                return (
-                  <Btn
-                    key={r}
-                    tone={book.risk === r ? 'primary' : 'ghost'}
-                    disabled={!check.ok}
-                    title={!check.ok ? check.reason : undefined}
-                    onClick={() => dispatch({ type: 'setInvestRisk', risk: r })}
-                  >
-                    {r}
-                    {locked ? ` · L${gate}` : ''}
-                  </Btn>
-                )
-              })}
-            </div>
-            <p className="ge-muted" style={{ fontSize: '0.72rem' }}>
-              Mid needs Engine L{INVEST.riskGate.mid}, High needs L{INVEST.riskGate.high}. More gates
-              arrive with the Era 2 slice.
-            </p>
-            <div className="ge-chip-row">
-              <Btn
-                tone="primary"
-                data-suggest-id="invest-book-deposit"
-                onClick={() => depositBook(0.25)}
-                disabled={s.cash < 1}
-              >
-                In 25%
-              </Btn>
-              <Btn onClick={() => withdrawBook(0.25)} disabled={book.balance < 1}>
-                Out 25%
-              </Btn>
-              <Btn onClick={() => withdrawBook(1)} disabled={book.balance < 0.01}>
-                Out all
-              </Btn>
-              <Btn
-                disabled={book.engineLevel >= 8 || s.cash < engineCost}
-                title={
-                  book.engineLevel >= 8
-                    ? 'Engine maxed'
-                    : s.cash < engineCost
-                      ? `Need ${money(engineCost, numberFormat)}`
-                      : undefined
-                }
-                onClick={() => dispatch({ type: 'buyInvestEngine' })}
-              >
-                Engine · {money(engineCost, numberFormat)}
-              </Btn>
-              {book.circuitBreaker ? (
-                <Btn tone="primary" onClick={() => dispatch({ type: 'resetCircuitBreaker' })}>
-                  Reset breaker
-                </Btn>
+            }
+          >
+            <div className="lh-stack">
+              <Meter
+                tone={book.circuitBreaker ? 'danger' : book.balance >= bookCap - 1 ? 'warn' : 'accent'}
+                value={bookYield}
+                max={bookCap}
+                label="Yielding"
+                eta={`${money(bookYield, numberFormat)} / ${money(bookCap, numberFormat)}`}
+              />
+              <Rows
+                coachId="invest-book"
+                rows={[
+                  { label: 'Book', value: money(book.balance, numberFormat) },
+                  { label: 'Peak', value: money(book.peak, numberFormat) },
+                  { label: 'Engine', value: `L${book.engineLevel}` },
+                  { label: 'Breaker', value: book.circuitBreaker ? 'TRIPPED' : 'Clear' },
+                ]}
+              />
+              {book.balance > bookCap + 1 ? (
+                <p className="lh-note">
+                  Yielding on {money(bookCap, numberFormat)} of {money(book.balance, numberFormat)}. Withdraw surplus to
+                  buy throughput.
+                </p>
               ) : null}
+              <div className="lh-actions">
+                {RISKS.map((r) => {
+                  const check = can(s, { type: 'setInvestRisk', risk: r })
+                  const gate = r === 'mid' ? INVEST.riskGate.mid : r === 'high' ? INVEST.riskGate.high : 0
+                  const locked = gate > 0 && book.engineLevel < gate
+                  return (
+                    <Button
+                      key={r}
+                      size="sm"
+                      tone={book.risk === r ? 'primary' : 'ghost'}
+                      disabled={!check.ok}
+                      title={
+                        !check.ok
+                          ? check.reason
+                          : `Mid needs Engine L${INVEST.riskGate.mid}, High needs L${INVEST.riskGate.high}.`
+                      }
+                      onClick={() => dispatch({ type: 'setInvestRisk', risk: r })}
+                    >
+                      {r}
+                      {locked ? ` · L${gate}` : ''}
+                    </Button>
+                  )
+                })}
+              </div>
+              <div className="lh-actions">
+                <Button
+                  size="sm"
+                  tone="primary"
+                  data-suggest-id="invest-book-deposit"
+                  onClick={() => depositBook(0.25)}
+                  disabled={s.cash < 1}
+                >
+                  In 25%
+                </Button>
+                <Button size="sm" onClick={() => withdrawBook(0.25)} disabled={book.balance < 1}>
+                  Out 25%
+                </Button>
+                <Button size="sm" onClick={() => withdrawBook(1)} disabled={book.balance < 0.01}>
+                  Out all
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={book.engineLevel >= INVEST.maxEngine || s.cash < engineCost}
+                  title={
+                    book.engineLevel >= INVEST.maxEngine
+                      ? 'Engine maxed'
+                      : s.cash < engineCost
+                        ? `Need ${money(engineCost, numberFormat)}`
+                        : `Engine maxes at L${INVEST.maxEngine}.`
+                  }
+                  onClick={() => dispatch({ type: 'buyInvestEngine' })}
+                >
+                  Engine · {money(engineCost, numberFormat)}
+                </Button>
+                {book.circuitBreaker ? (
+                  <Button size="sm" tone="primary" onClick={() => dispatch({ type: 'resetCircuitBreaker' })}>
+                    Reset breaker
+                  </Button>
+                ) : null}
+              </div>
             </div>
-          </article>
+          </Card>
         ) : null}
       </div>
 
-      <HelpCard title="Idle cash is a choice">
-        Caps scale with Empire level. Surplus above the cap does not earn — withdraw it to hire,
-        stock, or stamp memos. The book does not print a fortune.
-      </HelpCard>
-    </Panel>
+      {s.era >= 7 ? (
+        <section className="lh-stack" data-coach-id="invest-instruments">
+          <div className="lh-card-title">
+            <strong>Instruments</strong>
+            <span title="Each lot pays a Worlds currency every second.">{totalLots} lots held</span>
+          </div>
+          <div className="lh-grid">
+            {INSTRUMENTS.map((inst) => {
+              const lots = instrumentLots(s, inst.id)
+              const open = s.era >= inst.era
+              const check = can(s, { type: 'buyInstrument', id: inst.id })
+              const cost = instrumentCost(s, inst.id)
+              const yieldPerSec = instrumentYieldPerSec(s, inst.id)
+              const state = !open ? 'locked' : lots >= lotCap ? 'maxed' : check.ok ? 'affordable' : undefined
+              return (
+                <Card
+                  key={inst.id}
+                  state={state}
+                  header={<strong title={inst.blurb}>{inst.name}</strong>}
+                  footer={
+                    <Button
+                      size="sm"
+                      tone={check.ok ? 'primary' : 'ghost'}
+                      disabled={!check.ok}
+                      title={!check.ok ? check.reason : inst.blurb}
+                      onClick={() => dispatch({ type: 'buyInstrument', id: inst.id })}
+                    >
+                      {!open ? `Era ${inst.era}` : lots >= lotCap ? 'Full' : `Buy · ${money(cost, numberFormat)}`}
+                    </Button>
+                  }
+                >
+                  <p className="lh-note">
+                    {lots}/{lotCap}
+                    {open ? ` · +${yieldPerSec.toFixed(3)} ${inst.currency}/s` : ''}
+                  </p>
+                </Card>
+              )
+            })}
+          </div>
+
+          <Disclosure title="Positions" count={held.length} defaultOpen={held.length > 0}>
+            <DataTable
+              columns={positionCols}
+              rows={held}
+              rowKey={(r) => r.inst.id}
+              empty="No lots held yet. Buy one above."
+              caption="Instrument positions"
+            />
+          </Disclosure>
+
+          {drag > 0 ? (
+            <p className="lh-note">
+              Council scrutiny trims instrument yield by {Math.round(drag * 100)}%. Seat fewer delegates, or let the
+              heat fade.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+    </LateHubShell>
   )
 }

@@ -1,0 +1,28 @@
+/*
+ * Scene art tokens. Illustrated rooms and live scenes read these — never hardcode hex in TSX.
+ */
+@layer scenes {
+  .ge-root {
+    --sc-room-bg: #12161c;
+    --sc-chip-fill: #0f1317;
+    --sc-chip-stroke: #3a444e;
+    --sc-chip-muted: #b4bfc9;
+    --sc-chip-ink: #efe9dc;
+    --sc-chip-good: #7cc47f;
+    --sc-chip-bad: #d9665b;
+    --sc-aisle: #070b12;
+    --sc-tomato: var(--ge-tomato, #ff5a43);
+    --sc-shelf: #0a0e14;
+    --sc-cans: #c45c3e;
+    --sc-produce: #5a9e5a;
+    --sc-dairy: #e8e0c8;
+    --sc-meat: #a84848;
+    --sc-cold: #5b8fb8;
+    --sc-dock: #8a7a5c;
+    --sc-barge: #4a6a8a;
+    --sc-lamp-counter: #f2c14e;
+    --sc-lamp-chain: #7fa3c9;
+    --sc-lamp-globe: #e0a43a;
+    --sc-lamp-worlds: #ff5a43;
+  }
+}

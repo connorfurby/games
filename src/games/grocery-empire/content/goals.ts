@@ -1,9 +1,14 @@
-import { LOT_SURVEY_LIFETIME } from '../sim/balance'
+import { BILL_IDS, STORE_TRAIT_BY_ID, policyMatchesTrait, type BillId, type PlaceTraitId } from './depth'
+import { DEPTH, HORIZON, LOT_SURVEY_LIFETIME } from '../sim/balance'
 import type { Command } from '../sim/commands'
-import { acquireCost } from '../sim/systems/politics'
-import { openStoreCost } from '../sim/systems/chain'
-import { plantCost } from '../sim/systems/cold'
-import { bargeCost, laneCost } from '../sim/systems/fleet'
+import { hireCost } from '../sim/formulas'
+import { sumQty } from '../sim/helpers'
+import { billCost, billsPassed } from '../sim/systems/politics'
+import { matchedStoreCount, openStoreCost } from '../sim/systems/chain'
+import { plantCost, plantCountOf } from '../sim/systems/cold'
+import { bargeCost, franchiseCost, laneCost, matchedLaneCount } from '../sim/systems/fleet'
+import { probeCost, relayCost, stockedCount } from '../sim/systems/horizon'
+import { broadcastClimates } from '../sim/systems/late'
 import { MEMO_BY_ID } from './memos'
 import type { GameState } from '../sim/state'
 
@@ -39,6 +44,7 @@ const memoCash = (s: GameState, id: string) => {
   }
 }
 const frac = (have: number, need: number) => (need <= 0 ? 1 : Math.max(0, Math.min(1, have / need)))
+const matchedLaneDone = (s: GameState) => matchedLaneCount(s) >= 1
 
 export const GOALS: GoalDef[] = [
   // ── Era 0 · The Counter
@@ -52,16 +58,85 @@ export const GOALS: GoalDef[] = [
     action: () => ({ type: 'unpack' }),
   },
   {
+    id: 'feature-cans',
+    era: 0,
+    title: 'Feature a can facing',
+    hint: 'Pick Tomatoes, Beans, or Soup on the Floor.',
+    done: (s) => !!s.depth?.facings?.cans,
+    progress: (s) => (s.depth?.facings?.cans ? 1 : 0),
+    action: () => ({ type: 'setFacing', cat: 'cans', facingId: 'tomatoes' }),
+  },
+  {
+    id: 'market-bell',
+    era: 0,
+    title: 'Ring the Market Bell thrice',
+    hint: 'Order on three wholesale dips — not just one.',
+    done: (s) => (s.depth?.marketBellDips ?? 0) >= DEPTH.marketBellNeed,
+    progress: (s) => frac(s.depth?.marketBellDips ?? 0, DEPTH.marketBellNeed),
+    action: () => ({ type: 'buyWholesale' }),
+  },
+  {
+    id: 'serve-regulars',
+    era: 0,
+    title: 'Satisfy neighborhood regulars',
+    hint: 'Keep cans featured and the shelf stocked when neighbors visit.',
+    done: (s) => (s.depth?.regularSatisfied ?? 0) >= DEPTH.era1RegularNeed,
+    progress: (s) => frac(s.depth?.regularSatisfied ?? 0, DEPTH.era1RegularNeed),
+    action: () => ({ type: 'serveRegular' }),
+  },
+  {
+    id: 'layaway-slips',
+    era: 0,
+    title: 'Clear layaway slips',
+    hint: 'Serve the neighbor before patience runs out — the slip will not auto-clear.',
+    done: (s) => (s.depth?.layawaySlips ?? 0) >= DEPTH.layawaySlipNeed,
+    progress: (s) => frac(s.depth?.layawaySlips ?? 0, DEPTH.layawaySlipNeed),
+    action: () => ({ type: 'serveRegular' }),
+  },
+  {
     id: 'corner-store',
     era: 0,
     title: 'Become a corner store',
-    hint: 'Hire your first clerk — or sell 400 baskets yourself.',
+    hint: 'Feature cans, 3 bells, regulars, layaway slips, Open shift or baskets, stars ≥ 3.5.',
     done: (s) => s.era >= 1,
-    progress: (s) => Math.max(frac(s.baskets, 400), s.staff.length > 0 ? 1 : 0),
-    action: () => ({ type: 'hire', role: 'clerk' }),
+    progress: (s) => {
+      const featured = s.depth?.facings?.cans ? 0.12 : 0
+      const bell = frac(s.depth?.marketBellDips ?? 0, DEPTH.marketBellNeed) * 0.15
+      const regs = frac(s.depth?.regularSatisfied ?? 0, DEPTH.era1RegularNeed) * 0.15
+      const slips = frac(s.depth?.layawaySlips ?? 0, DEPTH.layawaySlipNeed) * 0.2
+      const stars = (s.depth?.stars ?? 0) >= DEPTH.era1StarMin ? 0.08 : 0
+      const hirePath =
+        s.staff.length > 0 && (s.depth?.shifts?.open?.length ?? 0) > 0
+          ? 0.12 + frac(s.baskets, DEPTH.ERA1_HIRE_BASKETS) * 0.18
+          : frac(s.baskets, DEPTH.ERA1_BASKETS_GATE) * 0.3
+      return Math.min(1, featured + bell + regs + slips + stars + hirePath)
+    },
+    action: (s) =>
+      !s.depth?.facings?.cans
+        ? { type: 'setFacing', cat: 'cans', facingId: 'tomatoes' }
+        : (s.depth?.marketBellDips ?? 0) < DEPTH.marketBellNeed
+          ? { type: 'buyWholesale' }
+          : (s.depth?.layawaySlips ?? 0) < DEPTH.layawaySlipNeed ||
+              (s.depth?.regularSatisfied ?? 0) < DEPTH.era1RegularNeed
+            ? { type: 'serveRegular' }
+            : s.staff.length === 0
+              ? { type: 'hire', role: 'clerk' }
+              : (s.depth?.shifts?.open?.length ?? 0) <= 0 && s.staff[0]
+                ? { type: 'assignShift', slot: 'open', staffId: s.staff[0]!.id }
+                : { type: 'unpack' },
     opensEra: 1,
   },
   // ── Era 1 · Corner Store
+  {
+    id: 'open-produce',
+    era: 1,
+    title: 'Open the produce aisle',
+    hint: 'File Produce Crates and stock fresh.',
+    done: (s) => !!s.categories.produce,
+    progress: (s) => (s.categories.produce ? 1 : frac(s.baskets, 800)),
+    cash: (s) => memoCash(s, 'produce-crates'),
+    action: () => ({ type: 'buyMemo', id: 'produce-crates' }),
+  },
   {
     id: 'back-office',
     era: 1,
@@ -83,10 +158,110 @@ export const GOALS: GoalDef[] = [
     action: () => ({ type: 'buyBuild', track: 'storefront' }),
   },
   {
+    id: 'first-writeoff',
+    era: 1,
+    title: 'Survive three morning write-offs',
+    hint: 'Stock produce, then dump or markdown what soured — three times.',
+    done: (s) => (s.depth?.writeOffs ?? 0) >= DEPTH.writeOffNeedEra2,
+    progress: (s) => frac(s.depth?.writeOffs ?? 0, DEPTH.writeOffNeedEra2),
+    action: (s) => {
+      if (!s.categories.produce) return { type: 'buyMemo', id: 'produce-crates' }
+      if (sumQty(s.backroom, 'produce') + sumQty(s.shelf, 'produce') <= 0) {
+        return { type: 'buyWholesale', cat: 'produce', crates: 1 }
+      }
+      return { type: 'morningWriteOff', mode: 'dump' }
+    },
+  },
+  {
+    id: 'staff-fresh-lead',
+    era: 1,
+    title: 'Staff the Fresh lead',
+    hint: 'Hire a Produce Lead for the Fresh department.',
+    done: (s) =>
+      s.staff.some((m) => m.role === 'produceLead') || (s.depth?.departments?.fresh?.leadId ?? null) != null,
+    progress: (s) =>
+      s.staff.some((m) => m.role === 'produceLead') || (s.depth?.departments?.fresh?.leadId ?? null) != null
+        ? 1
+        : 0,
+    cash: (s) => hireCost(s, 'produceLead'),
+    action: () => ({ type: 'hire', role: 'produceLead' }),
+  },
+  {
+    id: 'open-dairy',
+    era: 1,
+    title: 'Unlock the dairy case',
+    hint: 'Reach-in cooler, then file Dairy Case.',
+    done: (s) => !!s.categories.dairy,
+    progress: (s) =>
+      s.categories.dairy ? 1 : memo(s, 'reach-in') ? 0.5 + frac(s.builds.cold ?? 0, 1) * 0.5 : frac(s.baskets, 800) * 0.4,
+    cash: (s) => (!memo(s, 'reach-in') ? 60 : (s.builds.cold ?? 0) < 1 ? 150 : memoCash(s, 'dairy-case')),
+    action: (s) =>
+      !s.categories.produce
+        ? { type: 'buyMemo', id: 'produce-crates' }
+        : !memo(s, 'reach-in')
+          ? { type: 'buyMemo', id: 'reach-in' }
+          : (s.builds.cold ?? 0) < 1
+            ? { type: 'buyBuild', track: 'cold' }
+            : { type: 'buyMemo', id: 'dairy-case' },
+  },
+  {
+    id: 'pay-invoices',
+    era: 1,
+    title: 'Pay invoices on time',
+    hint: 'Settle wholesale invoices before they age — keep the yard float clean.',
+    done: (s) => (s.depth?.invoicesOnTime ?? 0) >= DEPTH.invoiceOnTimeNeedSideYard,
+    progress: (s) => frac(s.depth?.invoicesOnTime ?? 0, DEPTH.invoiceOnTimeNeedSideYard),
+    action: (s) => {
+      const inv = s.depth?.invoices?.find((i) => !i.paid)
+      return inv ? { type: 'payInvoice', id: inv.id } : { type: 'buyWholesale' }
+    },
+  },
+  {
+    id: 'dock-check-in',
+    era: 1,
+    title: 'Check in at the dock',
+    hint: 'Put a receiver on shift, then stamp the bay on cooldown.',
+    done: (s) => (s.depth?.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed,
+    progress: (s) => frac(s.depth?.dockCheckIns ?? 0, DEPTH.dockCheckInNeed),
+    action: (s) => {
+      const receiver = s.staff.find((m) => m.role === 'receiver')
+      if (!receiver) return { type: 'hire', role: 'receiver' }
+      const onBoard = (['open', 'mid', 'close'] as const).some((slot) =>
+        (s.depth?.shifts?.[slot] ?? []).includes(receiver.id),
+      )
+      if (!onBoard) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
+      return { type: 'dockCheckIn' }
+    },
+  },
+  {
+    id: 'flagship-planogram',
+    era: 1,
+    title: 'File the flagship planogram',
+    hint: 'Practice twice, then file a layout scoring ≥ 0.72.',
+    done: (s) => !!s.depth?.flagship?.credited,
+    progress: (s) => {
+      const f = s.depth?.flagship
+      if (!f) return 0
+      if (f.credited) return 1
+      const practices = DEPTH.flagshipPracticePerEra - f.practiceLeft
+      return Math.min(0.9, practices / DEPTH.flagshipPracticePerEra * 0.6 + frac(f.score, DEPTH.flagshipSlow) * 0.3)
+    },
+    action: () => ({ type: 'fileStandardFlagship' }),
+  },
+  {
+    id: 'regulars-block',
+    era: 1,
+    title: 'Earn the block’s trust',
+    hint: 'Satisfy twelve regulars before the side yard.',
+    done: (s) => (s.depth?.regularSatisfied ?? 0) >= DEPTH.era2RegularNeed,
+    progress: (s) => frac(s.depth?.regularSatisfied ?? 0, DEPTH.era2RegularNeed),
+    action: () => ({ type: 'serveRegular' }),
+  },
+  {
     id: 'lot-survey',
     era: 1,
     title: 'Survey the empty lot',
-    hint: 'Earn $4,000 lifetime, then file the Lot Survey memo.',
+    hint: 'Earn lifetime revenue, pay invoices, then file the Lot Survey memo.',
     done: (s) => memo(s, 'lot-survey') || !!s.expansions['side-yard'],
     progress: (s) => frac(s.lifetimeRevenue, LOT_SURVEY_LIFETIME),
     cash: () => 500,
@@ -96,11 +271,62 @@ export const GOALS: GoalDef[] = [
     id: 'side-yard',
     era: 1,
     title: 'Buy the side yard',
-    hint: 'Room for a second door. Opens the Chain era.',
+    hint: 'Write-offs, Fresh lead, dairy, regulars, invoices, dock check-ins, planogram, Open day, then buy.',
     done: (s) => s.era >= 2,
-    progress: (s) => frac(s.cash, 2500),
+    progress: (s) => {
+      const write = frac(s.depth?.writeOffs ?? 0, DEPTH.writeOffNeedEra2) * 0.1
+      const lead =
+        s.staff.some((m) => m.role === 'produceLead') ||
+        (s.depth?.departments?.fresh?.leadId ?? null) != null
+          ? 0.08
+          : 0
+      const build = (s.builds.storefront ?? 1) >= 2 ? 0.08 : 0
+      const dairy = s.categories.dairy ? 0.08 : 0
+      const regs = frac(s.depth?.regularSatisfied ?? 0, DEPTH.era2RegularNeed) * 0.12
+      const inv = frac(s.depth?.invoicesOnTime ?? 0, DEPTH.invoiceOnTimeNeedSideYard) * 0.12
+      const dock = frac(s.depth?.dockCheckIns ?? 0, DEPTH.dockCheckInNeed) * 0.14
+      const flag = s.depth?.flagship?.credited ? 0.08 : 0
+      const shift = frac(s.depth?.shifts?.daysCoveredOpen ?? 0, DEPTH.openDaysNeedSideYard) * 0.08
+      return Math.min(
+        1,
+        write + lead + build + dairy + regs + inv + dock + flag + shift + frac(s.cash, 2500) * 0.12,
+      )
+    },
     cash: () => 2500,
-    action: () => ({ type: 'expandLot', id: 'side-yard' }),
+    action: (s) => {
+      if ((s.depth?.writeOffs ?? 0) < DEPTH.writeOffNeedEra2) {
+        if (!s.categories.produce) return { type: 'buyMemo', id: 'produce-crates' }
+        if (sumQty(s.backroom, 'produce') + sumQty(s.shelf, 'produce') <= 0) {
+          return { type: 'buyWholesale', cat: 'produce', crates: 1 }
+        }
+        return { type: 'morningWriteOff', mode: 'dump' }
+      }
+      if (
+        !s.staff.some((m) => m.role === 'produceLead') &&
+        (s.depth?.departments?.fresh?.leadId ?? null) == null
+      ) {
+        return { type: 'hire', role: 'produceLead' }
+      }
+      if ((s.builds.storefront ?? 1) < 2) return { type: 'buyBuild', track: 'storefront' }
+      if (!s.categories.dairy) {
+        if (!memo(s, 'reach-in')) return { type: 'buyMemo', id: 'reach-in' }
+        if ((s.builds.cold ?? 0) < 1) return { type: 'buyBuild', track: 'cold' }
+        return { type: 'buyMemo', id: 'dairy-case' }
+      }
+      if (!s.depth?.flagship?.credited) return { type: 'fileStandardFlagship' }
+      if ((s.depth?.dockCheckIns ?? 0) < DEPTH.dockCheckInNeed) {
+        const receiver = s.staff.find((m) => m.role === 'receiver')
+        if (!receiver) return { type: 'hire', role: 'receiver' }
+        const onBoard = (['open', 'mid', 'close'] as const).some((slot) =>
+          (s.depth?.shifts?.[slot] ?? []).includes(receiver.id),
+        )
+        if (!onBoard) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
+        return { type: 'dockCheckIn' }
+      }
+      const unpaid = s.depth?.invoices?.find((i) => !i.paid)
+      if (unpaid) return { type: 'payInvoice', id: unpaid.id }
+      return { type: 'expandLot', id: 'side-yard' }
+    },
     opensEra: 2,
   },
   // ── Era 2 · Chain
@@ -130,26 +356,150 @@ export const GOALS: GoalDef[] = [
           : { type: 'buyBuild', track: 'cold' },
   },
   {
+    id: 'matched-stores',
+    era: 2,
+    title: 'Match four store policies',
+    hint: 'Open four doors and set each policy to its neighborhood trait.',
+    done: (s) => matchedStoreCount(s) >= DEPTH.matchedStoresNeed,
+    progress: (s) => frac(matchedStoreCount(s), DEPTH.matchedStoresNeed),
+    cash: (s) => (s.stores.length < DEPTH.matchedStoresNeed ? openStoreCost(s) : 0),
+    action: (s) => {
+      if (s.stores.length < DEPTH.matchedStoresNeed) return { type: 'openStore' }
+      for (const st of s.stores) {
+        const trait = s.depth?.placeTraits?.[st.id] as PlaceTraitId | undefined
+        if (!trait) continue
+        const def = STORE_TRAIT_BY_ID[trait]
+        if (!def || policyMatchesTrait(st.policy, trait)) continue
+        return { type: 'setPolicy', storeId: st.id, policy: def.matchPolicies[0]! }
+      }
+      return { type: 'openStore' }
+    },
+  },
+  {
+    id: 'depot-or-commissary',
+    era: 2,
+    title: 'Depot or commissary',
+    hint: 'Build a depot — or unlock the Commissary contract.',
+    done: (s) => !!s.depot || !!s.depth?.contracts?.commissary,
+    progress: (s) => (s.depot || s.depth?.contracts?.commissary ? 1 : 0.2),
+    cash: (s) =>
+      s.depth?.contracts && 'commissary' in s.depth.contracts
+        ? 0
+        : s.cash < 400
+          ? 400
+          : 0,
+    action: (s) => {
+      if (!(s.depth?.contracts && 'commissary' in s.depth.contracts)) {
+        return { type: 'unlockContract', id: 'commissary' }
+      }
+      if (!s.depth.contracts.commissary) return { type: 'setContract', id: 'commissary', on: true }
+      return { type: 'buildDepot' }
+    },
+  },
+  {
+    id: 'run-circular',
+    era: 2,
+    title: 'Hold flyer band weeks',
+    hint: 'Print a week, keep shelf price inside the band until it ends, cool down, repeat.',
+    done: (s) => (s.depth?.flyerWeeks ?? 0) >= DEPTH.flyerWeeksNeed,
+    progress: (s) => frac(s.depth?.flyerWeeks ?? 0, DEPTH.flyerWeeksNeed),
+    action: (s) => {
+      const cats = (['cans', 'produce', 'dairy', 'household', 'bakery', 'deli'] as const).filter(
+        (c) => s.categories[c],
+      )
+      if (cats.length < 2) return { type: 'buyMemo', id: 'produce-crates' }
+      return {
+        type: 'printFlyerWeek',
+        aisles: [cats[0]!, cats[1]!],
+        discountBand: 'soft',
+        promise: 'hours',
+      }
+    },
+  },
+  {
+    id: 'hot-trait-walks',
+    era: 2,
+    title: 'Walk the hot trait',
+    hint: 'When a block event lights a trait, match a store policy before the window ends.',
+    done: (s) => (s.depth?.hotTraitWalks ?? 0) >= DEPTH.hotTraitWalkNeed,
+    progress: (s) => frac(s.depth?.hotTraitWalks ?? 0, DEPTH.hotTraitWalkNeed),
+    action: (s) => {
+      const hot = s.depth?.blockEvent?.traitBias
+      if (hot && (s.depth?.blockEvent?.until ?? 0) > s.time) {
+        const def = STORE_TRAIT_BY_ID[hot as PlaceTraitId]
+        if (def) {
+          for (const st of s.stores) {
+            if (policyMatchesTrait(st.policy, hot)) continue
+            return { type: 'setPolicy', storeId: st.id, policy: def.matchPolicies[0]! }
+          }
+        }
+      }
+      for (const st of s.stores) {
+        const trait = s.depth?.placeTraits?.[st.id]
+        const def = trait ? STORE_TRAIT_BY_ID[trait as PlaceTraitId] : null
+        if (!def || policyMatchesTrait(st.policy, trait)) continue
+        return { type: 'setPolicy', storeId: st.id, policy: def.matchPolicies[0]! }
+      }
+      return { type: 'openStore' }
+    },
+  },
+  {
+    id: 'chain-planogram',
+    era: 2,
+    title: 'Refile after deli and bakery',
+    hint: 'Unlock Deli + Bakery, then file a credited flagship planogram.',
+    done: (s) => !!s.depth?.flagship?.chainCredited,
+    progress: (s) => {
+      const deli = s.categories.deli ? 0.25 : 0
+      const bakery = s.categories.bakery ? 0.25 : 0
+      const credited = s.depth?.flagship?.chainCredited ? 0.5 : s.depth?.flagship?.credited ? 0.2 : 0
+      return Math.min(1, deli + bakery + credited)
+    },
+    cash: (s) =>
+      !s.categories.meat
+        ? memoCash(s, 'butcher-block')
+        : !s.categories.deli
+          ? memoCash(s, 'deli-case')
+          : !s.categories.bakery
+            ? memoCash(s, 'bakery-oven')
+            : 0,
+    action: (s) => {
+      if (!s.categories.meat) return { type: 'buyMemo', id: 'butcher-block' }
+      if (!s.categories.deli) return { type: 'buyMemo', id: 'deli-case' }
+      if (!s.categories.bakery) return { type: 'buyMemo', id: 'bakery-oven' }
+      return { type: 'fileStandardFlagship' }
+    },
+  },
+  {
     id: 'cold-permit',
     era: 2,
     title: 'File the Cold Plant Permit',
-    hint: 'Run three stores, then file the permit. Opens the Cold Chain era.',
+    hint: 'Band-held flyer weeks, hot-trait walks, matched stores, stars, depot, chain planogram — then stamp.',
     done: (s) => s.era >= 3,
-    progress: (s) => (s.stores.length < 3 ? frac(s.stores.length, 3) * 0.5 : 0.5 + frac(s.cash, memoCash(s, 'cold-plant-permit')) * 0.5),
-    cash: (s) => (s.stores.length < 3 ? openStoreCost(s) : memoCash(s, 'cold-plant-permit')),
-    action: (s) => (s.stores.length < 3 ? { type: 'openStore' } : { type: 'buyMemo', id: 'cold-plant-permit' }),
+    progress: (s) => {
+      const flyers = frac(s.depth?.flyerWeeks ?? 0, DEPTH.flyerWeeksNeed) * 0.15
+      const walks = frac(s.depth?.hotTraitWalks ?? 0, DEPTH.hotTraitWalkNeed) * 0.2
+      const match = frac(matchedStoreCount(s), DEPTH.matchedStoresNeed) * 0.15
+      const stars = (s.depth?.stars ?? 0) >= DEPTH.coldPermitStarMin ? 0.1 : 0
+      const depot = s.depot || s.depth?.contracts?.commissary ? 0.1 : 0
+      const plan = s.depth?.flagship?.chainCredited ? 0.1 : 0
+      const cashBit = frac(s.cash, memoCash(s, 'cold-plant-permit')) * 0.2
+      return Math.min(1, flyers + walks + match + stars + depot + plan + cashBit)
+    },
+    cash: (s) => memoCash(s, 'cold-plant-permit'),
+    action: () => ({ type: 'buyMemo', id: 'cold-plant-permit' }),
     opensEra: 3,
   },
   // ── Era 3 · Cold Chain
   {
-    id: 'first-plant',
+    id: 'first-blast',
     era: 3,
-    title: 'Build a cold plant',
-    hint: 'Plants drain the region’s yield and pay out cash.',
-    done: (s) => s.cold.plants >= 1,
+    title: 'Build a blast plant',
+    hint: 'Only blast freezers drain regional yield. Compressors just pay rent.',
+    done: (s) => plantCountOf(s, 'blast') >= 1,
     progress: (s) => frac(s.cash, plantCost(s)),
     cash: (s) => plantCost(s),
-    action: () => ({ type: 'buyPlant' }),
+    action: () => ({ type: 'buyPlant', kind: 'blast' }),
   },
   {
     id: 'lobby',
@@ -163,31 +513,96 @@ export const GOALS: GoalDef[] = [
       (s.builds.civic ?? 0) < 1 ? { type: 'buyBuild', track: 'civic' } : { type: 'buyMemo', id: 'lobby-office' },
   },
   {
-    id: 'district',
+    id: 'pass-two-bills',
     era: 3,
-    title: 'Acquire a district',
-    hint: 'Each district multiplies your whole network.',
-    done: (s) => s.politics.acquisitions >= 1,
-    progress: (s) => frac(s.cash, acquireCost(s).cash),
-    cash: (s) => acquireCost(s).cash,
-    action: () => ({ type: 'acquireRegion' }),
+    title: 'Pass two bills',
+    hint: 'Named county bills — hours, waste, labor, or tax.',
+    done: (s) => billsPassed(s) >= 2,
+    progress: (s) => frac(billsPassed(s), 2),
+    cash: (s) => billCost(s).cash,
+    action: (s) => {
+      const next = BILL_IDS.find((id) => !s.politics.bills?.[id]) as BillId | undefined
+      return next ? { type: 'passBill', id: next } : null
+    },
+  },
+  {
+    id: 'brownout-drill',
+    era: 3,
+    title: 'Survive a brownout drill',
+    hint: 'Hire a plant operator, then clear the drill.',
+    done: (s) => (s.depth?.drillsRun ?? 0) >= 1,
+    progress: (s) => frac(s.depth?.drillsRun ?? 0, 1),
+    cash: (s) => (s.staff.some((m) => m.role === 'plantOperator') ? 0 : hireCost(s, 'plantOperator')),
+    action: (s) =>
+      !s.staff.some((m) => m.role === 'plantOperator')
+        ? { type: 'hire', role: 'plantOperator' }
+        : { type: 'runBrownoutDrill' },
+  },
+  {
+    id: 'cooler-logs',
+    era: 3,
+    title: 'Sign cooler logs',
+    hint: 'Temp checks on a timer. Plant Operator on shift auto-signs.',
+    done: (s) => (s.depth?.cooler?.logsSigned ?? 0) >= DEPTH.coolerLogNeed,
+    progress: (s) => frac(s.depth?.cooler?.logsSigned ?? 0, DEPTH.coolerLogNeed),
+    action: (s) =>
+      !s.staff.some((m) => m.role === 'plantOperator')
+        ? { type: 'hire', role: 'plantOperator' }
+        : { type: 'signCoolerLog' },
+  },
+  {
+    id: 'cold-leads-board',
+    era: 3,
+    title: 'Staff Fresh + Cold on the board',
+    hint: 'Put Produce Lead and Plant Operator on the Shift Board once.',
+    done: (s) => !!s.depth?.leadsOnBoard?.fresh && !!s.depth?.leadsOnBoard?.cold,
+    progress: (s) =>
+      (s.depth?.leadsOnBoard?.fresh ? 0.5 : 0) + (s.depth?.leadsOnBoard?.cold ? 0.5 : 0),
+    action: (s) => {
+      const plantOp = s.staff.find((m) => m.role === 'plantOperator')
+      if (plantOp && !s.depth?.leadsOnBoard?.cold) {
+        return { type: 'assignShift', slot: 'mid', staffId: plantOp.id }
+      }
+      const lead = s.staff.find((m) => m.role === 'produceLead')
+      if (lead && !s.depth?.leadsOnBoard?.fresh) {
+        return { type: 'assignShift', slot: 'open', staffId: lead.id }
+      }
+      if (!plantOp) return { type: 'hire', role: 'plantOperator' }
+      return { type: 'hire', role: 'produceLead' }
+    },
   },
   {
     id: 'drain-yield',
     era: 3,
     title: 'Tap out the region',
-    hint: 'More plants drain the regional yield faster.',
-    done: (s) => s.cold.yieldLeft <= 0,
-    progress: (s) => 1 - frac(s.cold.yieldLeft, s.cold.yieldMax),
-    action: () => ({ type: 'buyPlant' }),
+    hint: 'Blast freezers drain the regional yield. Build a tunnel too.',
+    done: (s) =>
+      s.cold.yieldLeft <= 0 &&
+      (s.cold.plantList ?? []).some((p) => p.kind === 'blast') &&
+      (s.cold.plantList ?? []).some((p) => p.kind === 'tunnel'),
+    progress: (s) => {
+      const blast = (s.cold.plantList ?? []).some((p) => p.kind === 'blast') ? 0.25 : 0
+      const tunnel = (s.cold.plantList ?? []).some((p) => p.kind === 'tunnel') ? 0.25 : 0
+      return blast + tunnel + (1 - frac(s.cold.yieldLeft, s.cold.yieldMax)) * 0.5
+    },
+    action: (s) =>
+      !(s.cold.plantList ?? []).some((p) => p.kind === 'blast')
+        ? { type: 'buyPlant', kind: 'blast' }
+        : !(s.cold.plantList ?? []).some((p) => p.kind === 'tunnel')
+          ? { type: 'buyPlant', kind: 'tunnel' }
+          : { type: 'buyPlant', kind: 'blast' },
   },
   {
     id: 'leave-region',
     era: 3,
     title: 'Leave the region',
-    hint: 'File Monopoly Watch and Leave the Region, then pack up.',
+    hint: 'Logs, blast+tunnel, bills, yield empty, then Leave the Region.',
     done: (s) => s.era >= 4,
-    progress: (s) => (memo(s, 'leave-region') ? 0.9 : memo(s, 'monopoly-watch') ? 0.5 : 0.1),
+    progress: (s) =>
+      (s.cold.yieldLeft <= 0 ? 0.2 : 0) +
+      (billsPassed(s) >= 2 ? 0.2 : frac(billsPassed(s), 2) * 0.2) +
+      frac(s.depth?.cooler?.logsSigned ?? 0, DEPTH.coolerLogNeed) * 0.3 +
+      (memo(s, 'leave-region') ? 0.3 : memo(s, 'monopoly-watch') ? 0.15 : 0),
     cash: (s) =>
       !memo(s, 'monopoly-watch')
         ? memoCash(s, 'monopoly-watch')
@@ -195,55 +610,853 @@ export const GOALS: GoalDef[] = [
           ? memoCash(s, 'leave-region')
           : 0,
     action: (s) =>
-      !memo(s, 'monopoly-watch')
-        ? { type: 'buyMemo', id: 'monopoly-watch' }
-        : !memo(s, 'leave-region')
-          ? { type: 'buyMemo', id: 'leave-region' }
-          : { type: 'leaveRegion' },
+      (s.depth?.cooler?.logsSigned ?? 0) < DEPTH.coolerLogNeed
+        ? { type: 'signCoolerLog' }
+        : !memo(s, 'monopoly-watch')
+          ? { type: 'buyMemo', id: 'monopoly-watch' }
+          : !memo(s, 'leave-region')
+            ? { type: 'buyMemo', id: 'leave-region' }
+            : { type: 'leaveRegion' },
     opensEra: 4,
   },
   // ── Era 4 · Globe
   {
     id: 'first-lane',
     era: 4,
-    title: 'Open an ocean lane',
-    hint: 'Fuelled lanes multiply the network.',
-    done: (s) => s.fleet.lanes >= 1,
-    progress: (s) => frac(s.cash, memo(s, 'ocean-lane') ? laneCost(s) : memoCash(s, 'ocean-lane')),
+    title: 'Open a matched lane',
+    hint: 'Pick a route and lock a matching manifest.',
+    done: (s) =>
+      (s.fleet.laneList ?? []).some((l) => {
+        const prefer = l.route === 'spice-route' ? 'import' : l.route === 'cold-line' ? 'frozen' : l.route === 'dry-haul' ? 'household' : 'bakery'
+        return s.depth?.manifests?.[l.id] === prefer
+      }) || matchedLaneDone(s),
+    progress: (s) =>
+      s.fleet.lanes >= 1
+        ? (s.depth?.manifestsRun ?? 0) >= 1
+          ? 1
+          : 0.6
+        : frac(s.cash, memo(s, 'ocean-lane') ? laneCost(s) : memoCash(s, 'ocean-lane')),
     cash: (s) => (memo(s, 'ocean-lane') ? laneCost(s) : memoCash(s, 'ocean-lane')),
-    action: (s) => (!memo(s, 'ocean-lane') ? { type: 'buyMemo', id: 'ocean-lane' } : { type: 'openLane' }),
+    action: (s) =>
+      !memo(s, 'ocean-lane')
+        ? { type: 'buyMemo', id: 'ocean-lane' }
+        : s.fleet.lanes < 1
+          ? { type: 'openLane', route: 'spice-route' }
+          : {
+              type: 'setManifest',
+              laneId: s.fleet.laneList[0]!.id,
+              mix: 'import',
+            },
+  },
+  {
+    id: 'exam-holds',
+    era: 4,
+    title: 'Swear exam holds',
+    hint: 'Lock a matched manifest, then swear the exam before the hold slips.',
+    done: (s) => (s.depth?.dispatch?.examsHeld ?? 0) >= DEPTH.examHoldNeed,
+    progress: (s) => frac(s.depth?.dispatch?.examsHeld ?? 0, DEPTH.examHoldNeed),
+    action: (s) => {
+      if (s.depth?.dispatch?.examLaneId && (s.depth.dispatch.examUntil ?? 0) > s.time) {
+        return { type: 'swearExam' }
+      }
+      const lane = s.fleet.laneList?.[0]
+      if (!lane) return { type: 'openLane', route: 'spice-route' }
+      const prefer =
+        lane.route === 'spice-route'
+          ? 'import'
+          : lane.route === 'cold-line'
+            ? 'frozen'
+            : lane.route === 'dry-haul'
+              ? 'household'
+              : 'bakery'
+      return { type: 'setManifest', laneId: lane.id, mix: prefer }
+    },
+  },
+  {
+    id: 'clean-manifests',
+    era: 4,
+    title: 'File clean manifests',
+    hint: 'Match wet cargo each dispatch cycle — swear exams, then clean filings.',
+    done: (s) => (s.depth?.dispatch?.cleanManifests ?? 0) >= DEPTH.cleanManifestsNeed,
+    progress: (s) => frac(s.depth?.dispatch?.cleanManifests ?? 0, DEPTH.cleanManifestsNeed),
+    action: (s) => {
+      if (s.depth?.dispatch?.examLaneId && (s.depth.dispatch.examUntil ?? 0) > s.time) {
+        return { type: 'swearExam' }
+      }
+      const lane = s.fleet.laneList?.[0]
+      if (!lane) return { type: 'openLane', route: 'spice-route' }
+      const prefer =
+        lane.route === 'spice-route'
+          ? 'import'
+          : lane.route === 'cold-line'
+            ? 'frozen'
+            : lane.route === 'dry-haul'
+              ? 'household'
+              : 'bakery'
+      return { type: 'setManifest', laneId: lane.id, mix: prefer }
+    },
+  },
+  {
+    id: 'hire-logistics',
+    era: 4,
+    title: 'Hire a Dispatcher or Purser',
+    hint: 'Logistics seats open with the first lane.',
+    done: (s) => s.staff.some((m) => m.role === 'dispatcher' || m.role === 'purser'),
+    progress: (s) => (s.staff.some((m) => m.role === 'dispatcher' || m.role === 'purser') ? 1 : 0.2),
+    cash: (s) => hireCost(s, 'dispatcher'),
+    action: () => ({ type: 'hire', role: 'dispatcher' }),
+  },
+  {
+    id: 'franchise-stable',
+    era: 4,
+    title: 'Hold the franchise line',
+    hint: 'Win back one defection, or keep a franchise loyal.',
+    done: (s) =>
+      (s.depth?.defectionsHandled ?? 0) >= 1 ||
+      (s.fleet.franchiseList ?? []).filter((f) => !f.defected).length >= 1,
+    progress: (s) =>
+      (s.depth?.defectionsHandled ?? 0) >= 1
+        ? 1
+        : frac((s.fleet.franchiseList ?? []).filter((f) => !f.defected).length, 1),
+    cash: (s) => franchiseCost(s),
+    action: (s) => {
+      const defected = s.fleet.franchiseList?.find((f) => f.defected)
+      if (defected) return { type: 'winBackFranchise', franchiseId: defected.id }
+      return { type: 'openFranchise' }
+    },
+  },
+  {
+    id: 'globe-planogram',
+    era: 4,
+    title: 'Refile after Import',
+    hint: 'Practice, then credit the flagship layout once Import is unlocked.',
+    done: (s) => !!s.depth?.flagship?.globeCredited,
+    progress: (s) => (s.depth?.flagship?.globeCredited ? 1 : s.categories.import ? 0.4 : 0.1),
+    action: () => ({ type: 'fileStandardFlagship' }),
   },
   {
     id: 'launch',
     era: 4,
     title: 'Launch the seed barges',
-    hint: 'File Barge Berth, bank Read, then launch.',
+    hint: 'Clean manifests, logistics staff, defection held, then Barge Berth.',
     done: (s) => s.era >= 5,
-    progress: (s) => (memo(s, 'barge-berth') ? 0.6 : 0.2),
+    progress: (s) =>
+      frac(s.depth?.dispatch?.cleanManifests ?? 0, DEPTH.cleanManifestsNeed) * 0.4 +
+      (memo(s, 'barge-berth') ? 0.4 : 0.1) +
+      (s.depth?.flagship?.globeCredited ? 0.2 : 0),
     cash: (s) => (memo(s, 'barge-berth') ? bargeCost(s) : memoCash(s, 'barge-berth')),
-    action: (s) => (!memo(s, 'barge-berth') ? { type: 'buyMemo', id: 'barge-berth' } : { type: 'launchBarge' }),
+    action: (s) =>
+      (s.depth?.dispatch?.cleanManifests ?? 0) < DEPTH.cleanManifestsNeed
+        ? (() => {
+            const lane = s.fleet.laneList?.[0]
+            if (!lane) return { type: 'openLane', route: 'spice-route' } as const
+            return {
+              type: 'setManifest' as const,
+              laneId: lane.id,
+              mix: 'import',
+            }
+          })()
+        : !memo(s, 'barge-berth')
+          ? { type: 'buyMemo', id: 'barge-berth' }
+          : { type: 'launchBarge', class: 'hauler' },
     opensEra: 5,
   },
   // ── Era 5 · Seed barges
   {
+    id: 'launch-hauler',
+    era: 5,
+    title: 'Launch a Hauler',
+    hint: 'Haulers clear matching biomass pockets.',
+    done: (s) => (s.fleet.bargeList ?? []).some((b) => b.class === 'hauler') || s.fleet.launched,
+    progress: (s) => (s.fleet.launched ? 1 : 0.3),
+    cash: (s) => bargeCost(s),
+    action: () => ({ type: 'launchBarge', class: 'hauler' }),
+  },
+  {
+    id: 'clear-two-pockets',
+    era: 5,
+    title: 'Clear two pockets',
+    hint: 'Dispatch Haulers on matching Pocket Ops trips.',
+    done: (s) => (s.fleet.pockets ?? []).filter((p) => p.left <= 0).length >= 2,
+    progress: (s) => frac((s.fleet.pockets ?? []).filter((p) => p.left <= 0).length, 2),
+    cash: (s) => bargeCost(s),
+    action: (s) => {
+      const enroute = new Set(
+        (s.fleet.trips ?? []).filter((t) => t.status === 'enroute').map((t) => t.bargeId),
+      )
+      const pocket = (s.fleet.pockets ?? []).find((p) => p.left > 0)
+      const hauler = (s.fleet.bargeList ?? []).find((b) => b.class === 'hauler' && !enroute.has(b.id))
+      if (pocket && hauler) {
+        return {
+          type: 'dispatchHauler' as const,
+          bargeId: hauler.id,
+          pocketId: pocket.id,
+          loadRation: pocket.ration,
+        }
+      }
+      return { type: 'launchBarge' as const, class: 'hauler' as const }
+    },
+  },
+  {
+    id: 'berth-turnarounds',
+    era: 5,
+    title: 'Turn the berth',
+    hint: 'Haulers rest after arrival — each turnaround counts toward Era 6.',
+    done: (s) => (s.depth?.berthTurnarounds ?? 0) >= DEPTH.berthTurnaroundNeed,
+    progress: (s) => frac(s.depth?.berthTurnarounds ?? 0, DEPTH.berthTurnaroundNeed),
+    cash: (s) => bargeCost(s),
+    action: (s) => {
+      const enroute = new Set(
+        (s.fleet.trips ?? []).filter((t) => t.status === 'enroute').map((t) => t.bargeId),
+      )
+      const pocket = (s.fleet.pockets ?? []).find((p) => p.left > 0)
+      const hauler = (s.fleet.bargeList ?? []).find((b) => b.class === 'hauler' && !enroute.has(b.id))
+      if (pocket && hauler) {
+        return {
+          type: 'dispatchHauler' as const,
+          bargeId: hauler.id,
+          pocketId: pocket.id,
+          loadRation: pocket.ration,
+        }
+      }
+      return { type: 'launchBarge' as const, class: 'hauler' as const }
+    },
+  },
+  {
+    id: 'orbit-mid',
+    era: 5,
+    title: 'Orbit on Mid',
+    hint: 'Assign a Pilot, Steward, or Hull Tech to the Mid shift.',
+    done: (s) =>
+      !!s.depth?.orbitMidOnce || (s.depth?.shifts?.daysCoveredMidOrbit ?? 0) >= 1 || s.era >= 6,
+    progress: (s) => (s.depth?.orbitMidOnce ? 1 : 0.3),
+    action: (s) => {
+      const m =
+        s.staff.find((x) => x.role === 'pilot') ??
+        s.staff.find((x) => x.role === 'steward') ??
+        s.staff.find((x) => x.role === 'hullTech')
+      return m
+        ? { type: 'assignShift' as const, slot: 'mid' as const, staffId: m.id }
+        : { type: 'hire' as const, role: 'pilot' as const }
+    },
+  },
+  {
     id: 'clear-biomass',
     era: 5,
-    title: 'Ration the universe',
-    hint: 'More barges harvest faster.',
+    title: 'Four pockets + ration + Hold',
+    hint: 'Clear four pockets via trips, feature ration, Orbit Mid, Hold the drift war.',
     done: (s) => s.era >= 6,
-    progress: (s) => 1 - frac(s.fleet.biomass, s.fleet.biomassMax),
+    progress: (s) => {
+      const cleared = (s.fleet.pockets ?? []).filter((p) => p.left <= 0).length
+      return (
+        Math.min(1, cleared / 4) * 0.5 +
+        (s.depth?.facings?.ration ? 0.15 : 0) +
+        (s.depth?.orbitMidOnce ? 0.15 : 0) +
+        ((s.depth?.driftWar?.step ?? 0) >= 3 ? 0.2 : 0)
+      )
+    },
     cash: (s) => bargeCost(s),
-    action: () => ({ type: 'launchBarge' }),
+    action: (s) => {
+      if (!s.depth?.facings?.ration && s.categories.ration) {
+        return { type: 'setFacing' as const, cat: 'ration' as const, facingId: 'standard-pack' }
+      }
+      if ((s.depth?.driftWar?.step ?? 0) < 3) {
+        return s.fleet.warOn
+          ? { type: 'advanceDriftWar' as const }
+          : { type: 'startDriftWar' as const }
+      }
+      const enroute = new Set(
+        (s.fleet.trips ?? []).filter((t) => t.status === 'enroute').map((t) => t.bargeId),
+      )
+      const pocket = (s.fleet.pockets ?? []).find((p) => p.left > 0)
+      const hauler = (s.fleet.bargeList ?? []).find((b) => b.class === 'hauler' && !enroute.has(b.id))
+      if (pocket && hauler) {
+        return {
+          type: 'dispatchHauler' as const,
+          bargeId: hauler.id,
+          pocketId: pocket.id,
+          loadRation: pocket.ration,
+        }
+      }
+      return { type: 'launchBarge' as const, class: 'hauler' as const }
+    },
     opensEra: 6,
   },
-  // ── Era 6 · Ending
+  // ── Era 6 · The ration door
+  {
+    id: 'stock-ration',
+    era: 6,
+    title: 'Stock ration packs',
+    hint: 'Keep ration on the flagship shelf during the week.',
+    done: (s) =>
+      sumQty(s.shelf, 'ration') + sumQty(s.backroom, 'ration') > 0 || !!s.depth?.facings?.ration,
+    progress: (s) => (s.depth?.facings?.ration ? 0.7 : 0.2),
+    action: () => ({ type: 'setFacing', cat: 'ration', facingId: 'field-kit' }),
+  },
+  {
+    id: 'board-agenda',
+    era: 6,
+    title: 'Resolve a board agenda',
+    hint: 'Meetings still open the door.',
+    done: (s) => (s.stats.boardMeetings ?? 0) >= 1 || s.board.lastResolvedAt > 0,
+    progress: (s) => (s.board.lastResolvedAt > 0 ? 1 : 0.3),
+    action: () => ({ type: 'resolveBoard', agenda: 'expand' }),
+  },
+  {
+    id: 'promote-steward',
+    era: 6,
+    title: 'Promote Steward of the Counter',
+    hint: 'Name a lead before Accept / Continue / Reject.',
+    done: (s) => s.depth?.stewardId != null,
+    progress: (s) => (s.depth?.stewardId != null ? 1 : 0.2),
+    action: (s) => {
+      const lead =
+        s.staff.find((m) => m.role === 'steward') ??
+        s.staff.find((m) => m.role === 'pilot') ??
+        s.staff.find((m) => m.role === 'storeManager') ??
+        s.staff.find((m) => m.role === 'produceLead')
+      return lead ? { type: 'promoteSteward', staffId: lead.id } : { type: 'hire', role: 'steward' }
+    },
+  },
+  {
+    id: 'ration-ledger',
+    era: 6,
+    title: 'Stamp the ration ledger',
+    hint: 'One stamp per shift-day while stars are frozen — Continue needs them all.',
+    done: (s) => (s.depth?.ledgerStamps ?? 0) >= DEPTH.rationLedgerNeed,
+    progress: (s) => frac(s.depth?.ledgerStamps ?? 0, DEPTH.rationLedgerNeed),
+    action: () => ({ type: 'stampLedger' }),
+  },
   {
     id: 'ending',
     era: 6,
-    title: 'Choose an ending',
-    hint: 'Accept, or reject. Both are endings.',
+    title: 'File the ration',
+    hint: 'Stamp the ledger, then Continue into the next aisle.',
     done: (s) => s.endingChoice !== null,
-    progress: () => 0.5,
+    progress: (s) =>
+      frac(s.depth?.ledgerStamps ?? 0, DEPTH.rationLedgerNeed) * 0.6 + (s.endingChoice ? 0.4 : 0.2),
+    action: (s) =>
+      (s.depth?.ledgerStamps ?? 0) < DEPTH.rationLedgerNeed
+        ? { type: 'stampLedger' }
+        : { type: 'continueHorizon' },
+  },
+  // ── Era 7 · Pantry of Worlds
+  {
+    id: 'probe-yard-memo',
+    era: 7,
+    title: 'Sign the Probe Yard',
+    hint: 'Buy Probe Yard on the memo desk before the first throw.',
+    done: (s) => (s.memos['probe-yard'] ?? 0) > 0 || (s.horizon?.planets.length ?? 0) >= 1,
+    progress: (s) => ((s.memos['probe-yard'] ?? 0) > 0 ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'buyMemo', id: 'probe-yard' }),
+  },
+  {
+    id: 'first-probe',
+    era: 7,
+    title: 'Probe the Pantry',
+    hint: 'Launch a probe. The Pantry answers first.',
+    done: (s) => (s.horizon?.planets.length ?? 0) >= 1,
+    progress: (s) => ((s.horizon?.planets.length ?? 0) >= 1 ? 1 : 0),
+    cash: (s) => probeCost(s),
+    action: () => ({ type: 'launchProbe' }),
+  },
+  {
+    id: 'first-broadcast',
+    era: 7,
+    title: 'Air a climate',
+    hint: 'Marketing › Broadcast. Stock a world first, then put its climate on the air.',
+    done: (s) =>
+      s.era > 7 || Object.values(s.late?.broadcasts ?? {}).some((n) => (n ?? 0) > 0),
+    progress: (s) => (Object.values(s.late?.broadcasts ?? {}).some((n) => (n ?? 0) > 0) ? 1 : 0),
+    cash: () => 0,
+    action: (s) => {
+      const climate = broadcastClimates(s)[0]
+      return climate ? { type: 'broadcast', climate } : { type: 'launchProbe' }
+    },
+  },
+  {
+    id: 'first-franchise',
+    era: 7,
+    title: 'Franchise a world',
+    hint: 'Stock a world, then put your name over an outpost door.',
+    done: (s) => s.era > 7 || (s.late?.planetFranchises ?? 0) >= 1,
+    progress: (s) => ((s.late?.planetFranchises ?? 0) >= 1 ? 1 : stockedCount(s) >= 1 ? 0.5 : 0),
+    cash: () => 0,
+    action: (s) => {
+      if (stockedCount(s) >= 1) return { type: 'openPlanetFranchise' }
+      const open = s.horizon?.planets.find((p) => p.revealed && !p.stocked)
+      return open ? { type: 'fileStandardPlanogram', planetId: open.id } : { type: 'launchProbe' }
+    },
+  },
+  {
+    id: 'survey-on-shift',
+    era: 7,
+    title: 'Put Survey on a shift',
+    hint: 'Assign a Surveyor or Planogram Clerk to the Shift Board once.',
+    done: (s) => s.era > 7 || !!s.depth?.surveyShiftOnce,
+    progress: (s) => (s.depth?.surveyShiftOnce ? 1 : 0.3),
+    cash: () => 0,
+    action: (s) => {
+      const m =
+        s.staff.find((x) => x.role === 'surveyor') ?? s.staff.find((x) => x.role === 'planogramClerk')
+      if (m) return { type: 'assignShift', slot: 'open', staffId: m.id }
+      return { type: 'hire', role: 'surveyor' }
+    },
+  },
+  {
+    id: 'climate-neighbors',
+    era: 7,
+    title: 'Serve climate neighbors',
+    hint: 'Stock a world, then serve its climate neighbor on a cooldown.',
+    done: (s) => (s.horizon?.climateServed ?? 0) >= HORIZON.climateServeNeed,
+    progress: (s) => frac(s.horizon?.climateServed ?? 0, HORIZON.climateServeNeed),
+    action: () => ({ type: 'serveClimateNeighbor' }),
+  },
+  {
+    id: 'four-worlds',
+    era: 7,
+    title: 'Open the exchange',
+    hint: 'Climate neighbors + practice shelves. Fast: 4 at 0.85. Slow: 8 credited at 0.72.',
+    done: (s) => s.era >= 8,
+    progress: (s) => {
+      const prac = s.depth?.practice?.planogram
+      const practiceFrac =
+        prac && HORIZON.practicePerLayer > 0
+          ? (HORIZON.practicePerLayer - prac.left) / HORIZON.practicePerLayer
+          : 1
+      const scores = (s.horizon?.planets ?? []).filter((p) => p.stocked).map((p) => p.score)
+      const fast = scores.filter((x) => x >= 0.85).length / 4
+      const slow = (prac?.credited ?? 0) / HORIZON.slowWorlds
+      const survey = s.depth?.surveyShiftOnce ? 1 : 0.4
+      const climate = frac(s.horizon?.climateServed ?? 0, HORIZON.climateServeNeed)
+      return Math.min(
+        1,
+        Math.max(fast, slow) * 0.55 + practiceFrac * 0.15 + survey * 0.1 + climate * 0.2,
+      )
+    },
+    cash: (s) => {
+      const waiting = s.horizon?.planets.some((p) => p.revealed && !p.stocked)
+      return waiting ? 0 : probeCost(s)
+    },
+    action: (s) => {
+      if ((s.horizon?.climateServed ?? 0) < HORIZON.climateServeNeed) {
+        return { type: 'serveClimateNeighbor' }
+      }
+      if (!s.depth?.surveyShiftOnce) {
+        const m =
+          s.staff.find((x) => x.role === 'surveyor') ?? s.staff.find((x) => x.role === 'planogramClerk')
+        if (m) return { type: 'assignShift', slot: 'open', staffId: m.id }
+        return { type: 'hire', role: 'surveyor' }
+      }
+      const open = s.horizon?.planets.find((p) => p.revealed && !p.stocked)
+      if (open) return { type: 'fileStandardPlanogram', planetId: open.id }
+      const stocked = s.horizon?.planets.find((p) => p.stocked)
+      if (stocked && (s.depth?.practice?.planogram.left ?? 0) > 0) {
+        return { type: 'fileStandardPlanogram', planetId: stocked.id }
+      }
+      if (stocked && (s.depth?.practice?.planogram.credited ?? 0) < HORIZON.slowWorlds) {
+        return { type: 'fileStandardPlanogram', planetId: stocked.id }
+      }
+      return { type: 'launchProbe' }
+    },
+    opensEra: 8,
+  },
+  {
+    id: 'hire-planogram-clerk',
+    era: 7,
+    title: 'Hire a Planogram Clerk',
+    hint: 'Survey desk — proposes a 0.85 shelf beside the Surveyor.',
+    done: (s) => s.era > 7 || s.staff.some((m) => m.role === 'planogramClerk'),
+    progress: (s) => (s.staff.some((m) => m.role === 'planogramClerk') ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'hire', role: 'planogramClerk' }),
+  },
+  // ── Era 8 · Exchange
+  {
+    id: 'first-circuit',
+    era: 8,
+    title: 'File a circuit',
+    hint: 'One route at the standard score (~0.72).',
+    done: (s) => (s.horizon?.circuits.some((c) => c.score >= 0.72) ?? false),
+    progress: (s) => (s.horizon?.circuits.length ? Math.min(1, (s.horizon.circuits[0]?.score ?? 0) / 0.72) : 0),
+    cash: () => 0,
+    action: () => ({ type: 'fileStandardConvoy' }),
+  },
+  {
+    id: 'bonded-unpack',
+    era: 8,
+    title: 'Unpack a bonded crate',
+    hint: 'Pick dry, chill, or fragile from the bonded cage.',
+    done: (s) => s.era > 8 || (s.late?.unpacked ?? 0) >= 1,
+    progress: (s) => ((s.late?.unpacked ?? 0) >= 1 ? 1 : Math.min(0.9, (s.bonded?.crates ?? 0))),
+    cash: () => 0,
+    action: () => ({ type: 'unpackBonded', count: 1, kind: 'dry' }),
+  },
+  {
+    id: 'wire-ad-goal',
+    era: 10,
+    title: 'Run a wire ad',
+    hint: 'Spend signal on Marketing › Wire ad once a relay is lit.',
+    done: (s) => s.era > 10 || (s.late?.wireAdsUntil ?? 0) > 0,
+    progress: (s) => ((s.late?.wireAdsUntil ?? 0) > 0 ? 1 : (s.horizon?.relays ?? 0) >= 1 ? 0.5 : 0),
+    cash: () => 0,
+    action: (s) =>
+      (s.horizon?.relays ?? 0) < 1 ? { type: 'buyRelay' } : { type: 'wireAd' },
+  },
+  {
+    id: 'stop-settlements',
+    era: 8,
+    title: 'Settle the stops',
+    hint: 'After each credited circuit, wait the ETA then settle the stop.',
+    done: (s) => (s.horizon?.settlements ?? 0) >= HORIZON.settlementNeed,
+    progress: (s) => frac(s.horizon?.settlements ?? 0, HORIZON.settlementNeed),
+    action: () => ({ type: 'settleStop' }),
+  },
+  {
+    id: 'three-circuits',
+    era: 8,
+    title: 'Open cultivars',
+    hint: 'Settlements + practice convoys. Fast: 3 at 0.85 with a Stevedore. Slow: credited at 0.72.',
+    done: (s) => s.era >= 9,
+    progress: (s) => {
+      const prac = s.depth?.practice?.convoy
+      const scores = (s.horizon?.circuits ?? []).map((c) => c.score)
+      const fast = scores.filter((x) => x >= 0.85).length / 3
+      const slow = (prac?.credited ?? 0) / HORIZON.slowCircuits
+      const settled = frac(s.horizon?.settlements ?? 0, HORIZON.settlementNeed)
+      return Math.min(1, Math.max(fast, slow) * 0.7 + settled * 0.3)
+    },
+    cash: () => 0,
+    action: (s) =>
+      (s.horizon?.settlements ?? 0) < HORIZON.settlementNeed && (s.horizon?.settlementUntil ?? 0) > 0
+        ? { type: 'settleStop' }
+        : { type: 'fileStandardConvoy' },
+    opensEra: 9,
+  },
+  {
+    id: 'hire-stevedore',
+    era: 8,
+    title: 'Hire a Stevedore',
+    hint: 'Makes a 0.85 packing stick beside the Broker.',
+    done: (s) => s.era > 8 || s.staff.some((m) => m.role === 'stevedore'),
+    progress: (s) => (s.staff.some((m) => m.role === 'stevedore') ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'hire', role: 'stevedore' }),
+  },
+  {
+    id: 'first-planting',
+    era: 9,
+    title: 'Plant a cross',
+    hint: 'One bed with a child. Standard cross is a weak year.',
+    done: (s) => s.horizon?.plots.some((p) => p.child.length > 0) ?? false,
+    progress: (s) => (s.horizon?.plots.some((p) => p.child.length > 0) ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'fileStandardCross' }),
+  },
+  {
+    id: 'season-chore',
+    era: 9,
+    title: 'Do a season chore',
+    hint: 'This season’s chore on the Shift Board — or a Season Hand on shift saves a miss.',
+    done: (s) => s.era > 9 || !!s.horizon?.seasonChore || (s.horizon?.weakYears ?? 0) >= 1,
+    progress: (s) => (s.horizon?.seasonChore || (s.horizon?.weakYears ?? 0) >= 1 ? 1 : 0),
+    cash: () => 0,
+    action: (s) => {
+      const chore = (['water', 'cover', 'harvest', 'rest'] as const)[(s.horizon?.season ?? 0) % 4]!
+      return { type: 'doSeasonChore', chore }
+    },
+  },
+  {
+    id: 'vault-seed-goal',
+    era: 9,
+    title: 'Vault some seed',
+    hint: 'Build the Seed Vault, then bank seed in the Backroom.',
+    done: (s) => s.era > 9 || (s.seedVault?.held ?? 0) >= 1,
+    progress: (s) => ((s.seedVault?.held ?? 0) >= 1 ? 1 : (s.builds.storage ?? 0) >= 7 ? 0.5 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'vaultSeed', amount: 1 }),
+  },
+  {
+    id: 'cryo-treaty-goal',
+    era: 9,
+    title: 'Sign a Cryo Treaty',
+    hint: 'Cold › Cryo Treaty. Plants stay warm while the seal holds.',
+    done: (s) => s.era > 9 || (s.late?.cryoImmuneUntil ?? 0) > 0,
+    progress: (s) => ((s.late?.cryoImmuneUntil ?? 0) > 0 ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'cryoTreaty' }),
+  },
+  {
+    id: 'council-seat',
+    era: 9,
+    title: 'Seat the Council',
+    hint: 'Buy a first seat from Politics. Seats pay the network and draw scrutiny.',
+    done: (s) => s.era > 9 || (s.politics?.acquisitions ?? 0) >= 1,
+    progress: (s) => ((s.politics?.acquisitions ?? 0) >= 1 ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'acquireRegion' }),
+  },
+  {
+    id: 'yield-hauls',
+    era: 9,
+    title: 'Haul the yield',
+    hint: 'Season chore arms a haul — bring it in before the season turns.',
+    done: (s) => (s.horizon?.haulsDone ?? 0) >= HORIZON.yieldHaulNeed,
+    progress: (s) => frac(s.horizon?.haulsDone ?? 0, HORIZON.yieldHaulNeed),
+    action: (s) => {
+      if ((s.horizon?.haulUntil ?? 0) > 0) return { type: 'haulYield' }
+      const chore = (['water', 'cover', 'harvest', 'rest'] as const)[(s.horizon?.season ?? 0) % 4]!
+      return { type: 'doSeasonChore', chore }
+    },
+  },
+  {
+    id: 'full-year',
+    era: 9,
+    title: 'Open the signal',
+    hint: 'Yield hauls + named cultivar ≥ 0.85, or 4 seasons and 2 weak years.',
+    done: (s) => s.era >= 10,
+    progress: (s) => {
+      const named = Math.min(1, (s.horizon?.namedBest ?? 0) / 0.85)
+      const slow = Math.min(1, ((s.horizon?.seasonsSeen ?? 0) / 4 + (s.horizon?.weakYears ?? 0) / 2) / 2)
+      const hauls = frac(s.horizon?.haulsDone ?? 0, HORIZON.yieldHaulNeed)
+      return Math.min(1, Math.max(named, slow) * 0.7 + hauls * 0.3)
+    },
+    cash: () => 0,
+    action: (s) =>
+      (s.horizon?.haulsDone ?? 0) < HORIZON.yieldHaulNeed
+        ? (s.horizon?.haulUntil ?? 0) > 0
+          ? { type: 'haulYield' }
+          : {
+              type: 'doSeasonChore',
+              chore: (['water', 'cover', 'harvest', 'rest'] as const)[(s.horizon?.season ?? 0) % 4]!,
+            }
+        : { type: 'fileStandardCross' },
+    opensEra: 10,
+  },
+  // ── Era 10 · Signal
+  {
+    id: 'first-phrase',
+    era: 10,
+    title: 'File a phrase',
+    hint: 'Standard is 3/4 (~0.72). Grammar binds neighbours.',
+    done: (s) => (s.horizon?.phrasesCleared ?? 0) >= 1,
+    progress: (s) => ((s.horizon?.phrasesCleared ?? 0) >= 1 ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'fileStandardPhrase' }),
+  },
+  {
+    id: 'first-instrument',
+    era: 10,
+    title: 'File an instrument',
+    hint: 'Invest › Planet Bonds. Cash becomes survey, slowly.',
+    done: (s) =>
+      s.era > 10 || Object.values(s.late?.instruments ?? {}).some((n) => n > 0),
+    progress: (s) => (Object.values(s.late?.instruments ?? {}).some((n) => n > 0) ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'buyInstrument', id: 'planet-bonds' }),
+  },
+  {
+    id: 'habit-watches',
+    era: 10,
+    title: 'Watch the habits',
+    hint: 'After each credited phrase, wait out the habit watch.',
+    done: (s) => (s.horizon?.watchedPhrases ?? 0) >= HORIZON.habitWatchNeed,
+    progress: (s) => frac(s.horizon?.watchedPhrases ?? 0, HORIZON.habitWatchNeed),
+    action: () => ({ type: 'fileStandardPhrase' }),
+  },
+  {
+    id: 'first-agent',
+    era: 10,
+    title: 'Open the charter',
+    hint: 'Habit watches + phrases. Fast: perfect + habit. Slow: credited phrases, relay, agent.',
+    done: (s) => s.era >= 11,
+    progress: (s) => {
+      const credited = s.depth?.practice?.phrase.credited ?? 0
+      const slow = Math.min(1, credited / HORIZON.slowPhrases)
+      const fast =
+        (s.horizon?.perfectPhrases ?? 0) >= 1 && s.horizon?.phraseHabitMatch ? 1 : slow * 0.5
+      const desk =
+        ((s.horizon?.relays ?? 0) >= 1 ? 0.25 : 0) + ((s.horizon?.agents.length ?? 0) >= 1 ? 0.25 : 0)
+      const watched = frac(s.horizon?.watchedPhrases ?? 0, HORIZON.habitWatchNeed)
+      return Math.min(1, Math.max(fast, slow) * 0.55 + desk + watched * 0.2)
+    },
+    cash: (s) => ((s.horizon?.relays ?? 0) >= 1 ? 0 : relayCost(s)),
+    action: (s) =>
+      (s.horizon?.relays ?? 0) < 1
+        ? { type: 'buyRelay' }
+        : (s.horizon?.agents.length ?? 0) < 1
+          ? { type: 'hireAgent', habit: 'price' }
+          : { type: 'fileStandardPhrase' },
+    opensEra: 11,
+  },
+  {
+    id: 'hire-night-operator',
+    era: 10,
+    title: 'Hire a Night Operator',
+    hint: 'Some phrases only clear at night.',
+    done: (s) => s.era > 10 || s.staff.some((m) => m.role === 'nightOperator'),
+    progress: (s) => (s.staff.some((m) => m.role === 'nightOperator') ? 1 : 0),
+    cash: () => 0,
+    action: () => ({ type: 'hire', role: 'nightOperator' }),
+  },
+  // ── Era 11 · Charter
+  {
+    id: 'three-clauses',
+    era: 11,
+    title: 'Keep four clauses',
+    hint: 'Keep 4. Some grudges cancel; some stack. Read the pair.',
+    done: (s) => (s.horizon?.clauses.length ?? 0) >= 4,
+    progress: (s) => Math.min(1, (s.horizon?.clauses.length ?? 0) / 4),
+    cash: () => 0,
+    action: (s) => {
+      const have = s.horizon?.clauses ?? []
+      const next = (['open-hours', 'local-shelf', 'one-price', 'cold-law'] as const).find(
+        (id) => !have.includes(id),
+      )
+      return next ? { type: 'toggleClause', id: next } : null
+    },
+  },
+  {
+    id: 'answer-hearing',
+    era: 11,
+    title: 'Clear the hearing docket',
+    hint: 'Concord files 2–3 rival clauses over sessions — answer each before you sign.',
+    done: (s) => {
+      const h = s.depth?.hearing
+      if (!h) return s.era > 11 || !!s.depth?.hearingAnswered
+      return s.era > 11 || (h.answered >= h.needed && !h.pendingClause)
+    },
+    progress: (s) => {
+      const h = s.depth?.hearing
+      if (!h) return s.depth?.hearingAnswered ? 1 : 0.4
+      return Math.min(1, h.answered / Math.max(1, h.needed))
+    },
+    cash: () => 0,
+    action: () => ({ type: 'answerHearing' }),
+  },
+  {
+    id: 'council-quorum',
+    era: 11,
+    title: 'Hold a quorum',
+    hint: 'Four Council seats. The room starts to listen.',
+    done: (s) => s.era > 11 || (s.politics?.acquisitions ?? 0) >= 4,
+    progress: (s) => Math.min(1, (s.politics?.acquisitions ?? 0) / 4),
+    cash: () => 0,
+    action: () => ({ type: 'acquireRegion' }),
+  },
+  {
+    id: 'clause-seatings',
+    era: 11,
+    title: 'Seat the clauses',
+    hint: 'Keep a clause, wait the seal ETA, then seat it — gap before the next.',
+    done: (s) => (s.horizon?.seatingsDone ?? 0) >= HORIZON.clauseSeatingNeed,
+    progress: (s) => frac(s.horizon?.seatingsDone ?? 0, HORIZON.clauseSeatingNeed),
+    action: (s) => {
+      if ((s.horizon?.seatingUntil ?? 0) > 0) return { type: 'seatClause' }
+      const have = s.horizon?.clauses ?? []
+      const next = (['open-hours', 'local-shelf', 'one-price', 'cold-law'] as const).find(
+        (id) => !have.includes(id),
+      )
+      return next ? { type: 'toggleClause', id: next } : { type: 'seatClause' }
+    },
+  },
+  {
+    id: 'charter-signed',
+    era: 11,
+    title: 'Sign the charter',
+    hint: 'Seatings + charter + four clauses open the Last Aisle.',
+    done: (s) => s.era >= 12,
+    progress: (s) =>
+      (s.horizon?.charter ? 0.35 : 0) +
+      Math.min(0.35, (s.horizon?.clauses.length ?? 0) / 4 / 2) +
+      frac(s.horizon?.seatingsDone ?? 0, HORIZON.clauseSeatingNeed) * 0.3,
+    cash: () => 0,
+    action: (s) => {
+      if ((s.horizon?.seatingsDone ?? 0) < HORIZON.clauseSeatingNeed) {
+        if ((s.horizon?.seatingUntil ?? 0) > 0) return { type: 'seatClause' }
+        const have = s.horizon?.clauses ?? []
+        const next = (['open-hours', 'local-shelf', 'one-price', 'cold-law'] as const).find(
+          (id) => !have.includes(id),
+        )
+        return next ? { type: 'toggleClause', id: next } : { type: 'seatClause' }
+      }
+      if ((s.horizon?.clauses.length ?? 0) < 4) {
+        const have = s.horizon?.clauses ?? []
+        const next = (['open-hours', 'local-shelf', 'one-price', 'cold-law'] as const).find(
+          (id) => !have.includes(id),
+        )
+        return next ? { type: 'toggleClause', id: next } : { type: 'setCharter', charter: 'standard' }
+      }
+      const docket = s.depth?.hearing
+      if (
+        s.horizon?.hearingClause ||
+        docket?.pendingClause ||
+        (docket && docket.answered < docket.needed)
+      ) {
+        return { type: 'answerHearing' }
+      }
+      return { type: 'setCharter', charter: 'standard' }
+    },
+    opensEra: 12,
+  },
+  // ── Era 12 · Last aisle
+  {
+    id: 'last-list',
+    era: 12,
+    title: 'File the list',
+    hint: 'Standard mean ~0.75. Accept wants 0.85 after rehearsal.',
+    done: (s) => (s.horizon?.listScore ?? 0) >= 0.75,
+    progress: (s) => Math.min(1, (s.horizon?.listScore ?? 0) / 0.75),
+    cash: () => 0,
+    action: () => ({ type: 'fileStandardList' }),
+  },
+  {
+    id: 'accept-rehearsal',
+    era: 12,
+    title: 'Rehearse Accept',
+    hint: 'Finish list practice, then one clever fill and a desk gap before Accept.',
+    done: (s) =>
+      !!s.horizon?.acceptRehearsal && (s.horizon?.acceptRehearsalUntil ?? 0) <= s.time,
+    progress: (s) =>
+      s.horizon?.acceptRehearsal
+        ? (s.horizon.acceptRehearsalUntil ?? 0) <= s.time
+          ? 1
+          : 0.6
+        : (s.horizon?.listScore ?? 0) >= 0.85
+          ? 0.4
+          : 0.1,
+    action: () => ({ type: 'rehearseAccept' }),
+  },
+  {
+    id: 'franchise-every-world',
+    era: 12,
+    title: 'Franchise every world',
+    hint: 'One outpost per stocked world. The store outlives the list.',
+    done: (s) => stockedCount(s) >= 1 && (s.late?.planetFranchises ?? 0) >= stockedCount(s),
+    progress: (s) => Math.min(1, (s.late?.planetFranchises ?? 0) / Math.max(1, stockedCount(s))),
+    cash: () => 0,
+    action: () => ({ type: 'openPlanetFranchise' }),
+  },
+  {
+    id: 'horizon-ending',
+    era: 12,
+    title: 'Answer the list',
+    hint: 'Rehearse, then Accept the standing order — or refuse it twice.',
+    done: (s) => s.horizon?.ending != null,
+    progress: (s) =>
+      s.horizon?.ending
+        ? 1
+        : s.horizon?.acceptRehearsal && (s.horizon.acceptRehearsalUntil ?? 0) <= s.time
+          ? 0.85
+          : (s.horizon?.listScore ?? 0) >= 0.85
+            ? 0.5
+            : 0.2,
+    cash: () => 0,
+    action: (s) =>
+      !s.horizon?.acceptRehearsal || (s.horizon.acceptRehearsalUntil ?? 0) > s.time
+        ? { type: 'rehearseAccept' }
+        : { type: 'acceptLastAisle' },
   },
 ]
 

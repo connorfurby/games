@@ -1,0 +1,147 @@
+@layer panels {
+  /* Size queries live on the frame; rules target .hub-stage inside it. */
+  .hub-frame {
+    container-type: inline-size;
+    container-name: hub;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hub-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0.35rem 0 0;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hub-stage__scene,
+  .hub-stage__primary,
+  .hub-stage__body {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .hub-stage__scene > .rm,
+  .hub-stage__scene > .sf,
+  .hub-stage__scene > .hz-scene,
+  .hub-stage__scene > .hz-shelf,
+  .hub-stage__scene > .hz-pins,
+  .hub-stage__scene .rm,
+  .hub-stage__scene .mu-gallery {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hub-stage__scene .rm-svg,
+  .hub-stage__scene .sf svg,
+  .hub-stage__scene .mu-gallery__bg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Stack: CTA first, room under — phone and narrow main columns. */
+  .hub-stage--stack .hub-stage__primary,
+  .hub-stage--split .hub-stage__primary {
+    order: -1;
+  }
+
+  .hub-stage--stack .hub-stage__scene .rm-svg,
+  .hub-stage--stack .hub-stage__scene .sf svg,
+  .hub-stage--split .hub-stage__scene .rm-svg,
+  .hub-stage--split .hub-stage__scene .sf svg {
+    max-height: min(18rem, 36vh);
+  }
+
+  .hub-stage__primary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    overflow-wrap: anywhere;
+  }
+
+  .hub-stage__primary .gk-card,
+  .hub-stage__primary .ge-card,
+  .hub-stage__primary .lh-callout,
+  .hub-stage__primary .mu-chests,
+  .hub-stage__primary .hz-goal {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .hub-stage__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .hub-stage__scene > .ge-status-band {
+    margin-bottom: 0.35rem;
+  }
+
+  @media (max-width: 519px) {
+    .hub-stage--stack .hub-stage__scene .rm-svg,
+    .hub-stage--stack .hub-stage__scene .sf svg,
+    .hub-stage--split .hub-stage__scene .rm-svg,
+    .hub-stage--split .hub-stage__scene .sf svg {
+      max-height: min(12rem, 32vh);
+    }
+  }
+
+  /*
+   * Split on the panel's own width — not the viewport.
+   * Rail + memos often leave main <900px while the window is wide.
+   */
+  @container hub (min-width: 640px) {
+    .hub-stage--split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(14rem, 20rem);
+      grid-template-areas:
+        'scene primary'
+        'rest rest';
+      gap: 0.65rem 0.85rem;
+      align-items: start;
+    }
+
+    .hub-stage--split:not(:has(.hub-stage__body)) {
+      grid-template-areas: 'scene primary';
+    }
+
+    .hub-stage--split .hub-stage__scene {
+      grid-area: scene;
+      order: 0;
+    }
+
+    .hub-stage--split .hub-stage__primary {
+      grid-area: primary;
+      align-self: stretch;
+      order: 0;
+    }
+
+    .hub-stage--split .hub-stage__body {
+      grid-area: rest;
+    }
+
+    .hub-stage--split .hub-stage__scene .rm-svg,
+    .hub-stage--split .hub-stage__scene .sf svg {
+      max-height: min(16rem, 34vh);
+    }
+  }
+
+  @container hub (min-width: 900px) {
+    .hub-stage--split {
+      grid-template-columns: minmax(0, 1.55fr) minmax(16rem, 24rem);
+      gap: 0.75rem 1rem;
+    }
+
+    .hub-stage--split .hub-stage__scene .rm-svg,
+    .hub-stage--split .hub-stage__scene .sf svg {
+      max-height: min(18rem, 38vh);
+    }
+  }
+}

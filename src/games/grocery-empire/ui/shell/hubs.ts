@@ -2,11 +2,12 @@ import type { MenuId } from '../../content/menus'
 import type { IconName } from '../icons/Icon'
 
 /**
- * 2.0 navigation: five hubs replace the 19-tab rail. Each hub shows only the
- * departments you have unlocked, so Era 0 is one hub and Era 6 is five.
+ * 2.0 navigation: hubs replace the 19-tab rail. Each hub shows only the
+ * departments you have unlocked, so Era 0 is one hub, Era 6 is five, and
+ * Eras 7+ add Worlds (Museum is always the last hub once unlocked).
  * Coach and More live in the HUD menu; Memos live in the Inbox drawer.
  */
-export type HubId = 'store' | 'supply' | 'team' | 'money' | 'empire' | 'museum'
+export type HubId = 'store' | 'supply' | 'team' | 'money' | 'empire' | 'worlds' | 'museum'
 
 export interface HubDef {
   id: HubId
@@ -54,6 +55,13 @@ export const HUBS: HubDef[] = [
     menus: ['empire', 'map', 'upgrades', 'strategy', 'land', 'fleet'],
   },
   {
+    id: 'worlds',
+    name: 'Worlds',
+    purpose: 'Worlds beyond the ration: planets, routes, seasons, signals, and the charter.',
+    icon: 'empire',
+    menus: ['planets', 'exchange', 'cultivars', 'signal', 'charter', 'lastaisle'],
+  },
+  {
     id: 'museum',
     name: 'Museum',
     purpose: 'Relics from every run, chests to open, and a wall to fill.',
@@ -73,4 +81,46 @@ export const SIDE_MENUS: MenuId[] = ['coach', 'more']
 export function hubOf(menu: MenuId): HubId | null {
   for (const h of HUBS) if (h.menus.includes(menu)) return h.id
   return null
+}
+
+/** Early hubs that always prefer the phone bottom bar. */
+export const PRIMARY_HUBS: HubId[] = ['store', 'supply', 'team', 'money']
+
+/**
+ * Phone bottom bar: Store · Supply · Team · Money, plus a Hubs overflow for
+ * Empire / Worlds / Museum. Money stays on the bar when Worlds unlocks.
+ */
+export function phoneBarHubs(unlocked: readonly HubId[]): HubId[] {
+  const have = new Set(unlocked)
+  const bar: HubId[] = []
+  for (const id of PRIMARY_HUBS) {
+    if (have.has(id)) bar.push(id)
+  }
+  return bar
+}
+
+/** Hubs that sit behind the phone "Hubs" sheet (Empire, Worlds, Museum). */
+export function overflowHubs(unlocked: readonly HubId[]): HubId[] {
+  const have = new Set(unlocked)
+  const out: HubId[] = []
+  for (const id of ['empire', 'worlds', 'museum'] as const) {
+    if (have.has(id)) out.push(id)
+  }
+  return out
+}
+
+/** Menu → the `data-coach-id` its hub button / sub-tab carries. */
+export const MENU_COACH: Partial<Record<MenuId, string>> = {
+  staff: 'menu-staff',
+  build: 'menu-build',
+  upgrades: 'menu-upgrades',
+  ventures: 'menu-ventures',
+  suppliers: 'menu-suppliers',
+  land: 'menu-land',
+  empire: 'menu-empire',
+  strategy: 'menu-strategy',
+  cold: 'menu-cold',
+  politics: 'menu-politics',
+  logistics: 'menu-logistics',
+  fleet: 'menu-fleet',
 }

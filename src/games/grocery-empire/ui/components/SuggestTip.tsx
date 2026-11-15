@@ -21,7 +21,7 @@ function goLabel(tip: Suggestion): string {
   return `Open ${channelLabel(tip.channel)}`
 }
 
-/** Polished next-buy strip — progression only. */
+/** One-line next-buy strip — progression only. Hidden by the shell when it fights Next Goal. */
 export function SuggestTip({
   tip,
   reducedMotion,
@@ -40,31 +40,23 @@ export function SuggestTip({
   const doLabel = tip.cta ?? 'Buy'
 
   return (
-    <div className="ge-suggest-tip" aria-live="polite">
+    <div className="ge-suggest-tip ge-suggest-tip--line" aria-live="polite">
       <AnimatePresence mode="wait">
         <motion.div
           key={tip.id}
-          className={`ge-suggest-tip__card ge-suggest-tip__card--${tip.kind}`}
-          initial={reducedMotion ? false : { opacity: 0, y: -5 }}
+          className={`ge-suggest-tip__card ge-suggest-tip__card--line ge-suggest-tip__card--${tip.kind}`}
+          initial={reducedMotion ? false : { opacity: 0, y: -3 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={reducedMotion ? undefined : { opacity: 0, y: 3 }}
-          transition={{ duration: reducedMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+          exit={reducedMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="ge-suggest-tip__rule" aria-hidden />
-          <header className="ge-suggest-tip__head">
-            <p className="ge-suggest-tip__eyebrow">
-              Suggested next
-              <span className="ge-suggest-tip__sep" aria-hidden>
-                /
-              </span>
-              <span className="ge-suggest-tip__kind">{kind}</span>
-            </p>
-            <span className="ge-suggest-tip__where">{where}</span>
-          </header>
-          <div className="ge-suggest-tip__body">
+          <p className="ge-suggest-tip__line">
+            <span className="ge-suggest-tip__eyebrow">
+              Suggested · {kind}
+            </span>
             <strong className="ge-suggest-tip__title">{tip.title}</strong>
-            <p className="ge-suggest-tip__blurb">{tip.blurb}</p>
-          </div>
+            <span className="ge-suggest-tip__where">{where}</span>
+          </p>
           <div className="ge-suggest-tip__actions">
             <button
               type="button"
@@ -94,4 +86,17 @@ export function SuggestTip({
 export function channelToMenu(channel: Suggestion['channel']): MenuId | null {
   if (channel === 'memos') return null
   return channel
+}
+
+/** True when the tip already matches the Next Goal verb (or there is no goal action). */
+export function tipAlignsWithGoal(
+  tip: Suggestion | null,
+  goalAction: Command | null,
+  goalMenu: MenuId | 'memos' | null,
+): boolean {
+  if (!tip) return false
+  if (!goalAction) return true
+  if (tip.action && tip.action.type === goalAction.type) return true
+  const tipMenu = tip.channel === 'memos' ? 'memos' : channelToMenu(tip.channel)
+  return !!goalMenu && tipMenu === goalMenu
 }

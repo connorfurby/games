@@ -1,24 +1,29 @@
 import { useState } from 'react'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
-import { can } from '../../sim/commands'
+import { can, type Command } from '../../sim/commands'
 import { backroomCap, batchSpoilFrac, effectiveLife } from '../../sim/formulas'
 import { sumQty } from '../../sim/helpers'
+import { bondedCap, seedVaultCap } from '../../sim/systems/late'
 import { useGame } from '../GameContext'
 import { clock, qty } from '../format'
-import { Btn } from '../components/Btn'
-import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { HelpCard } from '../components/HelpCard'
 import { MixPriority } from '../components/MixPriority'
-import { Panel } from '../components/Panel'
-import { BackroomBand } from '../scenes/DepartmentBands'
-import { DeptDiorama } from '../scenes/DeptDiorama'
+import { Icon } from '../icons/Icon'
+import { Button, Chip, Disclosure, EmptyState, Meter, useConfirm } from '../kit'
+import { PlayFrame } from '../play'
+import { BackroomScene } from '../scenes/live/BackroomScene'
+import './backroom.css'
 
 const PARTIAL_DUMP = 10
+const VAULT_CHUNK = 5
+
+/** Late-era commands may not be in the Command union yet; unknown types fail `can()` cleanly. */
+const lateCmd = (cmd: { type: string; [k: string]: unknown }) => cmd as unknown as Command
 
 export function BackroomPanel() {
-  const { state: s, dispatch, reducedMotion } = useGame()
-  const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
+  const { state: s, dispatch } = useGame()
+  const confirm = useConfirm()
   const [dumpCat, setDumpCat] = useState<CategoryId | null>(null)
+  const [showPerish, setShowPerish] = useState(false)
   const total = sumQty(s.backroom)
   const cap = backroomCap(s)
   const scannerReady = s.compute.scanner && s.time >= s.compute.scannerReadyAt
@@ -41,206 +46,236 @@ export function BackroomPanel() {
     ? can(s, { type: 'dumpCoolerPartial', cat: selectedCat, qty: PARTIAL_DUMP, where: 'backroom' })
     : { ok: false as const, reason: 'No perishable aisle.' }
 
+  const bondedCrates = s.bonded?.crates ?? 0
+  const bondedCheck = can(s, lateCmd({ type: 'unpackBonded' }))
+  const seedHeld = s.seedVault?.held ?? 0
+  const vaultAmount = Math.min(VAULT_CHUNK, Math.floor(s.horizon?.seed ?? 0))
+  const vaultCheck = can(s, lateCmd({ type: 'vaultSeed', amount: vaultAmount }))
   const perishableUnits = perishable.reduce((n, p) => n + p.b.qty, 0)
+  const nearlyFull = fill >= 0.95
+  const nextOrder = orders[0]
 
   return (
-    <Panel
-      title="Backroom"
-      purpose="Hold crates, watch spoil, restock the shelf."
-      lore="backroom"
-      scene={
-        <>
-          <BackroomBand state={s} />
-          <DeptDiorama kind="backroom" />
-        </>
-      }
-    >
-      {fill >= 0.95 ? (
-        <div className="ge-dept-callout is-ready" role="status" data-coach-id="backroom-capacity">
-          <div className="ge-dept-callout__copy">
-            <h3>Nearly full</h3>
-            <p>
-              {qty(total)} / {qty(cap)} — next truck may refund at the door.
-            </p>
-          </div>
+    <section className="ge-panel bk">
+      <PlayFrame
+        purpose="Hold crates, watch spoil, restock the shelf."
+        department="Backroom"
+        room={<BackroomScene />}
+        tray={{
+          primary: s.compute.scanner
+            ? {
+                label: scannerReady ? 'Pulse scanner' : `Cooling · ${scannerWait}s`,
+                tone: scannerReady ? 'primary' : 'ghost',
+                coachId: 'scanner-pulse',
+                className: 'ge-scanner-pulse',
+                disabled: !scannerCheck.ok,
+                title: !scannerCheck.ok ? scannerCheck.reason : undefined,
+                onClick: () => dispatch({ type: 'pulseScanner' }),
+              }
+            : nextOrder
+              ? {
+                  label: (
+                    <>
+                      <Icon name="wholesale" size={16} />
+                      Incoming {CATEGORIES[nextOrder.cat]?.short ?? nextOrder.cat} ·{' '}
+                      {clock(Math.max(0, nextOrder.eta - s.time))}
+                    </>
+                  ),
+                  tone: 'ghost',
+                  disabled: true,
+                  title: 'Truck is on the way',
+                }
+              : {
+                  label: nearlyFull ? 'Backroom nearly full' : `${qty(total)} / ${qty(cap)} in back`,
+                  tone: 'ghost',
+                  disabled: true,
+                },
+          failReason: s.compute.scanner && !scannerCheck.ok ? scannerCheck.reason : undefined,
+          secondaries: [
+            ...(perishableCats.length
+              ? [{ key: 'perish', label: 'Perishables', fact: String(perishable.length), onClick: () => setShowPerish(true) }]
+              : []),
+            ...(s.era >= 8
+              ? [
+                  {
+                    key: 'bonded',
+                    label: 'Bonded',
+                    fact: `${qty(bondedCrates)}/${qty(bondedCap(s))}`,
+                    disabled: !bondedCheck.ok,
+                    onClick: () => dispatch(lateCmd({ type: 'unpackBonded', count: 1, kind: 'dry' })),
+                  },
+                ]
+              : []),
+            ...(s.era >= 9
+              ? [
+                  {
+                    key: 'vault',
+                    label: 'Vault seed',
+                    fact: qty(seedHeld),
+                    disabled: !vaultCheck.ok,
+                    onClick: () => dispatch(lateCmd({ type: 'vaultSeed', amount: vaultAmount })),
+                  },
+                ]
+              : []),
+          ],
+        }}
+      >
+        <div data-coach-id="backroom-capacity">
+          <Meter
+            value={total}
+            max={Math.max(1, cap)}
+            tone={nearlyFull ? 'warn' : total <= 0 ? 'danger' : 'accent'}
+            label="Backroom"
+            eta={`${qty(total)} / ${qty(cap)}`}
+          />
         </div>
-      ) : (
-        <span className="ge-sr-only" data-coach-id="backroom-capacity">
-          Backroom {qty(total)} of {qty(cap)}
-        </span>
-      )}
 
-      {s.compute.scanner ? (
-        <div className="ge-dept-callout">
-          <div className="ge-dept-callout__copy">
-            <h3>Scanner Array</h3>
-            <p>Measure the diode grid. Attention arrives in a burst.</p>
-          </div>
-          <Btn
-            tone={scannerReady ? 'primary' : 'ghost'}
-            coachId="scanner-pulse"
-            className="ge-scanner-pulse"
-            disabled={!scannerCheck.ok}
-            title={!scannerCheck.ok ? scannerCheck.reason : undefined}
-            onClick={() => dispatch({ type: 'pulseScanner' })}
-          >
-            {scannerReady ? 'Pulse scanner' : `Cooling · ${scannerWait}s`}
-          </Btn>
-        </div>
-      ) : null}
-
-      <div className="ge-back-stock">
-        <section className="ge-back-stock__cats">
-          <header className="ge-empire-block__head">
-            <h3>Waiting to unpack</h3>
-            <p>Counts by aisle. Priority below decides what Unpack grabs first.</p>
-          </header>
-          <ul className="ge-back-cats" data-coach-id="backroom-categories">
-            {unlocked.map((c) => {
-              const n = sumQty(s.backroom, c)
-              const def = CATEGORIES[c]
-              return (
-                <li
-                  key={c}
-                  className={n > 0 ? 'is-on' : ''}
-                  data-coach-id={c === 'dairy' ? 'backroom-dairy' : undefined}
-                >
-                  <strong>{def.short}</strong>
-                  <span>{def.name}</span>
-                  <em>{qty(n)}</em>
-                </li>
-              )
-            })}
+        {orders.length > 0 ? (
+          <ul className="bk-list" aria-label="Incoming trucks">
+            {orders.map((o) => (
+              <li key={o.id} className="bk-truck">
+                <strong>{CATEGORIES[o.cat]?.short ?? o.cat}</strong>
+                <span>
+                  ×{o.qty} · {o.supplier === 'b' ? 'Budget' : 'Express'}
+                </span>
+                <em>{clock(Math.max(0, o.eta - s.time))}</em>
+              </li>
+            ))}
           </ul>
-          {!s.categories.dairy ? (
-            <p className="ge-muted" data-coach-id="backroom-dairy">
-              Dairy needs a reach-in cooler memo before it can stock here.
-            </p>
-          ) : null}
-        </section>
+        ) : (
+          <EmptyState title="No trucks inbound" body="Order a crate from Floor or Suppliers." />
+        )}
 
-        <section className="ge-back-stock__side">
-          <header className="ge-empire-block__head">
-            <h3>Incoming · {orders.length}</h3>
-            <p>Trucks on the road.</p>
-          </header>
-          {orders.length === 0 ? (
-            <p className="ge-empty">No trucks on the way.</p>
-          ) : (
-            <ul className="ge-back-orders">
-              {orders.map((o) => (
-                <li key={o.id}>
-                  <strong>{CATEGORIES[o.cat]?.short ?? o.cat}</strong>
-                  <span>
-                    ×{o.qty} · {o.supplier === 'b' ? 'Budget' : 'Express'}
-                  </span>
-                  <em>{clock(Math.max(0, o.eta - s.time))}</em>
-                </li>
-              ))}
-            </ul>
-          )}
+        <ul className="bk-cats" data-coach-id="backroom-categories">
+          {unlocked.map((c) => {
+            const n = sumQty(s.backroom, c)
+            const def = CATEGORIES[c]
+            return (
+              <li
+                key={c}
+                className={`bk-cat${n > 0 ? ' is-on' : ''}`}
+                title={def.name}
+                data-coach-id={c === 'dairy' ? 'backroom-dairy' : undefined}
+              >
+                <strong>{def.short}</strong>
+                <span>{def.name}</span>
+                <em>{qty(n)}</em>
+              </li>
+            )
+          })}
+        </ul>
 
-          {s.categories.produce || s.categories.dairy || s.categories.meat ? (
-            <>
-              <header className="ge-empire-block__head" style={{ marginTop: '0.85rem' }}>
-                <h3>Perishables</h3>
-                <p>Oldest-first by spoil. Age here until unpack or dump.</p>
-              </header>
-              <div data-coach-id="backroom-fifo">
-                {perishable.length === 0 ? (
-                  <p className="ge-empty">No perishables in back.</p>
-                ) : (
-                  <ul className="ge-back-orders">
-                    {perishable.slice(0, 12).map(({ b, spoil }, i) => {
-                      const life = Math.round(effectiveLife(s, b.cat) ?? 0)
-                      return (
-                        <li
-                          key={`${b.cat}-${i}-${b.age}`}
-                          className={spoil > 0.55 ? 'is-spoil' : undefined}
-                        >
-                          <strong>{CATEGORIES[b.cat]?.short ?? b.cat}</strong>
-                          <span>×{qty(b.qty)}</span>
-                          <em title={`${Math.round(spoil * 100)}% of life used`}>
-                            {Math.floor(b.age)}s / {life}s
-                          </em>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </div>
-              {perishableCats.length > 1 ? (
-                <div className="ge-chip-row" role="group" aria-label="Aisle to partial-dump">
-                  {perishableCats.map((c) => (
-                    <Btn
-                      key={c}
-                      tone={selectedCat === c ? 'primary' : 'ghost'}
-                      onClick={() => setDumpCat(c)}
-                    >
-                      {CATEGORIES[c].short}
-                    </Btn>
-                  ))}
-                </div>
-              ) : null}
-              <div className="ge-chip-row">
-                <Btn
-                  tone="ghost"
-                  disabled={!partialCheck.ok}
-                  title={
-                    !partialCheck.ok
-                      ? partialCheck.reason
-                      : `Toss the ${PARTIAL_DUMP} oldest ${selectedCat ? CATEGORIES[selectedCat].short : ''} units`
-                  }
-                  onClick={() => {
-                    if (selectedCat) {
-                      dispatch({
-                        type: 'dumpCoolerPartial',
-                        cat: selectedCat,
-                        qty: PARTIAL_DUMP,
-                        where: 'backroom',
-                      })
-                    }
-                  }}
+        {s.era >= 8 ? (
+          <Disclosure title={`Bonded cage · ${qty(bondedCrates)} / ${qty(bondedCap(s))}`} className="bk-bonded">
+            <div className="bk-row">
+              {(['dry', 'chill', 'fragile'] as const).map((kind) => (
+                <Button
+                  key={kind}
+                  tone={bondedCheck.ok ? 'primary' : 'ghost'}
+                  disabled={!bondedCheck.ok}
+                  title={!bondedCheck.ok ? bondedCheck.reason : `Unpack a ${kind} crate`}
+                  onClick={() => dispatch(lateCmd({ type: 'unpackBonded', count: 1, kind }))}
                 >
-                  Dump {PARTIAL_DUMP} oldest
-                  {selectedCat ? ` ${CATEGORIES[selectedCat].short}` : ''}
-                </Btn>
-                <Btn
-                  tone="danger"
-                  coachId="dump-cooler"
-                  onClick={() =>
-                    setConfirm({
-                      title: 'Dump the cooler?',
-                      body: `Throws away ${qty(perishableUnits)} perishable units in the backroom. Cash is not refunded.`,
-                      confirmLabel: 'Dump',
-                      tone: 'danger',
-                      onConfirm: () => dispatch({ type: 'dumpCooler' }),
+                  {kind}
+                </Button>
+              ))}
+            </div>
+          </Disclosure>
+        ) : null}
+
+        {s.era >= 9 ? (
+          <Disclosure title={`Seed vault · ${qty(seedHeld)} / ${qty(seedVaultCap(s))}`} className="bk-seed">
+            <Button
+              tone={vaultCheck.ok ? 'primary' : 'ghost'}
+              disabled={!vaultCheck.ok}
+              title={!vaultCheck.ok ? vaultCheck.reason : `Bank ${vaultAmount} seed`}
+              onClick={() => dispatch(lateCmd({ type: 'vaultSeed', amount: vaultAmount }))}
+            >
+              Vault{vaultAmount > 0 ? ` ${vaultAmount}` : ''}
+            </Button>
+          </Disclosure>
+        ) : null}
+
+        {showPerish && (s.categories.produce || s.categories.dairy || s.categories.meat) ? (
+          <div className="bk-perish">
+            {perishable.length === 0 ? (
+              <EmptyState title="No perishables in back" />
+            ) : (
+              <ul className="bk-list" data-coach-id="backroom-fifo">
+                {perishable.slice(0, 12).map(({ b, spoil }, i) => {
+                  const life = Math.round(effectiveLife(s, b.cat) ?? 0)
+                  return (
+                    <li key={`${b.cat}-${i}-${b.age}`} title={`${Math.round(spoil * 100)}% of life used`}>
+                      <Meter
+                        value={spoil}
+                        tone={spoil > 0.85 ? 'danger' : spoil > 0.55 ? 'warn' : 'success'}
+                        label={`${CATEGORIES[b.cat]?.short ?? b.cat} ×${qty(b.qty)}`}
+                        eta={`${Math.floor(b.age)}s / ${life}s`}
+                      />
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            {perishableCats.length > 1 ? (
+              <div className="bk-row" role="group" aria-label="Aisle to partial-dump">
+                {perishableCats.map((c) => (
+                  <Chip key={c} selected={selectedCat === c} onClick={() => setDumpCat(c)}>
+                    {CATEGORIES[c].short}
+                  </Chip>
+                ))}
+              </div>
+            ) : null}
+            <div className="bk-row">
+              <Button
+                tone="ghost"
+                disabled={!partialCheck.ok}
+                title={
+                  !partialCheck.ok
+                    ? partialCheck.reason
+                    : `Toss the ${PARTIAL_DUMP} oldest ${selectedCat ? CATEGORIES[selectedCat].short : ''} units`
+                }
+                onClick={() => {
+                  if (selectedCat) {
+                    dispatch({
+                      type: 'dumpCoolerPartial',
+                      cat: selectedCat,
+                      qty: PARTIAL_DUMP,
+                      where: 'backroom',
                     })
                   }
-                  disabled={!dumpCheck.ok}
-                  title={!dumpCheck.ok ? dumpCheck.reason : undefined}
-                >
-                  Dump cooler
-                </Btn>
-              </div>
-            </>
-          ) : null}
-        </section>
-      </div>
+                }}
+              >
+                Dump {PARTIAL_DUMP} oldest
+                {selectedCat ? ` ${CATEGORIES[selectedCat].short}` : ''}
+              </Button>
+              <Button
+                tone="danger"
+                coachId="dump-cooler"
+                disabled={!dumpCheck.ok}
+                title={!dumpCheck.ok ? dumpCheck.reason : undefined}
+                onClick={() => {
+                  void confirm({
+                    title: 'Dump the cooler?',
+                    body: `Throws away ${qty(perishableUnits)} perishable units in the backroom. Cash is not refunded.`,
+                    confirmLabel: 'Dump',
+                    tone: 'danger',
+                  }).then((ok) => {
+                    if (ok) dispatch({ type: 'dumpCooler' })
+                  })
+                }}
+              >
+                Dump cooler
+              </Button>
+              <Button tone="ghost" onClick={() => setShowPerish(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
-      <MixPriority coachId="backroom-even-mix" />
-
-      <HelpCard title="Storage is patient">
-        Trucks fill the backroom. Unpack moves stock to the shelf. Perishables age here — dump or cool
-        before they spoil. Full backroom means the next truck refunds at the door.
-      </HelpCard>
-
-      <ConfirmModal
-        open={!!confirm}
-        spec={confirm}
-        reducedMotion={reducedMotion}
-        onClose={() => setConfirm(null)}
-      />
-    </Panel>
+        <MixPriority coachId="backroom-even-mix" />
+      </PlayFrame>
+    </section>
   )
 }

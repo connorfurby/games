@@ -19,15 +19,16 @@ type MenuItem =
   | { id: string; label: string; hint: string; to: string; accent?: boolean }
   | { id: string; label: string; hint: string; action: 'settings' | 'hotkeys' | 'play' }
 
+/** Secondary destinations — primary Play/News/Guide/Shop live in ShellFrame. */
 const ITEMS: MenuItem[] = [
   { id: 'home', label: 'Home', hint: 'Shelf', to: '/' },
   { id: 'play', label: 'Play', hint: 'Grocery Empire', action: 'play', accent: true },
-  { id: 'shop', label: 'Shop', hint: 'Cosmetics', to: '/shop' },
-  { id: 'guide', label: 'Guide', hint: 'Strategy', to: '/guide/grocery-empire' },
   { id: 'awards', label: 'Awards', hint: 'Achievements', to: '/achievements' },
   { id: 'settings', label: 'Settings', hint: 'Saves & prefs', action: 'settings' },
   { id: 'hotkeys', label: 'Keys', hint: 'Hotkey map', action: 'hotkeys' },
-  { id: 'dev', label: 'Dev', hint: 'Sandbox', to: '/play/grocery-empire/dev' },
+  ...(import.meta.env.DEV
+    ? ([{ id: 'dev', label: 'Dev', hint: 'Sandbox', to: '/play/grocery-empire/dev' }] as MenuItem[])
+    : []),
 ]
 
 function WaffleIcon() {

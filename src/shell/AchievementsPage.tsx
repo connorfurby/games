@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { ACHIEVEMENTS, type AchievementDef } from '@/achievements/registry'
 import { createInitialState, type GameState } from '@/games/grocery-empire/sim/state'
 import { loadGame } from '@/shared/save'
 import { downloadAchievementGallery, downloadAchievementShareCard } from './achievementShareCard'
 import { useMeta } from './MetaContext'
+import { ShellFrame } from './ShellFrame'
 
 type TierFilter = 'all' | AchievementDef['tier']
 
@@ -46,12 +46,8 @@ export function AchievementsPage() {
   }
 
   return (
+    <ShellFrame title="Awards">
     <div className="ach-page shell-subpage">
-      <p className="shell-subpage__nav">
-        <Link to="/">Home</Link>
-        <Link to="/play/grocery-empire">Play</Link>
-        <Link to="/shop">Shop</Link>
-      </p>
       <h1 className="brand brand--page">Achievements</h1>
       <p className="tokens">
         {unlocked} / {ACHIEVEMENTS.length} unlocked · {tokenEarned} tokens earned · {meta.shelfTokens}{' '}
@@ -147,5 +143,6 @@ export function AchievementsPage() {
         })}
       </div>
     </div>
+    </ShellFrame>
   )
 }

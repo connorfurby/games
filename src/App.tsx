@@ -4,6 +4,7 @@ import { AppChrome } from '@/shell/AppChrome'
 import { GuidePage } from '@/shell/GuidePage'
 import { HotkeyOverlay } from '@/shell/HotkeyOverlay'
 import { MetaProvider } from '@/shell/MetaContext'
+import { NewsPage } from '@/shell/NewsPage'
 import { PlayPage } from '@/shell/PlayPage'
 import { Shelf } from '@/shell/Shelf'
 import { ShopPage } from '@/shell/ShopPage'
@@ -19,6 +20,8 @@ export default function App() {
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/guide/:gameId" element={<GuidePage />} />
+          <Route path="/news" element={<NewsPage />} />
+          <Route path="/news/:id" element={<NewsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <AppChrome />

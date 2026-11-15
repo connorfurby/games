@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useStable } from '../useStable'
 import type { NumberFormat } from '@/shared/bn'
 import { ERA_STORY } from '../../content/lore'
+import { GAME_VERSION } from '../../content/news'
 import { MENUS, type MenuId } from '../../content/menus'
 import type { Command } from '../../sim/commands'
 import { engine } from '../../sim/engine'
@@ -10,10 +11,10 @@ import type { GameState } from '../../sim/state'
 import { canResolveBoard } from '../../sim/systems/capital'
 import { canUndo } from '../../sim/undo'
 import { PopLayer, type PopItem } from '../components/Pop'
+import { useFlash, useTween } from '../fx'
 import { money, qty } from '../format'
 import { Icon } from '../icons/Icon'
 import { NextGoal } from './NextGoal'
-import { RollingNumber } from '../components/RollingNumber'
 
 function perSec(n: number, fmt: NumberFormat) {
   const sign = n < 0 ? '−' : '+'
@@ -40,6 +41,7 @@ export function Hud({
   toolsOpen,
   onTools,
   reducedMotion = false,
+  activeMenu,
 }: {
   state: GameState
   pops: PopItem[]
@@ -53,10 +55,15 @@ export function Hud({
   toolsOpen: boolean
   onTools: () => void
   reducedMotion?: boolean
+  activeMenu?: MenuId
 }) {
   const net = s.rates.revenuePerSec - s.rates.costPerSec
   const era = ERA_STORY[s.era]
   const undo = canUndo()
+  const cashShown = useTween(s.cash, { duration: reducedMotion ? 0 : 420, reducedMotion, snapRatio: 0.35 })
+  const cashFlash = useFlash(s.cash, { minRatio: 0.015, minDelta: 1 })
+  const basketsShown = useTween(s.baskets, { duration: reducedMotion ? 0 : 380, reducedMotion, snapRatio: 0.4 })
+  const basketsFlash = useFlash(s.baskets, { minRatio: 0.02, minDelta: 0.5 })
 
   // One alert at a time, most urgent first.
   let alert: { text: string; menu: MenuId; tone: 'warn' | 'danger' } | null = null
@@ -78,11 +85,14 @@ export function Hud({
   return (
     <header className="g2-hud">
       <div className="g2-hud__brand">
-        <Link to="/" className="g2-hud__home" title="Back to the shelf">
+        <Link to="/" className="g2-hud__home" title="Back to the shelf" data-coach-id="meta-shelf">
           Grocery Empire
         </Link>
         <span className="g2-hud__era" title={era?.epigraph}>
           {era?.title ?? `Era ${s.era}`}
+        </span>
+        <span className="g2-hud__ver" title="Display version — see News">
+          v{GAME_VERSION}
         </span>
       </div>
 
@@ -91,7 +101,9 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="cash" size={13} /> Cash
           </span>
-          <RollingNumber className="g2-stat__value" value={s.cash} format={(n) => money(n, numberFormat)} reducedMotion={reducedMotion} />
+          <span className="g2-stat__value" data-fx-flash={cashFlash ?? undefined}>
+            {money(cashShown, numberFormat)}
+          </span>
           <span className={`g2-stat__rate${net < 0 ? ' is-neg' : ''}`} title="Net income, smoothed over 45 s">
             {perSec(net, numberFormat)}
           </span>
@@ -100,8 +112,8 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="baskets" size={13} /> Baskets
           </span>
-          <span className="g2-stat__value g2-stat__value--small">
-            {qty(s.baskets, numberFormat)}
+          <span className="g2-stat__value g2-stat__value--small" data-fx-flash={basketsFlash ?? undefined}>
+            {qty(basketsShown, numberFormat)}
             <PopLayer pops={pops} />
           </span>
           <span className="g2-stat__rate">
@@ -110,13 +122,13 @@ export function Hud({
         </div>
       </div>
 
-      <NextGoal state={s} numberFormat={numberFormat} dispatch={dispatch} />
+      <NextGoal state={s} numberFormat={numberFormat} dispatch={dispatch} activeMenu={activeMenu} onMenu={onMenu} />
 
       <div className="g2-hud__controls">
         {alert ? (
           <button
             type="button"
-            className={`g2-alert is-${alert.tone}`}
+            className={`g2-alert g2-alert--wide is-${alert.tone}`}
             onClick={() => onMenu(alert.menu)}
             title={`Open ${MENUS[alert.menu].name}`}
           >
@@ -137,21 +149,26 @@ export function Hud({
             <button
               key={sp}
               type="button"
-              className={`g2-icon-btn g2-icon-btn--text${s.speed === sp ? ' is-on' : ''}`}
+              className={`g2-icon-btn g2-icon-btn--speed${s.speed === sp ? ' is-on' : ''}`}
               aria-pressed={s.speed === sp}
+              aria-label={`Speed ${sp}×`}
+              title={`Speed ${sp}×`}
               onClick={() => dispatch({ type: 'setSpeed', speed: sp })}
             >
-              {sp}×
+              <span aria-hidden>{sp}×</span>
+              <span className="ge-sr-only">{sp}×</span>
             </button>
           ))}
           <button
             type="button"
-            className="g2-icon-btn g2-icon-btn--text"
+            className="g2-icon-btn g2-icon-btn--undo"
             disabled={!engine.canUndo()}
             onClick={() => engine.undo()}
+            aria-label={undo.ok ? `Undo ${undo.label ?? 'last purchase'}` : 'Nothing to undo'}
             title={undo.ok ? `Undo ${undo.label ?? 'last purchase'} (Ctrl+Z)` : 'Nothing to undo'}
           >
-            Undo
+            <span aria-hidden>↶</span>
+            <span className="g2-icon-btn__label">Undo</span>
           </button>
         </div>
         <button

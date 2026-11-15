@@ -18,7 +18,7 @@ import {
   type RelicDef,
   type WingId,
 } from '../content/relics'
-import { PRICE } from './balance'
+import { HORIZON, PRICE } from './balance'
 import type { GameState } from './state'
 
 export interface Chest {
@@ -30,10 +30,20 @@ export interface Chest {
   at: number
 }
 
+export interface RelicRecord {
+  at: number
+  n: number
+  level: number
+}
+
 export interface MuseumSave {
-  v: 1
+  v: 2
   unlocked: boolean
-  relics: Record<string, { at: number; n: number }>
+  relics: Record<string, RelicRecord>
+  /** Socketed relic ids. Length is at most the socket cap. */
+  sockets: string[]
+  /** Dust new pulls at or below this rarity. Null is off. */
+  autoDust: Rarity | null
   chests: Chest[]
   dust: number
   /** Hint level bought per relic: 1 = where it comes from, 2 = most of the name. */
@@ -51,9 +61,11 @@ export interface MuseumSave {
 
 export function emptyMuseum(): MuseumSave {
   return {
-    v: 1,
+    v: 2,
     unlocked: false,
     relics: {},
+    sockets: [],
+    autoDust: null,
     chests: [],
     dust: 0,
     hints: {},
@@ -76,7 +88,12 @@ export function normalizeMuseum(raw: unknown): MuseumSave {
   if (r.relics && typeof r.relics === 'object') {
     for (const [id, v] of Object.entries(r.relics)) {
       if (!RELIC_BY_ID[id] || !v || typeof v !== 'object') continue
-      relics[id] = { at: num((v as { at?: unknown }).at, Date.now()), n: Math.max(1, Math.floor(num((v as { n?: unknown }).n, 1))) }
+      const row = v as { at?: unknown; n?: unknown; level?: unknown }
+      relics[id] = {
+        at: num(row.at, Date.now()),
+        n: Math.max(1, Math.floor(num(row.n, 1))),
+        level: Math.min(HORIZON.relicLevelCap, Math.max(1, Math.floor(num(row.level, 1)))),
+      }
     }
   }
   const chests: Chest[] = Array.isArray(r.chests)
@@ -94,10 +111,17 @@ export function normalizeMuseum(raw: unknown): MuseumSave {
   if (r.hints && typeof r.hints === 'object') {
     for (const [id, v] of Object.entries(r.hints)) if (RELIC_BY_ID[id] && (v === 1 || v === 2)) hints[id] = v
   }
+  const sockets = Array.isArray((r as { sockets?: unknown }).sockets)
+    ? (r as { sockets: unknown[] }).sockets.filter((id): id is string => typeof id === 'string' && !!relics[id])
+    : []
+  const rawDust = (r as { autoDust?: unknown }).autoDust
+  const autoDust = RARITIES.includes(rawDust as Rarity) ? (rawDust as Rarity) : null
   return {
-    v: 1,
+    v: 2,
     unlocked: !!r.unlocked,
     relics,
+    sockets,
+    autoDust,
     chests,
     dust: Math.max(0, Math.floor(num(r.dust, 0))),
     hints,
@@ -162,6 +186,7 @@ const WING_ERA: Record<Exclude<WingId, 'oddities'>, number> = {
   lab: 0,
   ventures: 1,
   works: 0,
+  horizon: 7,
 }
 
 export function wingOpen(m: MuseumSave, wing: WingId): boolean {
@@ -170,6 +195,7 @@ export function wingOpen(m: MuseumSave, wing: WingId): boolean {
 }
 
 export function eraWing(era: number): WingId {
+  if (era >= 7) return 'horizon'
   return (['backroom', 'corner', 'chain', 'cold', 'lanes', 'orbit', 'legacy'] as const)[Math.max(0, Math.min(6, era))]!
 }
 
@@ -223,9 +249,74 @@ export const FEATS: Record<string, { text: string; vague: string; test: (s: Game
   chests100: { vague: 'Open, open, open.', text: 'Open 100 chests.', test: (_s, m) => m.opened >= 100 },
   universe: { vague: 'Finish the job in orbit.', text: 'Clear the biomass and reach Era 6.', test: (s) => s.era >= 6 },
   collect250: { vague: 'Almost everything.', text: 'Own 250 relics.', test: (_s, m) => relicCount(m) >= 250 },
+  'hz-ration': {
+    vague: 'A board that counted every mouth, and then signed.',
+    text: 'Buy out the Ration Board.',
+    test: (s) => !!s.rivals?.ration?.bought,
+  },
+  'hz-eight': {
+    vague: 'Eight worlds, all of them stocked.',
+    text: 'Stock all 8 named planets.',
+    test: (s) => (s.horizon?.planets?.filter((p) => p.stocked).length ?? 0) >= 8,
+  },
+  'hz-year': {
+    vague: 'A dozen turns of the season.',
+    text: 'See 12 seasons.',
+    test: (s) => (s.horizon?.seasonsSeen ?? 0) >= 12,
+  },
+  'hz-phrases': {
+    vague: 'The wire, cleared again and again.',
+    text: 'Clear 40 phrases.',
+    test: (s) => (s.horizon?.phrasesCleared ?? 0) >= 40,
+  },
+  'hz-charter': {
+    vague: 'A charter with your name on it.',
+    text: 'Sign a charter.',
+    test: (s) => !!s.horizon?.charter,
+  },
+  'hz-list': {
+    vague: 'The last list, finished.',
+    text: 'Finish the last list.',
+    test: (s) => (s.horizon?.listScore ?? 0) + 1e-9 >= 0.8,
+  },
+  'hz-plaque': {
+    vague: 'A name on the wall, and a second silence.',
+    text: "Raise Ivo's Plaque or refuse the list twice.",
+    test: (s) => (s.builds.civic ?? 0) >= 7 || (s.memos['plaque-copy'] ?? 0) > 0 || s.horizon?.ending === 'reject',
+  },
+  'hz-route': {
+    vague: 'A route pinned so it can be filed again.',
+    text: 'Set a standing route.',
+    test: (s) => !!s.horizon?.standingRoute,
+  },
+  'hz-cluster': {
+    vague: 'A name you gave the sky.',
+    text: 'Name a cluster of worlds.',
+    test: (s) => !!s.horizon?.cluster,
+  },
+  'hz-desk': {
+    vague: 'A desk with no empty chair.',
+    text: 'Seat 3 agents at once.',
+    test: (s) => (s.horizon?.agents?.length ?? 0) >= 3,
+  },
+  'hz-seals': {
+    vague: 'Seals lifted, and pressed again.',
+    text: 'Swap charter clauses 4 times.',
+    test: (s) => (s.horizon?.clauseToggles ?? 0) >= 4,
+  },
 }
 
 // ── Earning ─────────────────────────────────────────────────────────────────
+
+/** Extra Horizon chests for reaching each late era: [era, rarity, source flavor]. */
+export const HORIZON_MILESTONES: readonly (readonly [number, Rarity, string])[] = [
+  [7, 'rare', 'The first world on the shelf'],
+  [8, 'rare', 'Freight that arrived on its own'],
+  [9, 'epic', 'A season in the beds'],
+  [10, 'epic', 'The wire heard you back'],
+  [11, 'epic', 'The fork, tasted twice'],
+  [12, 'legendary', 'The last aisle, swept'],
+]
 
 export interface EarnResult {
   chests: Chest[]
@@ -267,7 +358,12 @@ export function earn(m: MuseumSave, s: GameState, playDelta: number): EarnResult
     m.playClock -= MUSEUM.dripSec
     m.drips += 1
     const fourth = m.drips % 4 === 0
-    add(m, null, fourth ? 'uncommon' : 'common', fourth ? 'night' : 'corner', 'Time on the floor', out)
+    // Once the Horizon has been reached, every third drip is a Horizon chest instead.
+    if (m.maxEra >= 7 && !fourth && m.drips % 3 === 0) {
+      add(m, null, 'uncommon', 'horizon', 'Time at the listening desk', out)
+    } else {
+      add(m, null, fourth ? 'uncommon' : 'common', fourth ? 'night' : 'corner', 'Time on the floor', out)
+    }
   }
 
   // Coming back after a while away (the welcome-back receipt).
@@ -288,11 +384,16 @@ export function earn(m: MuseumSave, s: GameState, playDelta: number): EarnResult
     }
     if (!done) return
     const rarity: Rarity = i < 4 ? 'common' : i < 8 ? 'uncommon' : i < 13 ? 'rare' : 'epic'
-    add(m, `goal:${run}:${g.id}`, rarity, i < 5 ? 'backroom' : eraWing(Math.min(6, Math.floor(i / 3))), `Goal: ${g.title}`, out)
+    add(m, `goal:${run}:${g.id}`, rarity, i < 5 ? 'backroom' : g.era >= 7 ? 'horizon' : eraWing(Math.min(6, Math.floor(i / 3))), `Goal: ${g.title}`, out)
   })
 
   for (let e = 1; e <= s.era; e++) {
     add(m, `era:${run}:${e}`, e >= 6 ? 'legendary' : e >= 3 ? 'epic' : 'rare', eraWing(e), `Reached Era ${e}`, out)
+  }
+
+  // Era 7–12 milestone chests: one Horizon chest per era, with a source line of its own.
+  for (const [e, rarity, source] of HORIZON_MILESTONES) {
+    if (s.era >= e) add(m, `hzm:${run}:${e}`, rarity, 'horizon', source, out)
   }
 
   const bk: [number, Rarity][] = [[1e3, 'common'], [1e4, 'common'], [1e5, 'uncommon'], [1e6, 'rare'], [1e7, 'rare'], [1e8, 'epic'], [1e9, 'legendary']]
@@ -366,7 +467,7 @@ export function earn(m: MuseumSave, s: GameState, playDelta: number): EarnResult
       ok = false
     }
     if (ok) {
-      m.relics[r.id] = { at: Date.now(), n: 1 }
+      m.relics[r.id] = { at: Date.now(), n: 1, level: 1 }
       feats.push(r)
     }
   }
@@ -421,15 +522,110 @@ export function openChest(m: MuseumSave, chestId: string, rand: () => number = M
   const from = fresh.length > 0 && preferNew ? fresh : pool
   const relic = from[Math.floor(rand() * from.length)]!
 
+  const dusted = m.autoDust != null && RARITIES.indexOf(relic.rarity) <= RARITIES.indexOf(m.autoDust)
+  if (dusted) {
+    const dust = RARITY_INFO[relic.rarity].dust
+    m.dust += dust
+    return { relic, isNew: false, dust, chest }
+  }
   const isNew = !m.relics[relic.id]
   let dust = 0
-  if (isNew) m.relics[relic.id] = { at: Date.now(), n: 1 }
+  if (isNew) m.relics[relic.id] = { at: Date.now(), n: 1, level: 1 }
   else {
     m.relics[relic.id]!.n += 1
     dust = RARITY_INFO[relic.rarity].dust
     m.dust += dust
   }
   return { relic, isNew, dust, chest }
+}
+
+const LEVEL_MUL: Record<Rarity, number> = {
+  common: 1,
+  uncommon: 1.4,
+  rare: 2,
+  epic: 3.2,
+  legendary: 5,
+  mythic: 8,
+}
+
+/** Dust to go from `level` to `level + 1`. */
+export function relicLevelCost(rarity: Rarity, level: number): number {
+  return Math.round(8 * LEVEL_MUL[rarity] * Math.pow(Math.max(1, level), 1.6))
+}
+
+export function relicLevelPower(level: number): number {
+  const lv = Math.max(1, Math.min(HORIZON.relicLevelCap, Math.floor(level) || 1))
+  return 1 + 0.8 * Math.pow((lv - 1) / 9, 0.7)
+}
+
+function copiesOk(n: number, nextLevel: number): boolean {
+  if (nextLevel <= 3) return true
+  return n >= nextLevel - 2
+}
+
+/** Spend dust to raise a relic. `count` levels as far as dust and copies allow. */
+export function levelRelic(m: MuseumSave, id: string, count = 1): boolean {
+  const rec = m.relics[id]
+  const def = RELIC_BY_ID[id]
+  if (!rec || !def) return false
+  let stepped = 0
+  const times = Math.max(1, Math.floor(count) || 1)
+  for (let i = 0; i < times; i++) {
+    if (rec.level >= HORIZON.relicLevelCap) break
+    const next = rec.level + 1
+    if (!copiesOk(rec.n, next)) break
+    const cost = relicLevelCost(def.rarity, rec.level)
+    if (m.dust < cost) break
+    m.dust -= cost
+    rec.level = next
+    stepped++
+  }
+  return stepped > 0
+}
+
+export function socketCapFor(projectDone: boolean): number {
+  return projectDone ? HORIZON.relicSocketsLater : HORIZON.relicSockets
+}
+
+export function socketRelic(m: MuseumSave, id: string, cap: number = HORIZON.relicSockets): boolean {
+  if (!m.relics[id]) return false
+  if (m.sockets.includes(id)) return false
+  if (m.sockets.length >= cap) return false
+  m.sockets.push(id)
+  return true
+}
+
+export function unsocketRelic(m: MuseumSave, id: string): boolean {
+  const i = m.sockets.indexOf(id)
+  if (i < 0) return false
+  m.sockets.splice(i, 1)
+  return true
+}
+
+export function setAutoDust(m: MuseumSave, rarity: Rarity | null): void {
+  m.autoDust = rarity && RARITIES.includes(rarity) ? rarity : null
+}
+
+/** Turn one extra copy into dust. The last copy stays on the wall. */
+export function dustRelic(m: MuseumSave, id: string): boolean {
+  const rec = m.relics[id]
+  const def = RELIC_BY_ID[id]
+  if (!rec || !def || rec.n <= 1) return false
+  rec.n -= 1
+  m.dust += RARITY_INFO[def.rarity].dust
+  return true
+}
+
+/** Highest wing-rank multiplier when every relic in the wing is owned. */
+export function wingRankMul(m: MuseumSave, wing: WingId): number {
+  const rows = relicsInWing(wing)
+  if (rows.length === 0 || rows.some((r) => !m.relics[r.id])) return 1
+  let min: number = HORIZON.relicLevelCap
+  for (const r of rows) min = Math.min(min, m.relics[r.id]!.level)
+  if (min >= 10) return 1.5
+  if (min >= 6) return 1.25
+  if (min >= 3) return 1.1
+  return 1
 }
 
 // ── Dust: hints and the shop ────────────────────────────────────────────────
@@ -470,8 +666,28 @@ export function buyChest(m: MuseumSave, rarity: Rarity, wing: WingId | null): Ch
 }
 
 /** Stat bonus the run gets from the museum (read by sim/systems/stats.ts via state.relics). */
-export function museumSync(m: MuseumSave): { wings: string[]; count: number; unlocked: boolean; owned: Record<string, number> } {
+export function museumSync(m: MuseumSave): {
+  wings: string[]
+  count: number
+  unlocked: boolean
+  owned: Record<string, number>
+  levels: Record<string, number>
+  sockets: string[]
+  dust: number
+} {
   const owned: Record<string, number> = {}
-  for (const [id, v] of Object.entries(m.relics)) owned[id] = v.n
-  return { wings: completedWings(m), count: relicCount(m), unlocked: m.unlocked, owned }
+  const levels: Record<string, number> = {}
+  for (const [id, v] of Object.entries(m.relics)) {
+    owned[id] = v.n
+    levels[id] = v.level
+  }
+  return {
+    wings: completedWings(m),
+    count: relicCount(m),
+    unlocked: m.unlocked,
+    owned,
+    levels,
+    sockets: [...m.sockets],
+    dust: m.dust,
+  }
 }

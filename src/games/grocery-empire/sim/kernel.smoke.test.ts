@@ -18,7 +18,8 @@ describe('grocery empire sim kernel', () => {
     expect(gate.ok).toBe(true)
     expect(run(s, { type: 'buyWholesale' }).ok).toBe(true)
     expect(s.orders.length).toBe(1)
-    for (let i = 0; i < 50; i++) applyTick(s, DT)
+    // Early-demand mul softens Era 0 foot traffic — need ~15–20s for a first sale.
+    for (let i = 0; i < 200; i++) applyTick(s, DT)
     expect(s.stats.sold).toBeGreaterThan(0)
     expect(s.cash).toBeGreaterThan(0)
   })

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { TUTORIAL_BY_ID } from '../../content/tutorials'
 import { isTutorialStepDone } from '../../sim/helpers'
 import type { TutorialRun } from '../../sim/state'
-import { menuForCoachId } from '../coachTargets'
+import { menuForCoachId, menuForNavCoachId, needsInbox } from '../coachTargets'
+import { requestInbox } from '../shell/uiBus'
+import type { MenuId } from '../../content/menus'
 import { useGame } from '../GameContext'
 import { Btn } from './Btn'
 import { SpeakerChrome } from './SpeakerChrome'
@@ -19,7 +21,15 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
     if (!step?.coachId) return
     const menu = menuForCoachId(step.coachId)
     if (menu && activeMenu !== menu) setActiveMenu(menu)
-  }, [step?.coachId, active.step, active.id, activeMenu, setActiveMenu])
+    // menu-* targets: make sure the hub that owns the sub-tab is open.
+    const nav = menuForNavCoachId(step.coachId, activeMenu as MenuId, (id) => !!state.menus[id])
+    if (nav) setActiveMenu(nav)
+  }, [step?.coachId, active.step, active.id, activeMenu, setActiveMenu, state.menus])
+
+  // Memos / Attention / Ideas controls live in the Memos drawer — open it first.
+  useEffect(() => {
+    if (step?.coachId && needsInbox(step.coachId)) requestInbox('memos')
+  }, [step?.coachId, active.step, active.id])
 
   // Spotlight cutout from getBoundingClientRect; track resize/scroll.
   useEffect(() => {
@@ -108,6 +118,7 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
     : null
 
   const showDoForMe = !!step.action
+  const stuck = missingTarget && !hole
   const nextLabel =
     step.doneWhen.kind === 'always' || !step.action
       ? 'Got it'
@@ -161,23 +172,31 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
         <h3>{step.title}</h3>
         <p>{step.body}</p>
         <p className="ge-coach__recovery">{step.recovery}</p>
-        {missingTarget ? (
+        {stuck ? (
           <p className="ge-coach__recovery">
-            Target control is not on screen yet — use Next, Skip, or Do it for me.
+            That control isn&apos;t on screen — use {showDoForMe ? 'Do it for me' : nextLabel} or Skip.
           </p>
         ) : (
           <p className="ge-coach__recovery">
-            Click the highlighted control, or use Next / Do it for me below.
+            Click the highlight, or use the buttons below.
           </p>
         )}
         <div className="ge-coach__actions">
           <Btn tone="ghost" onClick={onSkip}>
             Skip tour
           </Btn>
-          <Btn tone={showDoForMe ? 'ghost' : 'primary'} onClick={onNext}>
+          {stuck && showDoForMe ? (
+            <Btn tone="primary" onClick={onDoForMe}>
+              Do it for me
+            </Btn>
+          ) : null}
+          <Btn
+            tone={stuck && !showDoForMe ? 'primary' : showDoForMe && !stuck ? 'ghost' : 'primary'}
+            onClick={onNext}
+          >
             {nextLabel}
           </Btn>
-          {showDoForMe ? (
+          {showDoForMe && !stuck ? (
             <Btn tone="primary" onClick={onDoForMe}>
               Do it for me
             </Btn>

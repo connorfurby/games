@@ -1,4 +1,16 @@
-export const CATEGORY_IDS = ['cans', 'household', 'produce', 'dairy', 'meat', 'privateLabel'] as const
+export const CATEGORY_IDS = [
+  'cans',
+  'household',
+  'produce',
+  'dairy',
+  'meat',
+  'deli',
+  'bakery',
+  'frozen',
+  'privateLabel',
+  'import',
+  'ration',
+] as const
 export type CategoryId = (typeof CATEGORY_IDS)[number]
 
 export interface CategoryDef {
@@ -68,6 +80,36 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
     weight: 0.6,
     life: 90,
   },
+  deli: {
+    id: 'deli',
+    name: 'Deli',
+    short: 'DLI',
+    role: 'High margin, fast spoil — about 2 minutes on the board.',
+    costMul: 1.8,
+    priceRatio: 2.8,
+    weight: 0.7,
+    life: 120,
+  },
+  bakery: {
+    id: 'bakery',
+    name: 'Bakery',
+    short: 'BKY',
+    role: 'Strong until midday, then quiet. Long shelf life.',
+    costMul: 0.9,
+    priceRatio: 1.6,
+    weight: 0.9,
+    life: null,
+  },
+  frozen: {
+    id: 'frozen',
+    name: 'Frozen',
+    short: 'FRZ',
+    role: 'Quiet pull, no spoil — needs cold coverage or it languishes.',
+    costMul: 1.2,
+    priceRatio: 1.8,
+    weight: 0.55,
+    life: null,
+  },
   privateLabel: {
     id: 'privateLabel',
     name: 'Private Label',
@@ -76,6 +118,26 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
     costMul: 0.6,
     priceRatio: 1.4,
     weight: 0.4,
+    life: null,
+  },
+  import: {
+    id: 'import',
+    name: 'Import',
+    short: 'IMP',
+    role: 'Quieter pull, higher ticket — follows the wet Spice Route.',
+    costMul: 1.6,
+    priceRatio: 2.6,
+    weight: 0.35,
+    life: null,
+  },
+  ration: {
+    id: 'ration',
+    name: 'Ration',
+    short: 'RTN',
+    role: 'Shelf-stable packs from the fleet. Medium pull on the flagship.',
+    costMul: 0.85,
+    priceRatio: 1.7,
+    weight: 0.7,
     life: null,
   },
 }

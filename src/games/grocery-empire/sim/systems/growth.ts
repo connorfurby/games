@@ -1,7 +1,8 @@
 import { PROJECT_BY_ID } from '../../content/projects'
 import { EMPIRE_REWARDS, EMPIRE_REWARD_POINTS } from '../../content/empireRewards'
-import { VENTURE_BY_ID, ventureIncome } from '../../content/ventures'
-import { EMPIRE } from '../balance'
+import { VENTURE_BY_ID, ventureIncome, venturePolicyIncomeMul } from '../../content/ventures'
+import { EMPIRE, HORIZON, LATE } from '../balance'
+import { hasFork } from '../ventureForks'
 import { backroomCap, empireXpToNext, perk, up } from '../formulas'
 import { addBatch, log, sumQty, takeUnits } from '../helpers'
 import { chance } from '../rng'
@@ -44,7 +45,13 @@ export function tickVentures(s: GameState, dt: number) {
 
     let efficiency = 1
     if (def.producePerLevel) {
-      const need = def.producePerLevel * vs.level * dt
+      // Meal Kits fork: Hearty stretches the produce, Lean burns it hotter.
+      const burn = hasFork(s, 'mealkitsHearty')
+        ? LATE.mealkitsHeartyBurnMul
+        : hasFork(s, 'mealkitsLean')
+          ? LATE.mealkitsLeanBurnMul
+          : 1
+      const need = def.producePerLevel * vs.level * burn * dt
       vs.carry += need
       const want = Math.floor(vs.carry)
       if (want > 0) {
@@ -62,7 +69,12 @@ export function tickVentures(s: GameState, dt: number) {
       }
     }
 
-    const income = ventureIncome(def, vs.level) * efficiency
+    const income =
+      ventureIncome(def, vs.level) *
+      efficiency *
+      venturePolicyIncomeMul(s, def, vs.policy) *
+      (s.horizon?.clauses?.includes('one-price') ? 0.92 : 1) *
+      (s.horizon?.charter === 'coop' ? HORIZON.coopVentureMul : 1)
     const cap = income * def.storeSec
     if (cap <= 0) continue
     const before = vs.stored
@@ -72,7 +84,8 @@ export function tickVentures(s: GameState, dt: number) {
 
     // Outgrown tills (under 0.5% of income) collect themselves: small change shouldn't be a chore.
     const outgrown = income < ventureOutgrownBelow(s)
-    if ((outgrown || up(s, 'auto-collect') >= 1 || perk(s, 'venture-auto') > 0) && vs.stored >= cap * 0.95) {
+    const autoPolicy = def.id === 'orbital' && vs.policy === 'b'
+    if ((outgrown || autoPolicy || up(s, 'auto-collect') >= 1 || perk(s, 'venture-auto') > 0) && vs.stored >= cap * 0.95) {
       collectVenture(s, id)
     }
   }

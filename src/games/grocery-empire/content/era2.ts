@@ -4,6 +4,7 @@
  */
 
 import { CELEBRITY_ENDCAP } from '../sim/balance'
+import { celebrityCashCost } from '../sim/lateCost'
 import { log, unlockMenu, queueTutorial } from '../sim/helpers'
 import type { GameState } from '../sim/state'
 import type { MemoCost, MemoDef } from './memos'
@@ -17,6 +18,8 @@ export interface DoctrineDef {
   blurb: string
   /** Ordinal unlock — buy in sequence for full tournament payoff. */
   order: number
+  /** Late doctrines stay hidden until this era (Worlds, 7+). */
+  era?: number
 }
 
 export const DOCTRINES: DoctrineDef[] = [
@@ -28,7 +31,19 @@ export const DOCTRINES: DoctrineDef[] = [
   { id: 'route-density', name: 'Route Density', blurb: 'Depot legs before vanity stores.', order: 5 },
   { id: 'float-discipline', name: 'Float Discipline', blurb: 'Equity is expansion fuel.', order: 6 },
   { id: 'read-bank', name: 'Bank the Read', blurb: 'Tournaments bank Read for the next fight.', order: 7 },
+  // Late doctrines (Era 7+). Each is read by sim/systems/late.ts.
+  { id: 'survey-ledger', name: 'Survey Ledger', blurb: 'Every survey trickle is written twice. +25% survey.', order: 8, era: 7 },
+  { id: 'freight-docket', name: 'Freight Docket', blurb: 'The bonded cage fills faster. +25% bonded crates.', order: 9, era: 8 },
+  { id: 'seed-bank', name: 'Seed Bank', blurb: 'The vault takes a quarter more seed.', order: 10, era: 9 },
+  { id: 'signal-discipline', name: 'Signal Discipline', blurb: 'The mast listens harder. +20% signal.', order: 11, era: 10 },
+  { id: 'quorum-rules', name: 'Quorum Rules', blurb: 'Council seats pay a quarter more.', order: 12, era: 11 },
+  { id: 'standing-order', name: 'Standing Order', blurb: 'Jump hauls carry 20% more freight.', order: 13, era: 12 },
 ]
+
+/** Doctrines the player can see and buy at this era (late ones open with Worlds). */
+export function doctrinesAtEra(era: number): DoctrineDef[] {
+  return DOCTRINES.filter((d) => (d.era ?? 0) <= era)
+}
 
 export const DOCTRINE_BY_ID: Record<string, DoctrineDef> = Object.fromEntries(
   DOCTRINES.map((d) => [d.id, d]),
@@ -224,7 +239,7 @@ export const ERA2_MEMOS: MemoDef[] = [
     voice: 'A local micro-celebrity stands by the cans for two minutes of fame.',
     effect: `+25% demand for ${CELEBRITY_ENDCAP.durationSec}s. Small Brand risk when cameras leave.`,
     era: 2,
-    cost: () => ({ cash: CELEBRITY_ENDCAP.cashCost, ideas: CELEBRITY_ENDCAP.ideasCost }),
+    cost: (s) => ({ cash: celebrityCashCost(s), ideas: CELEBRITY_ENDCAP.ideasCost }),
     visible: (s) => s.era >= 2 && s.compute.ideasUnlocked,
     blocked: (s) =>
       s.time < (s.campaigns?.celebrityUntil ?? 0) ? 'Celebrity still on the endcap.' : null,

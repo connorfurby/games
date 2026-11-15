@@ -3,6 +3,7 @@ import type { RivalId } from '../../content/rivals'
 import { RIVALS } from '../../content/rivals'
 import type { GameState } from '../../sim/state'
 import { Storefront } from '../art/Storefront'
+import { PlanetPins, horizonPins } from './PlanetPins'
 
 /**
  * The empire as a city block, not a ring of dots.
@@ -10,11 +11,14 @@ import { Storefront } from '../art/Storefront'
  * Water, plants and orbit appear when those eras open.
  */
 
-const VIEWBOX: Record<'city' | 'region' | 'world' | 'orbit', string> = {
+const VIEWBOX: Record<'city' | 'region' | 'world' | 'orbit' | 'system' | 'cluster' | 'galaxy', string> = {
   city: '210 255 620 235',
   region: '0 120 1000 500',
   world: '0 40 1000 600',
   orbit: '0 0 1000 640',
+  system: '0 0 1000 640',
+  cluster: '0 0 1000 640',
+  galaxy: '0 0 1000 640',
 }
 
 export type MapKind = 'flagship' | 'store' | 'district' | 'plant' | 'port' | 'franchise' | 'barge' | 'rival'
@@ -35,7 +39,7 @@ const AWNING = {
   premium: '#2f6d4f',
 } as const
 
-const RIVAL_COLOR: Record<RivalId, string> = {
+const RIVAL_COLOR: Partial<Record<RivalId, string>> = {
   penny: '#c2563a',
   freshway: '#3f7d58',
   megamart: '#3d6f9a',
@@ -86,7 +90,8 @@ const OUR_LOTS: { x: number; y: number }[] = [
   { x: 140, y: 470 },
 ]
 
-const RIVAL_ROW: Record<RivalId, { x: number; y: number }[]> = {
+/** The block map only has lots for the street-level chains; Horizon rivals live on the Empire map. */
+const RIVAL_ROW: Partial<Record<RivalId, { x: number; y: number }[]>> = {
   penny: [
     { x: 80, y: 470 },
     { x: 80, y: 398 },
@@ -124,6 +129,7 @@ export function BlockMap({
   onSelect,
   view,
   reducedMotion,
+  systemLayer = 'all',
 }: {
   pins: MapPin[]
   state: GameState
@@ -131,6 +137,7 @@ export function BlockMap({
   onSelect: (key: string) => void
   view: keyof typeof VIEWBOX
   reducedMotion: boolean
+  systemLayer?: 'all' | 'stocked' | 'open'
 }) {
   const stores = pins.filter((p) => p.kind === 'store')
   const shownStores = stores.slice(0, OUR_LOTS.length)
@@ -145,6 +152,27 @@ export function BlockMap({
   const orbit = s.era >= 5
   const biomass = s.fleet?.biomassMax > 0 ? 1 - (s.fleet.biomass ?? 0) / s.fleet.biomassMax : 0
   const fuelled = s.fuel > 0
+
+  if (view === 'system' || view === 'cluster' || view === 'galaxy') {
+    const worlds = horizonPins(s).filter((pin) => {
+      if (view !== 'system') return true
+      if (systemLayer === 'stocked') return pin.stocked
+      if (systemLayer === 'open') return !pin.stocked
+      return true
+    })
+    return (
+      <PlanetPins
+        pins={worlds}
+        selectedId={selected}
+        onSelect={onSelect}
+        reducedMotion={reducedMotion}
+        frame="map"
+        mode={view}
+        circuits={s.horizon.circuits.map((c) => ({ origin: c.origin, dest: c.dest }))}
+        embassies={s.horizon.embassies}
+      />
+    )
+  }
 
   return (
     <svg
@@ -255,9 +283,10 @@ export function BlockMap({
       {RIVALS.map((def) => {
         const group = pins.filter((p) => p.kind === 'rival' && p.rival === def.id)
         const lots = RIVAL_ROW[def.id]
+        if (!lots) return null
         return group.slice(0, lots.length).map((p, i) => {
           const lot = lots[i]!
-          const color = p.bought ? 'var(--sc-tag)' : RIVAL_COLOR[def.id]
+          const color = p.bought ? 'var(--sc-tag)' : (RIVAL_COLOR[def.id] ?? '#8a8478')
           if (def.id === 'halo') {
             return (
               <g key={p.key} transform={`translate(${lot.x} ${lot.y})`} {...hit({ key: p.key, kind: 'rival', active: selected === p.key, label: `${def.name} ${p.n}`, onSelect })}>

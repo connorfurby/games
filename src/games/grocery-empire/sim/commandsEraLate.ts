@@ -1,39 +1,59 @@
+import type { BillId } from '../content/depth'
+import { isBargeClass, isLaneRouteId } from '../content/depth'
 import type { Command, Check } from './commands'
-import type { GameState } from './state'
+import type { GameState, PlantKind } from './state'
 import {
   buyPlant,
   buyTank,
   canBuyPlant,
   canBuyTank,
   canDecommissionPlant,
+  canSetPlantPower,
   decommissionPlant,
+  setPlantPower,
 } from './systems/cold'
 import {
   acquireRegion,
   canAcquire,
   canHireLobby,
   canLeaveRegion,
+  canPassBill,
   hireLobby,
   leaveRegion,
+  passBill,
 } from './systems/politics'
 import {
   allocateCharter,
   applyGuardianPreset,
+  advanceDriftWar,
   buyCharterPoint,
   buyFuel,
   canAllocateCharter,
+  canAdvanceDriftWar,
   canBuyCharterPoint,
   canBuyFuel,
   canFranchise,
   canGuardianPreset,
+  canDispatchHauler,
   canLaunchBarge,
   canOpenLane,
+  canPromoteSteward,
   canRebootFleet,
+  canSetManifest,
+  canSwearExam,
+  canStampLedger,
+  canWinBackFranchise,
+  dispatchHauler,
   launchBarge,
   openFranchise,
   openLane,
+  promoteSteward,
   rebootFleet,
+  setManifest,
+  stampLedger,
   startDriftWar,
+  swearExam,
+  winBackFranchise,
 } from './systems/fleet'
 import {
   acceptEnding,
@@ -64,20 +84,29 @@ function sanitizeMutators(raw: unknown): PrestigeMutatorId[] {
 
 type EraLateCmd =
   | Extract<Command, { type: 'buyPlant' }>
+  | Extract<Command, { type: 'setPlantPower' }>
   | Extract<Command, { type: 'buyTank' }>
   | Extract<Command, { type: 'decommissionPlant' }>
   | Extract<Command, { type: 'hireLobby' }>
   | Extract<Command, { type: 'acquireRegion' }>
   | Extract<Command, { type: 'leaveRegion' }>
+  | Extract<Command, { type: 'passBill' }>
   | Extract<Command, { type: 'openLane' }>
   | Extract<Command, { type: 'buyFuel' }>
   | Extract<Command, { type: 'openFranchise' }>
+  | Extract<Command, { type: 'winBackFranchise' }>
+  | Extract<Command, { type: 'setManifest' }>
+  | Extract<Command, { type: 'swearExam' }>
+  | Extract<Command, { type: 'stampLedger' }>
   | Extract<Command, { type: 'launchBarge' }>
+  | Extract<Command, { type: 'dispatchHauler' }>
   | Extract<Command, { type: 'buyCharter' }>
   | Extract<Command, { type: 'setCharterAxis' }>
   | Extract<Command, { type: 'applyGuardian' }>
   | Extract<Command, { type: 'rebootFleet' }>
   | Extract<Command, { type: 'startDriftWar' }>
+  | Extract<Command, { type: 'advanceDriftWar' }>
+  | Extract<Command, { type: 'promoteSteward' }>
   | Extract<Command, { type: 'acceptEnding' }>
   | Extract<Command, { type: 'rejectEnding' }>
   | Extract<Command, { type: 'clearPendingAccept' }>
@@ -92,11 +121,26 @@ export const eraLateHandlers: {
   [K in EraLateCmd['type']]: EraLateHandler<Extract<EraLateCmd, { type: K }>>
 } = {
   buyPlant: {
-    can: (s) => {
-      const r = canBuyPlant(s)
+    can: (s, cmd) => {
+      const kind = (cmd.kind ?? 'compressor') as PlantKind
+      const r = canBuyPlant(s, kind)
       return r ? no(r) : ok
     },
-    run: (s) => buyPlant(s),
+    run: (s, cmd) => buyPlant(s, (cmd.kind ?? 'compressor') as PlantKind),
+  },
+  setPlantPower: {
+    can: (s, cmd) => {
+      const r = canSetPlantPower(s, cmd.kinds ?? [])
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => setPlantPower(s, cmd.kinds ?? []),
+  },
+  passBill: {
+    can: (s, cmd) => {
+      const r = canPassBill(s, cmd.id as BillId)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => passBill(s, cmd.id as BillId),
   },
   buyTank: {
     can: (s) => {
@@ -134,11 +178,15 @@ export const eraLateHandlers: {
     run: (s) => leaveRegion(s),
   },
   openLane: {
-    can: (s) => {
-      const r = canOpenLane(s)
+    can: (s, cmd) => {
+      const route = cmd.route && isLaneRouteId(cmd.route) ? cmd.route : 'spice-route'
+      const r = canOpenLane(s, route)
       return r ? no(r) : ok
     },
-    run: (s) => openLane(s),
+    run: (s, cmd) => {
+      const route = cmd.route && isLaneRouteId(cmd.route) ? cmd.route : 'spice-route'
+      openLane(s, route)
+    },
   },
   buyFuel: {
     can: (s) => {
@@ -154,12 +202,62 @@ export const eraLateHandlers: {
     },
     run: (s) => openFranchise(s),
   },
-  launchBarge: {
-    can: (s) => {
-      const r = canLaunchBarge(s)
+  winBackFranchise: {
+    can: (s, cmd) => {
+      const r = canWinBackFranchise(s, cmd.franchiseId)
       return r ? no(r) : ok
     },
-    run: (s) => launchBarge(s),
+    run: (s, cmd) => winBackFranchise(s, cmd.franchiseId),
+  },
+  setManifest: {
+    can: (s, cmd) => {
+      const r = canSetManifest(s, cmd.laneId, cmd.mix)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => setManifest(s, cmd.laneId, cmd.mix),
+  },
+  swearExam: {
+    can: (s) => {
+      const r = canSwearExam(s)
+      return r ? no(r) : ok
+    },
+    run: (s) => swearExam(s),
+  },
+  stampLedger: {
+    can: (s) => {
+      const r = canStampLedger(s)
+      return r ? no(r) : ok
+    },
+    run: (s) => stampLedger(s),
+  },
+  launchBarge: {
+    can: (s, cmd) => {
+      const cls = cmd.class && isBargeClass(cmd.class) ? cmd.class : 'hauler'
+      const r = canLaunchBarge(s, cls)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => {
+      const cls = cmd.class && isBargeClass(cmd.class) ? cmd.class : 'hauler'
+      launchBarge(s, cls)
+    },
+  },
+  dispatchHauler: {
+    can: (s, cmd) => {
+      const r = canDispatchHauler(s, {
+        bargeId: cmd.bargeId,
+        pocketId: cmd.pocketId,
+        class: cmd.class,
+        loadRation: cmd.loadRation,
+      })
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) =>
+      dispatchHauler(s, {
+        bargeId: cmd.bargeId,
+        pocketId: cmd.pocketId,
+        class: cmd.class,
+        loadRation: cmd.loadRation,
+      }),
   },
   buyCharter: {
     can: (s) => {
@@ -193,10 +291,24 @@ export const eraLateHandlers: {
   startDriftWar: {
     can: (s) => {
       if (!s.fleet.launched && s.fleet.barges <= 0) return no('Launch a barge first.')
-      if (s.fleet.warOn) return no('Drift war already on.')
+      if (s.fleet.warOn && (s.depth?.driftWar?.step ?? 0) >= 1) return no('Drift war already on.')
       return ok
     },
     run: (s) => startDriftWar(s),
+  },
+  advanceDriftWar: {
+    can: (s) => {
+      const r = canAdvanceDriftWar(s)
+      return r ? no(r) : ok
+    },
+    run: (s) => advanceDriftWar(s),
+  },
+  promoteSteward: {
+    can: (s, cmd) => {
+      const r = canPromoteSteward(s, cmd.staffId)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => promoteSteward(s, cmd.staffId),
   },
   acceptEnding: {
     can: (s) => {

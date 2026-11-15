@@ -25,6 +25,11 @@ const PATHS: Record<StatId, string> = {
   crateCut: 'M3 9l9-5 9 5v10l-9 4-9-4zM3 9l9 5 9-5M8 17l8-6',
   rivalCut: 'M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6zM9 12l2 2 4-4',
   dealCut: 'M3 12l5-5 4 4 4-4 5 5-5 5-4-4-4 4zM12 11v6',
+  planet: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  freight: 'M3 14h11V8H3v6zm11 0h4l3 3v2h-2M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  seed: 'M12 21c4-4 6-8 6-12a6 6 0 0 0-12 0c0 4 2 8 6 12zM12 9v6',
+  signal: 'M12 3l2.4 4.8 5.3.8-3.8 3.7.9 5.3L12 15.2 7.2 17.6l.9-5.3L4.3 8.6l5.3-.8z',
+  seal: 'M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM9 12l2 2 4-4',
 }
 
 export function StatGlyph({ stat, size = 22 }: { stat?: StatId; size?: number }) {

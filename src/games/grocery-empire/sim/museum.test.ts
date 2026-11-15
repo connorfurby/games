@@ -15,7 +15,7 @@ function rng(seed: number) {
 
 describe('relic catalog', () => {
   it('has hundreds of unique relics, 25 per wing', () => {
-    expect(RELICS.length).toBe(500)
+    expect(RELICS.length).toBe(525)
     expect(new Set(RELICS.map((r) => r.id)).size).toBe(RELICS.length)
     expect(new Set(RELICS.map((r) => r.name)).size).toBe(RELICS.length)
     for (const w of WINGS) expect(relicsInWing(w.id)).toHaveLength(25)
@@ -48,9 +48,9 @@ describe('museum', () => {
   it('every chest relic is reachable: opening enough chests fills the chest wings', () => {
     const m = emptyMuseum()
     m.unlocked = true
-    m.maxEra = 6
+    m.maxEra = 12
     const r = rng(7)
-    for (let i = 0; i < 7000; i++) {
+    for (let i = 0; i < 9000; i++) {
       m.chests.push({ id: `x${i}`, rarity: (['common', 'rare', 'epic', 'legendary', 'mythic'] as const)[i % 5]!, wing: null, source: 't', at: 0 })
       openChest(m, `x${i}`, r)
     }
@@ -81,7 +81,7 @@ describe('museum', () => {
 
   it('outlives the run: syncing feeds wing bonuses into a fresh state', () => {
     const m = emptyMuseum()
-    for (const r of relicsInWing('corner')) m.relics[r.id] = { at: 0, n: 1 }
+    for (const r of relicsInWing('corner')) m.relics[r.id] = { at: 0, n: 1, level: 1 }
     const s = createInitialState(9)
     const before = statMul(s, 'demand')
     run(s, { type: 'syncRelics', ...museumSync(m) })

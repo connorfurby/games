@@ -145,7 +145,24 @@ export function MetaProvider({ children }: { children: ReactNode }) {
     root.classList.add(`anim-density--${dens}`)
     root.dataset.animDensity = dens
     root.classList.toggle('a11y-colorblind', !!meta.settings.colorblind)
-  }, [meta.settings.animationDensity, meta.settings.colorblind])
+    root.classList.toggle('ge-reduced-motion', !!meta.settings.reducedMotion)
+    // Colorblind must win over pack inline vars (applyPack sets --accent etc. as styles).
+    if (meta.settings.colorblind) {
+      root.style.setProperty('--accent', '#0072b2')
+      root.style.setProperty('--danger', '#d55e00')
+      root.style.setProperty('--success', '#009e73')
+      root.style.setProperty('--ge-accent', '#0072b2')
+      root.style.setProperty('--ge-danger', '#d55e00')
+      root.style.setProperty('--ge-success', '#009e73')
+    } else {
+      applyPack(meta.equippedPack)
+    }
+  }, [
+    meta.settings.animationDensity,
+    meta.settings.colorblind,
+    meta.settings.reducedMotion,
+    meta.equippedPack,
+  ])
 
   // Optional pack ambience: mute-default, never auto-unmute; restart on pack change while unmuted.
   useEffect(() => {

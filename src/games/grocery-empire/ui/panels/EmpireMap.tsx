@@ -4,7 +4,9 @@ import type { GameState } from '../../sim/state'
 import { networkBreakdown, storeEngineWeight } from '../../sim/systems/network'
 import { useGame } from '../GameContext'
 import { money } from '../format'
+import { ScreenHeader, Sheet, usePhone } from '../kit'
 import { BlockMap, type MapPin } from '../map/BlockMap'
+import { planetDef } from '../../sim/systems/horizon'
 
 /**
  * Empire Map: everything you own, drawn as rings around the flagship.
@@ -16,7 +18,7 @@ const C = 500
 const GOLDEN = Math.PI * (3 - Math.sqrt(5))
 
 interface View {
-  id: 'city' | 'region' | 'world' | 'orbit'
+  id: 'city' | 'region' | 'world' | 'orbit' | 'system' | 'cluster' | 'galaxy'
   label: string
   r: number
   era: number
@@ -27,6 +29,9 @@ const VIEWS: View[] = [
   { id: 'region', label: 'Region', r: 320, era: 3 },
   { id: 'world', label: 'World', r: 450, era: 4 },
   { id: 'orbit', label: 'Orbit', r: 500, era: 5 },
+  { id: 'system', label: 'System', r: 500, era: 7 },
+  { id: 'cluster', label: 'Cluster', r: 500, era: 8 },
+  { id: 'galaxy', label: 'Galaxy', r: 500, era: 11 },
 ]
 
 /** Ring bands in map units. */
@@ -42,6 +47,13 @@ const RIVAL_RING: Record<RivalId, keyof typeof RING> = {
   freshway: 'region',
   megamart: 'world',
   halo: 'orbit',
+  drift: 'orbit',
+  keelmark: 'orbit',
+  // Horizon chains sit on the outer band; the Empire map has no deeper ring.
+  verdant: 'orbit',
+  static: 'orbit',
+  concord: 'orbit',
+  ration: 'orbit',
 }
 
 type Pin =
@@ -181,10 +193,18 @@ function describe(s: GameState, p: Pin, fmt: ReturnType<typeof useGame>['numberF
 
 export function EmpireMap() {
   const { state: s, tick, numberFormat, reducedMotion } = useGame()
+  const phone = usePhone()
   const open = VIEWS.filter((v) => s.era >= v.era)
   const [viewId, setViewId] = useState<View['id']>(() => open[open.length - 1]!.id)
   const view = open.find((v) => v.id === viewId) ?? open[open.length - 1]!
   const [selected, setSelected] = useState<string>('flagship')
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [systemLayer, setSystemLayer] = useState<'all' | 'stocked' | 'open'>('all')
+
+  const pick = (key: string) => {
+    setSelected(key)
+    if (phone) setDetailOpen(true)
+  }
   // Pins only move when counts change, so key the memo on the counts, not the tick.
   const sig = [
     s.stores.length,
@@ -200,33 +220,65 @@ export function EmpireMap() {
   const pins = useMemo(() => buildPins(s), [sig])
   const net = useMemo(() => networkBreakdown(s), [tick, s])
   const sel = pins.find((p) => pinKey(p) === selected) ?? pins[0]!
-  const info = describe(s, sel, numberFormat)
   const lanes = s.fleet?.lanes ?? 0
   const draw = useMemo(() => pins.map(toMapPin), [pins])
+  const worldZoom = view.id === 'system' || view.id === 'cluster' || view.id === 'galaxy'
+  const systemRun = worldZoom
+    ? s.horizon.planets.find((p) => p.id === selected) ?? s.horizon.planets.find((p) => p.revealed) ?? null
+    : null
+  const systemDef = systemRun ? planetDef(systemRun.id) : null
+  const info = worldZoom
+    ? systemRun && systemDef
+      ? {
+          title: systemDef.name,
+          lines: [
+            `${systemDef.climate} climate.`,
+            systemRun.stocked ? `Stocked at ${systemRun.score.toFixed(2)}.` : 'Revealed. The shelf is still empty.',
+            view.id === 'cluster'
+              ? `${s.horizon.circuits.filter((c) => c.origin === systemRun.id || c.dest === systemRun.id).length} circuit link(s).`
+              : view.id === 'galaxy'
+                ? `${s.horizon.embassies} embassy seal(s) on the charter.`
+                : systemDef.wanted.join(' · '),
+          ],
+        }
+      : {
+          title: view.id === 'cluster' ? 'The cluster' : view.id === 'galaxy' ? 'The galaxy' : 'The system',
+          lines: [
+            view.id === 'cluster'
+              ? 'Lines join worlds that share a filed circuit.'
+              : view.id === 'galaxy'
+                ? 'Embassy pins sit outside the ring. Open them from Charter.'
+                : 'Launch a probe from Planets. Revealed worlds pin here. Stocked ones fill in.',
+          ],
+        }
+    : describe(s, sel, numberFormat)
 
   const counts: [string, string][] = [
     ['Stores', String(s.stores.length)],
     ...(s.era >= 3 ? ([['Districts', String(s.politics?.acquisitions ?? 0)], ['Cold plants', String(s.cold?.plants ?? 0)]] as [string, string][]) : []),
     ...(s.era >= 4 ? ([['Lanes', String(lanes)], ['Franchises', String(s.fleet?.franchises ?? 0)]] as [string, string][]) : []),
     ...(s.era >= 5 ? ([['Barges', String(s.fleet?.barges ?? 0)]] as [string, string][]) : []),
+    ...(s.era >= 7 ? ([['Worlds', String(s.horizon.planets.filter((p) => p.revealed).length)]] as [string, string][]) : []),
     ['Network', `×${net.total >= 100 ? Math.round(net.total) : net.total.toFixed(2)}`],
   ]
 
   return (
     <div className="mp">
       <section className="ge-panel mp-head">
-        <header className="ge-panel__head">
-          <h2 className="ge-panel__title">Empire Map</h2>
-          <p className="ge-panel__purpose">Your block, then the water and the orbit. Tap a building.</p>
-        </header>
-        <dl className="mp-counts">
-          {counts.map(([k, v]) => (
-            <div key={k}>
-              <dt>{k}</dt>
-              <dd>{v}</dd>
-            </div>
-          ))}
-        </dl>
+        <ScreenHeader
+          hub
+          title="Map"
+          purpose="Tap a building on your block."
+          stats={
+            <p className="mp-counts mp-counts--line">
+              {counts.map(([k, v]) => (
+                <span key={k}>
+                  {k} {v}
+                </span>
+              ))}
+            </p>
+          }
+        />
       </section>
 
       <section className="ge-panel mp-stage">
@@ -249,26 +301,108 @@ export function EmpireMap() {
             )
           })}
         </div>
-        <BlockMap pins={draw} state={s} selected={selected} onSelect={setSelected} view={view.id} reducedMotion={reducedMotion} />
-        <aside className="mp-detail" aria-live="polite">
-          <h3>{info.title}</h3>
-          {info.lines.map((l) => (
-            <p key={l}>{l}</p>
-          ))}
-        </aside>
+        {view.id === 'system' ? (
+          <div className="ge-chip-row" role="group" aria-label="System layers">
+            {(
+              [
+                ['all', 'All worlds'],
+                ['stocked', 'Stocked'],
+                ['open', 'Open shelves'],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={`g2-subtab${systemLayer === id ? ' is-active' : ''}`}
+                aria-pressed={systemLayer === id}
+                onClick={() => setSystemLayer(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <BlockMap
+          pins={draw}
+          state={s}
+          selected={worldZoom ? (systemRun?.id ?? selected) : selected}
+          onSelect={pick}
+          view={view.id}
+          reducedMotion={reducedMotion}
+          systemLayer={systemLayer}
+        />
+        {!phone ? (
+          <aside className="mp-detail" aria-live="polite">
+            <h3>{info.title}</h3>
+            {info.lines.map((l) => (
+              <p key={l}>{l}</p>
+            ))}
+          </aside>
+        ) : (
+          <Sheet
+            open={detailOpen}
+            onClose={() => setDetailOpen(false)}
+            title={info.title}
+            reducedMotion={reducedMotion}
+          >
+            {info.lines.map((l) => (
+              <p key={l}>{l}</p>
+            ))}
+          </Sheet>
+        )}
       </section>
 
       <section className="ge-panel mp-legend" aria-label="Legend">
-        <ul>
-          <li><i className="mp-key mp-key--flagship" /> Flagship</li>
-          <li><i className="mp-key mp-key--store" /> Chain store</li>
-          {s.era >= 3 ? <li><i className="mp-key mp-key--district" /> District</li> : null}
-          {s.era >= 3 ? <li><i className="mp-key mp-key--plant" /> Cold plant</li> : null}
-          {s.era >= 4 ? <li><i className="mp-key mp-key--port" /> Lane port</li> : null}
-          {s.era >= 4 ? <li><i className="mp-key mp-key--franchise" /> Franchise</li> : null}
-          {s.era >= 5 ? <li><i className="mp-key mp-key--barge" /> Barge</li> : null}
-          {Object.keys(s.rivals ?? {}).length ? <li><i className="mp-key mp-key--rival" /> Rival store</li> : null}
-          {Object.values(s.rivals ?? {}).some((r) => r.bought) ? <li><i className="mp-key mp-key--bought" /> Bought rival</li> : null}
+        <ul className="mp-legend__dense">
+          <li>
+            <i className="mp-key mp-key--flagship" /> Flagship · hand-run till
+          </li>
+          <li>
+            <i className="mp-key mp-key--store" /> Chain · {s.stores.length} doors
+          </li>
+          {s.era >= 3 ? (
+            <li>
+              <i className="mp-key mp-key--district" /> District · {s.politics?.acquisitions ?? 0}
+            </li>
+          ) : null}
+          {s.era >= 3 ? (
+            <li>
+              <i className="mp-key mp-key--plant" /> Cold · {(s.cold?.plants ?? 0) + (s.cold?.offline ?? 0)} plants
+            </li>
+          ) : null}
+          {s.era >= 4 ? (
+            <li>
+              <i className="mp-key mp-key--port" /> Lane · {lanes} ports
+            </li>
+          ) : null}
+          {s.era >= 4 ? (
+            <li>
+              <i className="mp-key mp-key--franchise" /> Franchise · {s.fleet?.franchises ?? 0}
+            </li>
+          ) : null}
+          {s.era >= 5 ? (
+            <li>
+              <i className="mp-key mp-key--barge" /> Barge · {s.fleet?.barges ?? 0}
+            </li>
+          ) : null}
+          {s.era >= 7 ? (
+            <li>
+              <i className="mp-key mp-key--planet" /> World · {s.horizon.planets.filter((p) => p.revealed).length} pinned
+            </li>
+          ) : null}
+          {Object.keys(s.rivals ?? {}).length ? (
+            <li>
+              <i className="mp-key mp-key--rival" /> Rival awning
+            </li>
+          ) : null}
+          {Object.values(s.rivals ?? {}).some((r) => r.bought) ? (
+            <li>
+              <i className="mp-key mp-key--bought" /> Bought rival (gold)
+            </li>
+          ) : null}
+          <li>
+            <i className="mp-key mp-key--flagship" /> Network ×{net.total >= 100 ? Math.round(net.total) : net.total.toFixed(2)}
+          </li>
         </ul>
       </section>
     </div>

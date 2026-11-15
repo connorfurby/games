@@ -1,0 +1,305 @@
+/*
+ * FX primitives. Transform / opacity (and box-shadow on one-shot rings) only.
+ * Reduced motion: the JS side never spawns, and these rules also switch every animation off.
+ */
+@layer kit {
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-toast, 70);
+    pointer-events: none;
+    overflow: hidden;
+    contain: layout paint;
+  }
+
+  /* ── Floating text ───────────────────────────────────────────── */
+  .fx-float {
+    position: absolute;
+    translate: -50% -50%;
+    padding: 2px var(--s-2, 8px);
+    border-radius: var(--r-pill, 999px);
+    font: 700 var(--t-sm, 13px) / 1 var(--ge-font-ui, system-ui, sans-serif);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--ge-ink);
+    background: color-mix(in srgb, var(--ge-surface, #222) 88%, transparent);
+    box-shadow: var(--shadow-2, 0 2px 8px rgb(0 0 0 / 0.3));
+    will-change: transform, opacity;
+    animation: fx-rise 900ms var(--ease-out, ease-out) both;
+  }
+  .fx-float--gain {
+    color: var(--ge-success, #6fcf97);
+  }
+  .fx-float--cost {
+    color: var(--ge-tag-ink, #2b2208);
+    background: var(--ge-tag, #f2c14e);
+    animation-name: fx-fly;
+    animation-duration: 800ms;
+  }
+  .fx-float--toast {
+    padding: var(--s-2, 8px) var(--s-3, 12px);
+    border: 1px solid var(--ge-tag, #f2c14e);
+    animation-name: fx-pop;
+    animation-duration: 1800ms;
+  }
+
+  @keyframes fx-rise {
+    0% {
+      opacity: 0;
+      transform: translateY(8px) scale(0.9);
+    }
+    15% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-36px) scale(1);
+    }
+  }
+  @keyframes fx-fly {
+    0% {
+      opacity: 0;
+      transform: translateY(0) scale(0.8);
+    }
+    20% {
+      opacity: 1;
+      transform: translateY(-8px) scale(1.05);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-48px) scale(0.9);
+    }
+  }
+  @keyframes fx-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.85);
+    }
+    10% {
+      opacity: 1;
+      transform: translateY(0) scale(1.04);
+    }
+    16% {
+      transform: translateY(0) scale(1);
+    }
+    85% {
+      opacity: 1;
+      transform: translateY(-6px) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-16px) scale(1);
+    }
+  }
+
+  /* ── Burst ───────────────────────────────────────────────────── */
+  .fx-burst {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+  .fx-burst i {
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ge-tag, #f2c14e);
+    will-change: transform, opacity;
+    animation: fx-spark 650ms var(--ease-out, ease-out) both;
+  }
+  .fx-burst i:nth-child(even) {
+    background: var(--ge-success, #6fcf97);
+    animation-duration: 550ms;
+  }
+  .fx-burst__text {
+    position: absolute;
+    left: 0;
+    top: 0;
+    translate: -50% -50%;
+    font: 800 var(--t-md, 15px) / 1 var(--ge-font-ui, system-ui, sans-serif);
+    white-space: nowrap;
+    color: var(--ge-tag, #f2c14e);
+    text-shadow: 0 1px 4px rgb(0 0 0 / 0.6);
+    animation: fx-rise 700ms var(--ease-out, ease-out) both;
+  }
+  @keyframes fx-spark {
+    0% {
+      opacity: 1;
+      transform: translate(0, 0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.3);
+    }
+  }
+
+  /* ── Full-screen sweep (era / rank / project) ─────────────────── */
+  .fx-sweep {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .fx-sweep__bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 60%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      color-mix(in srgb, var(--ge-tag, #f2c14e) 28%, transparent) 45%,
+      color-mix(in srgb, white 22%, transparent) 50%,
+      color-mix(in srgb, var(--ge-tag, #f2c14e) 28%, transparent) 55%,
+      transparent 100%
+    );
+    will-change: transform, opacity;
+    animation: fx-sweep 1000ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+  .fx-sweep__text {
+    position: relative;
+    padding: var(--s-2, 8px) var(--s-5, 20px);
+    border-radius: var(--r-pill, 999px);
+    background: var(--ge-tag, #f2c14e);
+    color: var(--ge-tag-ink, #2b2208);
+    font: 800 var(--t-lg, 18px) / 1 var(--ge-font-display, var(--ge-font-ui, system-ui));
+    box-shadow: var(--shadow-3, 0 8px 24px rgb(0 0 0 / 0.4));
+    animation: fx-pop 1100ms var(--ease-out, ease-out) both;
+  }
+  @keyframes fx-sweep {
+    0% {
+      opacity: 0;
+      transform: translateX(-110%);
+    }
+    15% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(170%);
+    }
+  }
+
+  /* ── One-shot classes (added to existing elements) ───────────── */
+  .fx-ring {
+    animation: fx-ring 650ms var(--ease-out, ease-out) 1;
+  }
+  @keyframes fx-ring {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--ge-tag, #f2c14e) 70%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 14px transparent;
+    }
+  }
+
+  .gk-card--shimmer {
+    overflow: clip;
+  }
+  .gk-card--shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 30%,
+      color-mix(in srgb, var(--ge-tag, #f2c14e) 26%, transparent) 50%,
+      transparent 70%
+    );
+    will-change: transform, opacity;
+    animation: fx-shimmer 800ms var(--ease-out, ease-out) 1 both;
+  }
+  @keyframes fx-shimmer {
+    0% {
+      opacity: 1;
+      transform: translateX(-100%);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+
+  .gk-btn.is-bought {
+    animation: fx-bought 260ms var(--ease-spring, ease-out) 1;
+  }
+  @keyframes fx-bought {
+    0% {
+      transform: scale(0.96);
+    }
+    60% {
+      transform: scale(1.04);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* ── Value flash (useFlash consumers: data-fx-flash="up|down") ── */
+  [data-fx-flash='up'] {
+    animation: fx-flash-up 600ms ease-out 1;
+  }
+  [data-fx-flash='down'] {
+    animation: fx-flash-down 600ms ease-out 1;
+  }
+  @keyframes fx-flash-up {
+    0% {
+      color: var(--ge-success, #6fcf97);
+    }
+  }
+  @keyframes fx-flash-down {
+    0% {
+      color: var(--ge-danger, #e5736b);
+    }
+  }
+
+  .fx-crate-hop {
+    display: inline-block;
+  }
+  .fx-crate-hop.is-hop {
+    animation: fx-crate-hop 240ms var(--ease-out, ease-out) both;
+  }
+  @keyframes fx-crate-hop {
+    0% {
+      transform: translate(0, 0) scale(0.85);
+      opacity: 0.35;
+    }
+    100% {
+      transform: translate(48px, -28px) scale(1);
+      opacity: 0;
+    }
+  }
+  .fx-press--motion:active:not(:disabled) {
+    transform: scale(0.97);
+    transition: transform 80ms var(--ease-out, ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fx-layer *,
+    .fx-ring,
+    .gk-card--shimmer::after,
+    .gk-btn.is-bought,
+    [data-fx-flash],
+    .fx-crate-hop.is-hop {
+      animation: none !important;
+    }
+  }
+  html.ge-reduced-motion .fx-layer *,
+  html.ge-reduced-motion .fx-ring,
+  html.ge-reduced-motion .gk-card--shimmer::after,
+  html.ge-reduced-motion .gk-btn.is-bought,
+  html.ge-reduced-motion [data-fx-flash],
+  html.ge-reduced-motion .fx-crate-hop.is-hop {
+    animation: none !important;
+  }
+}

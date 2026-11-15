@@ -1,5 +1,6 @@
 import { CATEGORY_IDS } from '../content/categories'
-import { COMPUTE, HOURS, MORALE, PRICE } from './balance'
+import { emptyDepth } from '../content/depth'
+import { COMPUTE, DEPTH, HORIZON, HOURS, MORALE, PRICE } from './balance'
 import { hoursMax } from './formulas'
 import { clamp, compact } from './helpers'
 import { isRivalKind, type Batch, type GameState } from './state'
@@ -27,7 +28,7 @@ export function repair(s: GameState): GameState {
   s.arrearsForgiven = Math.max(0, finite(s.arrearsForgiven))
   s.debt.owed = Math.max(0, finite(s.debt.owed))
   s.debt.taken = Math.max(0, finite(s.debt.taken))
-  s.price = clamp(finite(s.price, PRICE.min), PRICE.min, PRICE.max)
+  s.price = Math.round(clamp(finite(s.price, PRICE.min), PRICE.min, PRICE.max) * 100) / 100
   s.hours = clamp(finite(s.hours, 1), HOURS.min, hoursMax(s))
   s.morale = clamp(finite(s.morale, 1), MORALE.min, MORALE.max)
   s.speed = [1, 2, 4, 8].includes(s.speed) ? s.speed : 1
@@ -265,8 +266,14 @@ export function repair(s: GameState): GameState {
   if (!Array.isArray(s.projects.active)) s.projects.active = []
   if (!s.projects.done || typeof s.projects.done !== 'object') s.projects.done = {}
   if (!s.rivals || typeof s.rivals !== 'object') s.rivals = {}
-  if (!s.relics || !Array.isArray(s.relics.wings)) s.relics = { wings: [], count: 0, owned: {} }
+  if (!s.relics || !Array.isArray(s.relics.wings)) {
+    s.relics = { wings: [], count: 0, owned: {}, levels: {}, sockets: [], dust: 0, autoDust: null }
+  }
   if (!s.relics.owned || typeof s.relics.owned !== 'object') s.relics.owned = {}
+  if (!s.relics.levels || typeof s.relics.levels !== 'object') s.relics.levels = {}
+  if (!Array.isArray(s.relics.sockets)) s.relics.sockets = []
+  if (typeof s.relics.dust !== 'number' || !Number.isFinite(s.relics.dust)) s.relics.dust = 0
+  if (s.relics.autoDust === undefined) s.relics.autoDust = null
   if (s.prestigeCarry) {
     s.prestigeCarry.appetite = Math.max(0, finite(s.prestigeCarry.appetite))
     s.prestigeCarry.tipSharpness = Math.max(0, finite(s.prestigeCarry.tipSharpness))
@@ -282,6 +289,217 @@ export function repair(s: GameState): GameState {
     }
     s.prestigeCarry.mutators = muts
   }
+
+  if (!s.depth || typeof s.depth !== 'object') s.depth = emptyDepth()
+  if (!s.depth.facings || typeof s.depth.facings !== 'object') s.depth.facings = {}
+  if (!s.depth.departments || typeof s.depth.departments !== 'object') {
+    s.depth.departments = emptyDepth().departments
+  }
+  for (const id of ['fresh', 'chain', 'cold', 'logistics', 'orbit']) {
+    if (!s.depth.departments[id]) {
+      s.depth.departments[id] = { leadId: null, specialistIds: [], policy: null }
+    }
+  }
+  if (!s.depth.contracts || typeof s.depth.contracts !== 'object') s.depth.contracts = {}
+  if (!s.depth.placeTraits || typeof s.depth.placeTraits !== 'object') s.depth.placeTraits = {}
+  if (!s.depth.manifests || typeof s.depth.manifests !== 'object') s.depth.manifests = {}
+  if (!s.depth.driftWar || typeof s.depth.driftWar !== 'object') s.depth.driftWar = { step: 0 }
+  if (typeof s.depth.open !== 'boolean') s.depth.open = true
+  s.depth.marketBellDipAt = Math.max(0, finite(s.depth.marketBellDipAt))
+  s.depth.marketBellDips = Math.max(0, Math.floor(finite(s.depth.marketBellDips)))
+  if (s.depth.marketBellDips <= 0 && s.depth.marketBellDipAt > 0) s.depth.marketBellDips = 1
+  s.depth.stars = Math.max(
+    DEPTH.starsMin,
+    Math.min(DEPTH.starsMax, finite(s.depth.stars ?? DEPTH.starsStart)),
+  )
+  s.depth.regularSatisfied = Math.max(0, Math.floor(finite(s.depth.regularSatisfied)))
+  s.depth.layawaySlips = Math.max(0, Math.floor(finite(s.depth.layawaySlips ?? 0)))
+  s.depth.dockCheckIns = Math.max(0, Math.floor(finite(s.depth.dockCheckIns ?? 0)))
+  s.depth.nextDockAt = Math.max(0, finite(s.depth.nextDockAt ?? 0))
+  s.depth.regularMissUntil = Math.max(0, finite(s.depth.regularMissUntil))
+  s.depth.nextInvoiceId = Math.max(1, Math.floor(finite(s.depth.nextInvoiceId || 1)))
+  s.depth.invoicesOnTime = Math.max(0, Math.floor(finite(s.depth.invoicesOnTime)))
+  if (!s.depth.regulars || typeof s.depth.regulars !== 'object') {
+    s.depth.regulars = emptyDepth().regulars
+  } else {
+    if (!s.depth.regulars.seen || typeof s.depth.regulars.seen !== 'object') s.depth.regulars.seen = {}
+    if (typeof s.depth.regulars.activeId !== 'string') s.depth.regulars.activeId = null
+    s.depth.regulars.arrivesAt = Math.max(0, finite(s.depth.regulars.arrivesAt))
+    s.depth.regulars.patienceUntil = Math.max(0, finite(s.depth.regulars.patienceUntil))
+    s.depth.regulars.layaway = !!s.depth.regulars.layaway
+  }
+  if (!s.depth.shifts || typeof s.depth.shifts !== 'object') {
+    s.depth.shifts = emptyDepth().shifts
+  } else {
+    for (const slot of DEPTH.shiftSlots) {
+      if (!Array.isArray(s.depth.shifts[slot])) s.depth.shifts[slot] = []
+    }
+    s.depth.shifts.daysCoveredOpen = Math.max(0, Math.floor(finite(s.depth.shifts.daysCoveredOpen)))
+    s.depth.shifts.daysCoveredMidOrbit = Math.max(
+      0,
+      Math.floor(finite(s.depth.shifts.daysCoveredMidOrbit ?? 0)),
+    )
+    s.depth.shifts.lastRolloverDay = Math.max(0, Math.floor(finite(s.depth.shifts.lastRolloverDay)))
+  }
+  if (!Array.isArray(s.depth.invoices)) s.depth.invoices = []
+  if (!s.depth.flagship || typeof s.depth.flagship !== 'object') {
+    s.depth.flagship = emptyDepth().flagship
+  } else {
+    if (!Array.isArray(s.depth.flagship.slots)) s.depth.flagship.slots = emptyDepth().flagship.slots
+    s.depth.flagship.score = Math.max(0, Math.min(1, finite(s.depth.flagship.score)))
+    s.depth.flagship.filings = Math.max(0, Math.floor(finite(s.depth.flagship.filings)))
+    s.depth.flagship.practiceLeft = Math.max(0, Math.floor(finite(s.depth.flagship.practiceLeft)))
+    if (typeof s.depth.flagship.credited !== 'boolean') s.depth.flagship.credited = false
+    if (typeof s.depth.flagship.chainCredited !== 'boolean') s.depth.flagship.chainCredited = false
+    if (typeof s.depth.flagship.globeCredited !== 'boolean') s.depth.flagship.globeCredited = false
+  }
+  if (s.depth.produceGrade !== 'good' && s.depth.produceGrade !== 'bruised') {
+    s.depth.produceGrade = null
+  }
+  s.depth.writeOffAt = Math.max(0, finite(s.depth.writeOffAt))
+  s.depth.writeOffs = Math.max(0, Math.floor(finite(s.depth.writeOffs)))
+  s.depth.promotions = Math.max(0, Math.floor(finite(s.depth.promotions)))
+  s.depth.circularsRun = Math.max(0, Math.floor(finite(s.depth.circularsRun)))
+  s.depth.flyerWeeks = Math.max(0, Math.floor(finite(s.depth.flyerWeeks ?? 0)))
+  s.depth.hotTraitWalks = Math.max(0, Math.floor(finite(s.depth.hotTraitWalks ?? 0)))
+  if (typeof s.depth.counterFlyerNeeded !== 'boolean') s.depth.counterFlyerNeeded = false
+  s.depth.counterFlyerAt = Math.max(0, finite(s.depth.counterFlyerAt ?? 0))
+  s.depth.blockEventAt = Math.max(0, finite(s.depth.blockEventAt ?? 0))
+  if (!s.depth.blockEvent || typeof s.depth.blockEvent !== 'object') {
+    s.depth.blockEvent = emptyDepth().blockEvent
+  } else {
+    const k = s.depth.blockEvent.kind
+    if (k !== 'parade' && k !== 'payday' && k !== 'rain' && k !== null) s.depth.blockEvent.kind = null
+    s.depth.blockEvent.until = Math.max(0, finite(s.depth.blockEvent.until))
+    if (typeof s.depth.blockEvent.traitBias !== 'string' && s.depth.blockEvent.traitBias !== null) {
+      s.depth.blockEvent.traitBias = null
+    }
+  }
+  if (s.depth.flyer !== null && typeof s.depth.flyer === 'object') {
+    if (!Array.isArray(s.depth.flyer.aisles)) s.depth.flyer.aisles = []
+    const d = s.depth.flyer.discount
+    if (d !== 'soft' && d !== 'mid' && d !== 'deep') s.depth.flyer.discount = 'soft'
+    if (s.depth.flyer.promise !== 'hours' && s.depth.flyer.promise !== 'facing') {
+      s.depth.flyer.promise = 'hours'
+    }
+    s.depth.flyer.until = Math.max(0, finite(s.depth.flyer.until))
+    s.depth.flyer.weeksCompleted = Math.max(0, Math.floor(finite(s.depth.flyer.weeksCompleted)))
+    s.depth.flyer.cooldownUntil = Math.max(0, finite(s.depth.flyer.cooldownUntil))
+    s.depth.flyer.bandHeld = s.depth.flyer.bandHeld !== false
+  } else if (s.depth.flyer !== null) {
+    s.depth.flyer = null
+  }
+  s.depth.rivalLockAt = Math.max(0, finite(s.depth.rivalLockAt))
+  s.depth.brownoutDrillAt = Math.max(0, finite(s.depth.brownoutDrillAt))
+  s.depth.drillsRun = Math.max(0, Math.floor(finite(s.depth.drillsRun)))
+  if (!s.depth.cooler || typeof s.depth.cooler !== 'object') {
+    s.depth.cooler = emptyDepth().cooler
+  } else {
+    s.depth.cooler.logsSigned = Math.max(0, Math.floor(finite(s.depth.cooler.logsSigned)))
+    s.depth.cooler.nextDueAt = Math.max(0, finite(s.depth.cooler.nextDueAt))
+    s.depth.cooler.missed = Math.max(0, Math.floor(finite(s.depth.cooler.missed)))
+    s.depth.cooler.lastSignedAt = Math.max(0, finite(s.depth.cooler.lastSignedAt ?? 0))
+  }
+  if (!s.depth.leadsOnBoard || typeof s.depth.leadsOnBoard !== 'object') {
+    s.depth.leadsOnBoard = emptyDepth().leadsOnBoard
+  } else {
+    if (typeof s.depth.leadsOnBoard.fresh !== 'boolean') s.depth.leadsOnBoard.fresh = false
+    if (typeof s.depth.leadsOnBoard.cold !== 'boolean') s.depth.leadsOnBoard.cold = false
+  }
+  if (!s.depth.dispatch || typeof s.depth.dispatch !== 'object') {
+    s.depth.dispatch = emptyDepth().dispatch
+  } else {
+    s.depth.dispatch.cleanManifests = Math.max(0, Math.floor(finite(s.depth.dispatch.cleanManifests)))
+    s.depth.dispatch.lastCycleAt = Math.max(0, finite(s.depth.dispatch.lastCycleAt))
+    if (typeof s.depth.dispatch.examLaneId !== 'string') s.depth.dispatch.examLaneId = null
+    if (typeof s.depth.dispatch.examMix !== 'string') s.depth.dispatch.examMix = null
+    s.depth.dispatch.examUntil = Math.max(0, finite(s.depth.dispatch.examUntil ?? 0))
+    s.depth.dispatch.examsHeld = Math.max(0, Math.floor(finite(s.depth.dispatch.examsHeld ?? 0)))
+  }
+  s.depth.ledgerStamps = Math.max(0, Math.floor(finite(s.depth.ledgerStamps ?? 0)))
+  s.depth.lastLedgerDay = Math.floor(finite(s.depth.lastLedgerDay ?? -1))
+  s.depth.berthTurnarounds = Math.max(0, Math.floor(finite(s.depth.berthTurnarounds ?? 0)))
+  s.depth.manifestsRun = Math.max(0, Math.floor(finite(s.depth.manifestsRun)))
+  s.depth.defectionsHandled = Math.max(0, Math.floor(finite(s.depth.defectionsHandled)))
+  s.depth.megaMartUntil = Math.max(0, finite(s.depth.megaMartUntil))
+  s.depth.rationWeekUntil = Math.max(0, finite(s.depth.rationWeekUntil))
+  if (typeof s.depth.orbitMidOnce !== 'boolean') s.depth.orbitMidOnce = false
+  if (typeof s.depth.surveyShiftOnce !== 'boolean') s.depth.surveyShiftOnce = false
+  s.depth.lastStandardFileAt = Math.max(0, finite(s.depth.lastStandardFileAt))
+  if (!s.depth.practice || typeof s.depth.practice !== 'object') {
+    s.depth.practice = emptyDepth().practice
+  } else {
+    for (const layer of ['planogram', 'convoy', 'cross', 'phrase', 'list'] as const) {
+      const row = s.depth.practice[layer]
+      if (!row || typeof row !== 'object') {
+        s.depth.practice[layer] = { left: HORIZON.practicePerLayer, credited: 0 }
+      } else {
+        row.left = Math.max(0, Math.floor(finite(row.left, HORIZON.practicePerLayer)))
+        row.credited = Math.max(0, Math.floor(finite(row.credited)))
+      }
+    }
+  }
+  if (!s.depth.hearing || typeof s.depth.hearing !== 'object') {
+    s.depth.hearing = emptyDepth().hearing
+  } else {
+    s.depth.hearing.sessions = Math.max(0, Math.floor(finite(s.depth.hearing.sessions)))
+    s.depth.hearing.answered = Math.max(0, Math.floor(finite(s.depth.hearing.answered)))
+    s.depth.hearing.needed = s.depth.hearing.needed === 2 ? 2 : 3
+    if (s.depth.hearing.pendingClause != null && typeof s.depth.hearing.pendingClause !== 'string') {
+      s.depth.hearing.pendingClause = null
+    }
+  }
+  if (s.depth.starsFrozenAt != null) {
+    s.depth.starsFrozenAt = Math.max(
+      DEPTH.starsMin,
+      Math.min(DEPTH.starsMax, finite(s.depth.starsFrozenAt)),
+    )
+  } else {
+    s.depth.starsFrozenAt = null
+  }
+  if (!s.depth.deptEverStaffed || typeof s.depth.deptEverStaffed !== 'object') s.depth.deptEverStaffed = {}
+  if (typeof s.depth.driftLockPlanet !== 'string' && s.depth.driftLockPlanet !== null) {
+    s.depth.driftLockPlanet = null
+  }
+  if (typeof s.depth.stolenBay !== 'number') s.depth.stolenBay = -1
+  if (typeof s.depth.stolenBayCircuit !== 'number') s.depth.stolenBayCircuit = -1
+  if (typeof s.depth.verdantTrait !== 'string' && s.depth.verdantTrait !== null) s.depth.verdantTrait = null
+  if (typeof s.depth.jammedSymbol !== 'string' && s.depth.jammedSymbol !== null) s.depth.jammedSymbol = null
+  if (typeof s.depth.hearingAnswered !== 'boolean') s.depth.hearingAnswered = false
+  if (typeof s.depth.rationLine !== 'number') s.depth.rationLine = -1
+  s.depth.hzRivalAt = Math.max(0, finite(s.depth.hzRivalAt))
+  if (s.depth.circular !== null && typeof s.depth.circular !== 'object') s.depth.circular = null
+  if (s.depth.rivalLockCat != null && !CATEGORY_IDS.includes(s.depth.rivalLockCat)) {
+    s.depth.rivalLockCat = null
+  }
+
+  if (!s.cold.plantList) s.cold.plantList = []
+  if (!s.cold.offlineList) s.cold.offlineList = []
+  if (!s.cold.nextPlantId) s.cold.nextPlantId = Math.max(1, s.cold.plantList.length + 1)
+  // Migrate anonymous plant count into compressors once.
+  if (s.cold.plants > s.cold.plantList.length) {
+    const need = s.cold.plants - s.cold.plantList.length
+    for (let i = 0; i < need; i++) {
+      s.cold.plantList.push({ id: `p${s.cold.nextPlantId++}`, kind: 'compressor' })
+    }
+  }
+  s.cold.plants = s.cold.plantList.length
+  s.cold.offline = s.cold.offlineList.length
+
+  if (!s.politics.bills) s.politics.bills = { hours: false, waste: false, labor: false, tax: false }
+
+  if (!s.fleet.laneList) s.fleet.laneList = []
+  if (!s.fleet.franchiseList) s.fleet.franchiseList = []
+  if (!s.fleet.bargeList) s.fleet.bargeList = []
+  if (!s.fleet.pockets) s.fleet.pockets = []
+  if (!Array.isArray(s.fleet.trips)) s.fleet.trips = []
+  if (!s.fleet.nextLaneId) s.fleet.nextLaneId = Math.max(1, s.fleet.laneList.length + 1)
+  if (!s.fleet.nextFranchiseId) s.fleet.nextFranchiseId = Math.max(1, s.fleet.franchiseList.length + 1)
+  if (!s.fleet.nextBargeId) s.fleet.nextBargeId = Math.max(1, s.fleet.bargeList.length + 1)
+  if (s.fleet.lastManifestAt == null) s.fleet.lastManifestAt = -1e9
+  s.fleet.lanes = Math.max(s.fleet.lanes, s.fleet.laneList.length)
+  s.fleet.franchises = Math.max(s.fleet.franchises, s.fleet.franchiseList.length)
+  s.fleet.barges = Math.max(s.fleet.barges, s.fleet.bargeList.length)
 
   return s
 }

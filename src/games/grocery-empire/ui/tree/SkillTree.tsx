@@ -1,7 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { StatId } from '../../content/upgrades/stats'
+import { Sheet, usePhone } from '../kit'
 import { StatGlyph } from './StatGlyph'
 import './tree.css'
+
+/** Keep discs ≥ ~36px on a 390px phone (node disc is 64px). */
+const MIN_ZOOM = 0.56
+const MAX_ZOOM = 1.8
 
 /**
  * An interactive skill tree: tiers run top to bottom, real prerequisites are drawn as
@@ -160,19 +165,45 @@ export function SkillTree({
   reducedMotion?: boolean
   emptyText?: string
 }) {
+  const phone = usePhone()
   const { placed, width, height, tierY } = useMemo(() => layout(nodes, tiers.length), [nodes, tiers.length])
   const pos = useMemo(() => new Map(placed.map((p) => [p.n.id, p])), [placed])
   const viewRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [hover, setHover] = useState<string | null>(null)
+  const [flashEdges, setFlashEdges] = useState<Set<string>>(() => new Set())
+  const prevLvl = useRef<Map<string, number>>(new Map())
   const drag = useRef<{ x: number; y: number; px: number; py: number; moved: boolean } | null>(null)
+  const selectedName = selected ? (pos.get(selected)?.n.name ?? 'Node') : ''
+
+  // Flash prerequisite edges when a node gains a rank.
+  useEffect(() => {
+    const prev = prevLvl.current
+    const bought: string[] = []
+    for (const n of nodes) {
+      const before = prev.get(n.id) ?? n.lvl
+      if (n.lvl > before) bought.push(n.id)
+      prev.set(n.id, n.lvl)
+    }
+    if (bought.length === 0 || reducedMotion) return
+    const edges = new Set<string>()
+    for (const id of bought) {
+      const n = pos.get(id)?.n
+      if (!n) continue
+      for (const r of n.requires) edges.add(`${r.id}-${id}`)
+    }
+    if (edges.size === 0) return
+    setFlashEdges(edges)
+    const t = window.setTimeout(() => setFlashEdges(new Set()), 700)
+    return () => window.clearTimeout(t)
+  }, [nodes, pos, reducedMotion])
 
   // Fit the tree's width on open / tree change.
   const fit = () => {
     const el = viewRef.current
     if (!el) return
-    const z = Math.max(0.45, Math.min(1, (el.clientWidth - 16) / width))
+    const z = Math.max(MIN_ZOOM, Math.min(1, (el.clientWidth - 16) / width))
     setZoom(z)
     setPan({ x: (el.clientWidth - width * z) / 2, y: 0 })
   }
@@ -198,7 +229,7 @@ export function SkillTree({
     const onWheel = (e: WheelEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return
       e.preventDefault()
-      setZoom((z) => Math.max(0.35, Math.min(1.8, z * (e.deltaY < 0 ? 1.1 : 0.9))))
+      setZoom((z) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z * (e.deltaY < 0 ? 1.1 : 0.9))))
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
@@ -226,8 +257,12 @@ export function SkillTree({
 
   if (nodes.length === 0) return <p className="st-empty">{emptyText}</p>
 
+  const detail = selected ? renderDetail(selected) : null
+  // Phone uses a bottom sheet so the tree keeps its full width; desktop keeps the side panel.
+  const showAside = !!selected && !phone
+
   return (
-    <div className={`st${selected ? ' has-detail' : ''}`} style={{ '--st-tint': tint } as React.CSSProperties}>
+    <div className={`st${showAside ? ' has-detail' : ''}`} style={{ '--st-tint': tint } as React.CSSProperties}>
       <div
         ref={viewRef}
         className="st-view"
@@ -245,7 +280,7 @@ export function SkillTree({
           setPan({ x: d.px + dx, y: d.py + dy })
         }}
         onPointerUp={() => {
-          if (drag.current && !drag.current.moved) onSelect(null)
+          if (drag.current && !drag.current.moved && !phone) onSelect(null)
           drag.current = null
         }}
       >
@@ -280,11 +315,12 @@ export function SkillTree({
                 const y1 = from.y + R
                 const y2 = p.y - R
                 const mid = (y1 + y2) / 2
+                const edgeKey = `${r.id}-${p.n.id}`
                 return (
                   <path
-                    key={`${r.id}-${p.n.id}`}
+                    key={edgeKey}
                     d={`M${from.x} ${y1} C${from.x} ${mid} ${p.x} ${mid} ${p.x} ${y2}`}
-                    className={`st-link${met ? ' is-met' : ''}${on ? ' is-lit' : ''}`}
+                    className={`st-link${met ? ' is-met' : ''}${on ? ' is-lit' : ''}${flashEdges.has(edgeKey) ? ' is-buy' : ''}`}
                   />
                 )
               }),
@@ -305,6 +341,8 @@ export function SkillTree({
             <button
               key={n.id}
               type="button"
+              data-upgrade-id={n.id}
+              data-suggest-id={`upgrade-${n.id}`}
               className={`st-node st-node--${n.state}${selected === n.id ? ' is-sel' : ''}${lit.has(n.id) ? ' is-lit' : ''}${n.fork ? ' is-fork' : ''}`}
               style={{ left: x - 32, top: y - 32 }}
               onClick={() => onSelect(selected === n.id ? null : n.id)}
@@ -324,10 +362,10 @@ export function SkillTree({
           ))}
         </div>
         <div className="st-zoom" onPointerDown={(e) => e.stopPropagation()}>
-          <button type="button" onClick={() => setZoom((z) => Math.min(1.8, z * 1.15))} aria-label="Zoom in">
+          <button type="button" onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z * 1.15))} aria-label="Zoom in">
             +
           </button>
-          <button type="button" onClick={() => setZoom((z) => Math.max(0.35, z / 1.15))} aria-label="Zoom out">
+          <button type="button" onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z / 1.15))} aria-label="Zoom out">
             −
           </button>
           <button type="button" onClick={fit} aria-label="Fit">
@@ -336,7 +374,17 @@ export function SkillTree({
         </div>
         <p className="st-help">Drag to pan · Ctrl/⌘ + wheel to zoom · tap a node</p>
       </div>
-      {selected ? <aside className="st-detail">{renderDetail(selected)}</aside> : null}
+      {showAside ? <aside className="st-detail">{detail}</aside> : null}
+      {phone ? (
+        <Sheet
+          open={!!selected}
+          onClose={() => onSelect(null)}
+          title={selectedName}
+          reducedMotion={reducedMotion}
+        >
+          {detail}
+        </Sheet>
+      ) : null}
     </div>
   )
 }

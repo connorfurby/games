@@ -13,6 +13,18 @@ const SCENES: Record<string, { sky: string; ground: string; sign: string }> = {
   media: { sky: '#2a2040', ground: '#1a1624', sign: 'ON AIR' },
   orbital: { sky: '#12162c', ground: '#10141f', sign: 'ORBIT' },
   museum: { sky: '#2e2830', ground: '#221e22', sign: 'MUSEUM' },
+  dutyfree: { sky: '#1a2040', ground: '#12182a', sign: 'DUTY-FREE' },
+  seedcat: { sky: '#243028', ground: '#1a2218', sign: 'SEEDS' },
+  bonded: { sky: '#2a241c', ground: '#1c1814', sign: 'BONDED' },
+  courier: { sky: '#243038', ground: '#182028', sign: 'COURIER' },
+  almanac: { sky: '#2c2830', ground: '#1c1820', sign: 'ALMANAC' },
+  wire: { sky: '#1c2830', ground: '#141c20', sign: 'WIRE' },
+  phrasebook: { sky: '#302418', ground: '#221a14', sign: 'PRESS' },
+  frequency: { sky: '#141828', ground: '#10141c', sign: 'NIGHT' },
+  'embassy-gift': { sky: '#2a2438', ground: '#1c1824', sign: 'GIFTS' },
+  'treaty-caterer': { sky: '#2c2c38', ground: '#1e1e26', sign: 'TREATY' },
+  'ivo-diner': { sky: '#2e2018', ground: '#1e1610', sign: 'IVO’S' },
+  'endless-kiosk': { sky: '#10182c', ground: '#0c1220', sign: 'KIOSK' },
 }
 
 export function VentureArt({
@@ -176,6 +188,221 @@ function Scene({ id, busy, open }: { id: string; busy: number; open: boolean }) 
           <polygon points="84,36 140,16 196,36" fill="#5b3a33" />
           {[0, 1, 2, 3].map((i) => (
             <rect key={i} x={100 + i * 20} y="48" width="12" height="16" fill={['#c9a15a', '#7fa3c9', '#d9665b', '#7cc47f'][i]} />
+          ))}
+        </g>
+      )
+    case 'dutyfree':
+      return (
+        <g>
+          {/* Airlock arch, counter, and bags on the shelf */}
+          <path d="M74 84 V54 Q74 34 110 34 Q146 34 146 54 V84" fill="#1a2040" stroke="#8fb6e0" strokeWidth="2" />
+          <path d="M84 84 V56 Q84 42 110 42 Q136 42 136 56 V84" fill="#0e1330" />
+          <rect x="150" y="56" width="62" height="28" rx="3" fill="#2a3358" />
+          {Array.from({ length: Math.max(2, Math.min(4, busy)) }, (_, i) => (
+            <rect key={i} x={156 + i * 14} y="46" width="10" height="12" rx="2" fill={['#f2c14e', '#d9665b', '#7cc47f', '#b58ad1'][i]} />
+          ))}
+          <circle cx="110" cy="62" r="5" fill="#efe9dc" className="va-steam" />
+          <circle cx="200" cy="30" r="2" fill="#efe9dc" opacity="0.8" />
+          <circle cx="176" cy="22" r="1.4" fill="#efe9dc" opacity="0.6" />
+        </g>
+      )
+    case 'seedcat':
+      return (
+        <g>
+          {/* Seed rack: packets pinned to a board */}
+          <rect x="82" y="38" width="100" height="46" rx="2" fill="#4a3d2c" />
+          {Array.from({ length: 6 }, (_, i) => (
+            <g key={i} transform={`translate(${90 + (i % 3) * 30} ${44 + Math.floor(i / 3) * 20})`}>
+              <rect width="22" height="16" rx="2" fill={['#c9a15a', '#7cc47f', '#d9665b', '#b58ad1', '#f2c14e', '#8fb6e0'][i]} />
+              <path d="M11 12 V5 M11 8 Q7 7 7 4 M11 8 Q15 7 15 4" stroke="#1a1612" strokeOpacity="0.6" fill="none" className={i === busy % 6 ? 'va-steam' : undefined} />
+            </g>
+          ))}
+          <ellipse cx="206" cy="78" rx="14" ry="5" fill="#2a2218" />
+          <path d="M206 78 V62 M206 68 Q198 66 198 60 M206 64 Q214 62 214 56" stroke="#7cc47f" strokeWidth="2" fill="none" />
+        </g>
+      )
+    case 'bonded':
+      return (
+        <g>
+          {/* Cage, padlock, and crates inside */}
+          <rect x="74" y="40" width="82" height="44" fill="#1a1612" stroke="#8a96a2" strokeWidth="2" />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <path key={i} d={`M${86 + i * 16} 40 V84`} stroke="#5a6570" />
+          ))}
+          <rect x="84" y="62" width="22" height="22" fill="#8a6240" />
+          <rect x="108" y="68" width="18" height="16" fill="#6c5b47" className="va-steam" />
+          <rect x="126" y="62" width="22" height="22" fill="#8a6240" opacity={busy >= 3 ? 1 : 0.35} />
+          <rect x="107" y="32" width="14" height="10" rx="5" fill="none" stroke="#c9a15a" strokeWidth="3" />
+          <rect x="102" y="40" width="24" height="14" rx="2" fill="#c9a15a" />
+          <rect x="170" y="62" width="40" height="22" fill="#4a3d2c" />
+          <rect x="176" y="54" width="28" height="10" fill="#8a6240" />
+        </g>
+      )
+    case 'courier':
+      return (
+        <g>
+          {/* Two cargo bikes in a line */}
+          {[0, 1].map((k) => (
+            <g key={k} transform={`translate(${k * 78 - 10} 0)`} className={k === 0 ? 'va-steam' : undefined}>
+              <circle cx="104" cy="76" r="9" fill="none" stroke="#efe9dc" strokeWidth="2" />
+              <circle cx="146" cy="76" r="9" fill="none" stroke="#efe9dc" strokeWidth="2" />
+              <path d="M104 76 L122 58 H142 L146 76 M122 58 L116 50 H110" stroke="#c9a15a" strokeWidth="2.5" fill="none" />
+              <rect x="118" y="40" width="22" height="16" rx="2" fill={k ? '#7cc47f' : '#c9a15a'} />
+              <path d="M118 48 H140" stroke="#1a1612" strokeOpacity="0.4" />
+            </g>
+          ))}
+          <path d="M70 86 H230" stroke="#efe9dc" strokeOpacity="0.25" strokeDasharray="6 6" />
+        </g>
+      )
+    case 'almanac':
+      return (
+        <g>
+          {/* A wall calendar with a ringed page and tear-off sheets */}
+          <rect x="88" y="34" width="64" height="50" rx="3" fill="#efe9dc" />
+          <rect x="88" y="34" width="64" height="12" rx="3" fill="#9b3f3a" />
+          {Array.from({ length: 12 }, (_, i) => (
+            <rect
+              key={i}
+              x={94 + (i % 4) * 14}
+              y={52 + Math.floor(i / 4) * 10}
+              width="9"
+              height="6"
+              rx="1"
+              fill={i === busy + 2 ? '#d9665b' : '#1a1612'}
+              opacity={i === busy + 2 ? 0.9 : 0.25}
+            />
+          ))}
+          {[96, 120, 144].map((x) => (
+            <circle key={x} cx={x} cy="34" r="2.2" fill="#1a1612" />
+          ))}
+          <path d="M160 46 Q184 40 196 56 L186 60 Z" fill="#efe9dc" opacity="0.85" className="va-steam" />
+        </g>
+      )
+    case 'wire':
+      return (
+        <g>
+          {/* Two poles, a sagging wire, and a bird on it */}
+          <rect x="82" y="38" width="5" height="46" fill="#6c5b47" />
+          <rect x="200" y="38" width="5" height="46" fill="#6c5b47" />
+          <path d="M60 44 H105 M178 44 H222" stroke="#6c5b47" strokeWidth="3" />
+          <path d="M84 46 Q144 78 202 46" stroke="#8fb6e0" strokeWidth="2" fill="none" />
+          <path d="M84 52 Q144 82 202 52" stroke="#8fb6e0" strokeWidth="1.5" fill="none" opacity="0.6" />
+          <g transform="translate(136 62)" className="va-steam">
+            <ellipse cx="0" cy="0" rx="6" ry="4" fill="#efe9dc" />
+            <circle cx="6" cy="-3" r="3" fill="#efe9dc" />
+            <path d="M9 -3 l4 1 -4 1z" fill="#f2c14e" />
+          </g>
+          {Array.from({ length: Math.max(1, Math.min(3, busy)) }, (_, i) => (
+            <circle key={i} cx={104 + i * 28} cy={70 + (i % 2) * 6} r="3" fill="#c9a15a" />
+          ))}
+        </g>
+      )
+    case 'phrasebook':
+      return (
+        <g>
+          {/* A press: stacked books and a lever */}
+          {Array.from({ length: Math.max(2, Math.min(5, busy + 1)) }, (_, i) => (
+            <rect
+              key={i}
+              x={92 + (i % 2) * 4}
+              y={74 - i * 9}
+              width="62"
+              height="8"
+              rx="1"
+              fill={['#5b3a33', '#2f5d9e', '#3f7d58', '#9b3f3a', '#6b4fa8'][i]}
+            />
+          ))}
+          <rect x="162" y="40" width="8" height="44" fill="#6c5b47" />
+          <path d="M166 44 H198" stroke="#8a96a2" strokeWidth="4" className="va-steam" />
+          <circle cx="198" cy="44" r="5" fill="#c9a15a" />
+          <rect x="170" y="70" width="36" height="14" fill="#efe9dc" />
+          <path d="M176 76 H200 M176 80 H192" stroke="#1a1612" strokeOpacity="0.4" />
+        </g>
+      )
+    case 'frequency':
+      return (
+        <g>
+          {/* Mast with radiating arcs over a sleeping town */}
+          <rect x="138" y="30" width="6" height="54" fill="#efe9dc" />
+          <circle cx="141" cy="26" r="5" fill="#ffd98c" className="va-steam" />
+          {[10, 20, 30].map((r, i) => (
+            <path key={r} d={`M${141 - r} ${26 - r * 0.2} Q141 ${26 - r * 1.2} ${141 + r} ${26 - r * 0.2}`} fill="none" stroke="#8fb6e0" opacity={0.9 - i * 0.25} />
+          ))}
+          {[84, 104, 186, 206].map((x, i) => (
+            <g key={x}>
+              <rect x={x} y="68" width="14" height="16" fill="#1a1a26" />
+              <rect x={x + 4} y="72" width="5" height="5" fill={i % 2 ? '#ffd98c' : '#3a4048'} />
+            </g>
+          ))}
+        </g>
+      )
+    case 'embassy-gift':
+      return (
+        <g>
+          {/* Gift boxes under a small flag */}
+          <rect x="86" y="62" width="34" height="22" fill="#9b3f3a" />
+          <path d="M103 62 V84 M86 72 H120" stroke="#f2c14e" strokeWidth="3" />
+          <path d="M103 62 q-8 -10 -14 -4 q4 6 14 4 q10 2 14 -4 q-6 -6 -14 4" fill="none" stroke="#f2c14e" strokeWidth="2" />
+          <rect x="128" y="52" width="26" height="32" fill="#2f5d9e" />
+          <path d="M141 52 V84 M128 68 H154" stroke="#efe9dc" strokeWidth="2.5" />
+          <rect x="162" y="68" width="22" height="16" fill="#3f7d58" />
+          <path d="M173 68 V84" stroke="#f2c14e" strokeWidth="2.5" />
+          <rect x="196" y="30" width="3" height="54" fill="#efe9dc" />
+          <path d="M199 32 H218 L214 38 L218 44 H199 Z" fill="#d9665b" className="va-steam" />
+        </g>
+      )
+    case 'treaty-caterer':
+      return (
+        <g>
+          {/* A long banquet table with plates, a cloche and the treaty */}
+          <rect x="72" y="62" width="150" height="8" rx="2" fill="#efe9dc" />
+          <rect x="82" y="70" width="5" height="16" fill="#4a3d2c" />
+          <rect x="206" y="70" width="5" height="16" fill="#4a3d2c" />
+          {Array.from({ length: Math.max(3, Math.min(5, busy + 2)) }, (_, i) => (
+            <ellipse key={i} cx={92 + i * 28} cy="60" rx="9" ry="3" fill="#d7e6ee" />
+          ))}
+          <path d="M138 58 Q150 40 162 58 Z" fill="#c9c9d0" className="va-steam" />
+          <circle cx="150" cy="40" r="2" fill="#c9c9d0" />
+          <rect x="176" y="48" width="30" height="12" fill="#e8d7a0" transform="rotate(-6 191 54)" />
+          <path d="M180 53 H202 M180 57 H196" stroke="#1a1612" strokeOpacity="0.4" />
+        </g>
+      )
+    case 'ivo-diner':
+      return (
+        <g>
+          {/* A counter, three stools, a mug, and a buzzing neon */}
+          <rect x="76" y="58" width="140" height="12" rx="3" fill="#8a6240" />
+          <rect x="76" y="70" width="140" height="14" fill="#3a2c20" />
+          {[96, 140, 184].map((x) => (
+            <g key={x}>
+              <ellipse cx={x} cy="78" rx="9" ry="3" fill="#9b3f3a" />
+              <rect x={x - 1.5} y="78" width="3" height="8" fill="#6a5c4a" />
+            </g>
+          ))}
+          <rect x="116" y="46" width="12" height="12" rx="2" fill="#efe9dc" />
+          <path d="M128 49 q6 0 6 5 q0 4 -6 4" fill="none" stroke="#efe9dc" strokeWidth="2" />
+          <path d="M120 44 q4 -8 0 -14" className="va-steam" />
+          <rect x="150" y="30" width="62" height="14" rx="3" fill="#1a0e0e" stroke="#ff7a5c" />
+          <text x="181" y="40" textAnchor="middle" className="va-jar" style={{ fill: '#ff9d86' }}>
+            OPEN
+          </text>
+        </g>
+      )
+    case 'endless-kiosk':
+      return (
+        <g>
+          {/* A striped stall at the edge of the map, with worlds hung over it */}
+          <rect x="94" y="56" width="96" height="28" fill="#2a3040" />
+          {Array.from({ length: 6 }, (_, i) => (
+            <path key={i} d={`M${90 + i * 18} 40 H${108 + i * 18} L${104 + i * 18} 56 H${94 + i * 18} Z`} fill={i % 2 ? '#efe9dc' : '#7fa3c9'} />
+          ))}
+          <rect x="108" y="62" width="30" height="14" fill="#0e1218" />
+          <circle cx="212" cy="36" r="10" fill="#6b4fa8" className="va-steam" />
+          <ellipse cx="212" cy="36" rx="16" ry="3.5" fill="none" stroke="#c9a0d4" />
+          <circle cx="76" cy="30" r="5" fill="#d9a441" />
+          <circle cx="232" cy="64" r="3" fill="#8fb6e0" />
+          {Array.from({ length: Math.max(2, Math.min(4, busy)) }, (_, i) => (
+            <circle key={i} cx={150 + i * 10} cy="70" r="3" fill={['#f2c14e', '#7cc47f', '#d9665b', '#8fb6e0'][i]} />
           ))}
         </g>
       )

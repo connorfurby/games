@@ -1,7 +1,7 @@
 import type { GameState } from '../sim/state'
 import type { StatEffect } from './upgrades/stats'
 
-export type PerkBranch = 'floorcraft' | 'ledger' | 'charter' | 'frontier' | 'legacy'
+export type PerkBranch = 'floorcraft' | 'ledger' | 'charter' | 'frontier' | 'legacy' | 'horizon'
 export type PerkScale = 'linear' | 'diminishing'
 
 export interface PerkDef {
@@ -30,6 +30,7 @@ export const PERK_BRANCHES: Record<PerkBranch, { name: string; blurb: string }> 
   charter: { name: 'Charter', blurb: 'Chain rules once a second door exists.' },
   frontier: { name: 'Frontier', blurb: 'Districts, lanes and the cold — the empire’s edges.' },
   legacy: { name: 'Legacy', blurb: 'What outlasts the run: value, rank and the stars.' },
+  horizon: { name: 'Horizon', blurb: 'Worlds, routes, beds, and the wire after Era 6.' },
 }
 
 /**
@@ -218,5 +219,22 @@ const PERKS_V2: PerkDef[] = [
 ]
 
 PERKS.push(...PERKS_V2)
+
+const HORIZON_PERKS: PerkDef[] = [
+  { id: 'hz-survey', name: 'Survey Habit', per: pctLine('planet shelves', 0.04), max: 5, cost: 1, branch: 'horizon', band: 0, visible: (s) => s.era >= 7, effects: fx('planet', 0.04) },
+  { id: 'hz-planet', name: 'Stocked Worlds', per: pctLine('planet shelves', 0.05), max: 5, cost: 1, branch: 'horizon', band: 0, visible: (s) => s.era >= 7, effects: fx('planet', 0.05) },
+  { id: 'hz-freight', name: 'Open Manifest', per: pctLine('freight routes', 0.05), max: 5, cost: 1, branch: 'horizon', band: 0, visible: (s) => s.era >= 8, effects: fx('freight', 0.05) },
+  { id: 'hz-keel', name: 'Keel’s Cut', per: pctLine('rival pressure cut', 0.04), max: 5, cost: 2, branch: 'horizon', band: 1, visible: (s) => s.era >= 8, effects: fx('rivalCut', 0.04) },
+  { id: 'hz-seed', name: 'Seed Ledger', per: pctLine('seed beds', 0.05), max: 5, cost: 1, branch: 'horizon', band: 0, visible: (s) => s.era >= 9, effects: fx('seed', 0.05) },
+  { id: 'hz-season', name: 'Season Bell', per: 'The forecast leads longer when Season Bell is owned.', max: 1, cost: 2, branch: 'horizon', band: 1, visible: (s) => s.era >= 9, effects: fx('seed', 0.03) },
+  { id: 'hz-signal', name: 'Clear Relay', per: pctLine('signal relays', 0.05), max: 5, cost: 1, branch: 'horizon', band: 0, visible: (s) => s.era >= 10, effects: fx('signal', 0.05) },
+  { id: 'hz-agent', name: 'Agent Wage', per: '−10% agent wage per point. Staff wages stay put.', max: 3, cost: 2, branch: 'horizon', band: 1, visible: (s) => s.era >= 10 },
+  { id: 'hz-clause', name: 'Clause Ink', per: pctLine('charter seal', 0.04), max: 5, cost: 2, branch: 'horizon', band: 1, visible: (s) => s.era >= 11, effects: fx('seal', 0.04) },
+  { id: 'hz-boutique', name: 'Boutique Craft', per: 'Boutique craft cap 1.5 → 1.65.', max: 1, cost: 3, branch: 'horizon', band: 2, visible: (s) => s.era >= 11, effects: fx('margin', 0.02) },
+  { id: 'hz-socket', name: 'Fifth Socket', per: 'Socketed relics multiply by ×1.45 instead of ×1.35.', max: 1, cost: 3, branch: 'horizon', band: 2, visible: (s) => s.era >= 11 },
+  { id: 'hz-endless', name: 'Endless Divisor', per: 'Endless planets fall off slower: divisor 0.12 → 0.10.', max: 1, cost: 3, branch: 'horizon', band: 2, visible: (s) => s.era >= 12, effects: fx('network', 0.02) },
+]
+
+PERKS.push(...HORIZON_PERKS)
 
 export const PERK_BY_ID: Record<string, PerkDef> = Object.fromEntries(PERKS.map((p) => [p.id, p]))

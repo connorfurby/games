@@ -1,11 +1,11 @@
 import type { StatId } from './upgrades/stats'
 
 /**
- * The Relic Museum: 300 relics in 12 wings. Relics live outside any run (see
+ * The Relic Museum: 525 relics in 21 wings. Relics live outside any run (see
  * sim/museum.ts) — they survive New Game, Rebrand and hard reset.
  *
- * Eleven wings fill from chests; each chest source leans toward one wing, which is
- * what the hints point at. The Oddities wing is earned by feats instead.
+ * Chest wings fill from chests; each chest source leans toward one wing, which is
+ * what the hints point at. Oddities and eleven Horizon feats are earned, not pulled.
  */
 
 export const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'] as const
@@ -40,6 +40,7 @@ export const WING_IDS = [
   'lab',
   'ventures',
   'works',
+  'horizon',
   'oddities',
 ] as const
 export type WingId = (typeof WING_IDS)[number]
@@ -75,6 +76,7 @@ export const WINGS: WingDef[] = [
   { id: 'lab', name: 'R&D Lab', blurb: 'Prototypes from the upgrade trees.', source: 'Chests from buying upgrades.', bonus: { stat: 'ideas', per: 0.06 }, hue: 150 },
   { id: 'ventures', name: 'Side Hustles', blurb: 'Souvenirs from every till you opened on the side.', source: 'Chests from collecting ventures.', bonus: { stat: 'margin', per: 0.04 }, hue: 95 },
   { id: 'works', name: 'Works Yard', blurb: 'Hard hats, blueprints and leftover bolts.', source: 'Chests from Build projects and wholesale orders.', bonus: { stat: 'shelf', per: 0.06 }, hue: 30 },
+  { id: 'horizon', name: 'Horizon', blurb: 'Grocery-cosmic. Worlds, seasons, and the last can.', source: 'Chests once Era 7 has been reached. Eleven are feats.', bonus: { stat: 'planet', per: 0.06 }, hue: 28 },
   { id: 'oddities', name: 'Oddities', blurb: 'Not in any chest. You have to do something strange.', source: 'Never in chests. Each one is earned by a feat.', bonus: { stat: 'margin', per: 0.06 }, hue: 320 },
 ]
 
@@ -113,7 +115,7 @@ const LADDER: Rarity[] = [
   'mythic',
 ]
 
-const CHEST_WINGS: Record<Exclude<WingId, 'oddities'>, Row[]> = {
+const CHEST_WINGS: Record<Exclude<WingId, 'oddities' | 'horizon'>, Row[]> = {
   corner: [
     ['The First Dollar', 'coin', 'Taped above the register. Never spent, never forgotten.'],
     ['Dented Peaches', 'can', 'Marked down so many times it owes you money.'],
@@ -666,8 +668,54 @@ function slug(s: string): string {
     .replace(/^-|-$/g, '')
 }
 
+/**
+ * Horizon wing. Rarity ladder is 10/7/3, then three epic, a legendary, and a mythic. Eleven
+ * rows carry a feat (earned, never pulled); the other fourteen come from chests.
+ */
+const HORIZON_RELICS: RelicDef[] = (
+  [
+    ['Pantry Key', 'key', 'Opens a world the way a key opens a till.'],
+    ['Brine Receipt', 'receipt', 'Salt, paid, and filed.'],
+    ['Cinder Spoon', 'apple', 'Still warm from a market that burns.'],
+    ['Glass Pip', 'bottle', 'A drop of orchard, held up to the light.'],
+    ['Mercy Lamp', 'lamp', 'Dimmed, the way Quiet Mercy asked.', 'hz-plaque'],
+    ['Ash Tag', 'tag', 'Stuck to a crate that came back dusty.'],
+    ['Snow Tin', 'can', 'Milk Snow, condensed.'],
+    ['Lantern Wick', 'flame', 'The bazaar keeps one lit for you.'],
+    ['Orbit Cork', 'bottle', 'Pulled on the way down.'],
+    ['Survey Chalk', 'chalk', 'A world, circled, not yet stocked.'],
+    ['Freight Nail', 'magnet', 'Held a manifest to the bay wall.'],
+    ['Seed Envelope', 'scroll', 'Two traits, and a season on the flap.'],
+    ['Season Stamp', 'clock', 'Cancelled when the bell rang.'],
+    ['Phrase Reel', 'scroll', 'Four marks, one of them still hidden.'],
+    ['Handler Pin', 'key', 'The second agent does not start without it.', 'hz-desk'],
+    ['Clause Wax', 'gem', 'Three seals. The fourth does not fit.', 'hz-seals'],
+    ['Embassy Seal', 'crown', 'Pressed into a grocery treaty.', 'hz-ration'],
+    ['Standing Cork', 'crate', 'Pins a route so it can be filed again.', 'hz-route'],
+    ['Cluster Compass', 'compass', 'Points at a name you gave the sky.', 'hz-cluster'],
+    ['Quiet Apple', 'apple', 'From a world that asked the lights down.'],
+    ['Eight World Shelves', 'planet', 'Every named world, stocked.', 'hz-eight'],
+    ['Twelve Season Bell', 'star', 'A dozen turns of the year.', 'hz-year'],
+    ['Forty Quiet Phrases', 'compass', 'The wire, cleared forty times.', 'hz-phrases'],
+    ['Signed Charter', 'key', 'Standard or boutique. Signed once.', 'hz-charter'],
+    ['Ivo’s Can', 'can', 'The last list, finished.', 'hz-list'],
+  ] as [string, Glyph, string, string?][]
+).map(([name, glyph, flavor, feat], i) => {
+  const rarity: Rarity =
+    i < 10 ? 'common' : i < 17 ? 'uncommon' : i < 20 ? 'rare' : i < 23 ? 'epic' : i < 24 ? 'legendary' : 'mythic'
+  return {
+    id: `hz-${String(i + 1).padStart(2, '0')}`,
+    name,
+    wing: 'horizon' as const,
+    rarity,
+    glyph,
+    flavor,
+    ...(feat ? { feat } : {}),
+  }
+})
+
 export const RELICS: RelicDef[] = [
-  ...(Object.entries(CHEST_WINGS) as [Exclude<WingId, 'oddities'>, Row[]][]).flatMap(([wing, rows]) =>
+  ...(Object.entries(CHEST_WINGS) as [Exclude<WingId, 'oddities' | 'horizon'>, Row[]][]).flatMap(([wing, rows]) =>
     rows.map(([name, glyph, flavor], i) => ({
       id: `${wing}:${slug(name)}`,
       name,
@@ -686,6 +734,7 @@ export const RELICS: RelicDef[] = [
     flavor,
     feat,
   })),
+  ...HORIZON_RELICS,
 ]
 
 export const RELIC_BY_ID: Record<string, RelicDef> = Object.fromEntries(RELICS.map((r) => [r.id, r]))

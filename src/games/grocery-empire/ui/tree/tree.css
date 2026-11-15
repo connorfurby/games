@@ -96,6 +96,30 @@
   filter: drop-shadow(0 0 6px var(--st-tint));
 }
 
+.st-link.is-buy {
+  stroke: #efe9dc;
+  stroke-width: 5;
+  filter: drop-shadow(0 0 10px var(--st-tint));
+  animation: st-buy-flash 0.7s ease-out 1;
+}
+
+@keyframes st-buy-flash {
+  0% {
+    stroke-width: 7;
+    opacity: 1;
+  }
+  100% {
+    stroke-width: 2.5;
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-link.is-buy {
+    animation: none;
+  }
+}
+
 .st-stub {
   stroke: rgba(255, 255, 255, 0.1);
   stroke-width: 1.5;
@@ -432,8 +456,8 @@
   }
 
   .st-view {
-    height: 60vh;
-    min-height: 360px;
+    height: min(50vh, 420px);
+    min-height: 280px;
   }
 }
 

@@ -130,6 +130,7 @@ function collectOffice(s: GameState, out: Suggestion[]) {
 
 function collectMemos(s: GameState, out: Suggestion[]) {
   for (const m of MEMOS) {
+    if (m.again) continue
     if ((s.memos[m.id] ?? 0) > 0 && !m.repeatable) continue
     if (!memoAffordable(s, m.id)) continue
     let cash = 0

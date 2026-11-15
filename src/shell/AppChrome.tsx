@@ -1,9 +1,4 @@
-import { useLocation } from 'react-router-dom'
-import { AppMenu } from './AppMenu'
-
-/** Fixed waffle on shelf/shop/etc. Play embeds its own inline menu in TopBar. */
+/** Play embeds its own menu. Non-play routes use ShellFrame (inline waffle). */
 export function AppChrome() {
-  const loc = useLocation()
-  if (loc.pathname.startsWith('/play/')) return null
-  return <AppMenu />
+  return null
 }

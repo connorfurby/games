@@ -5,10 +5,237 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 7
+export const SAVE_VERSION = 29
+
+/** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
+export const PUZZLE_SLOW = 0.72
+export const PUZZLE_FAST = 0.85
+
+/** Era depth framework (facings, departments, open/close, contracts). */
+export const DEPTH = {
+  ERA1_BASKETS_GATE: 1350,
+  /** With a hire on Open shift, still need this many baskets before Era 1. */
+  ERA1_HIRE_BASKETS: 1050,
+  /** Early demand ramp: soft foot traffic until facing + regulars land. */
+  earlyDemandMulStart: 0.34,
+  earlyDemandMulEnd: 1,
+  marketBellNeed: 3,
+  era1RegularNeed: 10,
+  /** Layaway slips (manual serve of layaway visits) — separate Era 1 gate. */
+  layawaySlipNeed: 16,
+  /** Extra visit gap when the active regular is on a layaway slip. */
+  layawayVisitGapSec: 150,
+  /** Dock check-in cooldown shortener unit (read via upgradeEffect('dock-check-pad')). */
+  dockCheckPadPerRank: 0.08,
+  /** Side-yard path: receiver check-ins at the dock. */
+  dockCheckInNeed: 28,
+  dockCheckInCooldownSec: 120,
+  era2RegularNeed: 24,
+  era1StarMin: 3.5,
+  writeOffNeedEra2: 3,
+  invoiceOnTimeNeedLot: 3,
+  invoiceOnTimeNeedSideYard: 48,
+  invoiceDueSec: 180,
+  invoiceEarlyDisc: 0.97,
+  invoiceLateFee: 1.08,
+  /** Cap unpaid invoices so float cannot run forever (softlock floor for fuzz). */
+  invoiceUnpaidCap: 8,
+  flagshipSlots: 6,
+  flagshipPracticePerEra: 2,
+  flagshipSlow: 0.72,
+  flagshipFast: 0.85,
+  shiftSlots: ['open', 'mid', 'close'] as const,
+  /** Close coverage cuts night shrink. */
+  closeShiftShrinkMul: 0.92,
+  /** Mid coverage eases checkout during the midday third of a shift day. */
+  midShiftCheckoutMul: 1.12,
+  /** Chain Patrol slows store drift; Push raises demand slightly. */
+  chainPatrolDriftMul: 0.88,
+  chainPushDemandMul: 1.08,
+  /** Logistics Schedule improves clean-manifest odds; Push Freight speeds lane income slightly. */
+  logisticsScheduleCleanMul: 1.1,
+  logisticsPushFreightMul: 1.08,
+  /** Survey policies: volume / margin / fresh on planet pull. */
+  surveyVolumeMul: 1.1,
+  surveyMarginMul: 1.08,
+  surveyFreshMul: 1.06,
+  /** Max powered cold plants at once (own three, run two). */
+  plantPowerSlots: 2,
+  /** Sim seconds per store day (Open → Mid → Close thirds). */
+  shiftDaySec: 900,
+  /** Side yard needs this many Open days covered (Phase 2 lengthen → ~3.5–4h). */
+  openDaysNeedSideYard: 14,
+  regularVisitGapSec: 120,
+  regularPatienceSec: 150,
+  starsStart: 3.5,
+  starsMin: 1,
+  starsMax: 5,
+  /** Missed regular / late invoice star hits. */
+  starMissHit: 0.05,
+  starLateInvoiceHit: 0.04,
+  starServeBump: 0.08,
+  /** Drift back toward starsStart when open and stocked. */
+  starRegenPerSec: 0.01,
+  /** Temporary demand cut after a missed regular (sim seconds). */
+  regularMissDemandMul: 0.82,
+  regularMissDemandSec: 45,
+  /** Unstaffed Open shift: bottleneck + spoil pressure. */
+  unstaffedOpenSpoilMul: 1.18,
+  unstaffedOpenDemandMul: 0.9,
+  closedDemandMul: 0.35,
+  closedWageMul: 0.25,
+  /** Per receiver on ETA; soft-capped with a floor. */
+  receiverEtaMul: 0.7,
+  marketBellIndex: 0.88,
+  greengrocer: { discount: 0.75, ageOnArrive: 60, cat: 'produce' as const },
+  freshSeats: { lead: 1, specialists: 2 },
+  facingPullDefault: 1,
+  /** Morning write-off cooldown (sim seconds). */
+  writeOffCooldown: 480,
+  /** Shift Lead staff: +1 floor seat each. */
+  shiftLeadSeatBonus: 1,
+  butcherMeatLifeMul: 1.45,
+  dairyClerkLifeMul: 1.3,
+  /** Markdown cash fraction of unit wholesale when write-off discounts. */
+  writeOffDiscountFrac: 0.35,
+  /** Era 2 flyer / circular: featured aisles demand bump (sim seconds). */
+  circularSec: 600,
+  circularDemandMul: 1.18,
+  /** Cooldown after a flyer week completes before the next print. */
+  flyerCooldownSec: 110 * 60,
+  /** Cold permit needs this many completed flyer weeks (band-held). */
+  flyerWeeksNeed: 4,
+  /** Price ceilings vs bestPrice while a flyer band is live. */
+  flyerBandSoftMax: 0.98,
+  flyerBandMidMax: 0.9,
+  flyerBandDeepMax: 0.8,
+  /** Band-lock cooldown shortener (upgradeEffect('flyer-band-pad')). */
+  flyerBandPadPerRank: 0.06,
+  /** Cold permit matched-store hard gate. */
+  matchedStoresNeed: 4,
+  /** Cold permit star floor (memo block uses starMemoFloor for others). */
+  coldPermitStarMin: 3.7,
+  /** Hot-trait walks credited during block events (cold permit gate). */
+  hotTraitWalkNeed: 8,
+  /** Hot-trait walk gap shortener (upgradeEffect('hot-trait-pad')). */
+  hotTraitPadPerRank: 0.08,
+  /** Soft floor: certain memos blocked below this. */
+  starMemoFloor: 3.0,
+  /** Mild demand cut while Penny forces a counter-flyer. */
+  counterFlyerDemandMul: 0.92,
+  counterFlyerGapSec: 11 * 60,
+  counterFlyerChancePerSec: 1 / 220,
+  /** Block events rewrite the hot trait for a window (fixed gap — not chance). */
+  blockEventGapSec: 16 * 60,
+  blockEventDurationSec: 5 * 60,
+  /** @deprecated fixed-gap spawn; kept so old reads do not NaN. */
+  blockEventChancePerSec: 0,
+  blockEventDemandMul: 1.14,
+  /** Commissary softens no-depot penalty; raises Attention drain. */
+  commissaryNoDepotMul: 0.82,
+  commissaryAttDrainMul: 1.12,
+  /** Penny aisle lock cadence. */
+  rivalLockGapSec: 8 * 60,
+  rivalLockChancePerSec: 1 / 200,
+  /** Horizon rival pressure cadence (Drift / Keelmark / Verdant / Static / Concord / Ration). */
+  hzRivalGapSec: 24 * 60,
+  hzRivalChancePerSec: 1 / 280,
+  /** Bakery open-cycle (sim seconds): strong first half, weak second. */
+  bakeryCycleSec: 600,
+  bakeryMorningMul: 1.28,
+  bakeryAfternoonMul: 0.62,
+  /** Frozen without tunnel/plant coverage. */
+  frozenNoColdWeightMul: 0.55,
+  /** FreshWay dump when no tunnel plant. */
+  freshWaySpoilMul: 1.55,
+  /** Tunnel spoil cut for fresh aisles when Fresh dept is staffed. */
+  tunnelFreshAgeMul: 0.72,
+  /** Unstaffed chain stores drift faster. */
+  unstaffedDriftMul: 1.6,
+  /** Brownout drill cadence / duration. */
+  brownoutDrillGapSec: 12 * 60,
+  brownoutDrillDurationSec: 90,
+  /** Port Broker discount / weather short chance. */
+  portBrokerDiscount: 0.72,
+  portBrokerShortChance: 0.35,
+  /** Franchise loyalty drift / win-back. */
+  franchiseLoyaltyDrift: 0.0035,
+  franchiseDefectAt: 0.28,
+  franchiseWinBackControl: 8,
+  franchiseWinBackLoyalty: 0.35,
+  megaMartGapSec: 10 * 60,
+  megaMartDurationSec: 180,
+  megaMartBuyoutCashFrac: 0.04,
+  /** Purser Control from work (log-scaled with cash). */
+  purserControlPerSec: 0.04,
+  /** Dispatcher fuel burn mul (<1). */
+  dispatcherFuelMul: 0.82,
+  liaisonDriftMul: 0.7,
+  /** Era 6 ration week (~90 min content; bots finish faster). */
+  rationWeekSec: 90 * 60,
+  rationTaxMul: 0.72,
+  rationDemandMul: 1.55,
+  rationFreshBiasMul: 1.2,
+  rationImportBiasMul: 1.15,
+  /** Manifest cooldown / fuel cycle. */
+  manifestCooldownSec: 45,
+  /** Cooler Log: timed temp checks (Era 3 leave gate). */
+  coolerLogGapSec: 52 * 60,
+  coolerLogNeed: 6,
+  /** Window after a signed log that counts as “recent” for FreshWay relief. */
+  coolerRecentLogSec: 20 * 60,
+  /** Per missed log: brownout pressure (demand mul) and FreshWay spoil bump. */
+  coolerMissedBrownoutMul: 0.08,
+  coolerMissedFreshWayMul: 0.12,
+  /** Leave the Region star floor. */
+  leaveStarMin: 3.5,
+  /** Dispatch Board: clean matched manifests toward barge berth. */
+  cleanManifestsNeed: 5,
+  /** Exam holds sworn before berth (setManifest locks; swearExam credits). */
+  examHoldNeed: 8,
+  /** Window to swear after locking a matching manifest. */
+  examHoldSec: 8 * 60,
+  /** Exam hold shortener (upgradeEffect('exam-hold-pad')). */
+  examHoldPadPerRank: 0.08,
+  /** Sim seconds between clean-manifest credits (loop stretch). */
+  dispatchCycleSec: 70 * 60,
+  /** Barge berth / first launch star floor. */
+  bargeStarMin: 3.5,
+  /** Era 6 door star floor (Pocket Ops + Orbit Mid + Hold). */
+  era6StarMin: 3.5,
+  /**
+   * Pocket Ops: one-way hauler trip ETA (sim seconds).
+   * Concurrent trips capped (pocketTripConcurrent) so the door is an ETA clock;
+   * 8 matching trips × 4 pockets × 12 min ≈ 6.4 h after Era 5 → Era 6 ~18–22 h.
+   */
+  pocketTripSec: 18 * 60,
+  /** Max simultaneous en-route Pocket Ops trips (replication cannot parallelize the clock). */
+  pocketTripConcurrent: 1,
+  /** Rest after a hauler arrives before next dispatch. */
+  berthTurnaroundSec: 7 * 60,
+  /** Era 6 reads this many completed turnarounds. */
+  berthTurnaroundNeed: 10,
+  /** Turnaround shortener (upgradeEffect('berth-turn-pad')). */
+  berthTurnPadPerRank: 0.08,
+  /** Ration ledger stamps while stars are frozen (Continue gate). */
+  rationLedgerNeed: 12,
+  /**
+   * Payroll. Era wage used to stop at Era 3; it now keeps climbing so a full
+   * org sits roughly in targetFullFrac of recent revenue. Soft-cap clamps the
+   * burden so wages cannot eat more than softCapFrac of revenue forever.
+   */
+  payroll: {
+    eraWagePerEra: 0.08,
+    /** Full org target band (docs / tests). */
+    targetFullLow: 0.15,
+    targetFullHigh: 0.25,
+    /** Hard soft-cap vs rates.revenuePerSec. */
+    softCapFrac: 0.3,
+  },
+}
 
 /** Lifetime revenue before the Lot Survey memo appears (Era 1 → 2 spine). */
-export const LOT_SURVEY_LIFETIME = 4000
+export const LOT_SURVEY_LIFETIME = 52_000
 
 export const START = {
   /** Gentler open: enough for a first wholesale dip without immediate rent panic. */
@@ -257,14 +484,15 @@ export const EMPIRE = {
   xpPerVentureCash: 0.0004,
   levelBase: 120,
   levelGrowth: 1.37,
-  maxLevel: 100,
+  maxLevel: 160,
   /** +2.5% demand per Empire level above 1. */
   demandPerLevel: 0.025,
 }
 
 /** Staff seats from storefront tier (index = builds.storefront). */
 export const STAFF_SEATS = {
-  byStorefront: [0, 3, 5, 8, 12, 16, 22, 30] as const,
+  /** Index = builds.storefront. Tiers 8–10 are Probe Plaza / Atrium / Last Aisle. */
+  byStorefront: [0, 3, 5, 8, 12, 16, 22, 30, 36, 42, 48] as const,
   sideYardBonus: 2,
   perExtraStore: 2,
   parkingBonus: 1,
@@ -463,8 +691,9 @@ export const COLD = {
   momentumDecayPerSec: 0.02,
   momentumMax: 3,
   brownoutLogCooldown: 45,
-  yieldStart: 100_000,
-  yieldDrainPerPlant: 2.5,
+  /** Blast plants only drain yield; ~45–70 min with a staffed blast. */
+  yieldStart: 10_000,
+  yieldDrainPerBlast: 3.2,
   quadraticYieldMul: 4,
   plantCashIncome: 8,
   surplusCashMul: 0.15,
@@ -499,12 +728,17 @@ export const POLITICS = {
   monopolyCap: 0.95,
   leaveYieldNeed: 0,
   leaveCapitalNeed: 15,
+  leaveBillsNeed: 2,
   brandRegenPerSec: 0.01,
+  /** Named bills (replace anonymous acquire spam for leave gate). */
+  billCash: 180_000,
+  billCapital: 18,
+  billGrowth: 1.55,
 }
 
-/** Era 4 — globe logistics. */
+/** Era 4 — globe logistics. Priced for a few minutes of post-cold Era 4 cash. */
 export const LOGISTICS = {
-  laneCash: 80_000_000,
+  laneCash: 8_000_000,
   laneGrowth: 2,
   laneControl: 5,
   laneFuel: 40,
@@ -512,21 +746,36 @@ export const LOGISTICS = {
   fuelCapPerBuffer: 50,
   fuelBurnPerLanePerSec: 0.08,
   fuelBuyUnit: 20,
-  fuelBuyCash: 2_000_000,
+  fuelBuyCash: 400_000,
   controlPerLogCash: 0.01,
   brandDriftPerFranchise: 0.004,
-  franchiseCash: 120_000_000,
+  franchiseCash: 12_000_000,
   franchiseGrowth: 1.9,
   franchiseBrandHit: 0.08,
+  /** Matched wet lane cash trickle (per lane / sec). */
+  matchedLaneCashPerSec: 40,
+  dryLaneCashPerSec: 8,
 }
 
-/** Era 5 — seed barges / charter. */
+/** Era 5 — seed barges / charter / biomass pockets. */
 export const FLEET = {
   bargeLaunchCash: 5_000_000_000,
   bargeGrowth: 2.4,
   bargeLaunchRead: 8,
   bargeSoftFloor: 1,
+  /** Compat total; pockets are the live drain. Kept for UI/migrate. */
   biomassStart: 12_000_000,
+  /** Six pockets; focused Haulers clear 4 via trip ETAs (~90 min parallel). */
+  pocketCount: 6,
+  pocketMax: 450_000,
+  /** Matching trips needed to empty one pocket (clear max / this per arrive). */
+  tripsToClearPocket: 8,
+  /** Compat — idle drain removed; trips clear pockets. */
+  haulerClearPerSec: 55,
+  replicatorCopyChance: 0.004,
+  arkCharterMul: 1.35,
+  /** Shell vs Replication fork: each point of the other axis softens this one. */
+  shellRepConflict: 0.08,
   harvestPerBargePerSec: 2,
   replicationPerSec: 0.002,
   charterBaseCap: 12,
@@ -539,6 +788,12 @@ export const FLEET = {
   guardianShellCost: 15,
   rebootCashFrac: 0.05,
   driftWinLegacy: 8,
+  /** Ration packs into backroom per successful pocket clear chunk. */
+  rationPerTripClear: 18,
+  /** Compat with older harvest-tick ration drip. */
+  rationPerBargePerSec: 0.15,
+  /** Pockets cleared + ration facing required for Era 6. */
+  era6PocketsNeed: 4,
 }
 
 /** Era 6 — endings / prestige. */
@@ -589,15 +844,341 @@ export const NETWORK = {
   autonomousMul: 1.3,
   /** Empire XP from copied baskets, relative to flagship baskets. */
   xpShare: 0.06,
+  /**
+   * Once the next era’s layer is online, further buys of the previous repeatable
+   * get steeper and old-layer network weight soft-caps (stops climbing hard).
+   * Chain→cold→lanes→barges→planets.
+   */
+  oldLayer: {
+    /** Extra geometric cost growth per buy past softAfter once next layer is up. */
+    costSteepen: 1.12,
+    /** Weight of units past softAfter (1 = full, 0 = frozen). */
+    weightSoft: 0.4,
+    /** Soft-cap floor for cold momentum once lanes exist. */
+    coldMomentumFloor: 1.6,
+    softAfter: {
+      /** Extra chain stores past this index (excl. flagship) after plants exist. */
+      stores: 6,
+      /** Extra plants past this count after lanes exist. */
+      plants: 4,
+      /** Extra lanes past this count after barges exist. */
+      lanes: 3,
+      /** Extra barges past this count after a planet is stocked. */
+      barges: 6,
+    },
+  },
 }
 
-/** 2.0 value ladder — premium stock: price and wholesale cost both scale. */
+/**
+ * 2.0 value ladder — premium stock: price and wholesale cost both scale.
+ * storefront[i] pairs with BUILD_TRACKS storefront tiers[i]:
+ *   0 Empty, 1 Stall, 2 Corner (×2), 3 Standard (×3.5), 4 Super (×6),
+ *   5 Hyper (×10), 6 Mega (×16), 7 Hub (×24),
+ *   8 Probe Plaza (×32), 9 Greenhouse Atrium (×40), 10 Last Aisle (×52).
+ * builds.storefront starts at 1 (Stall). Late tiers 8–10 keep a modest step so
+ * the building ladder matches the claim without a new exponent.
+ */
 export const VALUE = {
-  /** By storefront tier: Empty, Stall, Corner, Standard, Supermarket, Hyper, Mega, Hub. */
-  storefront: [1, 1, 2, 3.5, 6, 10, 16, 24] as const,
-  /** By era 0..6. */
-  era: [1, 1.5, 2.5, 5, 10, 20, 40] as const,
+  storefront: [1, 1, 2, 3.5, 6, 10, 16, 24, 32, 40, 52] as const,
+  /** By era 0..12. Eras 7–12 step modestly; network layers carry the real jump. */
+  era: [1, 1.5, 2.5, 5, 10, 20, 40, 70, 120, 200, 340, 560, 900] as const,
 }
+
+/**
+ * Past-Era-6 horizon. Every new economy number for Eras 7–12 lives here.
+ * Probe / greenhouse / relay / embassy scalars are retuned with LONG_HORIZON.
+ */
+export const HORIZON = {
+  unsealStipend: 5e14,
+  /** Floor every Horizon cash buy at N seconds of current revenue. */
+  cashGateSec: 300,
+  probeGate: 1,
+  greenhouseGate: 2.5,
+  relayGate: 4,
+  embassyGate: 6,
+  keelGate: 8,
+  surveyPerSec: 0.03,
+  surveyCap: 120,
+  probeBase: 8e14,
+  probeGrowth: 2.35,
+  planetLayer: 0.55,
+  clusterMul: { volume: 1.08, margin: 1.12, fresh: 1.1 },
+  clusterRetarget: 25,
+  localPriceElasticity: 1.35,
+  localChalkPerRank: 0.02,
+  freightPerPlanet: 0.2,
+  freightCap: 240,
+  circuitBase: 40,
+  circuitGrowth: 1.35,
+  circuitLayer: 0.6,
+  /** Five bays; bay-walls adds +1 to the last bay. Total base capacity 14. */
+  bayCaps: [2, 2, 3, 3, 4] as const,
+  crateOfferCount: 8,
+  /** Practice + credited circuits without refile cheats (was 6). */
+  maxCircuits: 8,
+  keelConvoyEvery: 180,
+  keelDemandCut: 0.004,
+  keelWarCostFrac: 0.05,
+  keelFreezeSec: 600,
+  /** Season length — Era 9 slow gate wants 4 seasons + chores. */
+  seasonSec: 2700,
+  plotsStart: 4,
+  plotsCap: 8,
+  /** First N fileStandard* per layer are practice (no gate credit). */
+  practicePerLayer: 2,
+  /** Min gap between Worlds standard filings (practice or credit). */
+  standardFileGapSec: 1500,
+  /** Climate neighbor serves needed for Era 8. */
+  climateServeNeed: 6,
+  climateServeCooldownSec: 480,
+  /** Stop settlements after circuit credit (Era 9). */
+  settlementNeed: 6,
+  settlementEtaSec: 900,
+  /** Yield hauls after season chore (Era 10). */
+  yieldHaulNeed: 4,
+  yieldHaulSec: 1200,
+  /** Habit watches after phrase credit (Era 11). */
+  habitWatchNeed: 5,
+  habitWatchSec: 900,
+  /** Clause seatings after keep (Era 12). */
+  clauseSeatingNeed: 4,
+  clauseSeatingSec: 720,
+  clauseSeatingGapSec: 600,
+  /** Accept rehearsal desk gap after clever fill. */
+  acceptRehearsalSec: 900,
+  /** Slow file-the-standard bar / slow era gates. */
+  slowScore: 0.72,
+  /** Fast clever gate. */
+  fastScore: 0.85,
+  /** Standard list mean before Accept. */
+  listStandardScore: 0.75,
+  /** Accept / Reject threshold. */
+  listAcceptScore: 0.85,
+  /** Keep this many clauses under the charter. */
+  clauseKeep: 4,
+  /** Fast: worlds / circuits at fastScore. Slow: at slowScore. */
+  fastWorlds: 4,
+  slowWorlds: 8,
+  fastCircuits: 3,
+  /** Unique gate credits (maxCircuits 8 − practice 2 leaves room for 6). */
+  slowCircuits: 6,
+  slowPhrases: 6,
+  /** Concord hearing sessions before the charter may be signed. */
+  hearingNeededMin: 3,
+  hearingNeededMax: 3,
+  /** Endless list mutates every N worlds. */
+  endlessMutateEvery: 5,
+  /** Cap on department-lead endless bonuses (doubles safety). */
+  leadBonusCap: 1.35,
+  /** Per-world probe survey surcharge variance (±frac). */
+  probeSurveyVar: 0.22,
+  /** Co-op charter: venture lift / network cut. */
+  coopVentureMul: 1.12,
+  coopNetworkMul: 0.92,
+  /** Packing sticks at this score when a stevedore is on duty. */
+  stevedoreStick: 0.85,
+  /** Season Hand saves per year. */
+  seasonHandSaves: 1,
+  greenhouseBase: 2e16,
+  greenhouseGrowth: 2.2,
+  greenhouseLayer: 0.45,
+  qualityMatch: 1.25,
+  qualityPlotMul: 0.8,
+  volumePlots: 2,
+  volumeMatch: 0.85,
+  intenseBedPerRank: 0.1,
+  signalPerRelay: 0.25,
+  signalCap: 160,
+  relayBase: 5e17,
+  relayGrowth: 2.3,
+  relayLayer: 0.5,
+  phraseEvery: 90,
+  phraseSignalCost: 8,
+  agentCap: 6,
+  agentHireSignal: 30,
+  agentWageFrac: 0.02,
+  agentMinWage: 1e12,
+  clauseLayer: 0.22,
+  clauseToggleSeal: 10,
+  freeClauseToggles: 3,
+  fairCopyScore: 0.85,
+  embassyBase: 2e18,
+  embassyGrowth: 2.25,
+  embassyLayer: 0.4,
+  embassySealPerSec: 0.15,
+  sealCap: 80,
+  maxEmbassies: 8,
+  standardNetwork: 1.25,
+  boutiqueCraft: 1.5,
+  endlessPlanetLayer: 0.18,
+  endlessProbeGrowth: 2.6,
+  relicLevelCap: 10,
+  relicSockets: 3,
+  relicSocketsLater: 5,
+  /** A socketed Horizon-wing relic (Era 7+) gets this on top of the socket multiplier. */
+  socketHorizonMul: 1.1,
+  deputyCooldown: 45,
+  deputyCooldownFast: 30,
+  deputyCashFloor: 0.1,
+  forecastLeadSec: 60,
+  forecastLeadFastSec: 120,
+  headlineEvery: 360,
+  headlineSwing: 0.1,
+  seedPerSec: 0.02,
+  seedPerGreenhouse: 0.05,
+  seedCap: 240,
+  coldLawSeedMul: 0.92,
+  keelBuyoutBase: 8e16,
+  keelBuyoutPerConvoy: 0.35,
+  /** Rows 4–6 verb amplifiers (content/upgrades/deep.ts). Per rank unless noted. */
+  widePinSurveyPerRank: 0.1,
+  fineChalkPerRank: 0.01,
+  probeCreditPerRank: 0.03,
+  probeCreditFloor: 0.6,
+  bayLinerPerRank: 0.04,
+  pinFileCutPerRank: 0.04,
+  pinFileFloor: 0.6,
+  freightClerkPerRank: 0.06,
+  longBellSecPerRank: 15,
+  bedHandSeedPerRank: 0.08,
+  crossSheetPerRank: 0.2,
+  quickReelCutPerRank: 0.04,
+  quickReelFloor: 0.6,
+  briskDeskCutPerRank: 0.05,
+  briskDeskFloor: 0.6,
+  mastTunePerRank: 0.06,
+} as const
+
+/**
+ * Late-hub (Era 7–12) scalars that thread Worlds into Store / Supply / Team / Money / Empire.
+ * Cash costs still go through gatedCash; Horizon currencies gate verbs.
+ */
+export const LATE = {
+  /** Cash floor seconds of revenue for late hub buys. */
+  cashGateSec: 240,
+  offworldPerWorld: 0.04,
+  offworldRestockSurvey: 4,
+  importedSalesBump: 0.06,
+  seasonalPremium: 0.12,
+  bondedCapBase: 8,
+  bondedCapPerStorage: 4,
+  bondedUnpackCashFrac: 0.015,
+  bondedNetwork: 0.02,
+  seedDecayPerSec: 0.004,
+  seedVaultCapBase: 20,
+  seedVaultPerStorage: 30,
+  cryoArkDecayMul: 0.5,
+  annexSeatsBase: 4,
+  annexSeatsPerPlaza: 2,
+  tasterMatchPerLevel: 0.03,
+  diplomatSealCutPerLevel: 0.04,
+  diplomatEmbassySealPerLevel: 0.02,
+  horizonPacePerLevel: 0.05,
+  jumpFreightPerFuel: 0.35,
+  planetFranchiseLayer: 0.08,
+  councilSeatLayer: 0.05,
+  councilScrutinyPerSeat: 0.04,
+  councilSealPerSeat: 0.03,
+  broadcastSurveyCost: 6,
+  /** A broadcast lifts off-world sales for stocked worlds in that climate for this long. */
+  broadcastDurationSec: 240,
+  /** Off-world sales bump per stocked world whose climate is on the air. */
+  broadcastSalesBump: 0.06,
+  wireAdSignalCost: 12,
+  wireAdMul: 1.15,
+  wireAdDurationSec: 180,
+  buildQueueCashFloor: 0.12,
+  /** Late build claim scalars (era 7+ tiers). */
+  probePlazaCostMul: 0.85,
+  probePlazaSurveyPerSec: 0.015,
+  greenhouseAtriumMul: 1.2,
+  lastAisleListFloor: 0.05,
+  bondedWarehouseBonus: 12,
+  seedVaultTierBonus: 40,
+  relayFoundryCostMul: 0.85,
+  relayFoundryLayerMul: 1.15,
+  jumpBerthFreightMul: 1.35,
+  embassyAnnexMul: 2,
+  ivoPlaqueEndless: 0.04,
+  /** Clause toggle seal cut stops here, however many diplomats are on the clock. */
+  diplomatSealCutCap: 0.6,
+  /** Annex staff may not push a deputy cooldown below this share of its base. */
+  horizonPaceFloor: 0.4,
+  /** Celebrity endcap and posture fees follow revenue past Era 7: this share of the gate seconds. */
+  celebrityGateMul: 0.04,
+  postureGateMul: 0.004,
+  /** Venture forks that used to be flavor only. */
+  dutyfreeTouristDemand: 0.04,
+  courierKeelCutMul: 0.5,
+  courierOwnPaceMul: 0.8,
+  bondedSealedAgeMul: 0.9,
+  mealkitsHeartyBurnMul: 0.7,
+  mealkitsLeanBurnMul: 1.25,
+  /** Media Loud: rivals notice sooner and more often. */
+  mediaLoudRivalGapMul: 0.75,
+  mediaLoudRivalChanceMul: 1.5,
+  /** Ghost Rush: delivery bags sit warm. Perishables age this much faster. */
+  ghostRushAgeMul: 1.05,
+  /** Era 11–12 ventures. */
+  embassyGiftSealMul: 1.05,
+  treatyTableSealMul: 0.9,
+  ivoDinerWageMul: 0.9,
+  endlessKioskSurveyMul: 1.1,
+  /** Era 7+ Co-op order: cheaper than Express, slower than Budget, part-paid in survey. */
+  coopCostMul: 0.7,
+  coopEtaMul: 2.5,
+  coopSurveyPerCrate: 1,
+  coopCrates: 2,
+  /** Era 8+ barges haul freight too: freight/s per √barge. */
+  bargeFreightPerSec: 0.012,
+  /** Orbital rows 21+ (content/upgrades/deep.ts). Per rank. */
+  jumpSkidBurnPerRank: 1,
+  bargeHoldPerRank: 0.08,
+  franchiseDeedPerRank: 0.05,
+  hullYardHarvestPerRank: 0.04,
+  /** Council seats past the cap still count for scrutiny, but pay this fraction. */
+  councilOverCapPay: 0.4,
+  /** Extra seat per Council Clerk rank (upgrade `lh-council-clerk`). */
+  councilSeatPerClerk: 1,
+  /** Scrutiny above this share trims instrument yield, up to `scrutinyDragMax`. */
+  scrutinyDragAt: 0.6,
+  scrutinyDragMax: 0.35,
+  /** Instruments: lots per instrument, cost growth, and the revenue floor in seconds. */
+  instrumentMaxLots: 4,
+  instrumentGrowth: 1.9,
+  instrumentGateSec: 90,
+  /** Doctrine knobs (Strategy, era 7+). */
+  doctrineSurveyMul: 1.25,
+  doctrineBondedMul: 1.25,
+  doctrineVaultMul: 1.25,
+  doctrineSignalMul: 1.2,
+  doctrineSeatMul: 1.25,
+  doctrineJumpMul: 1.2,
+  /** Council Whip reward: seat payoff multiplier. */
+  councilWhipMul: 1.25,
+  /** Phase 5 project specials (content/projects.ts): what each one does beyond its stat line. */
+  /** File the Manifest: freight that rides through a Rebrand with the standing route. */
+  manifestCrumbFreight: 18,
+  /** Raise the Wire Hall: one more chair on the agent desk, and a higher desk cap. */
+  wireHallAgentSeats: 1,
+  /** Open the Council Annex: extra paying seats. */
+  councilAnnexSeats: 3,
+  /** Empire 105 (phrase clue): the standard file lands this much closer to a full phrase. */
+  phraseClueBonus: 0.05,
+  /** Empire 115 (bay slot): extra capacity on the last bay. */
+  empireBaySlots: 1,
+  /** Empire 120 (agent seat): extra desk cap past HORIZON.agentCap. */
+  empireAgentSeats: 1,
+} as const
+
+/** Horizon currency yield instruments (Invest, era 7+). One lot = a standing position. */
+export const LATE_INSTRUMENTS = {
+  'planet-bonds': { era: 7, currency: 'survey', base: 1e15, yieldPerLot: 0.012 },
+  'freight-futures': { era: 8, currency: 'freight', base: 5e15, yieldPerLot: 0.1 },
+  'seed-index': { era: 9, currency: 'seed', base: 5e16, yieldPerLot: 0.02 },
+  'signal-options': { era: 10, currency: 'signal', base: 5e17, yieldPerLot: 0.08 },
+} as const
+export type InstrumentId = keyof typeof LATE_INSTRUMENTS
 
 /** 2.0 Rebrand prestige. Goodwill = floor(cbrt(lifetime revenue / revenuePerGoodwillCube)). */
 export const REBRAND = {
@@ -633,6 +1214,8 @@ export const RIVAL_CHAINS = {
   buyoutLevelShare: 0.06,
   /** A taunt is logged every this-many new stores. */
   tauntEvery: 3,
+  /** Horizon rivals (opening Era 9+): buyout never below this many gate-seconds of revenue (× LATE.cashGateSec). */
+  lateGateMul: 5,
 }
 
 /** Relic Museum: +0.1% shoppers per relic owned (soft-capped like every stat). */

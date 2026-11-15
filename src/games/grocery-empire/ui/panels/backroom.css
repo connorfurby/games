@@ -1,0 +1,124 @@
+/* Backroom panel (Phase 6a). `bk-` prefix keeps clear of legacy `ge-back-*`. */
+@layer panels {
+  .bk-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .bk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--s-3);
+    align-items: stretch;
+  }
+  .bk-title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+  .bk-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+  .bk-note {
+    margin: 0;
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    color: var(--ge-ink-muted);
+  }
+  .bk-note.is-warn {
+    color: var(--ge-warn);
+  }
+  .bk-note.is-warn strong {
+    color: var(--ge-ink);
+  }
+
+  /* Waiting-to-unpack aisles: tile per aisle, dim when empty. */
+  .bk-cats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: var(--s-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .bk-cat {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--s-2);
+    padding: var(--s-1) var(--s-2);
+    border: 1px solid var(--ge-line);
+    border-radius: var(--r-sm);
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+    opacity: 0.6;
+  }
+  .bk-cat.is-on {
+    opacity: 1;
+    border-color: color-mix(in srgb, var(--ge-accent) 40%, transparent);
+    background: color-mix(in srgb, var(--ge-accent) 8%, transparent);
+  }
+  .bk-cat strong {
+    color: var(--ge-accent);
+  }
+  .bk-cat span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ge-ink-muted);
+  }
+  .bk-cat em {
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Trucks + batches */
+  .bk-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .bk-truck {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--s-2);
+    font-size: var(--t-xs);
+    line-height: var(--t-xs-lh);
+  }
+  .bk-truck strong {
+    color: var(--ge-accent);
+  }
+  .bk-truck span {
+    color: var(--ge-ink-muted);
+  }
+  .bk-truck em {
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+  }
+  .bk-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .bk-perish {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  @media (max-width: 720px) {
+    .bk-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .bk-cats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}

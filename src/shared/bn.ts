@@ -67,11 +67,15 @@ export function formatBN(value: Decimal | number, format: NumberFormat = 'named'
     return Math.floor(n).toLocaleString()
   }
   if (format === 'full') {
-    try {
-      return d.toFixed(0)
-    } catch {
-      return d.toString()
+    // Past ~1e9, dumping every digit is unreadable in an idle game.
+    if (d.abs().lt(1e9)) {
+      try {
+        return d.toFixed(0)
+      } catch {
+        return d.toString()
+      }
     }
+    // Fall through to named / scientific below.
   }
   if (format === 'scientific') {
     return d.toExponential(digits)
@@ -90,6 +94,15 @@ export function formatBN(value: Decimal | number, format: NumberFormat = 'named'
     return `${scaled.toFixed(digits)}${NAMES[tier]}`
   }
   return d.toExponential(digits)
+}
+
+/** `$12.50` under 1k; named suffixes above. For sim gate reasons and UI. */
+export function cashLabel(n: number): string {
+  if (!Number.isFinite(n)) return '$0.00'
+  const sign = n < 0 ? '-' : ''
+  const abs = Math.abs(n)
+  if (abs < 1000) return `${sign}$${abs.toFixed(2)}`
+  return `${sign}$${formatBN(abs, 'named', 2)}`
 }
 
 export function serializeBN(d: Decimal): string {

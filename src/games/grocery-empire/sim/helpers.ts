@@ -3,6 +3,7 @@ import { DIALOGUE_BY_ID } from '../content/dialogue'
 import { ERA_STORY, MENU_LORE } from '../content/lore'
 import { MENU_IDS, type MenuId } from '../content/menus'
 import { TUTORIAL_BY_ID, type TutorialStep } from '../content/tutorials'
+import { DEPTH } from './balance'
 import type { Batch, GameState, LedgerKind } from './state'
 
 const LEDGER_CAP = 250
@@ -49,14 +50,21 @@ export function skipOpeningDialogue(s: GameState) {
   s.dialogueQueue = s.dialogueQueue.filter((id) => !OPENING_DIALOGUE_IDS.includes(id as (typeof OPENING_DIALOGUE_IDS)[number]))
 }
 
-/** Only queues ids that exist in TUTORIALS. */
+/** Max auto-queued tours waiting behind the active one. Extra catalog tours stay in Coach. */
+const TUTORIAL_QUEUE_CAP = 3
+
+/** Only queues ids that exist in TUTORIALS. Caps depth so era dumps cannot pile up. */
 export function queueTutorial(s: GameState, id: string) {
   if (!TUTORIAL_BY_ID[id]) return
   if (s.tutorials.done[id]) return
   if (s.tutorials.active?.id === id) return
   if (s.tutorials.queue.includes(id)) return
+  if (s.tutorials.queue.length >= TUTORIAL_QUEUE_CAP) return
   s.tutorials.queue.push(id)
 }
+
+/** Seconds of calm after a lesson before the next queued tour may open. */
+export const TUTORIAL_CALM_SEC = 10
 
 export function captureTutorialBaseline(s: GameState): Record<string, number> {
   return {
@@ -177,6 +185,7 @@ export function advanceTutorialStep(s: GameState) {
   if (!def || next >= def.steps.length) {
     s.tutorials.done[t.id] = true
     s.tutorials.active = null
+    s.tutorials.calmUntil = s.time + TUTORIAL_CALM_SEC
     if (def) log(s, `Lesson closed: ${def.name}. The aisle keeps the habit.`, 'story')
     return
   }
@@ -262,6 +271,11 @@ export function setEra(s: GameState, era: number) {
   s.chapterQueue.push(era)
   const story = ERA_STORY[era]
   if (story) log(s, story.line, 'story')
+  // Flagship planogram: practice resets each era door.
+  if (s.depth?.flagship) {
+    s.depth.flagship.practiceLeft = DEPTH.flagshipPracticePerEra
+    s.depth.flagship.credited = false
+  }
   if (era >= 2 && s.stores.length === 0) {
     s.stores.push({
       id: `s${s.nextStoreId++}`,

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { NumberFormat } from '@/shared/bn'
 import { playMemoFx } from '@/shared/audio'
 import { useMeta } from '@/shell/MetaContext'
@@ -21,11 +21,8 @@ import { SPINE_MEMOS } from '../../sim/suggestions'
 import { officeRebalanceCost } from '../../sim/systems/office'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money, qty } from '../format'
-import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { HelpCard } from '../components/HelpCard'
-import { Meter } from '../components/Meter'
-import { Section } from '../components/Section'
+import { Button, EmptyState, Meter, Section } from '../kit'
 import { Icon } from '../icons/Icon'
 
 function costLabel(def: MemoDef, s: Parameters<MemoDef['cost']>[0], fmt: NumberFormat) {
@@ -92,6 +89,10 @@ function cheapScore(def: MemoDef, s: Parameters<MemoDef['cost']>[0]) {
 }
 
 const MEMO_INDEX = new Map(MEMOS.map((m, i) => [m.id, i]))
+
+function eraChipLabel(era: number) {
+  return era >= 7 ? 'Horizon' : `Era ${era}`
+}
 
 type GS = Parameters<MemoDef['cost']>[0]
 
@@ -237,6 +238,9 @@ function FiledList({ s }: { s: GS }) {
               <Icon name="memo" size={14} tone="accent" />
             </span>
             <strong>{m.name}</strong>
+            <span className="ge-muted" style={{ fontSize: '0.62rem' }}>
+              {eraChipLabel(m.era)}
+            </span>
           </div>
           <span className="ge-memo__effect" title={m.effect}>
             {m.effect}
@@ -269,9 +273,9 @@ function OfficeSuggestBtn({
       data-suggest-id={id}
       className={`ge-office__suggest-btn${suggested ? ' is-suggested' : ''}`.trim()}
     >
-      <Btn coachId={id} disabled={disabled} title={title} onClick={onClick}>
+      <Button size="sm" tone="primary" coachId={id} disabled={disabled} title={title} onClick={onClick}>
         {label}
-      </Btn>
+      </Button>
     </span>
   )
 }
@@ -329,6 +333,9 @@ function MemoRow({
           <Icon name="memo" size={14} tone="accent" />
         </span>
         <strong>{m.name}</strong>
+        <span className="ge-muted" style={{ fontSize: '0.62rem' }}>
+          {eraChipLabel(m.era)}
+        </span>
         {fresh ? <span className="ge-memo__new">New</span> : null}
         <button
           type="button"
@@ -343,7 +350,7 @@ function MemoRow({
       <span className="ge-memo__effect" title={m.effect}>
         {m.effect}
       </span>
-      <Btn
+      <Button
         tone={affordable ? 'primary' : 'ghost'}
         coachId={sid}
         disabled={!affordable}
@@ -359,7 +366,7 @@ function MemoRow({
         }}
       >
         {affordable ? cost : gate ?? cost}
-      </Btn>
+      </Button>
     </li>
   )
 }
@@ -376,7 +383,7 @@ function OfficeRebalance({ ask }: { ask: (spec: ConfirmSpec) => void }) {
     <div className="ge-office__rebalance">
       <span className="ge-office__rebalance-label">Rebalance · {costLabel}</span>
       <div className="ge-office__rebalance-row">
-        <Btn
+        <Button
           tone="ghost"
           disabled={!toArchive.ok}
           title={toArchive.reason ?? `Pay cash · move 1 Analyst → Archive (cap +${step})`}
@@ -391,8 +398,8 @@ function OfficeRebalance({ ask }: { ask: (spec: ConfirmSpec) => void }) {
           }
         >
           → Archive
-        </Btn>
-        <Btn
+        </Button>
+        <Button
           tone="ghost"
           disabled={!toAnalyst.ok}
           title={toAnalyst.reason ?? `Pay cash · move 1 Archive → Analyst (cap −${step})`}
@@ -407,19 +414,23 @@ function OfficeRebalance({ ask }: { ask: (spec: ConfirmSpec) => void }) {
           }
         >
           → Analyst
-        </Btn>
+        </Button>
       </div>
     </div>
   )
 }
 
-export function MemosPanel({ compact }: { compact?: boolean }) {
+/** Memoized: re-renders from its own context reads, not from unrelated parent renders. */
+export const MemosPanel = memo(MemosPanelInner)
+
+function MemosPanelInner({ compact }: { compact?: boolean }) {
   const { state: s, tick, dispatch, numberFormat, reducedMotion } = useGame()
   const { meta } = useMeta()
   const [q, setQ] = useState('')
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
   const [affordableOnly, setAffordableOnly] = useState(false)
   const [tab, setTab] = useState<'desk' | 'filed' | 'standing'>('desk')
+  const [eraFilter, setEraFilter] = useState<'all' | 'horizon' | number>('all')
   const sortReady = true
   const listRef = useRef<HTMLUListElement>(null)
   const scrollRef = useRef<HTMLElement | null>(null)
@@ -430,11 +441,13 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase()
     const rows = MEMOS.filter((m) => {
-      if (m.standing) return false
+      if (m.standing || m.again) return false
       if (m.fork) return false
       const owned = s.memos[m.id] ?? 0
       if (owned > 0 && !m.repeatable) return false
       if (m.max != null && owned >= m.max) return false
+      if (eraFilter === 'horizon' && m.era < 7) return false
+      if (typeof eraFilter === 'number' && m.era !== eraFilter) return false
       if (s.memoSeen?.[m.id]) return true
       try {
         return m.visible(s)
@@ -469,7 +482,7 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
       return (MEMO_INDEX.get(a.id) ?? 0) - (MEMO_INDEX.get(b.id) ?? 0)
     })
     // `tick` — GameState is mutated in place; `s` identity never changes.
-  }, [tick, s, q, affordableOnly, sortReady])
+  }, [tick, s, q, affordableOnly, sortReady, eraFilter])
 
   const readyCount = useMemo(
     () => visible.reduce((n, m) => n + (canAfford(m, s) ? 1 : 0), 0),
@@ -525,6 +538,18 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
     el.scrollTop = scrollTopRef.current
   }, [visible])
 
+  const again = useMemo(() => {
+    return MEMOS.filter((m) => m.again).filter((m) => {
+      if (s.memoSeen?.[m.id]) return true
+      try {
+        return m.visible(s)
+      } catch {
+        return false
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick, s])
+
   const filedCount = useMemo(
     () => MEMOS.reduce((n, m) => n + (!m.repeatable && owned(s, m.id) ? 1 : 0), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -567,7 +592,7 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
       )}
 
       {s.compute?.unlocked ? (
-        <Section label="Back office">
+        <Section title="Back office" collapsible defaultOpen={false}>
           <div className="ge-office">
             <div className="ge-office__att" data-coach-id="compute-attention">
               <Meter
@@ -653,7 +678,7 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
                 }}
               />
               {s.compute.ideasUnlocked ? (
-                <Btn
+                <Button
                   tone="ghost"
                   title={
                     s.compute.ideasOn
@@ -663,17 +688,17 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
                   onClick={() => dispatch({ type: 'toggleIdeas' })}
                 >
                   Ideas {s.compute.ideasOn ? 'on' : 'off'}
-                </Btn>
+                </Button>
               ) : null}
               {s.compute.scanner ? (
-                <Btn
+                <Button
                   tone="ghost"
                   disabled={!scannerCheck.ok}
                   title={scannerCheck.ok ? 'Pulse Attention (wobbles, 2–4s cooldown)' : scannerCheck.reason}
                   onClick={() => dispatch({ type: 'pulseScanner' })}
                 >
                   {scannerCheck.ok ? 'Pulse' : scannerWait > 0 ? `Pulse · ${scannerWait}s` : 'Pulse'}
-                </Btn>
+                </Button>
               ) : null}
             </div>
 
@@ -695,6 +720,43 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
       <SpinePath s={s} fmt={numberFormat} />
       <ColdChainGraph s={s} />
 
+
+      <div className="ge-dept-tabs" role="tablist" aria-label="Memo desk">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'desk'}
+          className={`ge-dept-tab${tab === 'desk' ? ' is-on' : ''}`.trim()}
+          onClick={() => setTab('desk')}
+        >
+          Desk
+          <em>{visible.length}</em>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'standing'}
+          className={`ge-dept-tab${tab === 'standing' ? ' is-on' : ''}`.trim()}
+          onClick={() => setTab('standing')}
+        >
+          Standing
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'filed'}
+          className={`ge-dept-tab${tab === 'filed' ? ' is-on' : ''}`.trim()}
+          onClick={() => setTab('filed')}
+        >
+          Filed
+          <em>{filedCount}</em>
+        </button>
+      </div>
+
+      {tab === 'filed' ? <FiledList s={s} /> : null}
+
+      {tab === 'standing' ? (
+        <>
       <div className="ge-fork-strip" aria-label="Standing-order forks">
         {FORK_IDS.map((fork) => {
           const pair = FORK_PAIR[fork]
@@ -740,14 +802,14 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
                           Other path filed
                         </em>
                       ) : (
-                        <Btn
+                        <Button
                           tone={check.ok ? 'primary' : 'ghost'}
                           disabled={!check.ok}
                           title={check.reason ?? costLabel(m, s, numberFormat)}
                           onClick={() => dispatch({ type: 'buyMemo', id: m.id })}
                         >
                           {check.ok ? costLabel(m, s, numberFormat) : check.reason ?? 'Locked'}
-                        </Btn>
+                        </Button>
                       )}
                     </div>
                   )
@@ -758,41 +820,24 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
         })}
       </div>
 
-      <div className="ge-dept-tabs" role="tablist" aria-label="Memo desk">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'desk'}
-          className={`ge-dept-tab${tab === 'desk' ? ' is-on' : ''}`.trim()}
-          onClick={() => setTab('desk')}
-        >
-          Desk
-          <em>{visible.length}</em>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'standing'}
-          className={`ge-dept-tab${tab === 'standing' ? ' is-on' : ''}`.trim()}
-          onClick={() => setTab('standing')}
-        >
-          Standing
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'filed'}
-          className={`ge-dept-tab${tab === 'filed' ? ' is-on' : ''}`.trim()}
-          onClick={() => setTab('filed')}
-        >
-          Filed
-          <em>{filedCount}</em>
-        </button>
-      </div>
+      {again.length > 0 ? (
+        <ul className="ge-memo-list">
+          {again.map((m) => (
+            <MemoRow
+              key={m.id}
+              m={m}
+              s={s}
+              numberFormat={numberFormat}
+              fresh={false}
+              muted={meta.settings.muted}
+              reducedMotion={reducedMotion}
+              onBuy={() => dispatch({ type: 'buyMemo', id: m.id })}
+              onFav={() => dispatch({ type: 'toggleFavoriteMemo', id: m.id })}
+            />
+          ))}
+        </ul>
+      ) : null}
 
-      {tab === 'filed' ? <FiledList s={s} /> : null}
-
-      {tab === 'standing' ? (
         <div className="ge-standing-grid">
           {STANDING_ORDER_MEMOS.filter((m) => {
             try {
@@ -821,18 +866,19 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
                     <i key={i} className={i < lvl ? 'is-on' : undefined} />
                   ))}
                 </div>
-                <Btn
+                <Button
                   tone={check.ok ? 'primary' : 'ghost'}
                   disabled={!check.ok}
                   title={check.reason ?? costLabel(m, s, numberFormat)}
                   onClick={() => dispatch({ type: 'buyMemo', id: m.id })}
                 >
                   {lvl >= max ? 'Maxed' : costLabel(m, s, numberFormat)}
-                </Btn>
+                </Button>
               </article>
             )
           })}
         </div>
+        </>
       ) : null}
 
       <div
@@ -855,12 +901,42 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
           />
           Affordable
         </label>
-        <Btn tone="ghost" onClick={jumpAffordable} disabled={readyCount === 0}>
+        <Button tone="ghost" size="sm" onClick={jumpAffordable} disabled={readyCount === 0}>
           Jump
-        </Btn>
+        </Button>
       </div>
+      {tab === 'desk' ? (
+        <div className="ge-chip-row" role="tablist" aria-label="Memo era">
+          <Button tone={eraFilter === 'all' ? 'primary' : 'ghost'} size="sm" onClick={() => setEraFilter('all')}>
+            All
+          </Button>
+          {[0, 1, 2, 3, 4, 5, 6].map((era) =>
+            s.era >= era ? (
+              <Button
+                key={era}
+                size="sm"
+                tone={eraFilter === era ? 'primary' : 'ghost'}
+                onClick={() => setEraFilter(era)}
+              >
+                {eraChipLabel(era)}
+              </Button>
+            ) : null,
+          )}
+          {s.era >= 7 ? (
+            <Button
+              size="sm"
+              tone={eraFilter === 'horizon' ? 'primary' : 'ghost'}
+              onClick={() => setEraFilter('horizon')}
+            >
+              Horizon
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
-      {tab === 'desk' && visible.length === 0 ? <p className="ge-empty">No memos on the desk.</p> : null}
+      {tab === 'desk' && visible.length === 0 ? (
+        <EmptyState title="No memos on the desk" body="Buy crates and clear goals — new projects land here." />
+      ) : null}
 
       <ul
         className="ge-memo-list"
@@ -881,19 +957,6 @@ export function MemosPanel({ compact }: { compact?: boolean }) {
           />
         ))}
       </ul>
-
-      {s.compute?.unlocked ? (
-        <HelpCard title="Attention & Ideas">
-          Analysts make Attention; Archives set the cap. Stores spend some of it, but not enough to
-          stop the bar filling. Ideas mint only while the bar is full, so Tourney While Full waits
-          until you turn Ideas off. Spend Reputation on an Archive first, an Analyst second.
-        </HelpCard>
-      ) : (
-        <HelpCard title="Memos">
-          Each memo is a project that opens the next door. Buy the ready ones — cash is the only cost
-          until the back office opens. Star the ones you want to keep near the top.
-        </HelpCard>
-      )}
 
       <ConfirmModal
         open={!!confirm}

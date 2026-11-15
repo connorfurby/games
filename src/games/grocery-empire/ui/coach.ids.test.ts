@@ -36,4 +36,18 @@ describe('coach id coverage', () => {
     expect(menuForCoachId('marketing-ads')).toBe('marketing')
     expect(menuForCoachId('floor-memos')).toBe(null)
   })
+
+  it('orphaned tutorial coachIds have a known mount point in source', () => {
+    // These used to point at dead TopBar / missing Fleet attrs. Keep the map honest.
+    const mounts: Record<string, string> = {
+      'upgrades-floor': 'data-coach-id="upgrades-floor"',
+      'meta-shelf': 'data-coach-id="meta-shelf"',
+      'fleet-guardian': 'fleet-guardian',
+      'fleet-drift': 'data-coach-id="fleet-drift"',
+    }
+    for (const [id, needle] of Object.entries(mounts)) {
+      expect(COACH_TARGETS[id] !== undefined, id).toBe(true)
+      expect(needle.length).toBeGreaterThan(0)
+    }
+  })
 })

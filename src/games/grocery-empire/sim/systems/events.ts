@@ -1,5 +1,6 @@
 import { poemsForEra } from '../../content/poetry'
-import { CELEBRITY_ENDCAP, COUPON_WAR, FRANCHISE_CLONE, INSPECTION, MORALE, RIVAL_EVENTS } from '../balance'
+import { CELEBRITY_ENDCAP, COUPON_WAR, FRANCHISE_CLONE, INSPECTION, LATE, MORALE, RIVAL_EVENTS } from '../balance'
+import { hasFork } from '../ventureForks'
 import { inspectionDecay, inspectionFine, inspectionGainMul, memo, up } from '../formulas'
 import { clamp, log } from '../helpers'
 import { chance, nextRng } from '../rng'
@@ -182,9 +183,12 @@ function tickRival(s: GameState, dt: number) {
   // Bought every rival on the board: nobody left to pick a fight.
   if (s.rivals && Object.keys(s.rivals).length > 0 && activeRivals(s).length === 0) return
   if (s.events.couponWar?.active) return
-  if (s.time - r.lastAt < RIVAL_EVENTS.minGapSec) return
+  // Media Loud fork: the channel makes noise, so rivals notice sooner and more often.
+  const loud = hasFork(s, 'mediaLoud')
+  if (s.time - r.lastAt < RIVAL_EVENTS.minGapSec * (loud ? LATE.mediaLoudRivalGapMul : 1)) return
   if (s.time - (s.events.couponWar?.lastAt ?? -1e9) < 120) return
-  if (chance(s, RIVAL_EVENTS.startChancePerSec * dt)) startRival(s)
+  const chanceMul = loud ? LATE.mediaLoudRivalChanceMul : 1
+  if (chance(s, RIVAL_EVENTS.startChancePerSec * chanceMul * dt)) startRival(s)
 }
 
 /** Era 2+ rival banner: ~8–12 min gap, ~90s duration, −8% demand. Never bricks. */

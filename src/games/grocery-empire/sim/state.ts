@@ -1,4 +1,6 @@
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
+import { emptyDepth, type DepthState } from '../content/depth'
+import { emptyHorizon, type HorizonState } from '../content/horizon'
 import { CHARTER_AXES } from '../content/lateEras'
 import { MENU_IDS, type MenuId } from '../content/menus'
 import type { RoleId, StaffTraitId } from '../content/staff'
@@ -54,6 +56,8 @@ export interface StaffMember {
   hiredAt: number
   /** Soft personality trait: ±5% on one axis. Optional for old saves. */
   traitId?: StaffTraitId
+  /** Horizon deputy opt-in. The annex roles read this. */
+  deputy?: boolean
 }
 
 export interface LedgerEntry {
@@ -69,6 +73,8 @@ export interface VentureState {
   lifetime: number
   /** Fractional produce consumption carry. */
   carry: number
+  /** Level-10 policy fork. Locks after the first set. */
+  policy?: null | 'a' | 'b'
 }
 
 export interface TutorialRun {
@@ -90,6 +96,12 @@ export interface OfflineReceipt {
   attention: number
   ventures: number
   interest: number
+  /** Horizon pockets earned while away. Spends during the gap are not shown. */
+  survey: number
+  freight: number
+  seed: number
+  signal: number
+  seal: number
 }
 
 export type StorePolicy = 'local' | 'standard' | 'premium'
@@ -143,8 +155,19 @@ export interface BoardState {
 }
 
 /** Era 3 — cold chain / freshness / Momentum. */
+export type PlantKind = 'compressor' | 'tunnel' | 'blast'
+
+export interface PlantEntry {
+  id: string
+  kind: PlantKind
+}
+
 export interface ColdState {
   plants: number
+  /** Typed plant stack; plants === plantList.length for compat. */
+  plantList: PlantEntry[]
+  /** Which plant kinds draw power (max DEPTH.plantPowerSlots). Empty = all online kinds, capped. */
+  poweredKinds: PlantKind[]
   tanks: number
   /** 0..∞; 1 = supply meets demand; floors at 0.25 on brownout. */
   freshness: number
@@ -159,10 +182,15 @@ export interface ColdState {
   autoSheds: number
   /** 2.0: plants auto-shed during a brownout wait here and come back when surplus returns. */
   offline: number
+  /** Offline plant kinds (parallel to offline count), oldest first. */
+  offlineList: PlantEntry[]
   momentumHoldSec: number
   quadratic: boolean
   lastBrownoutLogAt: number
+  nextPlantId: number
 }
+
+export type BillId = 'hours' | 'waste' | 'labor' | 'tax'
 
 /** Era 3 — political capital / acquisition. */
 export interface PoliticsState {
@@ -171,15 +199,67 @@ export interface PoliticsState {
   monopolyRisk: number
   acquisitions: number
   leftRegion: boolean
+  bills: Record<BillId, boolean>
 }
 
-/** Era 5 — seed barges / Charter. */
+export interface LaneEntry {
+  id: string
+  route: string
+  /** Local fuel buffer for this lane (0 = dry). */
+  fuel: number
+}
+
+export interface FranchiseEntry {
+  id: string
+  name: string
+  /** 0..1 loyalty; low → defected. */
+  loyalty: number
+  defected: boolean
+}
+
+export interface BiomassPocket {
+  id: string
+  left: number
+  max: number
+  ration: string
+}
+
+export type BargeClassId = 'hauler' | 'replicator' | 'ark'
+
+export interface BargeEntry {
+  id: string
+  class: BargeClassId
+  /** Pocket ration this Hauler targets. */
+  ration?: string
+  /** Hauler must rest until this sim time after arrival (berth turnaround). */
+  restUntil?: number
+}
+
+/** Pocket Ops — hauler trip with ETA (Era 5). */
+export type PocketTripStatus = 'enroute' | 'done' | 'wasted'
+
+export interface PocketTrip {
+  bargeId: string
+  pocketId: string
+  /** Ration loaded at dispatch; must match pocket on arrive. */
+  ration: string
+  departAt: number
+  arriveAt: number
+  status: PocketTripStatus
+}
+
+/** Era 4–5 — globe logistics + seed barges / Charter. */
 export interface FleetState {
   barges: number
   /** Barges you paid for (replicated barges are free and do not raise the price). */
   launches: number
   biomass: number
   biomassMax: number
+  /** Six biomass pockets (Era 5). Sum of left ≈ biomass. */
+  pockets: BiomassPocket[]
+  bargeList: BargeEntry[]
+  /** Active + recent Pocket Ops hauler trips. */
+  trips: PocketTrip[]
   charter: Record<string, number>
   /** Unspent Charter points. */
   charterPool: number
@@ -188,9 +268,16 @@ export interface FleetState {
   warOn: boolean
   guardianUsed: boolean
   lanes: number
+  laneList: LaneEntry[]
   franchises: number
+  franchiseList: FranchiseEntry[]
   driftWins: number
   launched: boolean
+  nextLaneId: number
+  nextFranchiseId: number
+  nextBargeId: number
+  /** Last setManifest sim-time (fuel cycle gate). */
+  lastManifestAt: number
 }
 
 /** Mild New Game+ laws picked after Accept (0–2). */
@@ -203,6 +290,8 @@ export interface PrestigeCarry {
   universeIndex: number
   /** Active Hungry laws for this universe (max 2). Default []. */
   mutators: PrestigeMutatorId[]
+  /** Steward kept after Continue (flavor / mild goodwill). */
+  stewardName?: string
 }
 
 export interface Stats {
@@ -424,8 +513,34 @@ export interface GameState {
   brand: number
   /** Era 5+ seed barges. */
   fleet: FleetState
-  /** Era 6 ending pick. */
-  endingChoice: null | 'accept' | 'reject'
+  /** Era 6 ending pick. Continue keeps the save and opens Era 7. */
+  endingChoice: null | 'accept' | 'reject' | 'continue'
+  /** Era depth: facings, departments, contracts, open/close. */
+  depth: DepthState
+  /** Era 7–12 currencies, puzzles, and the endless layer. */
+  horizon: HorizonState
+  /** Era 7+ off-world bay (planet SKUs on the floor). */
+  offworld: { bay: string[]; sold: number }
+  /** Era 8+ bonded freight cage. */
+  bonded: { crates: number; cap: number }
+  /** Era 9+ seed vault (held seed is safe from decay). */
+  seedVault: { held: number; cap: number }
+  /** Late-hub timers and counts shared across Store/Supply/Team/Money. */
+  late: {
+    broadcasts: Record<string, number>
+    wireAdsUntil: number
+    cryoImmuneUntil: number
+    jumpFreightAcc: number
+    planetFranchises: number
+    futuresUntil: number
+    futuresSku: string | null
+    /** Council scrutiny 0..1, set from acquisitions (seats) each late tick. */
+    scrutiny: number
+    /** Invest instruments: lots held per id (Planet Bonds, Freight Futures, …). */
+    instruments: Record<string, number>
+    /** Bonded crates unpacked this run (campaign goal). */
+    unpacked: number
+  }
   /** UI applies MetaSave.groceryUniverses bump then clears. */
   pendingAccept: boolean
   /** Mild permanent bonuses after Accept prestige. */
@@ -437,14 +552,31 @@ export interface GameState {
   /** 2.0 named rival chains, keyed by rival id. Missing = not opened yet. */
   rivals: Record<string, RivalState>
   /** 2.0 Relic Museum, mirrored in from the museum save (which outlives runs). */
-  relics: { wings: string[]; count: number; owned: Record<string, number> }
+  relics: {
+    wings: string[]
+    count: number
+    owned: Record<string, number>
+    /** Museum level per relic id. Missing means 1. */
+    levels: Record<string, number>
+    sockets: string[]
+    /** Dust mirrored from the museum so level commands can spend it. */
+    dust: number
+    /** Rarity ceiling for auto-dust. Null is off. */
+    autoDust: string | null
+  }
 
   menus: Record<MenuId, boolean>
   seenMenus: Record<string, boolean>
   /** Player-opened department. Coach auto-nav does not bump this. */
   menuStamp: number
   lastMenu: string
-  tutorials: { done: Record<string, boolean>; queue: string[]; active: TutorialRun | null }
+  tutorials: {
+    done: Record<string, boolean>
+    queue: string[]
+    active: TutorialRun | null
+    /** Sim time until the next queued tour may promote (calm between lessons). */
+    calmUntil: number
+  }
   chapterQueue: number[]
 
   ledger: LedgerEntry[]
@@ -542,6 +674,8 @@ function emptyByCat(): Record<CategoryId, number> {
 export function emptyCold(): ColdState {
   return {
     plants: 0,
+    plantList: [],
+    poweredKinds: [],
     tanks: 0,
     freshness: 1,
     momentum: 1,
@@ -553,9 +687,11 @@ export function emptyCold(): ColdState {
     brownouts: 0,
     autoSheds: 0,
     offline: 0,
+    offlineList: [],
     momentumHoldSec: 0,
     quadratic: false,
     lastBrownoutLogAt: -1e9,
+    nextPlantId: 1,
   }
 }
 
@@ -566,16 +702,33 @@ export function emptyPolitics(): PoliticsState {
     monopolyRisk: 0,
     acquisitions: 0,
     leftRegion: false,
+    bills: { hours: false, waste: false, labor: false, tax: false },
   }
+}
+
+export function emptyPockets(): BiomassPocket[] {
+  const rations = ['grain', 'legume', 'oil', 'salt', 'yeast', 'water']
+  const max = FLEET.pocketMax
+  return rations.slice(0, FLEET.pocketCount).map((ration, i) => ({
+    id: `pk${i + 1}`,
+    left: max,
+    max,
+    ration,
+  }))
 }
 
 export function emptyFleet(): FleetState {
   const charter = Object.fromEntries(CHARTER_AXES.map((a) => [a.id, 0])) as Record<string, number>
+  const pockets = emptyPockets()
+  const biomass = pockets.reduce((a, p) => a + p.left, 0)
   return {
     barges: 0,
     launches: 0,
-    biomass: FLEET.biomassStart,
-    biomassMax: FLEET.biomassStart,
+    biomass,
+    biomassMax: biomass,
+    pockets,
+    bargeList: [],
+    trips: [],
     charter,
     charterPool: 0,
     charterCap: FLEET.charterBaseCap,
@@ -583,10 +736,26 @@ export function emptyFleet(): FleetState {
     warOn: false,
     guardianUsed: false,
     lanes: 0,
+    laneList: [],
     franchises: 0,
+    franchiseList: [],
     driftWins: 0,
     launched: false,
+    nextLaneId: 1,
+    nextFranchiseId: 1,
+    nextBargeId: 1,
+    lastManifestAt: -1e9,
   }
+}
+
+/** Keep biomass total in sync with pockets. */
+export function syncFleetBiomass(f: FleetState) {
+  if (!f.pockets?.length) return
+  f.biomass = f.pockets.reduce((a, p) => a + Math.max(0, p.left), 0)
+  f.biomassMax = Math.max(
+    f.biomassMax,
+    f.pockets.reduce((a, p) => a + Math.max(0, p.max), 0),
+  )
 }
 
 export function emptyPrestigeCarry(): PrestigeCarry {
@@ -800,18 +969,35 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     brand: 1,
     fleet: emptyFleet(),
     endingChoice: null,
+    depth: emptyDepth(),
+    horizon: emptyHorizon(),
+    offworld: { bay: [], sold: 0 },
+    bonded: { crates: 0, cap: 8 },
+    seedVault: { held: 0, cap: 20 },
+    late: {
+      broadcasts: {},
+      wireAdsUntil: 0,
+      cryoImmuneUntil: 0,
+      jumpFreightAcc: 0,
+      planetFranchises: 0,
+      futuresUntil: 0,
+      futuresSku: null,
+      scrutiny: 0,
+      instruments: {},
+      unpacked: 0,
+    },
     pendingAccept: false,
     prestigeCarry: emptyPrestigeCarry(),
     projects: { done: {}, active: [] },
     rivals: {},
-    relics: { wings: [], count: 0, owned: {} },
+    relics: { wings: [], count: 0, owned: {}, levels: {}, sockets: [], dust: 0, autoDust: null },
     rebrand: { goodwill: 0, count: 0, bankedThisRun: 0 },
 
     menus,
     seenMenus: { floor: true, more: true },
     menuStamp: 0,
     lastMenu: 'floor',
-    tutorials: { done: {}, queue: [], active: null },
+    tutorials: { done: {}, queue: [], active: null, calmUntil: 0 },
     chapterQueue: [],
 
     ledger: [],

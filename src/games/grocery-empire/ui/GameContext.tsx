@@ -28,6 +28,8 @@ export interface GameCtxValue {
   setPhotoMode: (on: boolean) => void
 }
 
+export { useGameSelector, shallowEqual } from './useGameSelector'
+
 const GameCtx = createContext<GameCtxValue | null>(null)
 
 export function GameProvider({ value, children }: { value: GameCtxValue; children: ReactNode }) {

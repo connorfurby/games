@@ -1,6 +1,7 @@
-import { REBRAND } from '../balance'
+import { HORIZON, REBRAND } from '../balance'
 import { log } from '../helpers'
 import { createInitialState, type GameState } from '../state'
+import { manifestCrumb } from './lateHubs'
 
 /**
  * Rebrand — the 2.0 prestige loop. From Era 3 you can start a fresh store under a
@@ -32,13 +33,20 @@ export function rebrand(s: GameState, now = Date.now()): GameState {
   fresh.empire = { ...s.empire, perks: { ...s.empire.perks } }
   fresh.rebrand = { goodwill: s.rebrand.goodwill + gain, count: s.rebrand.count + 1, bankedThisRun: 0 }
   fresh.prestigeCarry = { ...s.prestigeCarry, mutators: [...s.prestigeCarry.mutators] }
-  fresh.tutorials = { done: { ...s.tutorials.done }, queue: [], active: null }
+  fresh.tutorials = { done: { ...s.tutorials.done }, queue: [], active: null, calmUntil: 0 }
   fresh.seenLines = { ...s.seenLines }
   fresh.tipsSeen = { ...s.tipsSeen }
   fresh.introSeen = true
   fresh.museum = s.museum
   fresh.speed = s.speed
   fresh.cash = Math.round(fresh.cash * (1 + fresh.rebrand.goodwill * REBRAND.startCashPerGoodwill))
+  if (s.projects?.done?.['pj-manifest'] && s.horizon?.standingRoute) {
+    const route = s.horizon.standingRoute
+    fresh.horizon.standingRoute = { ...route, load: [...route.load] }
+    fresh.projects.done['pj-manifest'] = true
+    // The filed manifest also carries a crumb of freight across the sign change.
+    fresh.horizon.freight = Math.min(HORIZON.freightCap, fresh.horizon.freight + manifestCrumb(s))
+  }
   log(
     fresh,
     `Rebrand #${fresh.rebrand.count}: a new sign over the same door. +${gain} Goodwill (${fresh.rebrand.goodwill} total).`,

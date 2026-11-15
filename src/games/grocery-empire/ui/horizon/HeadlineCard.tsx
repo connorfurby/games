@@ -1,0 +1,76 @@
+import { HEADLINE_BY_ID, SEASON_NAMES, SEASON_WANTS, type HeadlineDef } from '../../content/horizon'
+import { can } from '../../sim/commands'
+import { useGame } from '../GameContext'
+import { Btn } from '../components/Btn'
+import { HorizonBust } from './HorizonBust'
+import type { HorizonCastId } from '../../art/cast'
+
+function speakerFor(id: string): HorizonCastId {
+  if (id.includes('keel')) return 'maris'
+  if (id.includes('ivo')) return 'ivo'
+  if (id.includes('season')) return 'edda'
+  if (id.includes('orchard') || id.includes('bruise')) return 'grower'
+  return 'nia'
+}
+
+function helpBlurb(def: HeadlineDef, season: number): string {
+  if (def.id === 'hl-season-telegraph') {
+    const next = SEASON_WANTS[(season + 1) % 4]
+    const name = SEASON_NAMES[(season + 1) % 4] ?? 'next'
+    return next ? `${name} wants ${next[0]} and ${next[1]}.` : 'The next two traits are on the wire.'
+  }
+  if (/freeze keel/i.test(def.helpEffect)) return 'Keel holds still for ten minutes.'
+  if (/\+1 legacy/i.test(def.helpEffect)) return 'Grants 1 Legacy if a fleet is still out.'
+  if (/layer ×1\.1/i.test(def.helpEffect)) return 'That world’s layer runs ×1.1 until the season turns.'
+  if (/day tag ×0\.95/i.test(def.helpEffect)) return 'Night tags ×1.1 and day tags ×0.95 until the season turns.'
+  const tagged = def.helpEffect.match(/([A-Za-z]+)-tagged/)
+  const goods = def.helpEffect.match(/([A-Za-z]+) goods match/)
+  const tag = tagged?.[1] ?? goods?.[1]
+  if (tag && /×1\.1/.test(def.helpEffect)) return `${tag} matches ×1.1 until the season turns.`
+  return 'Clears the wire. Nothing else moves.'
+}
+
+function costLabel(def: HeadlineDef): string {
+  const cost = def.helpCost
+  if (!cost) return 'Help'
+  if (cost.currency === 'cash') return 'Help · 1% cash'
+  return `Help · ${cost.amount} ${cost.currency}`
+}
+
+export function HeadlineCard({ reducedMotion }: { reducedMotion: boolean }) {
+  const { state: s, dispatch } = useGame()
+  const id = s.horizon.headlineId
+  const def = id ? HEADLINE_BY_ID[id] : undefined
+  if (!def) return null
+  const hideHelp = def.helpCost?.currency === 'seed' && s.era < 9
+  const help = can(s, { type: 'helpHeadline' })
+  const ignore = can(s, { type: 'ignoreHeadline' })
+  return (
+    <div className="ge-modal hz-headline" role="dialog" aria-labelledby="hz-headline-title">
+      <div
+        className="hz-headline__card"
+        style={reducedMotion ? undefined : { animation: 'hz-rise 220ms ease-out' }}
+      >
+        <HorizonBust id={speakerFor(def.id)} />
+        <p className="hz-note">Headline</p>
+        <h2 id="hz-headline-title">{def.text}</h2>
+        <p>{helpBlurb(def, s.horizon.season)}</p>
+        <div className="ge-chip-row">
+          {hideHelp ? null : (
+            <Btn tone="primary" disabled={!help.ok} title={help.ok ? costLabel(def) : help.reason} onClick={() => dispatch({ type: 'helpHeadline' })}>
+              {costLabel(def)}
+            </Btn>
+          )}
+          <Btn
+            tone="ghost"
+            disabled={!ignore.ok}
+            title={def.id === 'hl-ash-flour' && s.era >= 8 ? 'Keel gains a convoy.' : ignore.ok ? 'Set the headline aside.' : ignore.reason}
+            onClick={() => dispatch({ type: 'ignoreHeadline' })}
+          >
+            Ignore
+          </Btn>
+        </div>
+      </div>
+    </div>
+  )
+}

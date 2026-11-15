@@ -19,15 +19,8 @@
   border: 1px solid var(--g2-line);
 }
 
-.mu-hero__title h2 {
-  margin: 0;
-  font-family: var(--g2-display);
-  font-size: 1.6rem;
-  letter-spacing: -0.01em;
-}
-
 .mu-hero__title p {
-  margin: 0.2rem 0 0;
+  margin: 0;
   color: var(--ge-muted);
   font-size: 0.82rem;
 }
@@ -844,10 +837,6 @@
     height: 52px;
   }
 
-  .mu-hero__title h2 {
-    font-size: 1.3rem;
-  }
-
   .co-center {
     min-height: 300px;
   }
@@ -959,4 +948,149 @@
 .mu-perks strong {
   color: var(--ge-success);
   font-variant-numeric: tabular-nums;
+}
+
+/* Gallery strip — CSS grid so alcove/plaque never overlap pedestals. */
+.mu-gallery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'hud hud hud'
+    'peds alcove plaque';
+  gap: 0.55rem 0.75rem;
+  align-items: end;
+  margin: 0;
+  padding: 0.7rem 0.8rem 0.85rem;
+  border-radius: var(--g2-r-lg);
+  border: 1px solid var(--g2-line);
+  background:
+    linear-gradient(180deg, #1a1624 0%, #2a2238 62%, #16121c 62%, #16121c 100%);
+  min-height: 0;
+}
+.mu-gallery__hud {
+  grid-area: hud;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  font-size: 0.72rem;
+  color: #c8c0d8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.mu-gallery__hud strong {
+  color: #efe9dc;
+  font-variant-numeric: tabular-nums;
+}
+.mu-gallery__peds {
+  grid-area: peds;
+  display: flex;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  min-width: 0;
+  align-items: flex-end;
+}
+.mu-gallery__empty {
+  color: #a89eb8;
+  font-size: 0.85rem;
+  padding: 0.85rem 0.25rem;
+}
+.mu-gallery__ped {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  min-width: 4.4rem;
+}
+.mu-gallery__plinth {
+  display: block;
+  width: 2.6rem;
+  height: 0.45rem;
+  border-radius: 2px;
+  background: #4a4058;
+}
+.mu-gallery__ped em {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: #a89eb8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.mu-gallery__alcove {
+  grid-area: alcove;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 5.5rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #6a5a40;
+  border-radius: 8px;
+  background: #121018;
+  color: #efe9dc;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.mu-gallery__plaque {
+  grid-area: plaque;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 6rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #8d7bc4 50%, transparent);
+  background: #1c1824;
+  color: #c9b8ff;
+}
+.mu-gallery__plaque span {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a89eb8;
+}
+.mu-gallery__plaque strong {
+  font-family: var(--g2-display);
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+.mu-gallery__plaque small {
+  font-size: 0.7rem;
+  color: #a89eb8;
+}
+@media (max-width: 720px) {
+  .mu-gallery {
+    max-height: min(12rem, 32vh);
+    overflow: auto;
+  }
+}
+@media (max-width: 520px) {
+  .mu-gallery {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'hud hud'
+      'peds peds'
+      'alcove plaque';
+    max-height: min(12rem, 32vh);
+    overflow: auto;
+  }
+  .mu-gallery__alcove,
+  .mu-gallery__plaque {
+    width: 100%;
+  }
+}
+.mu-wings-seg {
+  overflow-x: auto;
+  margin: 0 0 0.5rem;
+}
+.mu-detail--sheet {
+  padding: 0.25rem 0 0.5rem;
 }

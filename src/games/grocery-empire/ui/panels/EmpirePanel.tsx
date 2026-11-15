@@ -8,23 +8,19 @@ import {
   type PerkBranch,
   type PerkDef,
 } from '../../content/perks'
-import { CAPITAL, PERK_RESPEC } from '../../sim/balance'
-import { empireXpToNext } from '../../sim/formulas'
+import { PERK_RESPEC } from '../../sim/balance'
 import { canReleaseAutonomous } from '../../sim/systems/capital'
 import { useGame } from '../GameContext'
-import { pct, qty } from '../format'
-import { Btn } from '../components/Btn'
-import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { HelpCard } from '../components/HelpCard'
+import { qty } from '../format'
 import { HungryLawsBoard } from '../components/HungryLaws'
-import { Panel } from '../components/Panel'
 import { can } from '../../sim/commands'
 import type { GameState } from '../../sim/state'
 import { STAT_INFO } from '../../content/upgrades/stats'
 import { SkillTree, type TreeNode, type TreeNodeState } from '../tree/SkillTree'
 import { StatGlyph } from '../tree/StatGlyph'
+import { Button, Sheet, useConfirm } from '../kit'
 
-const BRANCHES: PerkBranch[] = ['floorcraft', 'ledger', 'charter', 'frontier', 'legacy']
+const BRANCHES: PerkBranch[] = ['floorcraft', 'ledger', 'charter', 'frontier', 'legacy', 'horizon']
 
 function perkVisible(s: Parameters<NonNullable<PerkDef['visible']>>[0], p: PerkDef) {
   if (!p.visible) return true
@@ -41,6 +37,7 @@ const BRANCH_TINT: Record<PerkBranch, string> = {
   charter: '#ff8a7a',
   frontier: '#7fd3a0',
   legacy: '#c3aaf0',
+  horizon: '#e0b15a',
 }
 
 /** Exclusive doctrine already taken by a sibling, if any. */
@@ -112,6 +109,14 @@ function PerkDetail({ p, onBuy, onJump }: { p: PerkDef; onBuy: () => void; onJum
             <strong>+{(e.per * lvl * 100).toFixed(1)}%</strong>
           </li>
         ))}
+        {lvl < p.max
+          ? p.effects?.map((e) => (
+              <li key={`next-${e.stat}`}>
+                <span>Next: {STAT_INFO[e.stat].label}</span>
+                <strong>+{(e.per * (lvl + 1) * 100).toFixed(1)}%</strong>
+              </li>
+            ))
+          : null}
         <li>
           <span>Cost</span>
           <strong>
@@ -169,21 +174,24 @@ function PerkDetail({ p, onBuy, onJump }: { p: PerkDef; onBuy: () => void; onJum
   )
 }
 
-export function EmpirePanel() {
+/**
+ * Unique Empire sections (Hungry Laws, Autonomous, doctrines) for EmpireBoard.
+ * No second "Empire" panel header — the board already owns rank/XP hero copy.
+ */
+export function EmpireSections() {
   const { state: s, dispatch, setActiveMenu, reducedMotion } = useGame()
   const { metaRef, replaceMeta } = useMeta()
-  const need = Math.max(1, empireXpToNext(s.empire.level))
-  const xp = s.empire.xp
-  const fill = Math.max(0, Math.min(1, xp / need))
+  const confirm = useConfirm()
   const autoBlock = canReleaseAutonomous(s)
   const activeLaws = s.prestigeCarry.mutators ?? []
   const showLaws =
     s.pendingAccept || s.prestigeCarry.universeIndex > 0 || activeLaws.length > 0
   const points = s.empire.points
-  const ring = `conic-gradient(var(--ge-accent) ${fill * 360}deg, color-mix(in srgb, var(--ge-ink) 12%, transparent) 0)`
-  const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
+  const ownedDoctrines = Object.values(s.empire.perks).reduce((n, v) => n + ((v ?? 0) > 0 ? 1 : 0), 0)
   const [focusId, setFocusId] = useState<string | null>(null)
   const [branch, setBranch] = useState<PerkBranch>('floorcraft')
+  const [doctrineOpen, setDoctrineOpen] = useState(false)
+  const [autoOpen, setAutoOpen] = useState(false)
 
   const spent = useMemo(
     () =>
@@ -202,61 +210,36 @@ export function EmpirePanel() {
   const focus = focusId ? PERK_BY_ID[focusId] : null
 
   return (
-    <Panel
-      title="Empire"
-      purpose="Baskets raise rank. Rank unlocks upgrade bands and invest caps."
-      lore="empire"
-    >
-      <div className="ge-empire-hero">
-        <div className="ge-empire-hero__ring" style={{ background: ring }} aria-hidden>
-          <div className="ge-empire-hero__core">
-            <span className="ge-empire-hero__lv-label">Rank</span>
-            <strong className="ge-empire-hero__lv">{s.empire.level}</strong>
-          </div>
-        </div>
-        <div className="ge-empire-hero__copy">
-          <div className="ge-empire-hero__title">Run rank from baskets</div>
-          <p className="ge-empire-hero__blurb">
-            Baskets raise rank. Rank opens deeper cash-upgrade bands and a bigger invest park —
-            separate from buying Upgrade trees with cash. Trait points buy doctrines below.
-          </p>
-          <div className="ge-empire-hero__meters" role="group" aria-label="Empire progress">
-            <div className="ge-empire-stat">
-              <span>XP</span>
-              <strong>
-                {Math.floor(xp)}
-                <em> / {need}</em>
-              </strong>
-              <div className="ge-empire-stat__bar" aria-hidden>
-                <i style={{ width: pct(fill) }} />
-              </div>
-            </div>
-            <div className={`ge-empire-stat${points > 0 ? ' is-hot' : ''}`.trim()}>
-              <span>Trait pts</span>
-              <strong>{points}</strong>
-              <div className="ge-empire-stat__hint">
-                {points > 0 ? 'Spend on doctrines below' : `Spent ${spent} · earn one per level-up`}
-              </div>
-            </div>
-            {s.prestigeCarry.universeIndex > 0 ? (
-              <div className="ge-empire-stat">
-                <span>Universe</span>
-                <strong>#{s.prestigeCarry.universeIndex}</strong>
-              </div>
-            ) : null}
-          </div>
-          <div className="ge-chip-row" style={{ marginTop: '0.55rem' }}>
-            <Btn tone="ghost" onClick={() => setActiveMenu('upgrades')}>
-              Open Upgrades (cash trees)
-            </Btn>
-          </div>
-        </div>
+    <>
+      <div className="ge-chip-row" style={{ marginBottom: '0.55rem' }}>
+        <Button tone="ghost" onClick={() => setActiveMenu('upgrades')}>
+          Open Upgrades (cash trees)
+        </Button>
+        <Button tone="ghost" onClick={() => setDoctrineOpen(true)} data-coach-id="empire-doctrine">
+          {points > 0 ? `Doctrine · ${points} ready` : `Doctrine · ${ownedDoctrines}`}
+        </Button>
+        {s.era >= 2 && !s.autonomous ? (
+          <Button
+            tone={autoBlock ? 'ghost' : 'primary'}
+            coachId="empire-autonomous"
+            title={autoBlock ?? 'Release Autonomous'}
+            onClick={() => setAutoOpen(true)}
+          >
+            Autonomous
+          </Button>
+        ) : null}
       </div>
 
+      {s.autonomous ? (
+        <p className="ge-muted" data-coach-id="empire-autonomous">
+          Autonomous is live. Habits run from Books.
+        </p>
+      ) : null}
+
       {showLaws ? (
-        <section className="ge-empire-block">
+        <section className="ge-panel e2-section ge-empire-block">
           <header className="ge-empire-block__head">
-            <h3>Hungry laws</h3>
+            <h3 className="e2-h3">Hungry laws</h3>
             <p>NG+ physics this universe remembers — pick after Accept.</p>
           </header>
           {s.pendingAccept ? (
@@ -285,41 +268,41 @@ export function EmpirePanel() {
         </section>
       ) : null}
 
-      {s.era >= 2 ? (
-        <section className={`ge-empire-auto${s.autonomous ? ' is-live' : ''}`.trim()}>
-          <div className="ge-empire-auto__copy">
-            <h3>{s.autonomous ? 'Autonomous live' : 'Release Autonomous'}</h3>
-            <p>
-              Late Era 2 gate: depot online, bank {CAPITAL.autonomousReadNeed} Read on Strategy, and
-              spend ~{CAPITAL.autonomousRepSpentNeed} Reputation on Analysts/Archives.
-              {s.autonomous
-                ? ' Habits run from Books.'
-                : ` Progress — depot ${s.depot ? 'yes' : 'no'} · Read ${Math.floor(s.read)}/${CAPITAL.autonomousReadNeed} · Rep spent ${s.repSpent}/${CAPITAL.autonomousRepSpentNeed}.`}
-            </p>
-          </div>
-          <Btn
-            tone="primary"
-            coachId="empire-autonomous"
-            disabled={!!autoBlock || s.autonomous}
-            title={s.autonomous ? 'Already running' : (autoBlock ?? undefined)}
-            onClick={() => dispatch({ type: 'releaseAutonomous' })}
-          >
-            {s.autonomous ? 'Running' : autoBlock ?? 'Release'}
-          </Btn>
-        </section>
-      ) : null}
+      <Sheet
+        open={autoOpen}
+        onClose={() => setAutoOpen(false)}
+        title="Release Autonomous"
+        reducedMotion={reducedMotion}
+      >
+        <p className="ge-muted">Depot, Read, and Reputation are in. Habits will run from Books.</p>
+        <Button
+          tone="primary"
+          coachId="empire-autonomous"
+          disabled={!!autoBlock}
+          title={autoBlock ?? 'Release Autonomous'}
+          onClick={() => {
+            dispatch({ type: 'releaseAutonomous' })
+            setAutoOpen(false)
+          }}
+        >
+          Release
+        </Button>
+      </Sheet>
 
-      <section className="ge-empire-block">
+      <Sheet
+        open={doctrineOpen}
+        onClose={() => setDoctrineOpen(false)}
+        title={points > 0 ? `Doctrine board · ${points} ready` : 'Doctrine board'}
+        reducedMotion={reducedMotion}
+      >
         <header className="ge-empire-block__head">
-          <h3>Doctrine board</h3>
           <p>
-            Floorcraft, Ledger, and Charter — mild permanent picks with trait points. Exclusive pairs
-            give the run a shape.
-            {points > 0 ? ` ${points} ready.` : ''}
+            Floorcraft, Ledger, Charter, Frontier, Legacy, and Horizon — mild permanent picks with trait points.
+            Exclusive pairs give the run a shape.
           </p>
           {spent > 0 ? (
             <div className="ge-chip-row" style={{ marginTop: '0.35rem' }}>
-              <Btn
+              <Button
                 tone="ghost"
                 disabled={!canRespec}
                 title={
@@ -327,18 +310,17 @@ export function EmpirePanel() {
                     ? `Refund all trait points for ${qty(respecCost)} Ideas`
                     : `Need ${qty(respecCost)} Ideas`
                 }
-                onClick={() =>
-                  setConfirm({
+                onClick={async () => {
+                  const ok = await confirm({
                     title: 'Rewrite the Charter',
-                    body: `Spend ${qty(respecCost)} Ideas to refund every doctrine and restore trait points.`,
-                    detail: 'Exclusive forks clear. Archives already granted stay.',
+                    body: `Spend ${qty(respecCost)} Ideas to refund every doctrine and restore trait points. Exclusive forks clear. Archives already granted stay.`,
                     confirmLabel: `Rewrite · ${qty(respecCost)} Ide`,
-                    onConfirm: () => dispatch({ type: 'respecPerks' }),
                   })
-                }
+                  if (ok) dispatch({ type: 'respecPerks' })
+                }}
               >
                 Rewrite the Charter · {qty(respecCost)} Ide
-              </Btn>
+              </Button>
             </div>
           ) : null}
         </header>
@@ -350,7 +332,13 @@ export function EmpirePanel() {
             const ready = list.filter((p) => can(s, { type: 'buyPerk', id: p.id }).ok).length
             if (list.length === 0) return null
             return (
-              <button key={b} type="button" className={`dt-branch${branch === b ? ' is-on' : ''}`} onClick={() => setBranch(b)} style={{ '--bt': BRANCH_TINT[b] } as React.CSSProperties}>
+              <button
+                key={b}
+                type="button"
+                className={`dt-branch${branch === b ? ' is-on' : ''}`}
+                onClick={() => setBranch(b)}
+                style={{ '--bt': BRANCH_TINT[b] } as React.CSSProperties}
+              >
                 <strong>{PERK_BRANCHES[b].name}</strong>
                 <small>{owned} pts in</small>
                 {ready > 0 ? <span className="g2-badge">{ready}</span> : null}
@@ -369,7 +357,9 @@ export function EmpirePanel() {
           onSelect={setFocusId}
           reducedMotion={reducedMotion}
           emptyText="Level up once to earn a trait point."
-          renderDetail={(id) => <PerkDetail p={PERK_BY_ID[id]!} onBuy={() => dispatch({ type: 'buyPerk', id })} onJump={setFocusId} />}
+          renderDetail={(id) => (
+            <PerkDetail p={PERK_BY_ID[id]!} onBuy={() => dispatch({ type: 'buyPerk', id })} onJump={setFocusId} />
+          )}
         />
 
         {focus?.touches ? (
@@ -377,20 +367,12 @@ export function EmpirePanel() {
             {focus.name} synergizes cash node <strong>{focus.touches}</strong>.
           </p>
         ) : null}
-      </section>
-
-      <HelpCard title="Empire ≠ Upgrades">
-        <strong>Empire</strong> ranks from baskets and spends trait points on the doctrine board.{' '}
-        <strong>Upgrades</strong> spends cash on layered trees. Rank opens the next upgrade band —
-        stocking the shelf is still what scores baskets.
-      </HelpCard>
-
-      <ConfirmModal
-        open={!!confirm}
-        spec={confirm}
-        reducedMotion={reducedMotion}
-        onClose={() => setConfirm(null)}
-      />
-    </Panel>
+      </Sheet>
+    </>
   )
+}
+
+/** Thin re-export of sections for callers that still import EmpirePanel. */
+export function EmpirePanel() {
+  return <EmpireSections />
 }

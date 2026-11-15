@@ -51,7 +51,9 @@ test.describe('phone', () => {
     expect(box!.height).toBeGreaterThan(20)
     await rivals.click()
     await expect(page.locator('.rv-card', { hasText: 'Penny Pantry' })).toBeVisible()
-    await page.locator('.g2-hub', { hasText: 'Empire' }).click()
+    // Phones keep Store / Supply / Team / Money in the bar; Empire sits behind More.
+    await page.locator('.g2-hub--more').click()
+    await page.locator('.g2-more__item[data-hub="empire"]').click()
     await page.locator('.g2-subtab', { hasText: 'Map' }).click()
     await expect(page.locator('.mp-svg')).toBeVisible()
     await page.locator('.mp-pin--store').first().dispatchEvent('click')

@@ -24,7 +24,15 @@ function ensure() {
   } catch {
     raw = null
   }
+  const before = raw && typeof raw === 'object' ? (raw as { v?: unknown }).v : 0
   current = normalizeMuseum(raw)
+  if (before !== 2) {
+    try {
+      saveGame(k, current)
+    } catch {
+      /* keep the migrated copy in memory */
+    }
+  }
   version++
 }
 

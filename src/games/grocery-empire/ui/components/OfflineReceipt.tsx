@@ -7,6 +7,12 @@ import { Btn } from './Btn'
 import { Line } from './Line'
 
 /** A front-page line from the numbers — the moment you come back to. */
+function pocketQty(n: number) {
+  if (!Number.isFinite(n) || n <= 0) return '0'
+  if (n < 10) return n.toFixed(1)
+  return qty(n)
+}
+
 function headline(r: Receipt): string {
   const hours = r.cappedSeconds / 3600
   const when = hours >= 6 ? 'overnight' : hours >= 1 ? `in ${Math.floor(hours)} hour${hours >= 2 ? 's' : ''}` : 'while you stepped out'
@@ -61,6 +67,11 @@ export function OfflineReceiptModal({
           {receipt.ventures > 0 ? <Line left="Ventures" right={money(receipt.ventures)} /> : null}
           {receipt.interest > 0 ? <Line left="Interest" right={money(receipt.interest)} /> : null}
           {receipt.attention > 0 ? <Line left="Attention" right={`+${qty(receipt.attention)}`} /> : null}
+          {(receipt.survey ?? 0) > 0 ? <Line left="Survey" right={`+${pocketQty(receipt.survey)}`} /> : null}
+          {(receipt.freight ?? 0) > 0 ? <Line left="Freight" right={`+${pocketQty(receipt.freight)}`} /> : null}
+          {(receipt.seed ?? 0) > 0 ? <Line left="Seed" right={`+${pocketQty(receipt.seed)}`} /> : null}
+          {(receipt.signal ?? 0) > 0 ? <Line left="Signal" right={`+${pocketQty(receipt.signal)}`} /> : null}
+          {(receipt.seal ?? 0) > 0 ? <Line left="Seal" right={`+${pocketQty(receipt.seal)}`} /> : null}
         </div>
         <div className="ge-chip-row ge-receipt-actions">
           <Btn tone="primary" onClick={onDismiss}>

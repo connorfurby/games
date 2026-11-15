@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { DOCTRINE_BY_ID, DOCTRINES } from '../content/era2'
 import { CAPITAL, CHAIN, INVEST } from './balance'
 import { perk } from './formulas'
@@ -9,6 +10,7 @@ import {
   findStore,
   normalizeAttentionShares,
   openStoreCost,
+  rollStoreTrait,
   setStorePolicy,
   canTrainStore,
   canWalkStore,
@@ -67,7 +69,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       const cost = openStoreCost(s)
       const equityCover =
         (s.doctrines['float-discipline'] ?? 0) > 0 ? Math.min(s.equity, cost * 0.5) : 0
-      if (s.cash + equityCover < cost) return no(`Need $${cost}.`)
+      if (s.cash + equityCover < cost) return no(`Need ${cashLabel(cost)}.`)
       return ok
     },
     run: (s, cmd) => {
@@ -88,8 +90,9 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
         : 1
       // Policy Template perk: new doors copy the flagship's policy for free.
       const policy = perk(s, 'free-policy-preset') > 0 ? (s.stores[0]?.policy ?? 'standard') : 'standard'
+      const id = `s${s.nextStoreId++}`
       s.stores.push({
-        id: `s${s.nextStoreId++}`,
+        id,
         name,
         level: startLevel,
         xp: 0,
@@ -97,6 +100,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
         attentionShare: fair,
         drift: 0,
       })
+      rollStoreTrait(s, id)
       if (s.board.expandDiscount < 1) s.board.expandDiscount = 1
       s.stats.storesOpened += 1
       unlockMenu(s, 'land')
@@ -129,7 +133,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
     can: (s) => {
       if (s.era < 2) return no('Need Era 2.')
       if (s.incorporated) return no('Already incorporated.')
-      if (s.cash < CAPITAL.incorporateCash) return no(`Need $${CAPITAL.incorporateCash}.`)
+      if (s.cash < CAPITAL.incorporateCash) return no(`Need ${cashLabel(CAPITAL.incorporateCash)}.`)
       if (s.compute.reputation < CAPITAL.incorporateRep) {
         return no(`Need ${CAPITAL.incorporateRep} Reputation.`)
       }
@@ -229,7 +233,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (!s.invest.unlocked) return no('Unlock the trading desk first.')
       if (s.invest.engineLevel >= INVEST.maxEngine) return no('Engine maxed.')
       const cost = investEngineCost(s)
-      if (s.cash < cost) return no(`Need $${cost}.`)
+      if (s.cash < cost) return no(`Need ${cashLabel(cost)}.`)
       return ok
     },
     run: (s) => {
@@ -262,6 +266,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.era < 2) return no('Need Era 2.')
       const def = DOCTRINE_BY_ID[cmd.id]
       if (!def) return no('Unknown doctrine.')
+      if (def.era && s.era < def.era) return no(`Opens in Era ${def.era}.`)
       if ((s.doctrines[cmd.id] ?? 0) > 0) return no('Already owned.')
       const owned = DOCTRINES.filter((d) => (s.doctrines[d.id] ?? 0) > 0).length
       if (def.order > owned) return no('Unlock doctrines in order.')
@@ -285,7 +290,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.stores.length < 2 && !s.memos['depot-permit']) {
         return no('Open a second store or buy Depot Permit.')
       }
-      if (s.cash < CHAIN.depotCash) return no(`Need $${CHAIN.depotCash}.`)
+      if (s.cash < CHAIN.depotCash) return no(`Need ${cashLabel(CHAIN.depotCash)}.`)
       return ok
     },
     run: (s) => {

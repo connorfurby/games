@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { GUIDE_SECTIONS, GUIDE_TOPICS } from '@/games/grocery-empire/content/guide'
 import { loadGame } from '@/shared/save'
 import { useMeta } from './MetaContext'
+import { ShellFrame } from './ShellFrame'
 
 function playEraFromSave(): number {
   const s = loadGame<{ era?: number }>('grocery-empire')
@@ -48,13 +48,8 @@ export function GuidePage() {
   }, [filtered])
 
   return (
+    <ShellFrame title="Guide">
     <div className="guide-page shell-subpage">
-      <p className="shell-subpage__nav">
-        <Link to="/">Home</Link>
-        <Link to="/play/grocery-empire">Play</Link>
-        <Link to="/shop">Shop</Link>
-      </p>
-
       <header className="guide-hero">
         <h1 className="brand brand--page">Ops Wiki</h1>
         <p className="guide-lore">
@@ -146,5 +141,6 @@ export function GuidePage() {
         </div>
       )}
     </div>
+    </ShellFrame>
   )
 }

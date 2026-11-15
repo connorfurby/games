@@ -1,12 +1,136 @@
-import { CHAIN, CHECKOUT, COMPUTE } from '../balance'
+import { PLACE_TRAIT_IDS, STORE_TRAIT_BY_ID, policyMatchesTrait, isPlaceTraitId } from '../../content/depth'
+import { CHAIN, CHECKOUT, COMPUTE, DEPTH, NETWORK } from '../balance'
 import { upgradeEffect } from '../../content/upgrades'
 import { clamp, log } from '../helpers'
+import { chance, pick } from '../rng'
+import { chainStaffedEnough } from '../staffDept'
 import type { GameState, StorePolicy, StoreState } from '../state'
 
+export function traitOfStore(s: GameState, storeId: string): string | null {
+  const t = s.depth?.placeTraits?.[storeId]
+  return t && isPlaceTraitId(t) ? t : null
+}
+
+export function matchedStoreCount(s: GameState): number {
+  let n = 0
+  for (const st of s.stores) {
+    if (policyMatchesTrait(st.policy, traitOfStore(s, st.id) ?? undefined)) n += 1
+  }
+  return n
+}
+
+/** Alias used by cold-permit gates / docs. */
+export const countMatchedStores = matchedStoreCount
+
+/** Price ceiling for the printed flyer discount band vs bestPrice. */
+export function flyerBandMaxMul(discount: 'soft' | 'mid' | 'deep'): number {
+  if (discount === 'deep') return DEPTH.flyerBandDeepMax
+  if (discount === 'mid') return DEPTH.flyerBandMidMax
+  return DEPTH.flyerBandSoftMax
+}
+
+/**
+ * Break the live flyer week if shelf price sits above the printed band.
+ * `tip` should be bestPrice(s) — passed in to avoid formulas↔chain cycles.
+ */
+export function checkFlyerBandLock(s: GameState, tip: number) {
+  if (!s.depth?.flyer) return
+  const f = s.depth.flyer
+  if (f.until <= s.time || f.bandHeld === false) return
+  const max = tip * flyerBandMaxMul(f.discount)
+  if (s.price > max + 1e-6) {
+    f.bandHeld = false
+    log(s, 'Flyer band broken — this week will not credit.', 'warn')
+  }
+}
+
+/** Complete an active flyer week once its window ends; start cooldown. */
+export function tickFlyerDesk(s: GameState) {
+  if (!s.depth) return
+  const f = s.depth.flyer
+  if (!f || f.until <= 0 || s.time < f.until) return
+  // Final band check uses current price vs a soft tip (wholesale index × 1.25).
+  const tip =
+    (Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index) * 1.25
+  checkFlyerBandLock(s, tip)
+  const pad = Math.min(0.35, upgradeEffect(s, 'flyer-band-pad'))
+  const cd = DEPTH.flyerCooldownSec * (1 - pad)
+  f.cooldownUntil = s.time + cd
+  f.until = 0
+  s.depth.circular = null
+  if (f.bandHeld !== false) {
+    f.weeksCompleted += 1
+    s.depth.flyerWeeks = Math.max(s.depth.flyerWeeks, f.weeksCompleted)
+    log(s, `Flyer week ${s.depth.flyerWeeks} held the band. Cooldown ${Math.ceil(cd / 60)} min.`, 'info')
+  } else {
+    log(s, `Flyer week voided — prices broke the printed band. Cooldown ${Math.ceil(cd / 60)} min.`, 'warn')
+  }
+}
+
+/** Neighborhood block events bias which trait is "hot" for a window (fixed gap). */
+export function tickBlockEvents(s: GameState, _dt: number) {
+  if (!s.depth || s.era < 2 || s.stores.length < 2) return
+  const ev = s.depth.blockEvent
+  const gapCut = Math.min(0.35, upgradeEffect(s, 'hot-trait-pad'))
+  const gap = DEPTH.blockEventGapSec * (1 - gapCut)
+  if (ev.kind && s.time >= ev.until) {
+    ev.kind = null
+    ev.traitBias = null
+    ev.until = 0
+    log(s, 'Block event cleared — traits settle.', 'info')
+  }
+  if (ev.kind && ev.until > s.time) return
+  if (s.depth.blockEventAt > 0 && s.time - s.depth.blockEventAt < gap) return
+  const kinds = ['parade', 'payday', 'rain'] as const
+  const kind = pick(s, [...kinds])
+  const trait = pick(s, [...PLACE_TRAIT_IDS])
+  ev.kind = kind
+  ev.traitBias = trait
+  ev.until = s.time + DEPTH.blockEventDurationSec
+  s.depth.blockEventAt = s.time
+  const label = kind === 'parade' ? 'Parade week' : kind === 'payday' ? 'Payday rush' : 'Rain week'
+  log(s, `${label}: ${STORE_TRAIT_BY_ID[trait].name} doors pull hardest.`, 'warn')
+}
+
+/** Credit a hot-trait walk when any store policy matches the live bias. */
+export function maybeCreditHotTraitWalk(s: GameState) {
+  if (!s.depth) return
+  const ev = s.depth.blockEvent
+  if (!ev.kind || !ev.traitBias || s.time >= ev.until) return
+  for (const st of s.stores) {
+    if (policyMatchesTrait(st.policy, ev.traitBias)) {
+      s.depth.hotTraitWalks = (s.depth.hotTraitWalks ?? 0) + 1
+      log(
+        s,
+        `Hot-trait walk ${s.depth.hotTraitWalks}/${DEPTH.hotTraitWalkNeed} — ${STORE_TRAIT_BY_ID[ev.traitBias as keyof typeof STORE_TRAIT_BY_ID]?.name ?? ev.traitBias}.`,
+        'good',
+      )
+      // One walk per event window.
+      ev.traitBias = null
+      ev.kind = null
+      ev.until = 0
+      return
+    }
+  }
+}
+
+export function rollStoreTrait(s: GameState, storeId: string) {
+  if (!s.depth) return
+  if (s.depth.placeTraits[storeId]) return
+  const id = pick(s, PLACE_TRAIT_IDS)
+  s.depth.placeTraits[storeId] = id
+  const def = STORE_TRAIT_BY_ID[id]
+  log(s, `Neighborhood reads ${def.name.toLowerCase()}.`, 'info')
+}
+
 export function ensureFlagshipStore(s: GameState) {
-  if (s.stores.length > 0) return
+  if (s.stores.length > 0) {
+    for (const st of s.stores) rollStoreTrait(s, st.id)
+    return
+  }
+  const id = `s${s.nextStoreId++}`
   s.stores.push({
-    id: `s${s.nextStoreId++}`,
+    id,
     name: 'Flagship',
     level: 1,
     xp: 0,
@@ -14,6 +138,7 @@ export function ensureFlagshipStore(s: GameState) {
     attentionShare: 1,
     drift: 0,
   })
+  rollStoreTrait(s, id)
   s.stats.storesOpened = Math.max(s.stats.storesOpened, 1)
 }
 
@@ -72,8 +197,14 @@ export function chainAttentionDrainPerSec(s: GameState): number {
   if (allocated <= 0) return 0
   const metroMul = s.expansions['metro-slot'] ? CHAIN.metroAttDrainMul : 1
   const softcap = !s.depot && s.stores.length >= 5 ? 1.5 : 1
+  const commissaryMul = s.depth?.contracts?.commissary ? DEPTH.commissaryAttDrainMul : 1
   const raw =
-    CHAIN.attentionDrainPerSec * allocated * Math.min(1.5, 0.6 + s.stores.length * 0.15) * metroMul * softcap
+    CHAIN.attentionDrainPerSec *
+    allocated *
+    Math.min(1.5, 0.6 + s.stores.length * 0.15) *
+    metroMul *
+    softcap *
+    commissaryMul
   // Stores slow the fill. They cannot outrun analysts, or Ideas never mint.
   const gen = s.compute.analysts * COMPUTE.attentionPerAnalyst * (s.memos['ledger-tape'] ? 1.1 : 1)
   if (gen <= 0) return raw
@@ -100,7 +231,20 @@ export function chainDemandMul(s: GameState): number {
           ((s.memos['flagship-memo'] ?? 0) > 0 ? 0.03 : 0) +
           (s.empire.perks['flagship-habit'] ?? 0) * 0.02
         : 1
-    weighted += policy * levelMul * neglectMul * attMul * flag
+    const trait = traitOfStore(s, st.id)
+    const traitDef = trait && isPlaceTraitId(trait) ? STORE_TRAIT_BY_ID[trait] : null
+    const traitMul =
+      traitDef && policyMatchesTrait(st.policy, trait) ? traitDef.matchDemandMul : 1
+    const block = s.depth?.blockEvent
+    const blockHot =
+      block &&
+      block.kind &&
+      block.until > s.time &&
+      block.traitBias &&
+      policyMatchesTrait(st.policy, block.traitBias)
+        ? DEPTH.blockEventDemandMul
+        : 1
+    weighted += policy * levelMul * neglectMul * attMul * flag * traitMul * blockHot
   }
   const avg = weighted / n
   const perStore = s.expansions['metro-slot']
@@ -195,6 +339,8 @@ export function tickChain(s: GameState, dt: number, soldThisTick = 0) {
   ensureFlagshipStore(s)
   normalizeAttentionShares(s)
   if ((s.upgrades['even-att'] ?? 0) >= 1) applyEvenAttentionFloor(s)
+  tickFlyerDesk(s)
+  tickBlockEvents(s, dt)
 
   // Attention upkeep is charged inside tickOffice (see chainAttentionDrainPerSec) so a
   // full bar can still sit at cap and pay for cap-sized memos.
@@ -212,10 +358,24 @@ export function tickChain(s: GameState, dt: number, soldThisTick = 0) {
   if (s.stores.length > 0) {
     const fair = 1 / s.stores.length
     let neglect = 0
+    const staffed = chainStaffedEnough(s)
     for (const st of s.stores) {
       const under = Math.max(0, fair - st.attentionShare)
       neglect += under
-      st.drift = Math.min(1, Math.max(0, (st.drift ?? 0) + under * 0.015 * dt + 0.002 * dt))
+      const trait = traitOfStore(s, st.id)
+      const match = policyMatchesTrait(st.policy, trait)
+      const traitDef = trait && isPlaceTraitId(trait) ? STORE_TRAIT_BY_ID[trait] : null
+      const mismatchMul = traitDef && !match ? traitDef.mismatchDriftMul : 1
+      const unstaffedMul = staffed ? 1 : DEPTH.unstaffedDriftMul
+      const chainPol = s.depth?.departments?.chain?.policy
+      const patrolMul = chainPol === 'patrol' ? (DEPTH.chainPatrolDriftMul ?? 0.88) : 1
+      st.drift = Math.min(
+        1,
+        Math.max(
+          0,
+          (st.drift ?? 0) + (under * 0.015 * dt + 0.002 * dt) * mismatchMul * unstaffedMul * patrolMul,
+        ),
+      )
     }
     if (neglect > 0.1) {
       s.inspection.meter = Math.min(2, s.inspection.meter + neglect * 0.006 * dt)
@@ -238,6 +398,16 @@ export function walkStore(s: GameState, id: string, attCost = 40): string | null
   s.compute.attention -= attCost
   st.drift = 0
   s.stats.walks = (s.stats.walks ?? 0) + 1
+  // Soft win-back: walking doors nudges a defected franchise.
+  const defected = s.fleet?.franchiseList?.find((f) => f.defected)
+  if (defected) {
+    defected.loyalty = Math.min(1, defected.loyalty + 0.2)
+    if (defected.loyalty >= 0.45) {
+      defected.defected = false
+      s.depth.defectionsHandled = (s.depth.defectionsHandled ?? 0) + 1
+      log(s, `${defected.name} came back after the walk.`, 'good')
+    }
+  }
   log(s, `Walked ${st.name}. Drift cleared.`, 'good')
   return null
 }
@@ -284,6 +454,11 @@ export function openStoreCost(s: GameState): number {
   const manyDoors = (s.empire.perks['many-doors'] ?? 0) * 0.04
   cost *= Math.max(0.55, 1 - soft - desk - manyDoors)
   if (s.memos['many-doors-memo']) cost *= 0.97
+  // After cold plants exist, further chain doors get steeper.
+  if ((s.cold?.plants ?? 0) > 0) {
+    const extras = Math.max(0, n - 1 - NETWORK.oldLayer.softAfter.stores)
+    if (extras > 0) cost *= Math.pow(NETWORK.oldLayer.costSteepen, extras)
+  }
   return Math.ceil(cost)
 }
 
@@ -292,4 +467,5 @@ export function setStorePolicy(s: GameState, id: string, policy: StorePolicy) {
   if (!st) return
   st.policy = policy
   log(s, `${st.name} policy → ${policy}.`, 'info')
+  maybeCreditHotTraitWalk(s)
 }

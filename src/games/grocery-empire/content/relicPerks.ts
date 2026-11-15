@@ -1,3 +1,4 @@
+import { HORIZON } from '../sim/balance'
 import type { GameState, WeatherId } from '../sim/state'
 import { RELIC_BY_ID, relicSeed, type Glyph, type Rarity, type RelicDef } from './relics'
 import { STAT_INFO, type StatId } from './upgrades/stats'
@@ -116,8 +117,24 @@ export function perkStrength(r: RelicDef, s: GameState, copies: number, glyphCou
   }
 }
 
+/** Level curve. Level 1 is ×1, level 10 is ×1.80. */
+export function relicLevelPower(level: number): number {
+  const lv = Math.max(1, Math.min(10, Math.floor(level) || 1))
+  return 1 + 0.8 * Math.pow((lv - 1) / 9, 0.7)
+}
+
+/** Socketed relics. hz-socket raises 1.35 to 1.45. */
+export function relicSocketMul(s: GameState): number {
+  return (s.empire.perks['hz-socket'] ?? 0) > 0 ? 1.45 : 1.35
+}
+
 /** Effects for stats.ts from the relics on the wall. */
-export function relicEffects(s: GameState, owned: Record<string, number>): { effects: { stat: StatId; per: number }[]; rank: number }[] {
+export function relicEffects(
+  s: GameState,
+  owned: Record<string, number>,
+  levels: Record<string, number> = {},
+  sockets: readonly string[] = [],
+): { effects: { stat: StatId; per: number }[]; rank: number }[] {
   const glyphs: Record<string, number> = {}
   for (const id of Object.keys(owned)) {
     const r = RELIC_BY_ID[id]
@@ -128,8 +145,12 @@ export function relicEffects(s: GameState, owned: Record<string, number>): { eff
     const r = RELIC_BY_ID[id]
     if (!r) continue
     const p = relicPerk(r)
-    const effects = [{ stat: p.stat, per: p.per }]
-    if (p.also) effects.push({ stat: p.also, per: p.per / 2 })
+    const socketed = sockets.includes(id)
+    // Socket fantasy: a Horizon relic in a socket pays a little extra once the Horizon is open.
+    const horizonSocket = socketed && r.wing === 'horizon' && s.era >= 7 ? HORIZON.socketHorizonMul : 1
+    const scale = relicLevelPower(levels[id] ?? 1) * (socketed ? relicSocketMul(s) * horizonSocket : 1)
+    const effects = [{ stat: p.stat, per: p.per * scale }]
+    if (p.also) effects.push({ stat: p.also, per: (p.per / 2) * scale })
     out.push({ effects, rank: perkStrength(r, s, n, glyphs[r.glyph] ?? 0) })
   }
   return out

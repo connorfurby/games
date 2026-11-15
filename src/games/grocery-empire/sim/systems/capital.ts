@@ -146,7 +146,7 @@ function tickAutonomous(s: GameState, dt: number) {
   if (doPrice) {
     const tip = bestPrice(s)
     if (Number.isFinite(tip) && tip > 0) {
-      s.price = clamp(s.price + (tip - s.price) * 0.35, 0.5, 50)
+      s.price = Math.round(clamp(s.price + (tip - s.price) * 0.35, 0.5, 50) * 100) / 100
     }
   }
   if (doAtt && s.stores.length > 1) {
@@ -258,8 +258,8 @@ export function applyAutonomous(s: GameState) {
   if (!s.autonomousHabit) s.autonomousHabit = 'balanced'
   s.compute.reputation = 0
   const tip = bestPrice(s)
-  if (Number.isFinite(tip) && tip > 0) s.price = clamp(tip, 0.5, 50)
-  else s.price = clamp(s.price, 1.2, 2.2)
+  if (Number.isFinite(tip) && tip > 0) s.price = Math.round(clamp(tip, 0.5, 50) * 100) / 100
+  else s.price = Math.round(clamp(s.price, 1.2, 2.2) * 100) / 100
   log(
     s,
     'Autonomous fulfillment released. Habits run from Books — default Balanced (price, Att, collect).',

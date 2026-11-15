@@ -1,0 +1,118 @@
+/*
+ * Grocery Empire design tokens.
+ *
+ * Color roles map onto the active texture pack's variables (--ge-ink, --ge-bg,
+ * --ge-bg2, --ge-accent, --ge-danger, --ge-success, --tag ... defined on .ge-root
+ * in grocery.css). Never hardcode a hex in a component: pick a role.
+ *
+ * Breakpoints (media queries cannot use custom properties, so they live here):
+ *   phone   : 390px  design width. Everything must be playable at this width.
+ *   tablet  : 720px  `@media (max-width: 720px)` = phone layout (bottom sheets, 1 column);
+ *                    above it = desktop layout (side drawers, hub rail).
+ *   wide    : 1180px `@media (min-width: 1180px)` = three-column / side-by-side panels.
+ */
+@layer tokens {
+  .ge-root {
+    /* ── Color roles ─────────────────────────────────────────────── */
+    --ge-surface: var(--ge-bg2);
+    --ge-raised: color-mix(in srgb, var(--ge-bg2) 82%, var(--ge-ink) 6%);
+    --ge-sunken: color-mix(in srgb, var(--ge-bg) 70%, black 30%);
+    /* --ge-ink is the pack's text color (defined in grocery.css). */
+    --ge-ink-muted: var(--ge-muted, color-mix(in srgb, var(--ge-ink) 62%, transparent));
+    --ge-line: color-mix(in srgb, var(--ge-ink) 10%, transparent);
+    --ge-line-strong: color-mix(in srgb, var(--ge-ink) 20%, transparent);
+    /* --ge-accent / --ge-success / --ge-danger come from the pack. */
+    --ge-tag: var(--tag, #f2c14e); /* shelf-tag yellow: every paid action */
+    --ge-tag-ink: #2b2208;
+    --ge-tomato: var(--tomato, #ff5a43); /* free verbs — unpack, serve, swear, stamp */
+    --ge-tomato-ink: #1a0a08;
+    --ge-warn: var(--warn, #e0a43a);
+    --ge-info: var(--info, #7fa3c9);
+    --ge-focus: color-mix(in srgb, var(--ge-tag) 85%, white 15%);
+
+    /* g2.css names, kept as aliases so old and new share one source. */
+    --g2-surface: var(--ge-surface);
+    --g2-raised: var(--ge-raised);
+    --g2-line: var(--ge-line);
+    --g2-line-strong: var(--ge-line-strong);
+    --g2-tag: var(--ge-tag);
+    --g2-tag-ink: var(--ge-tag-ink);
+    --g2-display: var(--ge-font-display);
+    --g2-ui: var(--ge-font-ui, 'Space Grotesk', system-ui, sans-serif);
+
+    /* ── Type scale (size / line-height) ─────────────────────────── */
+    --t-2xs: 0.6875rem; /* 11 */
+    --t-2xs-lh: 0.875rem;
+    --t-xs: 0.75rem; /* 12 */
+    --t-xs-lh: 1rem;
+    --t-sm: 0.8125rem; /* 13 */
+    --t-sm-lh: 1.125rem;
+    --t-md: 0.9375rem; /* 15 */
+    --t-md-lh: 1.375rem;
+    --t-lg: 1.125rem; /* 18 */
+    --t-lg-lh: 1.625rem;
+    --t-xl: 1.5rem; /* 24 */
+    --t-xl-lh: 1.875rem;
+    --t-2xl: 2rem; /* 32 */
+    --t-2xl-lh: 2.375rem;
+
+    /* ── Spacing (4px base) ──────────────────────────────────────── */
+    --s-1: 4px;
+    --s-2: 8px;
+    --s-3: 12px;
+    --s-4: 16px;
+    --s-5: 20px;
+    --s-6: 24px;
+    --s-7: 32px;
+    --s-8: 40px;
+
+    /* ── Radius ──────────────────────────────────────────────────── */
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 16px;
+    --r-pill: 999px;
+
+    /* ── Shadows ─────────────────────────────────────────────────── */
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.28);
+    --shadow-2: 0 2px 8px rgb(0 0 0 / 0.32), 0 1px 2px rgb(0 0 0 / 0.24);
+    --shadow-3: 0 8px 24px rgb(0 0 0 / 0.38), 0 2px 6px rgb(0 0 0 / 0.26);
+    --shadow-4: 0 20px 48px rgb(0 0 0 / 0.5), 0 6px 14px rgb(0 0 0 / 0.3);
+    --shadow-inset: inset 0 1px 3px rgb(0 0 0 / 0.35);
+
+    /* ── Z-index ─────────────────────────────────────────────────── */
+    --z-base: 0;
+    --z-sticky: 10;
+    --z-hud: 20;
+    --z-drawer: 40;
+    --z-scrim: 50;
+    --z-modal: 60;
+    --z-toast: 70;
+    --z-coach: 80;
+    --z-devbar: 90;
+
+    /* ── Motion ──────────────────────────────────────────────────── */
+    --dur-instant: 80ms;
+    --dur-fast: 140ms;
+    --dur-base: 220ms;
+    --dur-slow: 420ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* In-game toggle (MetaContext sets html.ge-reduced-motion) and the OS setting. */
+  html.ge-reduced-motion .ge-root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ge-root {
+      --dur-instant: 0ms;
+      --dur-fast: 0ms;
+      --dur-base: 0ms;
+      --dur-slow: 0ms;
+    }
+  }
+}

@@ -1,4 +1,6 @@
+import type { SpeakerId } from '../art/cast'
 import type { DialogueLine } from './dialogue'
+import { HORIZON_DIALOGUE, type HorizonSpeaker } from './horizon/dialogue'
 import type { GameState } from '../sim/state'
 
 /**
@@ -751,6 +753,90 @@ const LATE_MORE: DialogueLine[] = [
   },
 ]
 
+const HORIZON_SPEAKER: Record<HorizonSpeaker, SpeakerId> = {
+  nia: 'operations',
+  maris: 'guardian',
+  edda: 'cold',
+  listener: 'operations',
+  arun: 'lobbyist',
+  ivo: 'clerk',
+  clerk: 'clerk',
+}
+
+function revealedPlanet(s: GameState, id: string) {
+  return !!s.horizon?.planets?.some((p) => p.id === id && p.revealed)
+}
+
+function hasClause(s: GameState, id: string) {
+  return !!s.horizon?.clauses?.includes(id)
+}
+
+/** Hook keys from content/horizon/dialogue.ts. Ivo's can lines are queued per era. */
+const HORIZON_WHEN: Record<string, (s: GameState) => boolean> = {
+  continue: (s) => s.endingChoice === 'continue' && s.era >= 7,
+  unseal: (s) => !!s.horizon?.unsealed,
+  'first-probe': (s) => (s.horizon?.probes ?? 0) >= 1 || (s.horizon?.planets?.length ?? 0) >= 1,
+  'planet-pantry': (s) => revealedPlanet(s, 'pantry'),
+  'planet-cinder': (s) => revealedPlanet(s, 'cinder'),
+  'planet-orchard': (s) => revealedPlanet(s, 'orchard'),
+  'planet-brine': (s) => revealedPlanet(s, 'brine'),
+  'planet-mercy': (s) => revealedPlanet(s, 'mercy'),
+  'planet-ash': (s) => revealedPlanet(s, 'ash'),
+  'planet-snow': (s) => revealedPlanet(s, 'snow'),
+  'planet-bazaar': (s) => revealedPlanet(s, 'bazaar'),
+  'four-worlds': (s) => (s.horizon?.planets?.filter((p) => p.stocked).length ?? 0) >= 4,
+  'first-circuit': (s) => (s.horizon?.circuits?.length ?? 0) >= 1,
+  'keel-convoy': (s) => (s.horizon?.keel?.convoys ?? 0) >= 1,
+  'keel-buyout': (s) => !!s.horizon?.keel?.bought,
+  'season-0': (s) => s.era >= 9 && (s.horizon?.season ?? 0) === 0,
+  'season-1': (s) => s.era >= 9 && (s.horizon?.season ?? 0) === 1,
+  'season-2': (s) => s.era >= 9 && (s.horizon?.season ?? 0) === 2,
+  'season-3': (s) => s.era >= 9 && (s.horizon?.season ?? 0) === 3,
+  'first-planting': (s) => !!s.horizon?.plots?.some((p) => p.child.length > 0),
+  'taster-quality': (s) => s.horizon?.taster === 'quality',
+  'taster-volume': (s) => s.horizon?.taster === 'volume',
+  'first-phrase': (s) => (s.horizon?.phrasesCleared ?? 0) >= 1 || !!s.horizon?.phrase,
+  'first-agent': (s) => (s.horizon?.agents?.length ?? 0) >= 1,
+  'clause-open-hours': (s) => hasClause(s, 'open-hours'),
+  'clause-cold-law': (s) => hasClause(s, 'cold-law'),
+  'clause-fair-stamp': (s) => hasClause(s, 'fair-stamp'),
+  'clause-local-shelf': (s) => hasClause(s, 'local-shelf'),
+  'clause-night-bell': (s) => hasClause(s, 'night-bell'),
+  'clause-one-price': (s) => hasClause(s, 'one-price'),
+  'charter-standard': (s) => s.horizon?.charter === 'standard',
+  'charter-boutique': (s) => s.horizon?.charter === 'boutique',
+  'ivo-list': (s) => s.era >= 12 || (s.horizon?.list?.length ?? 0) >= 5,
+  'ending-accept': (s) => s.horizon?.ending === 'accept',
+  'ending-reject': (s) => s.horizon?.ending === 'reject',
+  endless: (s) => !!s.horizon?.endless,
+  'nia-desk': (s) => s.era >= 7 && (s.horizon?.probes ?? 0) >= 1,
+  'maris-fonts': (s) => (s.horizon?.circuits?.length ?? 0) >= 1,
+  'edda-seed': (s) => !!s.horizon?.plots?.some((p) => p.child.length > 0),
+  'listener-name': (s) => (s.horizon?.phrasesCleared ?? 0) >= 1,
+  'arun-stamps': (s) => (s.horizon?.clauses?.length ?? 0) >= 1 || (s.horizon?.embassies ?? 0) >= 1,
+  'ivo-can': (s) => s.era >= 7,
+  'ivo-can-7': (s) => s.era === 7,
+  'ivo-can-8': (s) => s.era === 8,
+  'ivo-can-9': (s) => s.era === 9,
+  'ivo-can-10': (s) => s.era === 10,
+  'ivo-can-11': (s) => s.era === 11,
+  'ivo-can-12': (s) => s.era >= 12,
+  'first-vault': (s) => (s.seedVault?.held ?? 0) > 0,
+  'wire-ad-live': (s) => (s.late?.wireAdsUntil ?? 0) > s.time,
+  'council-seat': (s) => (s.late?.scrutiny ?? 0) > 0 || (s.politics?.lobby ?? 0) > 0,
+  'ivo-plaque': (s) => (s.builds.civic ?? 0) >= 7 || (s.memos['plaque-copy'] ?? 0) > 0,
+  'local-chalk': (s) => !!s.horizon?.planets?.some((p) => p.localPrice != null),
+  headline: (s) => !!s.horizon?.headlineId,
+  embassy: (s) => (s.horizon?.embassies ?? 0) >= 1,
+}
+
+const HORIZON_LINES: DialogueLine[] = HORIZON_DIALOGUE.map((line) => ({
+  id: line.id,
+  speaker: HORIZON_SPEAKER[line.speaker],
+  text: line.text,
+  when: HORIZON_WHEN[line.when ?? ''] ?? (() => false),
+}))
+
 export const EXTRA_DIALOGUE: DialogueLine[] = [
   ...WEATHER_MORE,
   ...MONEY_MORE,
@@ -762,4 +848,5 @@ export const EXTRA_DIALOGUE: DialogueLine[] = [
   ...ERA_FIRSTS,
   ...COLD_POLITICS_MORE,
   ...LATE_MORE,
+  ...HORIZON_LINES,
 ]

@@ -14,6 +14,7 @@ import {
   emptyPolitics,
   type GameState,
 } from './state'
+import { continueHorizon, launchProbe } from './systems/horizon'
 
 /**
  * Real campaign snapshots: the pacing bot played to each era (+10 min) on seed 7.
@@ -213,6 +214,33 @@ function era4Globe(): GameState {
   return s
 }
 
+function era7Worlds(): GameState {
+  const s = era5Fleet()
+  s.seed = 42_700
+  s.era = 6
+  s.fleet.biomass = 0
+  s.memos['universal-ration'] = 1
+  s.endingChoice = null
+  s.paused = false
+  s.cash = 1e18
+  continueHorizon(s)
+  if (s.era < 7) {
+    s.era = 7
+    s.endingChoice = 'continue'
+    s.horizon.continued = true
+    s.memos['survey-office'] = 1
+  }
+  launchProbe(s)
+  s.cash = 1e18
+  s.horizon.survey = 80
+  openMenus(s, ['floor', 'more', 'fleet', 'planets'])
+  markTutorialsDone(s, 7)
+  s.chapterQueue = []
+  s.dialogueQueue = []
+  s.paused = false
+  return s
+}
+
 function era5Fleet(): GameState {
   const s = era4Globe()
   s.seed = 42_500
@@ -337,6 +365,13 @@ export const DEV_STAGES: DevStageDef[] = [
       s.pendingAccept = false
       return s
     },
+  },
+  {
+    id: 'era7-horizon',
+    label: 'Era 7 · Worlds',
+    blurb: 'Continued past the ration. Survey office is open and the Pantry is on the map.',
+    era: 7,
+    build: () => era7Worlds(),
   },
   {
     id: 'cash-rich',

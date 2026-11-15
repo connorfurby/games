@@ -1,3 +1,4 @@
+import { DEPTH, FLEET } from '../sim/balance'
 import type { GameState } from '../sim/state'
 
 /** Live player checklist drawer (plan Part H2). */
@@ -47,12 +48,56 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     test: (s) => s.staff.some((m) => m.role === 'clerk') || s.stats.hires >= 1,
   },
 
+  // ── Era 0–1 depth loops ──────────────────────────────────────────────────
+  {
+    id: 'e0-regulars',
+    era: 0,
+    label: 'Satisfy neighborhood regulars',
+    test: (s) => (s.depth?.regularSatisfied ?? 0) >= Math.min(5, DEPTH.era1RegularNeed) || s.era >= 1,
+  },
+  {
+    id: 'e0-market-bells',
+    era: 0,
+    label: 'Ring the Market Bell three times',
+    test: (s) => (s.depth?.marketBellDips ?? 0) >= DEPTH.marketBellNeed || s.era >= 1,
+  },
+  {
+    id: 'e0-open-shift',
+    era: 0,
+    label: 'Staff Open on the Shift Board',
+    test: (s) => (s.depth?.shifts?.open?.length ?? 0) > 0 || (s.depth?.shifts?.daysCoveredOpen ?? 0) >= 1 || s.era >= 1,
+  },
+
   // ── Era 1 ────────────────────────────────────────────────────────────────
   {
     id: 'e1-build-menu',
     era: 1,
     label: 'Open Build menu (tutorial)',
     test: (s) => !!s.menus.build || !!s.tutorials.done['build'],
+  },
+  {
+    id: 'e1-invoices',
+    era: 1,
+    label: 'Pay invoices on time',
+    test: (s) => (s.depth?.invoicesOnTime ?? 0) >= DEPTH.invoiceOnTimeNeedLot || s.era >= 2,
+  },
+  {
+    id: 'e1-shift-open-days',
+    era: 1,
+    label: 'Cover Open shift for three days',
+    test: (s) => (s.depth?.shifts?.daysCoveredOpen ?? 0) >= DEPTH.openDaysNeedSideYard || s.era >= 2,
+  },
+  {
+    id: 'e1-regulars-block',
+    era: 1,
+    label: 'Satisfy regulars for the side yard',
+    test: (s) => (s.depth?.regularSatisfied ?? 0) >= DEPTH.era2RegularNeed || s.era >= 2,
+  },
+  {
+    id: 'e1-planogram',
+    era: 1,
+    label: 'File a credited flagship planogram',
+    test: (s) => !!s.depth?.flagship?.credited || s.era >= 2,
   },
   {
     id: 'e1-floor-upgrade',
@@ -110,6 +155,12 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   },
 
   // ── Era 2 ────────────────────────────────────────────────────────────────
+  {
+    id: 'e2-flyer-weeks',
+    era: 2,
+    label: 'Print three Flyer Desk weeks',
+    test: (s) => (s.depth?.flyerWeeks ?? 0) >= DEPTH.flyerWeeksNeed || s.era >= 3,
+  },
   {
     id: 'e2-second-store',
     era: 2,
@@ -244,6 +295,20 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     label: 'Weather a brownout (tanks help)',
     test: (s) => (s.cold?.brownouts ?? 0) >= 1,
   },
+  {
+    id: 'e3-cooler-logs',
+    era: 3,
+    label: 'Sign cooler logs (leave gate)',
+    test: (s) => (s.depth?.cooler?.logsSigned ?? 0) >= 6,
+  },
+  {
+    id: 'e3-blast-tunnel',
+    era: 3,
+    label: 'Build blast + tunnel plants',
+    test: (s) =>
+      (s.cold.plantList ?? []).some((p) => p.kind === 'blast') &&
+      (s.cold.plantList ?? []).some((p) => p.kind === 'tunnel'),
+  },
 
   // ── Era 4 · Autonomous Globe ─────────────────────────────────────────────
   {
@@ -257,6 +322,12 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     era: 4,
     label: 'Open first ocean lane with fuel buffer',
     test: (s) => s.fleet.lanes >= 1 || !!s.memos['ocean-lane'],
+  },
+  {
+    id: 'e4-clean-manifests',
+    era: 4,
+    label: 'File clean manifests (barge gate)',
+    test: (s) => (s.depth?.dispatch?.cleanManifests ?? 0) >= 5,
   },
   {
     id: 'e4-fuel-buffer',
@@ -287,6 +358,12 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     era: 4,
     label: 'Open a franchise (Brand will drift)',
     test: (s) => s.fleet.franchises >= 1 || (s.memos['franchise-kit'] ?? 0) > 0,
+  },
+  {
+    id: 'e4-defection',
+    era: 4,
+    label: 'Win back a franchise defection',
+    test: (s) => (s.depth?.defectionsHandled ?? 0) >= 1,
   },
   {
     id: 'e4-brand-steady',
@@ -333,10 +410,30 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     test: (s) => s.fleet.barges >= 3,
   },
   {
+    id: 'e5-pocket-trip',
+    era: 5,
+    label: 'Clear pockets with Hauler Pocket Ops trips',
+    test: (s) =>
+      (s.fleet.trips ?? []).filter((t) => t.status === 'done').length >= FLEET.era6PocketsNeed ||
+      s.era >= 6,
+  },
+  {
+    id: 'e5-orbit-mid',
+    era: 5,
+    label: 'Cover Mid with Orbit (Pilot / Steward / Hull Tech)',
+    test: (s) => !!s.depth?.orbitMidOnce || (s.depth?.shifts?.daysCoveredMidOrbit ?? 0) >= 1,
+  },
+  {
     id: 'e5-drift-war',
     era: 5,
     label: 'Meet Off-Brand in a drift war',
     test: (s) => s.fleet.warOn || s.fleet.legacy > 0 || (s.memos['off-brand-war'] ?? 0) > 0,
+  },
+  {
+    id: 'e5-drift-hold',
+    era: 5,
+    label: 'Hold the drift war',
+    test: (s) => (s.depth?.driftWar?.step ?? 0) >= 3,
   },
   {
     id: 'e5-barges-10',
@@ -393,5 +490,168 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     era: 6,
     label: 'Accept or Reject',
     test: (s) => s.endingChoice === 'accept' || s.endingChoice === 'reject',
+  },
+
+  // ── Era 7 · Pantry of Worlds ─────────────────────────────────────────────
+  {
+    id: 'e7-probe',
+    era: 7,
+    label: 'Launch a probe',
+    test: (s) => (s.horizon?.probes ?? 0) >= 1 || (s.horizon?.planets?.length ?? 0) >= 1,
+  },
+  {
+    id: 'e7-facing-planet',
+    era: 7,
+    label: 'Stock a world (file a planogram)',
+    test: (s) => (s.horizon?.planets ?? []).some((p) => p.stocked),
+  },
+  {
+    id: 'e7-survey-dept',
+    era: 7,
+    label: 'Put Survey on the Shift Board once',
+    test: (s) =>
+      !!s.depth?.surveyShiftOnce ||
+      s.staff.some((m) => m.role === 'surveyor' || m.role === 'planogramClerk') ||
+      !!s.depth?.deptEverStaffed?.survey,
+  },
+  {
+    id: 'e7-practice',
+    era: 7,
+    label: 'Practice two planogram filings',
+    test: (s) =>
+      s.era >= 8 ||
+      (s.depth?.practice?.planogram != null && s.depth.practice.planogram.left === 0),
+  },
+  {
+    id: 'e7-puzzle-gate',
+    era: 7,
+    label: 'Clear the planogram gate (practice then 0.72 / 0.85)',
+    test: (s) => s.era >= 8,
+  },
+
+  // ── Era 8 · The Exchange ─────────────────────────────────────────────────
+  {
+    id: 'e8-circuit',
+    era: 8,
+    label: 'File a convoy circuit',
+    test: (s) => (s.horizon?.circuits?.length ?? 0) >= 1,
+  },
+  {
+    id: 'e8-bonded',
+    era: 8,
+    label: 'Unpack a bonded crate',
+    test: (s) => (s.late?.unpacked ?? 0) >= 1,
+  },
+  {
+    id: 'e8-stevedore',
+    era: 8,
+    label: 'Hire a stevedore or broker',
+    test: (s) => s.staff.some((m) => m.role === 'stevedore' || m.role === 'broker'),
+  },
+  {
+    id: 'e8-puzzle-gate',
+    era: 8,
+    label: 'Clear the convoy gate',
+    test: (s) => s.era >= 9,
+  },
+
+  // ── Era 9 · Cultivars ────────────────────────────────────────────────────
+  {
+    id: 'e9-cross',
+    era: 9,
+    label: 'File a cultivar cross',
+    test: (s) => (s.horizon?.plots ?? []).some((p) => (p.child?.length ?? 0) > 0) || (s.horizon?.seasonsSeen ?? 0) >= 1,
+  },
+  {
+    id: 'e9-vault',
+    era: 9,
+    label: 'Hold seed in the vault',
+    test: (s) => (s.seedVault?.held ?? 0) > 0 || (s.horizon?.seed ?? 0) > 0,
+  },
+  {
+    id: 'e9-season-hand',
+    era: 9,
+    label: 'Staff a Season Hand or grower',
+    test: (s) => s.staff.some((m) => m.role === 'seasonHand' || m.role === 'grower'),
+  },
+  {
+    id: 'e9-puzzle-gate',
+    era: 9,
+    label: 'Clear the cultivar gate',
+    test: (s) => s.era >= 10,
+  },
+
+  // ── Era 10 · The Signal ──────────────────────────────────────────────────
+  {
+    id: 'e10-phrase',
+    era: 10,
+    label: 'Clear a signal phrase',
+    test: (s) => (s.horizon?.phrasesCleared ?? 0) >= 1,
+  },
+  {
+    id: 'e10-agent',
+    era: 10,
+    label: 'Hire an agent',
+    test: (s) => (s.horizon?.agents?.length ?? 0) >= 1,
+  },
+  {
+    id: 'e10-night-op',
+    era: 10,
+    label: 'Staff Night Operator or translator',
+    test: (s) => s.staff.some((m) => m.role === 'nightOperator' || m.role === 'translator'),
+  },
+  {
+    id: 'e10-puzzle-gate',
+    era: 10,
+    label: 'Clear the phrase gate',
+    test: (s) => s.era >= 11,
+  },
+
+  // ── Era 11 · Charter of Groceries ────────────────────────────────────────
+  {
+    id: 'e11-keep-4',
+    era: 11,
+    label: 'Keep four charter clauses',
+    test: (s) => (s.horizon?.clauses?.length ?? 0) >= 4,
+  },
+  {
+    id: 'e11-hearing',
+    era: 11,
+    label: 'Clear the Concord hearing docket',
+    test: (s) => {
+      if (s.era >= 12) return true
+      const h = s.depth?.hearing
+      if (h) return h.answered >= h.needed && !h.pendingClause
+      return !!s.depth?.hearingAnswered
+    },
+  },
+  {
+    id: 'e11-sign',
+    era: 11,
+    label: 'Sign the charter fork',
+    test: (s) => !!s.horizon?.charter || s.era >= 12,
+  },
+
+  // ── Era 12 · The Last Aisle ──────────────────────────────────────────────
+  {
+    id: 'e12-list',
+    era: 12,
+    label: 'Open Ivo’s list',
+    test: (s) => (s.horizon?.list?.length ?? 0) >= 1 || s.era >= 12,
+  },
+  {
+    id: 'e12-fill',
+    era: 12,
+    label: 'Fill a Last Aisle line',
+    test: (s) => (s.horizon?.list ?? []).some((l) => !!l.filled) || (s.horizon?.listScore ?? 0) > 0,
+  },
+  {
+    id: 'e12-choice',
+    era: 12,
+    label: 'Accept or Reject the Last Aisle',
+    test: (s) =>
+      s.endingChoice === 'accept' ||
+      s.endingChoice === 'reject' ||
+      (s.horizon?.listScore ?? 0) >= 0.85,
   },
 ]

@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import { VENTURES, ventureIncome, ventureLevelCost } from '../../content/ventures'
+import { VENTURES, ventureIncome, ventureLevelCost, venturePolicyIncomeMul } from '../../content/ventures'
 import { ventureOutgrownBelow } from '../../sim/systems/growth'
+import { hasAffordableVenture, planAffordableVentures } from '../../sim/upgradePlan'
 import { VENTURE_TRAFFIC } from '../../sim/balance'
 import { sumQty } from '../../sim/helpers'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money, rate } from '../format'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
-import { Meter } from '../components/Meter'
-import { Panel } from '../components/Panel'
+import { HubStage } from '../components/HubStage'
 import { Icon } from '../icons/Icon'
-import { VentureArt } from '../ventures/VentureArt'
+import { Button, Card, Meter, ScreenHeader, Sheet } from '../kit'
+import { VenturesStreet } from '../ventures/VenturesStreet'
+
 function duration(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) return '—'
   if (sec < 60) return `${Math.ceil(sec)}s`
@@ -45,6 +45,9 @@ export function VenturesPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
   const collectSuggested = useIsSuggested('ventures-collect')
   const [readyOnly, setReadyOnly] = useState(false)
+  const [bulkId, setBulkId] = useState<string | null>(null)
+  const [sweepNote, setSweepNote] = useState<{ text: string; levels: number } | null>(null)
+  const canSweep = hasAffordableVenture(s)
 
   const rows = VENTURES.map((def) => {
     let available = false
@@ -81,54 +84,92 @@ export function VenturesPanel() {
   })
 
   return (
-    <Panel
-      title="Ventures"
-      purpose="Open a side till, then Upgrade it on the card."
-      lore="ventures"
-    >
-      {claimable.length > 0 ? (
-        <div
-          data-suggest-id="ventures-collect"
-          className={`ge-dept-callout is-ready${collectSuggested ? ' is-suggested' : ''}`.trim()}
-        >
-          <div className="ge-dept-callout__copy">
-            <h3>
-              Claim {money(
-                claimable.reduce((n, { vs }) => n + (vs?.stored ?? 0), 0),
-                numberFormat,
-              )}
-            </h3>
-            <p>
-              {claimable.length} till{claimable.length === 1 ? '' : 's'} ready — overflow stops
-              stacking when full.
-            </p>
-          </div>
-          <Btn
-            tone="primary"
-            onClick={() => {
-              for (const { def } of claimable) dispatch({ type: 'collectVenture', id: def.id })
-            }}
-          >
-            Claim all
-          </Btn>
-        </div>
-      ) : open.some((r) => (r.vs?.level ?? 0) > 0) ? (
-        <p className="ge-muted" style={{ margin: '0 0 0.65rem', fontSize: '0.78rem' }}>
-          Upgrade is the button on each open card. It spends cash and raises that till.
-        </p>
-      ) : open.length > 0 ? (
-        <p className="ge-muted" style={{ margin: '0 0 0.65rem', fontSize: '0.78rem' }}>
-          None opened yet. Open a card to start the till — Upgrade shows up on that card right after.
-        </p>
-      ) : null}
+    <section className="ge-panel vt">
+      <ScreenHeader
+        hub
+        title={
+          <>
+            <Icon name="venture" size={20} tone="accent" /> Ventures
+          </>
+        }
+        purpose="Open a side till, then Upgrade it on the card."
+      />
 
-      {open.length === 0 && small.length === 0 ? (
-        <p className="ge-empty">
-          No venture is open yet. Cards below list what unlocks each one. After you open one, Upgrade
-          is on that card.
-        </p>
-      ) : null}
-
+      <HubStage
+        scene={<VenturesStreet />}
+        primary={
+          <>
+            {claimable.length > 0 ? (
+              <div
+                data-suggest-id="ventures-collect"
+                className={`ge-dept-callout is-ready${collectSuggested ? ' is-suggested' : ''}`.trim()}
+              >
+                <div className="ge-dept-callout__copy">
+                  <h3>
+                    Claim{' '}
+                    {money(
+                      claimable.reduce((n, { vs }) => n + (vs?.stored ?? 0), 0),
+                      numberFormat,
+                    )}
+                  </h3>
+                  <p>
+                    {claimable.length} till{claimable.length === 1 ? '' : 's'} ready — overflow stops stacking when
+                    full.
+                  </p>
+                </div>
+                <Button
+                  tone="primary"
+                  onClick={() => {
+                    for (const { def } of claimable) dispatch({ type: 'collectVenture', id: def.id })
+                  }}
+                >
+                  Claim all
+                </Button>
+              </div>
+            ) : open.some((r) => (r.vs?.level ?? 0) > 0) ? (
+              <div className="u2-sweep">
+                <Button
+                  tone="primary"
+                  disabled={!canSweep}
+                  title="Raises open tills in order of income per dollar. Does not open a new one."
+                  onClick={() => {
+                    const plan = planAffordableVentures(s)
+                    const levels = plan.reduce((n, step) => n + step.count, 0)
+                    if (levels <= 0) {
+                      const now = Object.values(s.ventures).reduce((n, v) => n + (v?.level ?? 0), 0)
+                      setSweepNote({ text: 'No open till can be raised right now.', levels: now })
+                      return
+                    }
+                    const before = s.cash
+                    dispatch({ type: 'levelVentureSweep' })
+                    const now = Object.values(s.ventures).reduce((n, v) => n + (v?.level ?? 0), 0)
+                    setSweepNote({
+                      text: `Raised ${levels} levels · ${money(before - s.cash, numberFormat)}.`,
+                      levels: now,
+                    })
+                  }}
+                >
+                  Upgrade all
+                </Button>
+                <span className="u2-sweep__note">
+                  {sweepNote &&
+                  sweepNote.levels === Object.values(s.ventures).reduce((n, v) => n + (v?.level ?? 0), 0)
+                    ? sweepNote.text
+                    : 'Best income per dollar, then the next. Cards still upgrade one at a time.'}
+                </span>
+              </div>
+            ) : open.length > 0 ? (
+              <p className="ge-muted" style={{ margin: 0, fontSize: '0.78rem' }}>
+                None opened yet. Open a card to start the till — Upgrade shows up on that card right after.
+              </p>
+            ) : (
+              <p className="ge-empty" style={{ margin: 0 }}>
+                Cards below list unlocks. Open one to put Upgrade on that card.
+              </p>
+            )}
+          </>
+        }
+      >
       {small.length > 0 ? (
         <div className="vt-small" title="These tills are maxed and earn under 0.5% of your income. They collect themselves.">
           <span className="vt-small__label">Small change · collects itself</span>
@@ -168,7 +209,7 @@ export function VenturesPanel() {
           const canCollect = stored > 0
           const canLevel = opened && !atMax && s.cash >= nextCost
           const canOpen = !opened && s.cash >= def.openCost
-          const income = ventureIncome(def, level)
+          const income = ventureIncome(def, level) * venturePolicyIncomeMul(s, def, vs?.policy)
           const gain = atMax ? 0 : ventureIncome(def, level + 1) - income
           const payback = gain > 0 && nextCost > 0 ? nextCost / gain : Number.POSITIVE_INFINITY
           const fillSec = income > 0 ? Math.max(0, storeCap - stored) / income : Number.POSITIVE_INFINITY
@@ -181,30 +222,137 @@ export function VenturesPanel() {
           const levelMany = (n: number) => {
             for (let i = 0; i < n; i++) dispatch({ type: 'levelVenture', id: def.id })
           }
+          const cardState = atMax ? 'maxed' : canCollect || canOpen || canLevel ? 'affordable' : undefined
           return (
-            <article
+            <Card
               key={def.id}
+              state={cardState}
               className={`ge-card ge-card--venture${opened ? ' ge-card--owned' : ''}${canCollect || canOpen || canLevel ? ' is-ready' : ''}`.trim()}
-            >
-              <VentureArt
-                id={def.id}
-                level={level}
-                fill={opened && storeCap > 0 ? stored / storeCap : 0}
-                open={opened}
-                motion={!reducedMotion}
-              />
-              <div className="ge-card__head">
-                <Icon name="venture" size={20} tone="accent" />
-                <div>
-                  <strong>{def.name}</strong>
-                  <p className="ge-muted">
-                    {opened
-                      ? `Lv ${level} / ${def.maxLevel} · ~+${Math.round(VENTURE_TRAFFIC.perOpen * 100)}% traffic`
-                      : 'Not opened'}
-                  </p>
+              header={
+                <div className="ge-card__head">
+                  <Icon name="venture" size={20} tone="accent" />
+                  <div>
+                    <strong>{def.name}</strong>
+                    <p className="ge-muted">
+                      {opened
+                        ? `Lv ${level} / ${def.maxLevel} · ~+${Math.round(VENTURE_TRAFFIC.perOpen * 100)}% traffic`
+                        : 'Not opened'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              }
+              footer={
+                opened ? (
+                  <div className="ge-card__actions">
+                    <Button
+                      tone={canLevel ? 'primary' : 'ghost'}
+                      disabled={atMax || s.cash < nextCost}
+                      title={
+                        atMax
+                          ? 'Max level'
+                          : s.cash < nextCost
+                            ? `Need ${money(nextCost, numberFormat)}`
+                            : `Raise this till. Next level adds ${rate(gain)}.`
+                      }
+                      onClick={() => dispatch({ type: 'levelVenture', id: def.id })}
+                    >
+                      {atMax ? 'Maxed' : `Upgrade · ${money(nextCost, numberFormat)}`}
+                    </Button>
+                    <Button
+                      tone={canCollect && !canLevel ? 'primary' : 'ghost'}
+                      coachId={`venture-collect-${def.id}`}
+                      disabled={!canCollect}
+                      title={!canCollect ? 'Nothing stacked yet' : undefined}
+                      onClick={() => dispatch({ type: 'collectVenture', id: def.id })}
+                    >
+                      {canCollect ? `Claim ${money(stored, numberFormat)}` : 'Claim'}
+                    </Button>
+                    {!atMax && (ten >= 2 || plan.n > 1) ? (
+                      <Button tone="ghost" onClick={() => setBulkId(def.id)}>
+                        Bulk
+                      </Button>
+                    ) : null}
+                    {bulkId === def.id ? (
+                      <Sheet
+                        open
+                        onClose={() => setBulkId(null)}
+                        title={`${def.name} · bulk`}
+                        reducedMotion={reducedMotion}
+                        footer={
+                          <Button tone="primary" onClick={() => setBulkId(null)}>
+                            Done
+                          </Button>
+                        }
+                      >
+                        <div className="p6-stack">
+                          <Button
+                            tone="secondary"
+                            disabled={ten < 2 || s.cash < tenCost}
+                            title={
+                              ten < 2
+                                ? 'Fewer than 2 levels left'
+                                : s.cash < tenCost
+                                  ? `Need ${money(tenCost, numberFormat)}`
+                                  : `Buy ${ten} levels for ${money(tenCost, numberFormat)}`
+                            }
+                            onClick={() => levelMany(ten)}
+                          >
+                            +{ten} · {money(tenCost, numberFormat)}
+                          </Button>
+                          <Button
+                            tone="secondary"
+                            disabled={plan.n < 1}
+                            title={
+                              plan.n < 1
+                                ? 'Not affordable yet'
+                                : `Buy ${plan.n} level${plan.n === 1 ? '' : 's'} for ${money(plan.total, numberFormat)}`
+                            }
+                            onClick={() => levelMany(plan.n)}
+                          >
+                            Max{plan.n > 0 ? ` ${plan.n}` : ''} · {money(plan.total, numberFormat)}
+                          </Button>
+                        </div>
+                      </Sheet>
+                    ) : null}
+                  </div>
+                ) : (
+                  <Button
+                    tone={canOpen ? 'primary' : 'ghost'}
+                    coachId={def.id === 'coffee' ? 'ventures-coffee' : `venture-open-${def.id}`}
+                    disabled={!canOpen}
+                    title={!canOpen ? `Need ${money(def.openCost, numberFormat)}` : undefined}
+                    onClick={() => dispatch({ type: 'openVenture', id: def.id })}
+                    icon={<Icon name="venture" size={14} />}
+                  >
+                    Open · {money(def.openCost, numberFormat)}
+                  </Button>
+                )
+              }
+            >
               <p className="ge-card__blurb">{def.blurb}</p>
+              {opened && def.policies && level >= 10 ? (
+                <div className="ge-card__meta">
+                  <div className="ge-card__meta-row">
+                    <span>Policy</span>
+                    <strong>
+                      {vs?.policy ? def.policies[vs.policy].name : 'Choose at level 10'}
+                    </strong>
+                  </div>
+                  <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>
+                    {vs?.policy ? def.policies[vs.policy].blurb : 'Locks after the first choice.'}
+                  </p>
+                  {!vs?.policy ? (
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                      <Button tone="primary" onClick={() => dispatch({ type: 'setVenturePolicy', id: def.id, policy: 'a' })}>
+                        {def.policies.a.name}
+                      </Button>
+                      <Button tone="ghost" onClick={() => dispatch({ type: 'setVenturePolicy', id: def.id, policy: 'b' })}>
+                        {def.policies.b.name}
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               {def.loop ? <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>{def.loop}</p> : null}
               {opened ? (
                 <>
@@ -256,80 +404,13 @@ export function VenturesPanel() {
                     </p>
                   ) : null}
                   <Meter value={stored} max={Math.max(1, storeCap)} label={money(stored, numberFormat)} />
-                  <div className="ge-card__actions">
-                    <Btn
-                      tone={canLevel ? 'primary' : 'ghost'}
-                      disabled={atMax || s.cash < nextCost}
-                      title={
-                        atMax
-                          ? 'Max level'
-                          : s.cash < nextCost
-                            ? `Need ${money(nextCost, numberFormat)}`
-                            : `Raise this till. Next level adds ${rate(gain)}.`
-                      }
-                      onClick={() => dispatch({ type: 'levelVenture', id: def.id })}
-                    >
-                      {atMax ? 'Maxed' : `Upgrade · ${money(nextCost, numberFormat)}`}
-                    </Btn>
-                    <Btn
-                      tone={canCollect && !canLevel ? 'primary' : 'ghost'}
-                      coachId={`venture-collect-${def.id}`}
-                      disabled={!canCollect}
-                      title={!canCollect ? 'Nothing stacked yet' : undefined}
-                      onClick={() => dispatch({ type: 'collectVenture', id: def.id })}
-                    >
-                      {canCollect ? `Claim ${money(stored, numberFormat)}` : 'Claim'}
-                    </Btn>
-                    {!atMax ? (
-                      <>
-                        <Btn
-                          tone="ghost"
-                          disabled={ten < 2 || s.cash < tenCost}
-                          title={
-                            ten < 2
-                              ? 'Fewer than 2 levels left'
-                              : s.cash < tenCost
-                                ? `Need ${money(tenCost, numberFormat)}`
-                                : `Buy ${ten} levels for ${money(tenCost, numberFormat)}`
-                          }
-                          onClick={() => levelMany(ten)}
-                        >
-                          +{ten}
-                        </Btn>
-                        <Btn
-                          tone="ghost"
-                          disabled={plan.n < 1}
-                          title={
-                            plan.n < 1
-                              ? 'Not affordable yet'
-                              : `Buy ${plan.n} level${plan.n === 1 ? '' : 's'} for ${money(plan.total, numberFormat)}`
-                          }
-                          onClick={() => levelMany(plan.n)}
-                        >
-                          Max{plan.n > 0 ? ` (${plan.n})` : ''}
-                        </Btn>
-                      </>
-                    ) : null}
-                  </div>
                 </>
               ) : (
-                <Btn
-                  tone={canOpen ? 'primary' : 'ghost'}
-                  coachId={def.id === 'coffee' ? 'ventures-coffee' : `venture-open-${def.id}`}
-                  disabled={!canOpen}
-                  title={!canOpen ? `Need ${money(def.openCost, numberFormat)}` : undefined}
-                  onClick={() => dispatch({ type: 'openVenture', id: def.id })}
-                >
-                  <Icon name="venture" size={14} />
-                  Open · {money(def.openCost, numberFormat)}
-                </Btn>
-              )}
-              {!opened ? (
                 <p className="ge-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.7rem' }}>
                   After it opens, Upgrade on this card raises the till.
                 </p>
-              ) : null}
-            </article>
+              )}
+            </Card>
           )
         })}
       </div>
@@ -342,7 +423,7 @@ export function VenturesPanel() {
           </header>
           <div className="ge-card-grid">
             {locked.map(({ def }) => (
-              <article key={def.id} className="ge-card">
+              <Card key={def.id} state="locked" className="ge-card">
                 <div className="ge-card__head">
                   <div>
                     <strong>{def.name}</strong>
@@ -352,16 +433,12 @@ export function VenturesPanel() {
                 <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>
                   Opens at {def.opensAt}.
                 </p>
-              </article>
+              </Card>
             ))}
           </div>
         </section>
       ) : null}
-
-      <HelpCard title="Side hustles">
-        Open a venture, then press Upgrade on its card. Each level raises that till. Collect before
-        the jar caps — overflow stops stacking. A venture does not stamp memos or earn Reputation.
-      </HelpCard>
-    </Panel>
+      </HubStage>
+    </section>
   )
 }

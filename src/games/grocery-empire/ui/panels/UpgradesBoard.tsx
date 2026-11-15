@@ -24,8 +24,10 @@ import { can } from '../../sim/commands'
 import { upgradeBulkCost, upgradeRankCap } from '../../sim/formulas'
 import type { GameState } from '../../sim/state'
 import { treeRanks } from '../../sim/systems/stats'
+import { hasAffordableUpgrade, planAffordableUpgrades } from '../../sim/upgradePlan'
 import { useGame } from '../GameContext'
 import { money } from '../format'
+import { Button, ScreenHeader } from '../kit'
 
 type NodeView = {
   def: UpgradeDef
@@ -161,6 +163,10 @@ const TREE_TINT: Record<TreeId, string> = {
   fresh: '#8fe39a',
   logistics: '#6fb0e8',
   space: '#c3aaf0',
+  pantry: '#e0b15a',
+  exchange: '#7eb0d4',
+  cultivar: '#8fd39a',
+  signal: '#d7a4e8',
 }
 
 function toTreeNode(v: NodeView, fmt: Parameters<typeof money>[1]): TreeNode {
@@ -308,6 +314,7 @@ export function UpgradesBoard() {
   const [affordOnly, setAffordOnly] = useState(false)
   const [view, setView] = useState<'tree' | 'list'>('tree')
   const [sel, setSel] = useState<string | null>(null)
+  const [sweepNote, setSweepNote] = useState<{ text: string; bought: number } | null>(null)
 
   const ranks = useMemo(() => treeRanks(s), [tick, s])
 
@@ -339,35 +346,58 @@ export function UpgradesBoard() {
   const tr = active.ranks
   const nextMastery = (Math.floor(tr / MASTERY.ranksPerStep) + 1) * MASTERY.ranksPerStep
   const mastery = masteryMul(tr)
+  const treeReady = hasAffordableUpgrade(s, active.id)
+  const allReady = hasAffordableUpgrade(s, 'all')
+
+  const sweep = (tree: TreeId | 'all') => {
+    const plan = planAffordableUpgrades(s, tree)
+    const ranks = plan.reduce((n, step) => n + step.count, 0)
+    if (ranks <= 0) {
+      setSweepNote({ text: 'Nothing affordable there. Capstones stay a choice.', bought: s.stats.upgradesBought })
+      return
+    }
+    const before = s.cash
+    dispatch({ type: 'buyUpgradeSweep', tree })
+    setSweepNote({
+      text: `Bought ${ranks} ranks · ${money(before - s.cash, numberFormat)}.`,
+      bought: s.stats.upgradesBought,
+    })
+  }
 
   return (
     <section className="ge-panel u2" aria-label="Upgrades">
       <header className="u2-head">
-        <div>
-          <h2 className="ge-panel__title">Upgrades</h2>
-          <p className="ge-panel__purpose">
-            Every rank multiplies something real. Ranks 10 and 25 double a node; every {MASTERY.ranksPerStep} ranks in a
-            tree adds {Math.round(MASTERY.perStep * 100)}% to all of it.
-          </p>
-        </div>
-        <div className="u2-tools">
-          <div className="u2-viewswitch" role="tablist" aria-label="View">
-            {(['tree', 'list'] as const).map((v) => (
-              <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'is-on' : ''} onClick={() => setView(v)}>
-                {v === 'tree' ? 'Tree' : 'List'}
-              </button>
-            ))}
-          </div>
-          {view === 'list' ? (
-            <label className="u2-toggle">
-              <input type="checkbox" checked={affordOnly} onChange={(e) => setAffordOnly(e.target.checked)} />
-              Only what I can buy
-            </label>
-          ) : null}
-        </div>
+        <ScreenHeader
+          hub
+          title="Upgrades"
+          purpose={
+            <span
+              title={`Ranks 10 and 25 double a node. Every ${MASTERY.ranksPerStep} ranks in a tree add ${Math.round(MASTERY.perStep * 100)}%.`}
+            >
+              Buy ranks that multiply the store.
+            </span>
+          }
+          actions={
+            <div className="u2-tools">
+              <div className="u2-viewswitch" role="tablist" aria-label="View">
+                {(['tree', 'list'] as const).map((v) => (
+                  <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'is-on' : ''} onClick={() => setView(v)}>
+                    {v === 'tree' ? 'Tree' : 'List'}
+                  </button>
+                ))}
+              </div>
+              {view === 'list' ? (
+                <label className="u2-toggle">
+                  <input type="checkbox" checked={affordOnly} onChange={(e) => setAffordOnly(e.target.checked)} />
+                  Only what I can buy
+                </label>
+              ) : null}
+            </div>
+          }
+        />
       </header>
 
-      <nav className="u2-trees" aria-label="Trees">
+      <nav className="u2-trees" aria-label="Trees" data-coach-id="upgrades-floor">
         {trees.map((t) => (
           <button
             key={t.id}
@@ -375,6 +405,7 @@ export function UpgradesBoard() {
             className={`u2-tree${t.id === active.id ? ' is-active' : ''}`}
             onClick={() => setTree(t.id)}
             aria-pressed={t.id === active.id}
+            data-coach-id={t.id === 'floor' ? 'upgrades-floor-tree' : undefined}
           >
             <span className="u2-tree__name">{TREES[t.id].name}</span>
             <span className="u2-tree__meta">{t.ranks} ranks</span>
@@ -385,6 +416,27 @@ export function UpgradesBoard() {
 
       <div className="u2-tree-head">
         <p className="u2-tree-blurb">{TREES[active.id].blurb}</p>
+        <div className="u2-sweep">
+          <Button
+            tone="primary"
+            disabled={!treeReady}
+            title="Buys the best affordable ranks in this tree, strongest per dollar first. Capstones stay a choice."
+            onClick={() => sweep(active.id)}
+          >
+            Upgrade all
+          </Button>
+          <Button
+            tone="ghost"
+            disabled={!allReady}
+            title="Same pass across every tree. Capstones stay a choice."
+            onClick={() => sweep('all')}
+          >
+            All trees
+          </Button>
+          {sweepNote && sweepNote.bought === s.stats.upgradesBought ? (
+            <span className="u2-sweep__note">{sweepNote.text}</span>
+          ) : null}
+        </div>
         <div className="u2-mastery" title="Tree mastery">
           <span>
             Mastery ×{mastery.toFixed(1)} · next at {nextMastery} ranks

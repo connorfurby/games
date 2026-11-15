@@ -75,3 +75,43 @@ export function plateSrc(id: PlateId | undefined): string | undefined {
   if (!id) return undefined
   return PLATES[id]
 }
+
+/** Worlds-hub busts. Colored silhouettes — the counter had photos, the map has ink. */
+export type HorizonCastId =
+  | 'nia'
+  | 'maris'
+  | 'edda'
+  | 'listener'
+  | 'arun'
+  | 'ivo'
+  | 'surveyor'
+  | 'broker'
+  | 'grower'
+  | 'taster'
+  | 'translator'
+  | 'handler'
+  | 'diplomat'
+
+export interface HorizonCastMember {
+  id: HorizonCastId
+  name: string
+  role: string
+  initials: string
+  color: string
+}
+
+export const HORIZON_CAST: Record<HorizonCastId, HorizonCastMember> = {
+  nia: { id: 'nia', name: 'Nia', role: 'Survey', initials: 'NI', color: '#6ea8c9' },
+  maris: { id: 'maris', name: 'Maris', role: 'Keel', initials: 'MA', color: '#c45a3c' },
+  edda: { id: 'edda', name: 'Edda', role: 'Greenhouse', initials: 'ED', color: '#6a9a55' },
+  listener: { id: 'listener', name: 'Listener', role: 'Wire', initials: 'LI', color: '#8d84c4' },
+  arun: { id: 'arun', name: 'Arun', role: 'Bazaar', initials: 'AR', color: '#c6a15a' },
+  ivo: { id: 'ivo', name: 'Ivo', role: 'Last aisle', initials: 'IV', color: '#efe9dc' },
+  surveyor: { id: 'surveyor', name: 'Surveyor', role: 'Probe yard', initials: 'SU', color: '#4f7d99' },
+  broker: { id: 'broker', name: 'Broker', role: 'Exchange', initials: 'BR', color: '#a34832' },
+  grower: { id: 'grower', name: 'Grower', role: 'Beds', initials: 'GR', color: '#3f6b3a' },
+  taster: { id: 'taster', name: 'Taster', role: 'Fork', initials: 'TA', color: '#d4a054' },
+  translator: { id: 'translator', name: 'Translator', role: 'Phrase', initials: 'TR', color: '#6d5ea8' },
+  handler: { id: 'handler', name: 'Handler', role: 'Freight', initials: 'HA', color: '#8a6a42' },
+  diplomat: { id: 'diplomat', name: 'Diplomat', role: 'Charter', initials: 'DI', color: '#b9924a' },
+}

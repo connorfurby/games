@@ -1,28 +1,61 @@
 import { ENDING_BEATS } from '../../content/lateEras'
+import { emptyHorizon } from '../../content/horizon'
 import { TUTORIALS } from '../../content/tutorials'
+import { upgradeEffect } from '../../content/upgrades'
 import { ENDINGS } from '../balance'
+import { emptyPockets, syncFleetBiomass } from '../state'
 import { log } from '../helpers'
 import type { GameState } from '../state'
 
+function endingSpineReady(s: GameState): boolean {
+  const boardOk = (s.stats.boardMeetings ?? 0) >= 1 || s.board.lastResolvedAt > 0
+  const stewardOk = s.depth?.stewardId != null
+  return boardOk && stewardOk
+}
+
 export function endingOpen(s: GameState): boolean {
-  return s.era >= 6 && s.fleet.biomass <= 0 && s.endingChoice === null
+  const pocketsOk =
+    (s.fleet.pockets?.filter((p) => p.left <= 0).length ?? 0) >= 4 || s.fleet.biomass <= 0
+  const rationFacing = !!s.depth?.facings?.ration
+  return (
+    s.era >= 6 &&
+    pocketsOk &&
+    (rationFacing || s.fleet.biomass <= 0) &&
+    endingSpineReady(s) &&
+    s.endingChoice === null
+  )
+}
+
+/** Mutator preview upgrade softens Hungry-law board friction (flavor scalar). */
+export function mutatorPreviewMul(s: GameState): number {
+  return 1 + upgradeEffect(s, 'mutator-preview') * 0.2
 }
 
 export function canAcceptEnding(s: GameState): string | null {
+  if (s.endingChoice === 'continue') return 'Already continued past the ration.'
   if (s.endingChoice) return 'Ending already chosen.'
   if (!endingOpen(s) && !(s.memos['universal-ration'] > 0)) {
     return 'Clear universe biomass first.'
   }
   if (s.era < 6 && !(s.memos['accept-exile'] > 0)) return 'Ending not open yet.'
+  if (s.depth?.stewardId == null) return 'Promote a Steward first.'
+  if ((s.stats.boardMeetings ?? 0) < 1 && !(s.board.lastResolvedAt > 0)) {
+    return 'Resolve a board agenda first.'
+  }
   return null
 }
 
 export function canRejectEnding(s: GameState): string | null {
+  if (s.endingChoice === 'continue') return 'Already continued past the ration.'
   if (s.endingChoice) return 'Ending already chosen.'
   if (!endingOpen(s) && !(s.memos['universal-ration'] > 0)) {
     return 'Clear universe biomass first.'
   }
   if (s.era < 6 && !(s.memos['reject-silence'] > 0)) return 'Ending not open yet.'
+  if (s.depth?.stewardId == null) return 'Promote a Steward first.'
+  if ((s.stats.boardMeetings ?? 0) < 1 && !(s.board.lastResolvedAt > 0)) {
+    return 'Resolve a board agenda first.'
+  }
   return null
 }
 
@@ -82,17 +115,31 @@ export function acceptEnding(s: GameState) {
   // Soft reset of run currencies — appetite carries; cosmetics/meta outside
   s.cash = 20
   s.baskets = 0
-  s.fleet.biomass = s.fleet.biomassMax
+  s.fleet.pockets = emptyPockets()
+  syncFleetBiomass(s.fleet)
+  s.fleet.bargeList = []
   s.fleet.barges = 0
   s.fleet.launches = 0
   s.fleet.launched = false
   s.fleet.warOn = false
+  if (s.depth) {
+    s.depth.driftWar = { step: 0 }
+    s.depth.rationWeekUntil = 0
+    if (s.depth.stewardId != null) {
+      const m = s.staff.find((x) => x.id === s.depth.stewardId)
+      if (m) s.prestigeCarry.stewardName = m.name
+      s.depth.stewardKept = false
+    }
+  }
+  void mutatorPreviewMul(s)
   s.cold.plants = 0
+  s.cold.plantList = []
   s.cold.tanks = 0
   s.cold.yieldLeft = s.cold.yieldMax
   s.cold.momentum = 1
   s.cold.browned = false
   s.era = 0
+  s.horizon = emptyHorizon()
   softResetTeaching(s)
   s.chapterQueue.push(0)
   log(s, 'Accept filed. Hungry laws board open — pick 0–2, or Confirm with none.', 'era')

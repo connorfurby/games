@@ -1,3 +1,6 @@
+import type { MenuId } from '../content/menus'
+import { HUBS, MENU_COACH, hubOf } from './shell/hubs'
+
 /**
  * Every `coachId` in content/tutorials.ts must appear here.
  * Value = menu id to soft-open before spotlighting, or null if always mounted
@@ -10,6 +13,8 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'floor-unpack': 'floor',
   'floor-price': 'floor',
   'floor-wholesale': 'floor',
+  'floor-layaway': 'floor',
+  'floor-serve-regular': 'floor',
   'floor-baskets': null,
   'floor-rent': 'floor',
   'floor-inspection': 'floor',
@@ -46,7 +51,11 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'land-policy': 'land',
   'land-depot': 'land',
   'land-expansions': 'land',
+  'land-hot-trait': 'land',
+  'marketing-flyer-band': 'marketing',
   'suppliers-autorestock': 'suppliers',
+  'suppliers-dock-check': 'suppliers',
+  'suppliers-invoices': 'suppliers',
   'meta-shelf': null,
   'books-incorporate': 'books',
   'books-board': 'books',
@@ -63,11 +72,35 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'politics-leave': 'politics',
   'logistics-lane': 'logistics',
   'logistics-franchise': 'logistics',
+  'logistics-exam': 'logistics',
   'fleet-launch': 'fleet',
   'fleet-guardian': 'fleet',
   'fleet-drift': 'fleet',
+  'fleet-ledger': 'fleet',
   'ending-accept': 'fleet',
   'ending-reject': 'fleet',
+  'planets-survey': 'planets',
+  'planets-launch': 'planets',
+  'planets-shelf': 'planets',
+  'planets-climate': 'planets',
+  'exchange-freight': 'exchange',
+  'exchange-circuit': 'exchange',
+  'exchange-keel': 'exchange',
+  'exchange-settle': 'exchange',
+  'cultivars-seed': 'cultivars',
+  'cultivars-bed': 'cultivars',
+  'cultivars-haul': 'cultivars',
+  'signal-currency': 'signal',
+  'signal-phrase': 'signal',
+  'signal-agents': 'signal',
+  'charter-seal': 'charter',
+  'charter-clauses': 'charter',
+  'charter-fork': 'charter',
+  'charter-seat': 'charter',
+  'lastaisle-list': 'lastaisle',
+  'lastaisle-score': 'lastaisle',
+  'lastaisle-ending': 'lastaisle',
+  'lastaisle-rehearse': 'lastaisle',
 }
 
 /** Map coachId prefixes / exact ids to the panel that hosts the control. */
@@ -98,6 +131,12 @@ export function menuForCoachId(coachId: string): string | null {
   if (coachId.startsWith('politics-')) return 'politics'
   if (coachId.startsWith('logistics-')) return 'logistics'
   if (coachId.startsWith('fleet-') || coachId.startsWith('ending-')) return 'fleet'
+  if (coachId.startsWith('planets-')) return 'planets'
+  if (coachId.startsWith('exchange-')) return 'exchange'
+  if (coachId.startsWith('cultivars-')) return 'cultivars'
+  if (coachId.startsWith('signal-')) return 'signal'
+  if (coachId.startsWith('charter-')) return 'charter'
+  if (coachId.startsWith('lastaisle-')) return 'lastaisle'
   if (coachId.startsWith('compute-') || coachId === 'floor-memos' || coachId.startsWith('memo-')) {
     return null
   }
@@ -111,4 +150,32 @@ export function menuForCoachId(coachId: string): string | null {
     return null
   }
   return null
+}
+
+/** Targets that live inside the Memos drawer — open it before spotlighting. */
+export function needsInbox(coachId: string): boolean {
+  return coachId === 'floor-memos' || coachId.startsWith('compute-') || coachId.startsWith('memo-')
+}
+
+/**
+ * `menu-*` ids are hub buttons or sub-tabs. A hub button is always on screen, but a
+ * sub-tab only exists while its hub is open. Returns the menu to switch to so the
+ * target is mounted — never the target itself, so "Open Staff" steps still need the click.
+ */
+export function menuForNavCoachId(
+  coachId: string,
+  active: MenuId,
+  unlocked: (id: MenuId) => boolean,
+): MenuId | null {
+  if (!coachId.startsWith('menu-')) return null
+  const target = (Object.keys(MENU_COACH) as MenuId[]).find((m) => MENU_COACH[m] === coachId)
+  if (!target) return null
+  const hub = hubOf(target)
+  if (!hub) return null
+  const menus = HUBS.find((h) => h.id === hub)!.menus.filter(unlocked)
+  // The hub button carries the id of the hub's first tagged menu.
+  const carrier = menus.find((m) => MENU_COACH[m])
+  if (carrier === target) return null
+  if (hubOf(active) === hub) return null
+  return menus.find((m) => m !== target) ?? null
 }

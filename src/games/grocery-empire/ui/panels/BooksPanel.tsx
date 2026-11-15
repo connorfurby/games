@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { CATEGORIES, CATEGORY_IDS } from '../../content/categories'
-import { CAPITAL, CHAIN, DEBT, RECOVERY } from '../../sim/balance'
+import { CAPITAL, DEBT, RECOVERY } from '../../sim/balance'
 import {
   demandBreakdown,
   rentPerSec,
@@ -16,13 +16,11 @@ import type { BoardAgenda } from '../../sim/state'
 import type { GameState, SalesBottleneck } from '../../sim/state'
 import { useGame } from '../GameContext'
 import { money, qty, rate } from '../format'
-import { Btn } from '../components/Btn'
-import { HelpCard } from '../components/HelpCard'
-import { Line } from '../components/Line'
-import { Panel } from '../components/Panel'
-import { Section } from '../components/Section'
-import { Sparkline } from '../components/Sparkline'
-import { StatusBand } from '../components/StatusBand'
+import { Button, Card, DataTable, Disclosure, Meter, Sparkline, Stat, Tabs } from '../kit'
+import type { Column } from '../kit'
+import { LedgerScene } from '../scenes/live/LedgerScene'
+import { HubCallout, LateHubShell, Rows } from './LateHubShell'
+import { CurrencyFlowTable, IncomeWaterfall } from './BooksLate'
 
 const BOARD_AGENDAS: { id: BoardAgenda; label: string; tip: string }[] = [
   { id: 'expand', label: 'Expand', tip: 'The next store costs 10% less. A little equity is set aside.' },
@@ -48,43 +46,32 @@ function bottleneckTarget(
   switch (kind) {
     case 'shelf':
       return sumQty(s.backroom) > 0
-        ? pick('floor', 'Go to Floor · Unpack')
-        : (pick('suppliers', 'Go to Suppliers · buy a crate') ?? pick('floor', 'Go to Floor · buy a crate'))
+        ? pick('floor', 'Floor')
+        : (pick('suppliers', 'Suppliers') ?? pick('floor', 'Floor'))
     case 'unpack':
-      return pick('staff', 'Go to Staff · hire a clerk') ?? pick('floor', 'Go to Floor · Unpack')
+      return pick('staff', 'Staff') ?? pick('floor', 'Floor')
     case 'checkout':
-      return pick('staff', 'Go to Staff · hire cashiers') ?? pick('floor', 'Go to Floor')
+      return pick('staff', 'Staff') ?? pick('floor', 'Floor')
     case 'demand':
-      return pick('floor', 'Go to Floor · price') ?? null
+      return pick('marketing', 'Marketing') ?? pick('floor', 'Floor')
     default:
       return null
   }
 }
 
-/** Per-sec Attention the chain drains (mirrors tickChain). */
-function chainAttentionDrain(s: GameState): number {
-  if (s.era < 2 || !s.compute.unlocked || s.stores.length < 1) return 0
-  const allocated = s.stores.reduce((a, st) => a + st.attentionShare, 0)
-  const metroMul = s.expansions['metro-slot'] ? CHAIN.metroAttDrainMul : 1
-  const softcap = !s.depot && s.stores.length >= 5 ? 1.5 : 1
-  return (
-    CHAIN.attentionDrainPerSec *
-    allocated *
-    Math.min(1.5, 0.6 + s.stores.length * 0.15) *
-    metroMul *
-    softcap
-  )
-}
+/** Memoized: re-renders from its own context reads, not from unrelated parent renders. */
+export const BooksPanel = memo(BooksPanelInner)
 
-export function BooksPanel() {
+function BooksPanelInner() {
   const { state: s, dispatch, numberFormat, setActiveMenu } = useGame()
+  const [tape, setTape] = useState<'flow' | 'history'>('flow')
   // New players (first ten minutes) get the demand explainer open once.
-  const [demandOpen, setDemandOpen] = useState(() => (s.stats.playSec ?? 0) < 600)
+  const [demandOpen, setDemandOpen] = useState(false)
   const demand = demandBreakdown(s)
   const cashHist = s.history?.cash ?? []
   const soldHist = s.history?.sold ?? []
   const revHist = s.history?.revenue ?? []
-  const meetingDue = !canResolveBoard(s)
+  const meetingDue = canResolveBoard(s) === null
   const nextMeetingInSec = Math.max(0, Math.ceil(s.board.nextMeetingAt - s.time))
   const rent = rentPerSec(s)
   const wages = wagesPerSec(s)
@@ -130,348 +117,317 @@ export function BooksPanel() {
     return { id: c, name: CATEGORIES[c].name, sold, rev, spoiled, cogs, spoilLoss, margin: rev - cogs - spoilLoss }
   })
 
-  const alerts: { tone: 'danger' | 'warn' | 'info'; text: string }[] = []
-  if (storeRev > 0.01 && wages / storeRev > 0.4) {
-    alerts.push({
-      tone: 'danger',
-      text: `Wages are ${Math.round((wages / storeRev) * 100)}% of store revenue (over 40%). Cut hours or hold off hiring.`,
-    })
-  }
   const spoilShare =
     (s.stats.sold ?? 0) + (s.stats.spoiled ?? 0) > 0
       ? (s.stats.spoiled ?? 0) / ((s.stats.sold ?? 0) + (s.stats.spoiled ?? 0))
       : 0
-  if ((s.stats.spoiled ?? 0) >= 10 && spoilShare > 0.1) {
-    alerts.push({
-      tone: 'warn',
-      text: `${qty(s.stats.spoiled)} units spoiled (${Math.round(spoilShare * 100)}% of throughput). Order smaller mixes, cool the aisle, or dump early.`,
-    })
-  }
-  const attDrain = chainAttentionDrain(s)
-  if (s.era >= 2 && s.stores.length > 1 && attDrain > 0) {
-    alerts.push({
-      tone: 'info',
-      text: `${s.stores.length} stores drain ~${attDrain.toFixed(2)} Att/s. Keep Analysts and Archives ahead of it.`,
-    })
-  }
-  if (Number.isFinite(runwaySec) && runwaySec < 300) {
-    alerts.push({
-      tone: 'danger',
-      text: `Cash runway ${etaLabel(runwaySec)} at the current burn. Sales are not covering the bill.`,
-    })
-  }
 
   const exhibits = [...(s.museum?.exhibits ?? [])].sort((a, b) => b.qty - a.qty).slice(0, 4)
 
+  // The HUD raises the same alert (Hud.tsx): when the board is waiting, it leads the panel.
+  const boardLifted = s.era >= 2 && s.incorporated && meetingDue
+
+  const boardCard = s.incorporated ? (
+    <Card
+      className={`lh-board${meetingDue ? '' : ' lh-board--calm'}`}
+      data-coach-id="books-board"
+      header={
+        <div className="lh-card-title">
+          <strong>Board meeting</strong>
+          <span>
+            {meetingDue
+              ? 'One choice. The others wait until the next meeting.'
+              : `Next meeting ${etaLabel(nextMeetingInSec)}.`}
+          </span>
+        </div>
+      }
+    >
+      <ul className="lh-board__list">
+        {BOARD_AGENDAS.map((a) => (
+          <li key={a.id} className={meetingDue ? 'is-due' : ''}>
+            <div>
+              <strong>{a.label}</strong>
+              <span>{a.tip}</span>
+            </div>
+            <Button
+              size="sm"
+              tone={meetingDue ? 'primary' : 'ghost'}
+              disabled={!meetingDue}
+              title={meetingDue ? a.tip : `Next meeting ${etaLabel(nextMeetingInSec)}`}
+              onClick={() => dispatch({ type: 'resolveBoard', agenda: a.id })}
+            >
+              {meetingDue ? 'Choose' : 'Waiting'}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  ) : null
+
+  type FlowRow = { key: string; label: string; value: string; title?: string; neg?: boolean }
+  const flowRows: FlowRow[] = [
+    { key: 'store', label: 'Store revenue', value: rate(storeRev) },
+    { key: 'venture', label: 'Venture fill', value: rate(ventureRate) },
+    { key: 'invest', label: 'Invest yield', value: rate(investYield) },
+    { key: 'rent', label: 'Rent', value: rate(rent) },
+    { key: 'wages', label: 'Wages', value: rate(wages) },
+    { key: 'burn', label: 'Burn', value: rate(burn), title: 'Cost + rent + wages' },
+    { key: 'net', label: 'Net', value: rate(net), neg: net < 0 },
+  ]
+  const flowCols: Column<FlowRow>[] = [
+    { key: 'line', header: 'Line', render: (r) => (r.key === 'net' ? <strong>{r.label}</strong> : r.label) },
+    {
+      key: 'val',
+      header: 'Per sec',
+      align: 'end',
+      render: (r) => (
+        <span className={r.neg ? 'lh-neg' : undefined} title={r.title}>
+          {r.key === 'net' ? <strong>{r.value}</strong> : r.value}
+        </span>
+      ),
+    },
+  ]
+
+  const aisleCols: Column<(typeof aisles)[number]>[] = [
+    { key: 'aisle', header: 'Aisle', render: (a) => a.name },
+    { key: 'sold', header: 'Sold', align: 'end', render: (a) => qty(a.sold) },
+    { key: 'spoiled', header: 'Spoiled', align: 'end', render: (a) => (a.spoiled > 0 ? qty(a.spoiled) : '—') },
+    {
+      key: 'margin',
+      header: 'Margin',
+      align: 'end',
+      render: (a) => (
+        <strong
+          className={a.margin < 0 ? 'lh-neg' : undefined}
+          title={`Revenue ${money(a.rev, numberFormat)} − est. COGS ${money(a.cogs, numberFormat)} − spoil write-off ${money(a.spoilLoss, numberFormat)}`}
+        >
+          {a.margin < 0 ? '−' : '+'}
+          {money(Math.abs(a.margin), numberFormat)}
+        </strong>
+      ),
+    },
+  ]
+
+  const wageShare = storeRev > 0.01 ? wages / storeRev : 0
+
+  const kpis = (
+    <>
+      <Stat size="sm" label="Cash" value={money(s.cash, numberFormat)} />
+      <Stat size="sm" label="Net" value={rate(net)} title="Till income minus burn, per second" />
+      <Stat size="sm" label="Burn" value={rate(burn)} title="Cost + rent + wages" />
+      <Stat
+        size="sm"
+        label="Runway"
+        value={net >= -1e-6 ? 'steady' : etaLabel(runwaySec)}
+        title="Cash ÷ net loss per second. Steady when income covers the bill."
+      />
+    </>
+  )
+
   return (
-    <Panel
+    <LateHubShell
       title="Books"
       purpose="Read the tape. Fix the bottleneck elsewhere."
-      lore="books"
+      stats={kpis}
+      scene={<LedgerScene />}
+      primary={
+        target ? (
+          <HubCallout
+            title={bottleneck.label}
+            tone={bottleneck.kind !== 'demand' ? 'warn' : undefined}
+            action={
+              <Button tone={bottleneck.kind !== 'demand' ? 'primary' : 'ghost'} onClick={() => setActiveMenu(target.menu)}>
+                {target.label}
+              </Button>
+            }
+          />
+        ) : boardLifted ? (
+          boardCard
+        ) : null
+      }
     >
-      <StatusBand
-        items={[
-          {
-            label: 'Limit',
-            value: bottleneck.kind,
-            tone: bottleneck.kind === 'demand' ? 'muted' : 'danger',
-            hint: bottleneck.label,
-          },
-          {
-            label: 'Rep ETA',
-            value: etaLabel(repEta),
-            tone: 'accent',
-            hint: `Next +1 @ ${qty(s.compute.nextRepAt)} baskets`,
-          },
-          {
-            label: 'Burn',
-            value: rate(burn),
-            tone: 'muted',
-            hint: 'Cost + rent + wages',
-          },
-          {
-            label: 'Arrears',
-            value: money(s.arrears, numberFormat),
-            tone: s.arrears > 0 ? 'danger' : 'muted',
-          },
+      {boardLifted && target ? boardCard : null}
+
+      <Tabs
+        aria-label="Books tape"
+        value={tape}
+        onChange={setTape}
+        options={[
+          { value: 'flow', label: 'Cashflow' },
+          { value: 'history', label: 'History' },
         ]}
       />
-
-      {target ? (
-        <div className="ge-dept-callout" role="status">
-          <div className="ge-dept-callout__copy">
-            <h3>{bottleneck.kind}</h3>
-            <p>{bottleneck.label}</p>
-          </div>
-          <Btn
-            tone={bottleneck.kind !== 'demand' ? 'primary' : 'ghost'}
-            onClick={() => setActiveMenu(target.menu)}
-          >
-            {target.label} →
-          </Btn>
+      {tape === 'flow' ? (
+        <div className="lh-stack">
+          <DataTable columns={flowCols} rows={flowRows} rowKey={(r) => r.key} caption="Cashflow split" />
+          {storeRev > 0.01 ? (
+            <Meter
+              tone={wageShare > 0.4 ? 'danger' : wageShare > 0.3 ? 'warn' : 'success'}
+              value={wageShare}
+              max={0.4}
+              label="Wages / sales"
+              eta={`${Math.round(wageShare * 100)}%`}
+            />
+          ) : null}
+          {(s.stats.sold ?? 0) + (s.stats.spoiled ?? 0) > 0 ? (
+            <Meter
+              tone={spoilShare > 0.1 ? 'danger' : spoilShare > 0.05 ? 'warn' : 'success'}
+              value={spoilShare}
+              max={0.1}
+              label="Spoilage"
+              eta={`${Math.round(spoilShare * 100)}%`}
+            />
+          ) : null}
+          <Rows
+            rows={[
+              { label: 'Rep ETA', value: etaLabel(repEta), title: `Next +1 @ ${qty(s.compute.nextRepAt)} baskets` },
+              ...(s.arrears > 0.005
+                ? [
+                    {
+                      label: 'Arrears',
+                      value: `${money(s.arrears, numberFormat)} · ${etaLabel(arrearsEta)}`,
+                      title: `${Math.round(RECOVERY.arrearsRevenueShare * 100)}% of store sales go to arrears`,
+                    },
+                  ]
+                : []),
+              {
+                label: 'Debt',
+                value: `${money(debtOwed, numberFormat)}${
+                  debtOwed > 0.005 && storeRev > 1e-6 ? ` · ${etaLabel(debtOwed / (storeRev * debtShare))}` : ''
+                }`,
+              },
+              { label: 'Peak cash', value: money(peak, numberFormat) },
+            ]}
+          />
         </div>
-      ) : null}
-
-      {alerts.length > 0 ? (
-        <ul className="ge-alerts" role="status" style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0' }}>
-          {alerts.map((a, i) => (
-            <li
-              key={i}
-              className={`ge-muted ge-alert ge-alert--${a.tone}`}
-              style={{
-                margin: '0.2rem 0',
-                fontSize: '0.78rem',
-                color: a.tone === 'danger' ? 'var(--ge-danger, #d9534f)' : a.tone === 'warn' ? 'var(--ge-warn, #e09f3e)' : undefined,
-              }}
-            >
-              {a.tone === 'info' ? 'ℹ' : '⚠'} {a.text}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <div className="ge-dept-split">
-        <article className="ge-card">
-          <header className="ge-empire-block__head">
-            <h3>Cashflow split</h3>
-            <p>Store sales vs side tills vs parked yield.</p>
-          </header>
-          <div className="ge-card__meta">
-            <div className="ge-card__meta-row">
-              <span>Store revenue</span>
-              <strong>{rate(storeRev)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Venture fill</span>
-              <strong>{rate(ventureRate)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Invest yield</span>
-              <strong>{rate(investYield)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Burn</span>
-              <strong>{rate(burn)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Rent</span>
-              <strong>{rate(rent)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Wages</span>
-              <strong>{rate(wages)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Net</span>
-              <strong>{rate(net)}</strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Cash runway</span>
-              <strong title="Cash ÷ net loss per second; 'steady' when income covers the bill">
-                {net >= -1e-6 ? 'steady' : etaLabel(runwaySec)}
-              </strong>
-            </div>
-            {s.arrears > 0.005 ? (
-              <div className="ge-card__meta-row">
-                <span>Arrears payoff</span>
-                <strong title={`${Math.round(RECOVERY.arrearsRevenueShare * 100)}% of store sales go to arrears`}>
-                  {etaLabel(arrearsEta)}
-                </strong>
-              </div>
-            ) : null}
-            <div className="ge-card__meta-row">
-              <span>Debt</span>
-              <strong>
-                {money(debtOwed, numberFormat)}
-                {debtOwed > 0.005 && storeRev > 1e-6
-                  ? ` · ${etaLabel(debtOwed / (storeRev * debtShare))}`
-                  : ''}
-              </strong>
-            </div>
-            <div className="ge-card__meta-row">
-              <span>Peak cash</span>
-              <strong>{money(peak, numberFormat)}</strong>
-            </div>
-          </div>
-        </article>
-
-        <article className="ge-card">
-          <header className="ge-empire-block__head">
-            <h3>History</h3>
-            <p>
-              {cashHist.length < 2
-                ? 'Sparklines fill after a few minutes.'
-                : `${cashHist.length} samples`}
-            </p>
-          </header>
-          <div className="ge-spark-stack" data-coach-id="books-history">
+      ) : (
+        <div className="lh-stack">
+          <div className="lh-spark" data-coach-id="books-history">
             <Sparkline values={cashHist} label="Cash" width={280} height={40} />
             <Sparkline values={soldHist} label="Sold" width={280} height={32} />
             <Sparkline values={revHist} label="Revenue" width={280} height={32} />
           </div>
-        </article>
-      </div>
-
-      <Section label="Tally">
-        <div className="ge-stat-strip">
-          <div className="ge-stat-strip__item">
-            <span>Sold</span>
-            <strong>{qty(s.stats?.sold ?? 0)}</strong>
-          </div>
-          <div className="ge-stat-strip__item">
-            <span>Spoiled</span>
-            <strong>{qty(s.stats?.spoiled ?? 0)}</strong>
-          </div>
-          <div className="ge-stat-strip__item">
-            <span>Shrink</span>
-            <strong>{qty(s.stats?.shrunk ?? 0)}</strong>
-          </div>
-          <div className="ge-stat-strip__item">
-            <span>Demand</span>
-            <strong>×{demand.total.toFixed(2)}</strong>
+          <p className="lh-note">
+            {cashHist.length < 2 ? 'Sparklines fill after a few minutes.' : `${cashHist.length} samples`}
+          </p>
+          <div className="lh-actions">
+            <Stat size="sm" label="Sold" value={qty(s.stats?.sold ?? 0)} />
+            <Stat size="sm" label="Spoiled" value={qty(s.stats?.spoiled ?? 0)} />
+            <Stat size="sm" label="Shrink" value={qty(s.stats?.shrunk ?? 0)} />
+            <Stat size="sm" label="Demand" value={`×${demand.total.toFixed(2)}`} />
           </div>
         </div>
-      </Section>
+      )}
 
-      {aisles.length > 0 ? (
-        <Section label="Aisle P&L">
-          <div className="ge-card__meta" data-coach-id="books-aisles">
-            {aisles.map((a) => (
-              <div key={a.id} className="ge-card__meta-row">
-                <span>
-                  {a.name} · {qty(a.sold)} sold
-                  {a.spoiled > 0 ? ` · ${qty(a.spoiled)} spoiled` : ''}
-                </span>
-                <strong
-                  style={{ color: a.margin < 0 ? 'var(--ge-danger, #d9534f)' : undefined }}
-                  title={`Revenue ${money(a.rev, numberFormat)} − est. COGS ${money(a.cogs, numberFormat)} − spoil write-off ${money(a.spoilLoss, numberFormat)}`}
-                >
-                  {a.margin < 0 ? '−' : '+'}
-                  {money(Math.abs(a.margin), numberFormat)}
-                </strong>
-              </div>
-            ))}
+      {s.era >= 7 ? (
+        <Disclosure title="Worlds income">
+          <div className="lh-split">
+            <IncomeWaterfall s={s} />
+            <CurrencyFlowTable s={s} />
           </div>
-          <p className="ge-muted" style={{ fontSize: '0.7rem' }}>
-            Estimate: cost = sold × today’s unit cost, so a lucky dip buy reads a little low.
-          </p>
-        </Section>
+        </Disclosure>
       ) : null}
 
-      {exhibits.length > 0 ? (
-        <Section label="Museum of spoilage">
-          {exhibits.map((e) => (
-            <Line key={`${e.t}-${e.note}`} left={e.note} right={`×${qty(e.qty)}`} muted />
-          ))}
-        </Section>
+      {aisles.length > 0 ? (
+        <Disclosure title="Aisle P&L" count={aisles.length}>
+          <div className="lh-stack" data-coach-id="books-aisles">
+            <DataTable columns={aisleCols} rows={aisles} rowKey={(a) => a.id} caption="Aisle profit and loss" />
+            <p className="lh-note">
+              Estimate: cost = sold × today’s unit cost, so a lucky dip buy reads a little low.
+            </p>
+          </div>
+        </Disclosure>
       ) : null}
 
       {s.era >= 2 ? (
-        <Section label="Capital">
-          <Line left="Incorporated" right={s.incorporated ? 'Yes' : 'No'} />
-          <Line left="Equity" right={money(s.equity, numberFormat)} muted />
-          <Line
-            left="Read bank"
-            right={
-              s.read > 0
-                ? `${Math.floor(s.read * 10) / 10} · spend on Strategy`
-                : 'Earn via Strategy tournaments'
-            }
-            muted
-          />
-          <div className="ge-chip-row">
-            <Btn
-              tone="primary"
-              coachId="books-incorporate"
-              disabled={!!incorporateBlocked}
-              title={incorporateBlocked ?? undefined}
-              onClick={() => dispatch({ type: 'incorporate' })}
-            >
-              {s.incorporated
-                ? 'Incorporated'
-                : `Incorporate · $${CAPITAL.incorporateCash} + ${CAPITAL.incorporateRep} Rep`}
-            </Btn>
-          </div>
-          {s.incorporated ? (
-            <div className="bk-board" data-coach-id="books-board">
-              <header className="bk-board__head">
-                <h3>Board meeting</h3>
-                <p>
-                  {meetingDue
-                    ? 'One choice. The others wait until the next meeting.'
-                    : `Next meeting ${etaLabel(nextMeetingInSec)}.`}
-                </p>
-              </header>
-              <ul className="bk-board__list">
-                {BOARD_AGENDAS.map((a) => (
-                  <li key={a.id} className={meetingDue ? 'is-due' : ''}>
-                    <div>
-                      <strong>{a.label}</strong>
-                      <span>{a.tip}</span>
-                    </div>
-                    <Btn
-                      tone={meetingDue ? 'primary' : 'ghost'}
-                      disabled={!meetingDue}
-                      title={meetingDue ? a.tip : `Next meeting ${etaLabel(nextMeetingInSec)}`}
-                      onClick={() => dispatch({ type: 'resolveBoard', agenda: a.id })}
-                    >
-                      {meetingDue ? 'Choose' : 'Waiting'}
-                    </Btn>
-                  </li>
-                ))}
-              </ul>
+        <Card
+          header={
+            <div className="lh-card-title">
+              <strong>Capital</strong>
+              <span>{s.incorporated ? 'Incorporated' : 'Not incorporated'}</span>
             </div>
-          ) : (
-            <p className="ge-muted" style={{ fontSize: '0.78rem' }} data-coach-id="books-board">
-              Board agenda opens after you incorporate.
-            </p>
-          )}
-          {s.autonomous ? (
-            <>
-              <p className="ge-muted" style={{ fontSize: '0.78rem', margin: '0.75rem 0 0.25rem' }}>
-                Autonomous habit — pick what the ticker emphasizes.
+          }
+        >
+          <div className="lh-stack">
+            <Rows
+              rows={[
+                { label: 'Equity', value: money(s.equity, numberFormat) },
+                {
+                  label: 'Read bank',
+                  value:
+                    s.read > 0
+                      ? `${Math.floor(s.read * 10) / 10} · spend on Strategy`
+                      : 'Earn via Strategy tournaments',
+                  muted: s.read <= 0,
+                },
+              ]}
+            />
+            <div className="lh-actions">
+              <Button
+                tone="primary"
+                coachId="books-incorporate"
+                disabled={!!incorporateBlocked}
+                title={incorporateBlocked ?? undefined}
+                onClick={() => dispatch({ type: 'incorporate' })}
+              >
+                {s.incorporated
+                  ? 'Incorporated'
+                  : `Incorporate · $${CAPITAL.incorporateCash} + ${CAPITAL.incorporateRep} Rep`}
+              </Button>
+            </div>
+            {s.incorporated ? (
+              boardLifted ? (
+                <p className="lh-note">The board meeting is open at the top of this page.</p>
+              ) : (
+                boardCard
+              )
+            ) : (
+              <p className="lh-note" data-coach-id="books-board">
+                Board agenda opens after you incorporate.
               </p>
-              <div className="ge-chip-row">
-                {(
-                  [
-                    ['balanced', 'Balanced'],
-                    ['price', 'Price'],
-                    ['attention', 'Attention'],
-                    ['collect', 'Collect'],
-                  ] as const
-                ).map(([id, label]) => (
-                  <Btn
-                    key={id}
-                    tone={(s.autonomousHabit ?? 'balanced') === id ? 'primary' : 'ghost'}
-                    onClick={() => dispatch({ type: 'setAutonomousHabit', habit: id })}
-                  >
-                    {label}
-                  </Btn>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </Section>
+            )}
+            {s.autonomous ? (
+              <>
+                <p className="lh-note">Autonomous habit — pick what the ticker emphasizes.</p>
+                <div className="lh-actions">
+                  {(
+                    [
+                      ['balanced', 'Balanced'],
+                      ['price', 'Price'],
+                      ['attention', 'Attention'],
+                      ['collect', 'Collect'],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <Button
+                      key={id}
+                      size="sm"
+                      tone={(s.autonomousHabit ?? 'balanced') === id ? 'primary' : 'ghost'}
+                      onClick={() => dispatch({ type: 'setAutonomousHabit', habit: id })}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </Card>
       ) : null}
 
-      <details
-        className="ge-details"
-        open={demandOpen}
-        onToggle={(e) => setDemandOpen((e.currentTarget as HTMLDetailsElement).open)}
-      >
-        <summary>Demand multipliers</summary>
-        <div className="ge-details__body">
-          {Object.entries(demand.parts).map(([k, v]) => (
-            <Line key={k} left={k} right={`×${v.toFixed(2)}`} muted />
-          ))}
-          <Line left="Total" right={`×${demand.total.toFixed(2)}`} />
-        </div>
-      </details>
+      {exhibits.length > 0 ? (
+        <Disclosure title="Spoilage log" count={exhibits.length}>
+          <Rows rows={exhibits.map((e) => ({ label: e.note, value: `×${qty(e.qty)}`, muted: true }))} />
+        </Disclosure>
+      ) : null}
 
-      <HelpCard title="The tape">
-        Baskets come from the aisle. Ventures and the book are side cash. When progress stalls, read
-        the bottleneck line — then hire, Unpack, or open a managed door.
-      </HelpCard>
-    </Panel>
+      <Disclosure title="Demand multipliers" open={demandOpen} onOpenChange={setDemandOpen}>
+        <Rows
+          rows={[
+            ...Object.entries(demand.parts).map(([k, v]) => ({ label: k, value: `×${v.toFixed(2)}`, muted: true })),
+            { label: 'Total', value: `×${demand.total.toFixed(2)}` },
+          ]}
+        />
+      </Disclosure>
+    </LateHubShell>
   )
 }

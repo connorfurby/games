@@ -1,6 +1,5 @@
 import { motion } from 'motion/react'
 import { useMemo, useState, type CSSProperties } from 'react'
-import { Link } from 'react-router-dom'
 import {
   LEDGER_SKINS,
   ORNAMENTS,
@@ -12,6 +11,7 @@ import {
 } from '@/cosmetics/packs'
 import { PLATES, type PlateId } from '@/games/grocery-empire/art/cast'
 import { useMeta } from './MetaContext'
+import { ShellFrame } from './ShellFrame'
 
 /** Optional plate thumbs for known pack ids (presentation only). */
 const PACK_PLATES: Record<string, PlateId> = {
@@ -63,13 +63,9 @@ export function ShopPage() {
   const equippedOrnaments = meta.equippedOrnaments ?? []
 
   return (
+    <ShellFrame title="Shop">
     <div className="shop-page shell-subpage">
       <header className="shop-hero">
-        <p className="shell-subpage__nav">
-          <Link to="/">Home</Link>
-          <Link to="/play/grocery-empire">Play</Link>
-          <Link to="/achievements">Awards</Link>
-        </p>
         <motion.h1 className="brand" layoutId="brand">
           SHOP
         </motion.h1>
@@ -318,6 +314,7 @@ export function ShopPage() {
         </div>
       )}
     </div>
+    </ShellFrame>
   )
 }
 

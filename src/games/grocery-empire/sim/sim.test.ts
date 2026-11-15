@@ -16,7 +16,8 @@ describe('grocery empire sim', () => {
     expect(run(s, { type: 'unpack' }).ok).toBe(true)
     expect(sumQty(s.shelf)).toBeGreaterThan(0)
 
-    for (let i = 0; i < 80; i++) applyTick(s, DT)
+    // Early-demand mul softens Era 0 foot traffic — need a longer window for a first sale.
+    for (let i = 0; i < 250; i++) applyTick(s, DT)
 
     expect(s.stats.sold).toBeGreaterThan(0)
     expect(s.cash).toBeGreaterThan(cashBefore)

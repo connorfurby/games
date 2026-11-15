@@ -146,6 +146,8 @@ export class GroceryEngine {
       'buyBuild',
       'sellBuild',
       'buyUpgrade',
+      'buyUpgradeSweep',
+      'levelVentureSweep',
       'buyMemo',
       'hire',
       'buyEndcap',

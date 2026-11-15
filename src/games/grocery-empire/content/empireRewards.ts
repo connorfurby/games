@@ -10,7 +10,17 @@ export interface EmpireReward {
   blurb: string
   effects: StatEffect[]
   /** Unlocks a feature flag read elsewhere (Projects board, etc.). */
-  unlocks?: 'projects' | 'second-project'
+  unlocks?:
+    | 'projects'
+    | 'second-project'
+    | 'jump-surge'
+    | 'annex-seat'
+    | 'annex-seat-2'
+    | 'council-whip'
+    | 'instrument-lot'
+    | 'phrase-clue'
+    | 'bay-slot'
+    | 'agent-seat'
 }
 
 const e = (stat: StatEffect['stat'], per: number): StatEffect => ({ stat, per })
@@ -50,6 +60,18 @@ export const EMPIRE_REWARDS: EmpireReward[] = [
   { level: 90, name: 'Universal Brand', blurb: 'Every species knows the logo.', effects: [e('demand', 0.2)] },
   { level: 95, name: 'Hungry Universe', blurb: 'The universe asks for more. You have more.', effects: [e('harvest', 0.25), e('barge', 0.1)] },
   { level: 100, name: 'Grocery Empire', blurb: 'There is nothing left to stock. You stock it anyway.', effects: [e('network', 0.25), e('value', 0.25)] },
+  { level: 105, name: 'Ivo’s list, pinned.', blurb: 'The corner of a list, tacked where the register can see it. The phrase board marks the one cell the standard gets wrong, and the standard file scores a little higher.', effects: [e('planet', 0.02)], unlocks: 'phrase-clue' },
+  { level: 110, name: 'A route with your name.', blurb: 'Freight answers to the flagship. Jump lanes burn up to 15 fuel a haul.', effects: [e('freight', 0.02)], unlocks: 'jump-surge' },
+  { level: 115, name: 'Seed in the drawer.', blurb: 'The beds remember last season, and the drawer fits one more crate. The last bay holds one more.', effects: [e('seed', 0.02)], unlocks: 'bay-slot' },
+  { level: 120, name: 'One more agent.', blurb: 'The desk cap rises by one, to seven.', effects: [e('signal', 0.02)], unlocks: 'agent-seat' },
+  { level: 125, name: 'Ink on the clause.', blurb: 'Seal comes a little easier. The Council opens an annex: two more seats pay out.', effects: [e('seal', 0.02)], unlocks: 'annex-seat' },
+  { level: 130, name: 'The night frequency.', blurb: 'Shoppers who only come after close.', effects: [e('demand', 0.02)] },
+  { level: 135, name: 'A fair margin.', blurb: 'The till keeps a little more of the same sale. Council seats pay a quarter more.', effects: [e('margin', 0.02)], unlocks: 'council-whip' },
+  { level: 140, name: 'The planet shelf.', blurb: 'Planet shelves, thicker. The fifth socket stays with the project.', effects: [e('planet', 0.1)] },
+  { level: 145, name: 'The network listens.', blurb: 'Every copy of the store hears the list. A second annex seats two more.', effects: [e('network', 0.02)], unlocks: 'annex-seat-2' },
+  { level: 150, name: 'One can, worth more.', blurb: 'The basket remembers who asked for it. Every instrument takes one more lot.', effects: [e('value', 0.02)], unlocks: 'instrument-lot' },
+  { level: 155, name: 'Rank on the wire.', blurb: 'Empire learns from the last aisle.', effects: [e('xp', 0.02)] },
+  { level: 160, name: 'The store outlives the list.', blurb: 'The list is a standing order. The store is still the store.', effects: [e('planet', 0.04), e('network', 0.02)] },
 ]
 
 export function nextEmpireReward(level: number): EmpireReward | null {

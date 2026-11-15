@@ -2,8 +2,7 @@ import { DIALOGUE_LINES } from '../content/dialogue'
 import { BASKET_MILESTONES } from '../content/lore'
 import { MEMOS } from '../content/memos'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
-import { COMPUTE } from './balance'
-import { roleCount } from './formulas'
+import { COMPUTE, DEPTH } from './balance'
 import {
   advanceTutorialStep,
   beginTutorial,
@@ -15,8 +14,6 @@ import {
   unlockMenu,
 } from './helpers'
 import type { GameState } from './state'
-
-const ERA1_BASKETS_GATE = 400
 
 /** Soft menu unlocks that do not require a memo (memos remain the main spine). */
 function tickMenus(s: GameState) {
@@ -55,6 +52,12 @@ function tickMenus(s: GameState) {
   if (s.era >= 5 || s.memos['barge-berth'] || s.fleet.launched || s.fleet.barges > 0) {
     unlockMenu(s, 'fleet')
   }
+  if (s.era >= 7) unlockMenu(s, 'planets')
+  if (s.era >= 8) unlockMenu(s, 'exchange')
+  if (s.era >= 9) unlockMenu(s, 'cultivars')
+  if (s.era >= 10) unlockMenu(s, 'signal')
+  if (s.era >= 11) unlockMenu(s, 'charter')
+  if (s.era >= 12) unlockMenu(s, 'lastaisle')
 }
 
 function sumBackroomKinds(s: GameState) {
@@ -167,6 +170,14 @@ function tickTutorialQueue(s: GameState) {
   if (s.fleet.warOn || s.memos['off-brand-war']) queueTutorial(s, 'drift-war')
   if (s.era >= 3 || s.memos['private-label-works']) queueTutorial(s, 'venture-late')
   if (s.era >= 6 || s.endingChoice || s.memos['universal-ration']) queueTutorial(s, 'endings')
+
+  // One opener per Worlds era — sequels stay in the Coach catalog.
+  if (s.era >= 7 || s.menus.planets) queueTutorial(s, 'hz-worlds')
+  if (s.era >= 8 || s.menus.exchange) queueTutorial(s, 'hz-exchange')
+  if (s.era >= 9 || s.menus.cultivars) queueTutorial(s, 'hz-greenhouse')
+  if (s.era >= 10 || s.menus.signal) queueTutorial(s, 'hz-phrase')
+  if (s.era >= 11 || s.menus.charter) queueTutorial(s, 'hz-clauses')
+  if (s.era >= 12 || s.menus.lastaisle) queueTutorial(s, 'hz-list')
 }
 
 function tickActiveTutorial(s: GameState) {
@@ -177,12 +188,14 @@ function tickActiveTutorial(s: GameState) {
     // Unknown id (legacy queue) — drop safely
     s.tutorials.done[t.id] = true
     s.tutorials.active = null
+    s.tutorials.calmUntil = s.time + 10
     return
   }
   const step = def.steps[t.step]
   if (!step) {
     s.tutorials.done[t.id] = true
     s.tutorials.active = null
+    s.tutorials.calmUntil = s.time + 10
     return
   }
   if (isTutorialStepDone(s, step, t.baseline)) {
@@ -192,6 +205,7 @@ function tickActiveTutorial(s: GameState) {
 
 function promoteTutorial(s: GameState) {
   if (s.tutorials.active || s.tutorials.queue.length === 0) return
+  if (s.time < (s.tutorials.calmUntil ?? 0)) return
   while (s.tutorials.queue.length > 0) {
     const id = s.tutorials.queue.shift()!
     if (s.tutorials.done[id]) continue
@@ -223,9 +237,17 @@ function tickMemoSeen(s: GameState) {
 
 function tickEra(s: GameState) {
   if (s.era >= 1) return
-  if (roleCount(s, 'clerk') > 0 || s.staff.length > 0 || s.baskets >= ERA1_BASKETS_GATE) {
-    setEra(s, 1)
-  }
+  const featured = !!s.depth?.facings?.cans
+  const bells = (s.depth?.marketBellDips ?? 0) >= DEPTH.marketBellNeed
+  const regulars = (s.depth?.regularSatisfied ?? 0) >= DEPTH.era1RegularNeed
+  const slips = (s.depth?.layawaySlips ?? 0) >= DEPTH.layawaySlipNeed
+  const stars = (s.depth?.stars ?? 0) >= DEPTH.era1StarMin
+  const openStaffed = (s.depth?.shifts?.open?.length ?? 0) > 0
+  // Hire path needs Open coverage + volume; solo path is 800 baskets.
+  const hireOrBaskets =
+    (s.staff.length > 0 && openStaffed && s.baskets >= DEPTH.ERA1_HIRE_BASKETS) ||
+    s.baskets >= DEPTH.ERA1_BASKETS_GATE
+  if (featured && bells && regulars && slips && stars && hireOrBaskets) setEra(s, 1)
 }
 
 function tickStoryMilestones(s: GameState) {

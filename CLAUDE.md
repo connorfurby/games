@@ -2,6 +2,8 @@
 
 Source of truth for the 2.0 rebuild: `docs/2.0-plan.md`.
 
+**Living agent briefing (structure, pacing, depth systems, changelog, backlog):** `docs/grocery-empire/` — start at `docs/grocery-empire/README.md`. After meaningful changes, update that pack (see `docs/grocery-empire/00-agent-protocol.md`).
+
 ## Commands
 
 - `npm run dev` — play locally (`/play/grocery-empire`, DevMode at `/play/grocery-empire/dev`)

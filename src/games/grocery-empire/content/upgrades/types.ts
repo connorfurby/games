@@ -12,6 +12,10 @@ export const TREE_IDS = [
   'fresh',
   'logistics',
   'space',
+  'pantry',
+  'exchange',
+  'cultivar',
+  'signal',
 ] as const
 export type TreeId = (typeof TREE_IDS)[number]
 
@@ -26,6 +30,10 @@ export const TREES: Record<TreeId, { name: string; blurb: string; tint: 'accent'
   fresh: { name: 'Fresh', blurb: 'Cold chain, deli and bakery — freshness that compounds.', tint: 'success' },
   logistics: { name: 'Logistics', blurb: 'Districts, lanes and hubs that make the network hum.', tint: 'ink' },
   space: { name: 'Orbital', blurb: 'Barges, biomass and the long chart once the fleet is up.', tint: 'accent' },
+  pantry: { name: 'Pantry', blurb: 'Worlds on the shelf. Probes, pins, and local chalk.', tint: 'accent' },
+  exchange: { name: 'Exchange', blurb: 'Circuits, bays, and the route you pin.', tint: 'ink' },
+  cultivar: { name: 'Cultivar', blurb: 'Seasons, beds, and the bell before the turn.', tint: 'success' },
+  signal: { name: 'Signal', blurb: 'Phrases, handlers, and the fair copy of the charter.', tint: 'accent' },
 }
 
 export const BAND_IDS = [0, 1, 2, 3] as const
