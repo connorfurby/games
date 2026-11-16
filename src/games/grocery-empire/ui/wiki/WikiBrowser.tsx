@@ -9,8 +9,8 @@ import type { TutorialDef } from '../../content/tutorials'
 import { PLATES } from '../../art/cast'
 import { Icon } from '../icons/Icon'
 import { EraRibbon, HubMap } from './figures'
-import { WikiBlocks, slug } from './WikiBlocks'
-import type { WikiNav, WikiView } from './nav'
+import { WikiBlocks } from './WikiBlocks'
+import { slug, type WikiNav, type WikiView } from './nav'
 import './wiki.css'
 
 export interface WikiBrowserProps {
@@ -45,12 +45,9 @@ export function WikiBrowser(props: WikiBrowserProps) {
   const { nav, go, playEra, spoilers, onSpoilers, compact } = props
   const maxEra = spoilers ? 12 : Math.max(1, playEra)
   const articles = useMemo(() => visibleArticles(maxEra), [maxEra])
-  const [q, setQ] = useState(nav.view === 'search' ? (nav.q ?? '') : '')
+  const [draft, setDraft] = useState('')
+  const q = nav.view === 'search' ? (nav.q ?? '') : draft
   const top = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (nav.view === 'search') setQ(nav.q ?? '')
-  }, [nav.view, nav.q])
 
   // New page → back to the top of the wiki (drawer or window).
   useEffect(() => {
@@ -93,7 +90,7 @@ export function WikiBrowser(props: WikiBrowserProps) {
             placeholder="Search the wiki — attention, regulars, cold…"
             aria-label="Search the wiki"
             onChange={(e) => {
-              setQ(e.target.value)
+              setDraft(e.target.value)
               if (nav.view === 'search' || e.target.value.length > 1) go({ view: 'search', q: e.target.value })
             }}
           />
@@ -493,8 +490,7 @@ function SearchView({ go, articles, q }: ViewProps & { q: string }) {
 /* ── Lessons ──────────────────────────────────────────────────────── */
 
 function LessonsView({ nav, go, maxEra, lessonsDone, renderPlayLesson, playEra }: ViewProps) {
-  const [openId, setOpenId] = useState<string | undefined>(nav.id)
-  useEffect(() => setOpenId(nav.id), [nav.id])
+  const openId = nav.id
   useEffect(() => {
     if (nav.id) document.getElementById(`wk-lesson-${nav.id}`)?.scrollIntoView({ block: 'center' })
   }, [nav.id])
@@ -540,10 +536,7 @@ function LessonsView({ nav, go, maxEra, lessonsDone, renderPlayLesson, playEra }
                         type="button"
                         className="wk-lesson__head"
                         aria-expanded={isOpen}
-                        onClick={() => {
-                          setOpenId(isOpen ? undefined : l.id)
-                          if (!isOpen) go({ view: 'learn', id: l.id })
-                        }}
+                        onClick={() => go({ view: 'learn', id: isOpen ? undefined : l.id })}
                       >
                         <span className="wk-lesson__tick" aria-label={isDone ? 'Done' : 'Not done'}>
                           {isDone ? '✓' : ''}

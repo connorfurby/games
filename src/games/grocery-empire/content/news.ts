@@ -31,6 +31,24 @@ export interface NewsArticle {
   dek: string
   /** Short paragraphs */
   body: string[]
+  /** Section label above the headline (Release, Feature, Guide, Desk). */
+  kicker?: string
+  /** "In this edition" cards: one change each, optionally pointing at a wiki page. */
+  highlights?: { label: string; text: string; band?: NewsBand; wiki?: string }[]
+  /** Wiki pages to read next. */
+  wiki?: string[]
+  /** Header art. Defaults from the first band. */
+  art?: NewsArt
+  /** Who filed it (cast portrait). Defaults to Operations. */
+  by?: 'operations' | 'clerk' | 'cold' | 'lobbyist' | 'guardian'
+}
+
+export type NewsArt = 'counter' | 'corner' | 'cold' | 'fleet' | 'worlds' | 'desk'
+
+export function newsArt(a: NewsArticle): NewsArt {
+  if (a.art) return a.art
+  const b = a.bands[0]
+  return b === 'e01' ? 'counter' : b === 'e23' ? 'corner' : b === 'e46' ? 'fleet' : b === 'e712' ? 'worlds' : 'desk'
 }
 
 /** Newest first. Agents: prepend — never bury the latest bulletin. */
@@ -40,6 +58,17 @@ export const NEWS: NewsArticle[] = [
     bands: ['e01', 'e23', 'e46', 'e712'],
     date: '2026-11-15',
     version: '40.0',
+    kicker: 'Release',
+    art: 'corner',
+    wiki: ['choice-regulars', 'choice-flyer', 'choice-manifest', 'choice-charter'],
+    highlights: [
+      { label: 'Two regulars', text: 'A second shopper can wait while the first is unserved, each with their own patience.', band: 'e01', wiki: 'choice-regulars' },
+      { label: 'Flyer stance', text: 'Deep pulls Penny in, soft lets FreshWay spoil produce, mid keeps the peace.', band: 'e23', wiki: 'choice-flyer' },
+      { label: 'Manifest stance', text: 'Clean, exam-ready or fast — one filing, one stance.', band: 'e46', wiki: 'choice-manifest' },
+      { label: 'Climate guests', text: 'A guest bans your strongest facing until the shift turns.', band: 'e712', wiki: 'late-worlds-guests' },
+      { label: 'Charter fork', text: 'Standard, Boutique or Co-op sits on your Next Goal until you sign.', band: 'e712', wiki: 'choice-charter' },
+      { label: 'Accept rebuilds', text: 'Accept now rebuilds like Rebrand and keeps Empire, museum and Goodwill.', band: 'e46', wiki: 'walk-e6' },
+    ],
     headline: "What's new in 40.0 — every aisle asks you something",
     dek: 'Nine phases of receipts: two regulars, three stances, a harder Accept, and an aisle with no last page.',
     body: [
@@ -59,6 +88,13 @@ export const NEWS: NewsArticle[] = [
     bands: ['e01', 'e23', 'e46'],
     date: '2026-11-15',
     version: '4.0',
+    kicker: 'Release',
+    art: 'counter',
+    highlights: [
+      { label: 'Next Goal button', text: 'Free goals use a tomato button and sit on their own row.', band: 'e01' },
+      { label: 'Doctrine ladder', text: 'Strategy shows the whole ladder at once.', band: 'e23' },
+      { label: 'Upgrade Best', text: 'One tap sweeps the best value ranks; Buy Best does the same for memos.', band: 'e01', wiki: 'sys-build-up' },
+    ],
     headline: '4.0 — Departments that finish, goals that fit',
     dek: 'Next Goal free CTA. Strategy ladder. Build facings. Real PlayFrame rooms.',
     body: [
@@ -72,6 +108,13 @@ export const NEWS: NewsArticle[] = [
     bands: ['e01', 'e46', 'e712'],
     date: '2026-11-14',
     version: '3.0',
+    kicker: 'Release',
+    art: 'cold',
+    highlights: [
+      { label: 'One frame', text: 'Purpose, room, one primary verb and up to four secondaries on every page.', band: 'e01', wiki: 'start-controls' },
+      { label: 'Dock check-ins', text: 'Crates go into the aisle you choose.', band: 'e01' },
+      { label: 'Shifts matter', text: 'Close and Mid finally do something.', band: 'e01', wiki: 'sys-depth-eight' },
+    ],
     headline: 'Feel overhaul — the aisle shows up',
     dek: 'One frame. One verb. Choices you can see.',
     body: [
@@ -85,6 +128,8 @@ export const NEWS: NewsArticle[] = [
     bands: ['e01'],
     date: '2026-11-14',
     version: '2.0',
+    kicker: 'Feature',
+    by: 'clerk',
     headline: 'After Hours on the Floor',
     dek: 'One aisle. One verb. Yellow spends; tomato is free.',
     body: [
@@ -98,6 +143,9 @@ export const NEWS: NewsArticle[] = [
     bands: ['e01'],
     date: '2026-11-14',
     version: '2.0',
+    kicker: 'Guide',
+    by: 'clerk',
+    wiki: ['start-first-hour', 'walk-e0'],
     headline: 'Your first hour on the block',
     dek: 'Unpack → baskets → price → truck → rent.',
     body: [
@@ -111,6 +159,7 @@ export const NEWS: NewsArticle[] = [
     bands: ['meta'],
     date: '2026-11-14',
     version: '2.0',
+    kicker: 'Desk',
     headline: 'This bulletin board stays open',
     dek: 'A short article whenever the aisle changes for players.',
     body: [

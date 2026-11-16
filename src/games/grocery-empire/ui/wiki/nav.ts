@@ -55,3 +55,19 @@ export function pathToNav(rest: string, search: URLSearchParams): WikiNav {
     }
   }
 }
+
+export function slug(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+/** Play deep link: `?m=` opens a department, `?tour=` starts a Coach lesson (handled in GroceryEmpireApp). */
+export function playHref(opts: { menu?: string; tour?: string }) {
+  const p = new URLSearchParams()
+  if (opts.menu) p.set('m', opts.menu)
+  if (opts.tour) p.set('tour', opts.tour)
+  const q = p.toString()
+  return `/play/grocery-empire${q ? `?${q}` : ''}`
+}

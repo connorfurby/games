@@ -1,11 +1,11 @@
-import { useCallback, useMemo } from 'react'
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { MENUS, type MenuId } from '@/games/grocery-empire/content/menus'
+import { useCallback } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { MENUS } from '@/games/grocery-empire/content/menus'
 import { lessonMenu } from '@/games/grocery-empire/content/wiki/lessons'
 import type { TutorialDef } from '@/games/grocery-empire/content/tutorials'
 import { LinkButton } from '@/games/grocery-empire/ui/kit'
 import { WikiBrowser } from '@/games/grocery-empire/ui/wiki/WikiBrowser'
-import { navToPath, pathToNav, type WikiNav } from '@/games/grocery-empire/ui/wiki/nav'
+import { navToPath, pathToNav, playHref, type WikiNav } from '@/games/grocery-empire/ui/wiki/nav'
 import { loadGame } from '@/shared/save'
 import { useMeta } from './MetaContext'
 import { ShellFrame } from './ShellFrame'
@@ -21,22 +21,13 @@ function readSave(): { era: number; done: Record<string, boolean> } {
   return { era, done: s?.tutorials?.done ?? {} }
 }
 
-/** Play deep link: `?m=` opens a department, `?tour=` starts a Coach lesson (handled in GroceryEmpireApp). */
-export function playHref(opts: { menu?: MenuId; tour?: string }) {
-  const p = new URLSearchParams()
-  if (opts.menu) p.set('m', opts.menu)
-  if (opts.tour) p.set('tour', opts.tour)
-  const q = p.toString()
-  return `/play/grocery-empire${q ? `?${q}` : ''}`
-}
-
 export function GuidePage() {
   const { meta, updateSettings } = useMeta()
   const params = useParams()
   const [search] = useSearchParams()
-  const loc = useLocation()
   const navigate = useNavigate()
-  const save = useMemo(() => readSave(), [loc.key])
+  // Read on every navigation so a run played in another tab shows up.
+  const save = readSave()
   const nav = pathToNav(params['*'] ?? '', search)
 
   const go = useCallback(

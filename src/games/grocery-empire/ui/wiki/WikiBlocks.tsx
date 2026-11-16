@@ -1,17 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { WikiBlock } from '../../content/wiki/blocks'
 import { GLOSSARY, type GlossEntry } from '../../content/wiki/glossary'
 import { WIKI_BY_ID } from '../../content/wiki/articles'
 import { Icon } from '../icons/Icon'
 import { WikiFigure } from './figures'
-import type { WikiNav } from './nav'
-
-export function slug(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-}
+import { slug, type WikiNav } from './nav'
 
 /** Glossary words linked inline, longest first so "Shelf price" wins over "Shelf". */
 const TERMS: { re: RegExp; entry: GlossEntry }[] = GLOSSARY.flatMap((g) => {
@@ -57,15 +50,17 @@ function linkTerms(text: string, ctx: Ctx): ReactNode[] {
 
 const CALLOUT_ICON = { tip: 'help', warn: 'rivals', lore: 'memo', rule: 'doctrine' } as const
 
+function readChecks(key: string): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(`ge-wiki-check:${key}`) ?? '{}') as Record<string, boolean>
+  } catch {
+    return {}
+  }
+}
+
+/** Ticks persist per article + block on this device. The caller keys the list so a new article remounts it. */
 function useChecks(key: string) {
-  const [on, setOn] = useState<Record<string, boolean>>({})
-  useEffect(() => {
-    try {
-      setOn(JSON.parse(localStorage.getItem(`ge-wiki-check:${key}`) ?? '{}') as Record<string, boolean>)
-    } catch {
-      setOn({})
-    }
-  }, [key])
+  const [on, setOn] = useState<Record<string, boolean>>(() => readChecks(key))
   const toggle = (i: string) =>
     setOn((prev) => {
       const next = { ...prev, [i]: !prev[i] }
@@ -150,7 +145,7 @@ export function WikiBlocks({
               </ol>
             )
           case 'check':
-            return <Checklist key={i} items={b.items} storeKey={`${articleId}:${i}`} />
+            return <Checklist key={`${articleId}:${i}`} items={b.items} storeKey={`${articleId}:${i}`} />
           case 'list':
             return (
               <ul key={i} className="wk-list">
