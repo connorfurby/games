@@ -96,8 +96,8 @@
   }
   .gk-btn--primary:disabled,
   .gk-btn--primary.is-short {
-    --_bg: color-mix(in srgb, var(--ge-tag) 14%, transparent);
-    --_ink: color-mix(in srgb, var(--ge-tag) 62%, var(--ge-ink));
+    --_bg: color-mix(in srgb, var(--ge-tag) 6%, transparent);
+    --_ink: color-mix(in srgb, var(--ge-tag) 70%, var(--ge-ink));
     --_line: color-mix(in srgb, var(--ge-tag) 55%, transparent);
   }
   .gk-btn--primary:disabled .gk-btn__cost,
@@ -105,7 +105,7 @@
     background: color-mix(in srgb, var(--ge-tag) 20%, transparent);
   }
   .gk-btn--free:disabled {
-    --_bg: color-mix(in srgb, var(--ge-tomato, #ff5a43) 14%, transparent);
+    --_bg: color-mix(in srgb, var(--ge-tomato, #ff5a43) 7%, transparent);
     --_ink: color-mix(in srgb, var(--ge-tomato, #ff5a43) 55%, var(--ge-ink));
     --_line: color-mix(in srgb, var(--ge-tomato, #ff5a43) 55%, transparent);
   }

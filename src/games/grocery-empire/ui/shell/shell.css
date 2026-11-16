@@ -1218,4 +1218,51 @@
       padding-bottom: 0.75rem;
     }
   }
+
+  /* ── 1.0 chrome set: one focus ring, one minimum size ─────────────────── */
+  :where(.g2-icon-btn, .g2-hub, .g2-subtab, .g2-inbox-btn, .g2-alert, .g2-goal__do, .g2-goal__fork, .g2-tag, .g2-more__item, .g2-palette__row, .g2-scenebar__btn):focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 2px;
+  }
+  .g2-alert {
+    min-height: 32px;
+  }
+  .g2-hud__home {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+  }
+
+  /* Coach card sits on the far side of its highlight. */
+  .ge-coach.ge-coach--top {
+    place-items: start center;
+  }
+  .ge-coach--top .ge-coach__card {
+    margin-bottom: 0;
+    margin-top: 0.5rem;
+  }
+  .ge-coach__card {
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+  }
+
+  @media (max-width: 720px) {
+    /* Story line sits on the tab bar; the sticky primary verb and toasts step up above it. */
+    .g2-root:has(.g2-dialogue) .pf__primary {
+      bottom: 5.25rem;
+    }
+    .g2-root:has(.g2-dialogue) .g2-toasts {
+      bottom: calc(var(--g2-hubs-h, 64px) + env(safe-area-inset-bottom) + 11.5rem);
+    }
+    .ge-coach {
+      padding: 0.5rem;
+    }
+    .ge-coach__card {
+      padding: 0.75rem 0.85rem;
+    }
+    .ge-coach__card > p:not(.ge-coach__recovery) {
+      font-size: var(--t-sm);
+      margin: 0.2rem 0 0.35rem;
+    }
+  }
 }

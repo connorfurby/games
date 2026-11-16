@@ -117,6 +117,11 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
       }
     : null
 
+  // The card takes whichever side of the highlight has more room, so it never sits on
+  // the control it is pointing at.
+  const viewH = typeof window === 'undefined' ? 800 : window.innerHeight
+  const cardOnTop = !!hole && hole.top > viewH - (hole.top + hole.height)
+
   const showDoForMe = !!step.action
   const stuck = missingTarget && !hole
   const nextLabel =
@@ -128,7 +133,7 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
 
   return (
     <div
-      className={`ge-coach ${reducedMotion ? 'ge-coach--reduced' : ''}`.trim()}
+      className={`ge-coach${reducedMotion ? ' ge-coach--reduced' : ''}${cardOnTop ? ' ge-coach--top' : ''}`}
       aria-live="polite"
     >
       {/* Dim blocks stray clicks outside the spotlight hole so the tour feels intentional. */}

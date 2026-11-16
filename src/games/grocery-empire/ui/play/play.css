@@ -90,6 +90,11 @@
     }
   }
 
+  /* Sliders: a thumb you can hit. */
+  .ge-root input[type='range'].ge-range {
+    min-height: 32px;
+  }
+
   .pf__dept {
     margin: 0;
     font: 700 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
