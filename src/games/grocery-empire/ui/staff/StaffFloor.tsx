@@ -5,7 +5,9 @@ import { sumQty } from '../../sim/helpers'
 import type { Batch, StaffMember } from '../../sim/state'
 import { rate } from '../format'
 import { Badge, Hit, Person as RoomPerson, ROOM_W, Register, ShelfBay, Sign } from '../scenes/room'
-import { RoomHud, type RoomHudChip } from '../scenes/room/RoomHud'
+import { usePhone } from '../kit/hooks'
+import { RoomChips, RoomHud, type RoomHudChip } from '../scenes/room/RoomHud'
+import { BAND_TOP } from '../scenes/room/RoomScene'
 import '../scenes/room/room.css'
 
 /**
@@ -233,6 +235,7 @@ export function StaffFloor({
   const cap = Math.max(1, shelfCapacity)
   const perBay = Math.max(1, cap / Math.max(1, shownCats.length))
 
+  const phone = usePhone()
   const clerkSlots = STATION.clerk?.length ?? 4
   const cashierSlots = STATION.cashier?.length ?? 4
   const clerks = counts.clerk ?? 0
@@ -251,8 +254,16 @@ export function StaffFloor({
   ]
 
   return (
-    <figure className={`sf rm${motion ? ' is-live' : ''}${annexOn ? ' has-annex' : ''}`}>
-      <svg viewBox={`0 0 ${ROOM_W} ${height}`} role="img" aria-label="Staff on the store floor">
+    <figure className={`sf rm${phone ? ' rm--band' : ''}${motion ? ' is-live' : ''}${annexOn ? ' has-annex' : ''}`}>
+      {phone ? <RoomChips chips={chips} label="Staff numbers" /> : null}
+      <div className="rm-stage">
+      <svg
+        className="rm-svg"
+        viewBox={phone ? `0 ${BAND_TOP} ${ROOM_W} ${height - BAND_TOP}` : `0 0 ${ROOM_W} ${height}`}
+        role="img"
+        aria-label="Staff on the store floor"
+        style={phone ? { aspectRatio: `${ROOM_W} / ${height - BAND_TOP}` } : undefined}
+      >
         <defs>
           <linearGradient id="sf-sky" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#070b12" />
@@ -263,7 +274,7 @@ export function StaffFloor({
         <rect y={FLOOR_H - 40} width={ROOM_W} height="40" fill="#0c1014" />
         <rect y={FLOOR_H - 44} width={ROOM_W} height="6" fill="#1a1e24" />
 
-        <RoomHud chips={chips} chipW={annexOn ? 148 : 170} />
+        {phone ? null : <RoomHud chips={chips} chipW={annexOn ? 148 : 170} />}
 
         {/* Unload / clerks — tomato free station */}
         <g>
@@ -351,6 +362,7 @@ export function StaffFloor({
           <Annex people={annexPeople} litIds={lit} roster={roster} motion={motion} annexByRole={annexByRole} />
         ) : null}
       </svg>
+      </div>
       <figcaption>
         {roster.length === 0
           ? 'Empty payroll.'

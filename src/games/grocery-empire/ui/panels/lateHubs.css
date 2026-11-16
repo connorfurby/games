@@ -105,7 +105,9 @@
   .lh-callout__copy h3 {
     margin: 0;
     font-size: var(--t-md);
-    text-transform: capitalize;
+  }
+  .lh-callout__copy h3::first-letter {
+    text-transform: uppercase;
   }
   .lh-callout__copy p {
     margin: 0;

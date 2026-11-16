@@ -3,14 +3,14 @@ import { useId } from 'react'
 import { useGame } from '../../GameContext'
 import { usePhone } from '../../kit/hooks'
 import type { RoomHudChip } from './RoomHud'
-import { RoomHud } from './RoomHud'
+import { RoomChips, RoomHud } from './RoomHud'
 import './room.css'
 
 export const ROOM_W = 960
 export const ROOM_H = 300
 export const ROOM_GROUND = 248
 /** Height of the in-scene HUD row that the phone band crops away. */
-const BAND_TOP = 54
+export const BAND_TOP = 54
 
 /**
  * Dense illustrated department room (960×300). Always mounts a RoomHud.
@@ -87,17 +87,7 @@ export function RoomScene({
         } as CSSProperties
       }
     >
-      {mode !== 'wide' && chips.length ? (
-        <ul className="rm-chips" aria-label={`${label.split(',')[0]} numbers`}>
-          {chips.slice(0, 5).map((c, i) => (
-            <li key={`${c.label}-${i}`} className="rm-chips__chip">
-              <span className="rm-chips__label">{c.label}</span>
-              <span className="rm-chips__value">{c.value}</span>
-              {c.rate ? <span className={`rm-chips__rate${c.neg ? ' is-neg' : ''}`}>{c.rate}</span> : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {mode !== 'wide' ? <RoomChips chips={chips} label={`${label.split(',')[0]} numbers`} /> : null}
       <div className="rm-stage">
         <svg
           className="rm-svg"

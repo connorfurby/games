@@ -44,3 +44,19 @@ export function RoomHud({
     </g>
   )
 }
+
+/** The same numbers as real text, for phone rooms where in-scene chips would be unreadable. */
+export function RoomChips({ chips, label }: { chips: RoomHudChip[]; label: string }) {
+  if (!chips.length) return null
+  return (
+    <ul className="rm-chips" aria-label={label}>
+      {chips.slice(0, 5).map((c, i) => (
+        <li key={`${c.label}-${i}`} className="rm-chips__chip">
+          <span className="rm-chips__label">{c.label}</span>
+          <span className="rm-chips__value">{c.value}</span>
+          {c.rate ? <span className={`rm-chips__rate${c.neg ? ' is-neg' : ''}`}>{c.rate}</span> : null}
+        </li>
+      ))}
+    </ul>
+  )
+}

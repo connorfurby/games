@@ -700,7 +700,13 @@
   .gk-seg--wrap .gk-seg__item {
     min-width: 0;
     padding: 0 var(--s-2);
-    text-transform: capitalize;
+  }
+  /* Sentence case: lift the first letter only ("Night shift", not "Night Shift"). */
+  .gk-seg--wrap .gk-seg__label {
+    display: inline-block;
+  }
+  .gk-seg--wrap .gk-seg__label::first-letter {
+    text-transform: uppercase;
   }
   .gk-seg--wrap .gk-seg__label {
     min-width: 0;

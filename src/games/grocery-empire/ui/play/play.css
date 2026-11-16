@@ -89,6 +89,14 @@
     .pf__secondaries .pf-row__fact {
       max-width: 100%;
     }
+    /* Three verbs: the last one takes the full row instead of leaving a hole. */
+    .pf__secondaries .gk-btn:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+    .pf__secondaries .gk-btn:last-child:nth-child(odd) .pf-row__main {
+      flex-direction: row;
+      align-items: baseline;
+    }
   }
 
   /* Secondary verbs read as buttons: raised, bordered, one row height everywhere. */
@@ -186,14 +194,19 @@
     display: inline-flex;
     align-items: center;
     gap: var(--s-1);
-    min-height: 22px;
-    padding: 0 var(--s-2);
+    /* A chip hugs its text; it never stretches into a full-width outlined bar. */
+    align-self: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 24px;
+    padding: 2px var(--s-2);
     border-radius: var(--r-pill);
     border: 1px solid var(--ge-line);
     background: var(--ge-sunken);
     color: var(--ge-ink-muted);
-    font: 650 var(--t-2xs) / 1 var(--ge-font-ui, system-ui, sans-serif);
-    letter-spacing: 0.04em;
+    font: 600 var(--t-xs) / 1.25 var(--ge-font-ui, system-ui, sans-serif);
+  }
+  .pf-chip::first-letter {
     text-transform: uppercase;
   }
 
