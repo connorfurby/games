@@ -1265,4 +1265,72 @@
       margin: 0.2rem 0 0.35rem;
     }
   }
+
+  /* ── Tablet and small laptop (721–1100): goal takes its own row ───────── */
+  @media (min-width: 720.02px) and (max-width: 1100px) {
+    .g2-hud {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        'brand money controls'
+        'goal goal goal';
+      row-gap: var(--s-2);
+    }
+    .g2-hud .g2-goal {
+      grid-area: goal;
+    }
+    .g2-hud__controls .g2-alert {
+      display: none;
+    }
+  }
+  @media (min-width: 720.02px) and (max-width: 900px) {
+    .g2-stat__full {
+      display: none;
+    }
+    .g2-stat__short {
+      display: inline;
+    }
+  }
+
+  /* ── Landscape phone (short screens): one slim HUD row, more room for the page ── */
+  @media (min-width: 720.02px) and (max-height: 500px) {
+    .g2-hud {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: 'money goal controls';
+      padding-block: var(--s-1);
+    }
+    .g2-hud__brand,
+    .g2-hud .g2-goal__hint,
+    .g2-hud .g2-goal__meter,
+    .g2-stat__label,
+    .g2-stat__full,
+    .g2-hubhead__title,
+    .ge-devbar__note {
+      display: none;
+    }
+    .g2-stat__short {
+      display: inline;
+    }
+    .g2-stat__value {
+      font-size: var(--t-lg);
+    }
+    .g2-hud .g2-goal {
+      grid-area: goal;
+      padding-block: 0.3rem;
+    }
+    .g2-root .g2-main {
+      padding-top: 0.4rem;
+      padding-bottom: 0.5rem;
+    }
+    /* The verb stays in reach while the room scrolls under it. */
+    .pf__tray {
+      display: contents;
+    }
+    .pf__primary {
+      position: sticky;
+      bottom: 0;
+      z-index: var(--z-sticky, 10);
+      padding-block: var(--s-2);
+      background: linear-gradient(to top, var(--ge-bg2, #101a18) 70%, transparent);
+    }
+  }
 }
