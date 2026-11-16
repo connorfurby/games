@@ -1,9 +1,8 @@
-import { ENDING_BEATS } from '../../content/lateEras'
-import { emptyHorizon } from '../../content/horizon'
+import { ENDING_BEATS, HUNGRY_MUTATORS } from '../../content/lateEras'
 import { TUTORIALS } from '../../content/tutorials'
 import { upgradeEffect } from '../../content/upgrades'
 import { ENDINGS } from '../balance'
-import { emptyPockets, syncFleetBiomass } from '../state'
+import { replaceStateInPlace, freshRunKeepingMeta, canCarry, carryName, type RebrandCarry } from './prestige'
 import { log } from '../helpers'
 import type { GameState } from '../state'
 
@@ -31,7 +30,13 @@ export function mutatorPreviewMul(s: GameState): number {
   return 1 + upgradeEffect(s, 'mutator-preview') * 0.2
 }
 
-export function canAcceptEnding(s: GameState): string | null {
+export function canAcceptEnding(s: GameState, carry: RebrandCarry = null): string | null {
+  const carryWhy = canCarry(s, carry)
+  if (carryWhy) return carryWhy
+  return canAcceptEndingBase(s)
+}
+
+function canAcceptEndingBase(s: GameState): string | null {
   if (s.endingChoice === 'continue') return 'Already continued past the ration.'
   if (s.endingChoice) return 'Ending already chosen.'
   if (!endingOpen(s) && !(s.memos['universal-ration'] > 0)) {
@@ -102,47 +107,41 @@ export function softResetTeaching(s: GameState) {
   s.dialogueQueue = s.dialogueQueue.filter((id) => !lines.has(id))
 }
 
-/** Accept: prestige to hungry universe; UI bumps groceryUniverses via pendingAccept. */
-export function acceptEnding(s: GameState) {
-  narrate(s, ENDING_BEATS.accept)
-  s.endingChoice = 'accept'
-  s.pendingAccept = true
+/**
+ * Accept: rebuild the run like Rebrand (same keep-list — see `freshRunKeepingMeta`), then open the
+ * Hungry laws board. Store, staff, depth board, upgrades, cash and fleet all start over; Empire,
+ * museum, Goodwill, tipSharpness / appetite carry. UI bumps groceryUniverses via pendingAccept.
+ */
+export function acceptEnding(s: GameState, carry: RebrandCarry = null) {
   s.prestigeCarry.universeIndex += 1
   s.prestigeCarry.appetite += ENDINGS.acceptAppetite
   s.prestigeCarry.tipSharpness += ENDINGS.acceptTip
   // Clear prior laws — player re-picks 0–2 on the Hungry laws board (default none).
   s.prestigeCarry.mutators = []
-  // Soft reset of run currencies — appetite carries; cosmetics/meta outside
-  s.cash = 20
-  s.baskets = 0
-  s.fleet.pockets = emptyPockets()
-  syncFleetBiomass(s.fleet)
-  s.fleet.bargeList = []
-  s.fleet.barges = 0
-  s.fleet.launches = 0
-  s.fleet.launched = false
-  s.fleet.warOn = false
-  if (s.depth) {
-    s.depth.driftWar = { step: 0 }
-    s.depth.rationWeekUntil = 0
-    if (s.depth.stewardId != null) {
-      const m = s.staff.find((x) => x.id === s.depth.stewardId)
-      if (m) s.prestigeCarry.stewardName = m.name
-      s.depth.stewardKept = false
-    }
+  if (s.depth?.stewardId != null) {
+    const m = s.staff.find((x) => x.id === s.depth.stewardId)
+    if (m) s.prestigeCarry.stewardName = m.name
   }
   void mutatorPreviewMul(s)
-  s.cold.plants = 0
-  s.cold.plantList = []
-  s.cold.tanks = 0
-  s.cold.yieldLeft = s.cold.yieldMax
-  s.cold.momentum = 1
-  s.cold.browned = false
-  s.era = 0
-  s.horizon = emptyHorizon()
+  const carried = carry && !canCarry(s, carry) ? carry : null
+  const { fresh, gain } = freshRunKeepingMeta(s, s.createdAt, carried)
+  replaceStateInPlace(s, fresh)
+  narrate(s, ENDING_BEATS.accept)
+  s.endingChoice = 'accept'
+  s.pendingAccept = true
   softResetTeaching(s)
   s.chapterQueue.push(0)
-  log(s, 'Accept filed. Hungry laws board open — pick 0–2, or Confirm with none.', 'era')
+  log(
+    s,
+    `Accept filed — rebuilt like a Rebrand (+${gain} Goodwill, ${s.rebrand.goodwill} total). Hungry laws board open — pick 0–2, or Confirm with none.`,
+    'era',
+  )
+  if (carried) log(s, `Carried across: ${carryName(carried)}.`, 'good')
+}
+
+/** Hungry-law options an Accept would put on the board (the "law each Accept would turn on"). */
+export function acceptLawOptions(): readonly { id: string; name: string; blurb: string }[] {
+  return HUNGRY_MUTATORS
 }
 
 /** Reject: ordered disassembly; no prestige; mythic gallery path. */

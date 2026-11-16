@@ -5,8 +5,10 @@ import {
   LANE_ROUTE_BY_ID,
   isBargeClass,
   isLaneRouteId,
+  isManifestStance,
   isOrbitShiftRole,
   type BargeClass,
+  type ManifestStance,
 } from '../../content/depth'
 import { CHARTER_AXES, CHARTER_OPENER } from '../../content/lateEras'
 import { upgradeEffect } from '../../content/upgrades'
@@ -15,6 +17,7 @@ import { rebootFee, starLoyaltyResist, up } from '../formulas'
 import { clamp, log, round2, setEra, unlockMenu } from '../helpers'
 import { chance } from '../rng'
 import { bargeFreightPerSec } from './lateHubs'
+import { ledgerDayLength } from './rivals'
 import {
   syncFleetBiomass,
   type BargeClassId,
@@ -88,6 +91,25 @@ export function orbitMidCovered(s: GameState): boolean {
   })
 }
 
+/** Max simultaneous Pocket Ops trips: base 1 + the `pocket-concurrent` (Second Berth) upgrade. */
+export function pocketConcurrency(s: GameState): number {
+  return DEPTH.pocketTripConcurrent + Math.floor(Math.min(2, upgradeEffect(s, 'pocket-concurrent')))
+}
+
+/** Distinct rations that open (uncleared) pockets are asking for right now. */
+export function openPocketRations(s: GameState): string[] {
+  const out: string[] = []
+  for (const p of s.fleet.pockets ?? []) {
+    if (p.left > 0 && !out.includes(p.ration)) out.push(p.ration)
+  }
+  return out
+}
+
+/** SAVE 33: two open pockets want different rations but only one hauler may sail. */
+export function pocketsOutrunHauler(s: GameState): boolean {
+  return openPocketRations(s).length >= 2 && pocketConcurrency(s) <= 1
+}
+
 export function canDispatchHauler(
   s: GameState,
   opts: { bargeId?: string; pocketId: string; class?: string; loadRation?: string },
@@ -112,9 +134,11 @@ export function canDispatchHauler(
   if ((barge.restUntil ?? 0) > s.time) {
     return `Hauler resting ${Math.ceil((barge.restUntil ?? 0) - s.time)}s (berth turnaround).`
   }
-  const concurrent =
-    DEPTH.pocketTripConcurrent + Math.floor(Math.min(2, upgradeEffect(s, 'pocket-concurrent')))
+  const concurrent = pocketConcurrency(s)
   if (activeTrips(s).length >= concurrent) {
+    if (concurrent <= 1 && openPocketRations(s).length >= 2) {
+      return 'A Hauler is already en route — one hauler feeds one ration at a time. Second Berth (Supply) sends two.'
+    }
     return 'A Hauler is already en route — wait for ETA.'
   }
   return null
@@ -349,52 +373,178 @@ export function winBackFranchise(s: GameState, franchiseId: string) {
   log(s, `${fr.name} won back. Loyalty ${Math.round(fr.loyalty * 100)}%.`, 'good')
 }
 
-export function canSetManifest(s: GameState, laneId: string, mix: string): string | null {
+/** Preferred cargo mix for a lane's route (null if the route is unknown). */
+export function lanePreferMix(lane: LaneEntry | undefined): string | null {
+  if (!lane) return null
+  return LANE_ROUTE_BY_ID[lane.route]?.prefer ?? null
+}
+
+/** Exam credits tick on `lastCycleAt` (dispatch cycle). */
+export function examCycleLeft(s: GameState): number {
+  const last = s.depth?.dispatch?.lastCycleAt ?? 0
+  if (last <= 0) return 0
+  return Math.max(0, DEPTH.dispatchCycleSec - (s.time - last))
+}
+
+/** Clean credits tick on their own clock (`lastCleanAt`). */
+export function cleanCycleLeft(s: GameState): number {
+  const last = s.depth?.dispatch?.lastCleanAt ?? 0
+  if (last <= 0) return 0
+  return Math.max(0, DEPTH.dispatchCycleSec - (s.time - last))
+}
+
+export function examCycleReady(s: GameState): boolean {
+  return examCycleLeft(s) <= 0
+}
+
+export function cleanCycleReady(s: GameState): boolean {
+  return cleanCycleLeft(s) <= 0
+}
+
+/** Stance of a lane's current filing (null = never filed matched). */
+export function laneStance(s: GameState, laneId: string): ManifestStance | null {
+  return s.depth?.dispatch?.laneStances?.[laneId] ?? null
+}
+
+/** A lane MegaMart can snipe: cargo unmatched, or filed fast (spent, left open). */
+export function laneLeftOpen(s: GameState, lane: LaneEntry): boolean {
+  const prefer = lanePreferMix(lane)
+  const mix = s.depth?.manifests?.[lane.id]
+  if (!prefer || mix !== prefer) return true
+  return laneStance(s, lane.id) === 'fast'
+}
+
+const STANCE_LABEL: Record<ManifestStance, string> = {
+  clean: 'clean',
+  exam: 'exam-ready',
+  fast: 'fast',
+}
+
+function waitLabel(sec: number): string {
+  return sec >= 90 ? `${Math.ceil(sec / 60)} min` : `${Math.ceil(sec)}s`
+}
+
+export function canSetManifest(
+  s: GameState,
+  laneId: string,
+  mix: string,
+  stance: ManifestStance = 'exam',
+): string | null {
   ensureLaneList(s)
   if (s.era < 4 && s.fleet.lanes <= 0) return 'Logistics locked.'
   const lane = s.fleet.laneList.find((l) => l.id === laneId)
   if (!lane) return 'Unknown lane.'
   const known = ['import', 'frozen', 'household', 'bakery', 'cans', 'produce', 'dairy', 'meat', 'deli', 'ration', 'privateLabel']
   if (!known.includes(mix)) return 'Unknown cargo mix.'
+  if (!isManifestStance(stance)) return 'Unknown manifest stance.'
   if (s.time - (s.fleet.lastManifestAt ?? -1e9) < DEPTH.manifestCooldownSec) {
     return 'Manifest still cycling.'
+  }
+  const prefer = lanePreferMix(lane)
+  if (stance !== 'exam' && mix !== prefer) {
+    return `A ${STANCE_LABEL[stance]} manifest needs the matched cargo (${prefer ?? 'route mix'}).`
+  }
+  if (stance === 'clean' && !cleanCycleReady(s)) {
+    return `Clean credit cooling — ${waitLabel(cleanCycleLeft(s))} to the next clean filing.`
+  }
+  if (stance === 'fast' && s.fuel < DEPTH.fastManifestFuel) {
+    return `Fast run burns ${DEPTH.fastManifestFuel} fuel — top up first.`
   }
   return null
 }
 
-export function setManifest(s: GameState, laneId: string, mix: string) {
+/** Stance filing files the lane's matched cargo (what the Dispatch Board's three choices use). */
+export function canSetManifestStance(s: GameState, laneId: string, stance: string): string | null {
+  ensureLaneList(s)
+  if (!isManifestStance(stance)) return 'Unknown manifest stance.'
+  const lane = s.fleet.laneList.find((l) => l.id === laneId)
+  if (!lane) return s.era < 4 && s.fleet.lanes <= 0 ? 'Logistics locked.' : 'Unknown lane.'
+  const prefer = lanePreferMix(lane)
+  if (!prefer) return 'Unknown route.'
+  return canSetManifest(s, laneId, prefer, stance)
+}
+
+export function setManifestStance(s: GameState, laneId: string, stance: ManifestStance) {
+  const lane = s.fleet.laneList.find((l) => l.id === laneId)
+  const prefer = lanePreferMix(lane)
+  if (!prefer) return
+  setManifest(s, laneId, prefer, stance)
+}
+
+export function setManifest(s: GameState, laneId: string, mix: string, stance: ManifestStance = 'exam') {
   ensureLaneList(s)
   if (!s.depth.manifests) s.depth.manifests = {}
   if (!s.depth.dispatch) s.depth.dispatch = emptyDispatchSafe(s)
+  const d = s.depth.dispatch
+  if (!d.laneStances) d.laneStances = {}
   s.depth.manifests[laneId] = mix as import('../../content/categories').CategoryId
   s.fleet.lastManifestAt = s.time
   s.depth.manifestsRun = (s.depth.manifestsRun ?? 0) + 1
   const lane = s.fleet.laneList.find((l) => l.id === laneId)
-  const prefer = lane ? LANE_ROUTE_BY_ID[lane.route]?.prefer : null
+  const prefer = lane ? lanePreferMix(lane) : null
   const matched = prefer === mix
-  const d = s.depth.dispatch
-  if (matched) {
+  const laneName = lane ? (LANE_ROUTE_BY_ID[lane.route]?.name ?? lane.route) : laneId
+  if (!matched) {
+    delete d.laneStances[laneId]
+    d.examLaneId = null
+    d.examMix = null
+    d.examUntil = 0
+    log(s, `Manifest set: ${mix} on ${lane?.route ?? laneId} (mismatch — dry pay).`, 'info')
+    return
+  }
+  // One filing, one stance. Re-filing a lane drops any exam hold it was holding.
+  d.laneStances[laneId] = stance
+  if (d.examLaneId === laneId && stance !== 'exam') {
+    d.examLaneId = null
+    d.examMix = null
+    d.examUntil = 0
+  }
+  if (stance === 'exam') {
     const hold = DEPTH.examHoldSec * (1 - Math.min(0.35, upgradeEffect(s, 'exam-hold-pad')))
     d.examLaneId = laneId
     d.examMix = mix
     d.examUntil = s.time + Math.max(30, hold)
     log(
       s,
-      `Exam hold: swear ${mix} on ${LANE_ROUTE_BY_ID[lane!.route]?.name} within ${Math.ceil(hold / 60)}m.`,
+      `Exam-ready: swear ${mix} on ${laneName} within ${Math.ceil(hold / 60)}m (counts as an exam, not a clean).`,
       'info',
     )
-  } else {
-    d.examLaneId = null
-    d.examMix = null
-    d.examUntil = 0
-    log(s, `Manifest set: ${mix} on ${lane?.route ?? laneId} (mismatch — dry pay).`, 'info')
+    return
   }
+  if (stance === 'clean') {
+    d.cleanManifests = (d.cleanManifests ?? 0) + 1
+    d.lastCleanAt = s.time
+    log(
+      s,
+      `Clean manifest filed on ${laneName}: ${d.cleanManifests}/${DEPTH.cleanManifestsNeed} (no exam window).`,
+      'good',
+    )
+    return
+  }
+  // fast
+  const cap = Math.max(1, LOGISTICS.fuelCapBase)
+  const burst = Math.round(
+    LOGISTICS.matchedLaneCashPerSec * DEPTH.fastManifestSec * (0.5 + Math.min(1, s.fuel / cap)),
+  )
+  s.cash = round2(s.cash + burst)
+  s.fuel = Math.max(0, s.fuel - DEPTH.fastManifestFuel)
+  if (lane) lane.fuel = Math.max(0, lane.fuel - DEPTH.fastManifestFuel)
+  s.fleet.lastManifestAt = s.time - DEPTH.manifestCooldownSec * (1 - DEPTH.fastManifestCooldownFrac)
+  d.fastFiled = (d.fastFiled ?? 0) + 1
+  log(
+    s,
+    `Fast run on ${laneName}: +${cashLabel(burst)}, no credit — the lane is left open to MegaMart.`,
+    'warn',
+  )
 }
 
 function emptyDispatchSafe(s: GameState) {
   return {
     cleanManifests: s.depth?.dispatch?.cleanManifests ?? 0,
     lastCycleAt: s.depth?.dispatch?.lastCycleAt ?? 0,
+    lastCleanAt: s.depth?.dispatch?.lastCleanAt ?? 0,
+    laneStances: {} as Record<string, ManifestStance>,
+    fastFiled: s.depth?.dispatch?.fastFiled ?? 0,
     examLaneId: null as string | null,
     examMix: null as string | null,
     examUntil: 0,
@@ -416,25 +566,24 @@ export function tickExamHold(s: GameState) {
 
 export function canSwearExam(s: GameState): string | null {
   const d = s.depth?.dispatch
-  if (!d?.examLaneId || !d.examMix) return 'No exam hold on the board.'
+  if (!d?.examLaneId || !d.examMix) return 'No exam hold on the board — file a lane exam-ready first.'
   if (s.time > d.examUntil) return 'Exam hold expired.'
-  const last = d.lastCycleAt ?? 0
-  if (last > 0 && s.time - last < DEPTH.dispatchCycleSec) {
-    return 'Dispatch cycle still cooling.'
+  if (!examCycleReady(s)) {
+    return `Dispatch cycle still cooling — ${waitLabel(examCycleLeft(s))}.`
   }
   return null
 }
 
+/** SAVE 33: an exam is an exam — it never also counts as a clean manifest. */
 export function swearExam(s: GameState) {
   const why = canSwearExam(s)
   if (why) return
   const d = s.depth.dispatch
-  d.cleanManifests = (d.cleanManifests ?? 0) + 1
   d.examsHeld = (d.examsHeld ?? 0) + 1
   d.lastCycleAt = s.time
   log(
     s,
-    `Exam sworn #${d.examsHeld}: clean manifest ${d.cleanManifests}/${DEPTH.cleanManifestsNeed}.`,
+    `Exam sworn #${d.examsHeld}/${DEPTH.examHoldNeed} (cleans stay ${d.cleanManifests}/${DEPTH.cleanManifestsNeed}).`,
     'good',
   )
   d.examLaneId = null
@@ -718,10 +867,6 @@ export function era6GateReady(s: GameState): boolean {
   )
 }
 
-function ledgerDayLength(s: GameState): number {
-  return DEPTH.shiftDaySec * (1 - Math.min(0.35, upgradeEffect(s, 'ledger-stamp-pad')))
-}
-
 export function canStampLedger(s: GameState): string | null {
   if (s.era < 6) return 'Ration ledger opens in Era 6.'
   if (!starsFrozenNow(s)) return 'Stars are not frozen — wait for ration week.'
@@ -836,11 +981,8 @@ export function tickLogistics(s: GameState, dt: number) {
   }
 
   // MegaMart pressure: drifting franchises, or unassigned / mismatched manifests.
-  const unassignedLanes = s.fleet.laneList.filter((lane) => {
-    const prefer = LANE_ROUTE_BY_ID[lane.route]?.prefer
-    const mix = s.depth?.manifests?.[lane.id]
-    return !prefer || mix !== prefer
-  }).length
+  // SAVE 33: a lane filed 'fast' counts as left open — MegaMart snipes the lane you spent.
+  const unassignedLanes = s.fleet.laneList.filter((lane) => laneLeftOpen(s, lane)).length
   if (s.era >= 4 && (s.fleet.franchiseList.some((f) => f.loyalty < 0.5 && !f.defected) || unassignedLanes > 0)) {
     if (!s.depth.megaMartTarget && s.time - (s.depth.megaMartUntil || 0) > DEPTH.megaMartGapSec) {
       const target =
@@ -870,9 +1012,7 @@ export function tickLogistics(s: GameState, dt: number) {
     // Unassigned lanes go dry when MegaMart lands the snipe.
     if (unassignedLanes > 0) {
       for (const lane of s.fleet.laneList) {
-        const prefer = LANE_ROUTE_BY_ID[lane.route]?.prefer
-        const mix = s.depth?.manifests?.[lane.id]
-        if (!prefer || mix !== prefer) lane.fuel = 0
+        if (laneLeftOpen(s, lane)) lane.fuel = 0
       }
       log(s, 'MegaMart sniped unassigned lanes — fuel drained until you rematch cargo.', 'warn')
     }

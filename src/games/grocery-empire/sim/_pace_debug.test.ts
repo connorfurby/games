@@ -1,25 +1,21 @@
 import { describe, it } from 'vitest'
 import { runPacing } from './bots'
 
-/** Quarantine: opt-in with PACE_DEBUG=1. Not part of default CI. */
-const ON = !!(globalThis as { process?: { env?: Record<string, string> } }).process?.env?.PACE_DEBUG
+const PACE_DEBUG = !!(globalThis as { process?: { env?: Record<string, string> } }).process?.env
+  ?.PACE_DEBUG
 
-describe.runIf(ON)('_pace_debug', () => {
-  it('print era clocks', () => {
-    for (const seed of [1, 42]) {
-      const r = runPacing(seed, 5 * 3600)
-      // eslint-disable-next-line no-console
-      console.log(
-        JSON.stringify({
-          seed,
-          era1_s: r.eraAt[1],
-          era1_min: r.eraAt[1] != null ? +(r.eraAt[1]! / 60).toFixed(2) : null,
-          era2_s: r.eraAt[2],
-          era2_h: r.eraAt[2] != null ? +(r.eraAt[2]! / 3600).toFixed(3) : null,
-          slips: r.final.depth?.layawaySlips,
-          dock: r.final.depth?.dockCheckIns,
-        }),
-      )
-    }
-  }, 420_000)
+/** Opt-in landings dump — run with: PACE_DEBUG=1 npx vitest run src/games/grocery-empire/sim/_pace_debug.test.ts */
+describe.runIf(PACE_DEBUG)('pace debug', () => {
+  it('prints seed-1 Era 1–6 landings', () => {
+    const H = 3600
+    const M = 60
+    const r = runPacing(1, 28 * H)
+    const fmt = (s: number | undefined) =>
+      s == null ? '—' : s < H ? `${(s / M).toFixed(1)} min` : `${(s / H).toFixed(2)} h`
+    // eslint-disable-next-line no-console
+    console.log(
+      'LANDINGS',
+      Object.fromEntries([1, 2, 3, 4, 5, 6].map((e) => [e, fmt(r.eraAt[e])])),
+    )
+  }, 300_000)
 })

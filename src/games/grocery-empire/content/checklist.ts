@@ -523,6 +523,12 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
       (s.depth?.practice?.planogram != null && s.depth.practice.planogram.left === 0),
   },
   {
+    id: 'e7-climate-guest',
+    era: 7,
+    label: 'Serve a climate guest (they ban a facing for the shift)',
+    test: (s) => (s.horizon?.climateServed ?? 0) >= 1 || s.era >= 8,
+  },
+  {
     id: 'e7-puzzle-gate',
     era: 7,
     label: 'Clear the planogram gate (practice then 0.72 / 0.85)',
@@ -573,6 +579,12 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     era: 9,
     label: 'Staff a Season Hand or grower',
     test: (s) => s.staff.some((m) => m.role === 'seasonHand' || m.role === 'grower'),
+  },
+  {
+    id: 'e9-season-chore',
+    era: 9,
+    label: 'Do a season chore (it locks the bed until the turn)',
+    test: (s) => !!s.horizon?.seasonChore || (s.horizon?.haulsDone ?? 0) >= 1 || s.era >= 10,
   },
   {
     id: 'e9-puzzle-gate',
@@ -626,6 +638,12 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
     },
   },
   {
+    id: 'e11-amend',
+    era: 11,
+    label: 'Optional: amend one grudge at a hearing',
+    test: (s) => (s.horizon?.amendedClauses?.length ?? 0) >= 1 || s.era >= 12,
+  },
+  {
     id: 'e11-sign',
     era: 11,
     label: 'Sign the charter fork',
@@ -653,5 +671,11 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
       s.endingChoice === 'accept' ||
       s.endingChoice === 'reject' ||
       (s.horizon?.listScore ?? 0) >= 0.85,
+  },
+  {
+    id: 'e12-endless-edit',
+    era: 12,
+    label: 'After Accept: let the standing order mutate once',
+    test: (s) => (s.horizon?.listMutations ?? 0) >= 1,
   },
 ]

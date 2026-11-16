@@ -2,47 +2,34 @@
 
 Use this as the “what’s left” list for the next agent. Check items off here when done, and move finished work into [10-changelog-chat.md](10-changelog-chat.md).
 
-## Pacing / balance hygiene
+## After 40.0 (still open)
 
-- [ ] Re-measure Era 2 after `openDaysNeedSideYard: 4` on seeds 1 **and** 42; refresh [07-pacing.md](07-pacing.md) if ~2.65 h moved.
-- [ ] Spot-check `LONG=1` and `LONG_HORIZON=1` still green after any DEPTH/HORIZON tweak (they are slow — run before merging big balance PRs).
-- [ ] Human multi-hour playtest pass (called out historically in progress notes) — bot ≠ feel.
-- [ ] Watch seed flakiness near CI floors (8 s misses are real); prefer small loop pads over `>=` softens.
-
-## Systems depth (shipped but can go richer)
-
-- [ ] Regulars: expand cast toward ~40 by Era 3; world-climate regulars (Era 7) if thin.
+- [ ] Human multi-hour playtest pass — bot ≠ feel. Especially charter Boutique/Co-op, Accept rebuild, two regulars, flyer deep/soft.
+- [ ] Watch seed flakiness near CI floors (Era 12 landed ~40.10 h — only ~6 min over the floor). Prefer seating/gap pads over softens.
+- [ ] Museum relic drip for 40.0 verbs (keep 25/wing; Oddities may stay 26).
+- [ ] Full legacy CSS deletion pass (continued cut of unused `ge-*` / `g2-*` in grocery.css / leftover g2.css after shell move).
+- [ ] Bundle size warning on build (>500 kB) — pre-existing; code-split only if asked.
+- [ ] Confirm `VALUE.storefront` indices still match `builds.storefront` tiers after era 5–6 facing slots.
 - [ ] Shift Board: float slot from Shift Lead; Mid/Close gates beyond Open days where design intended.
 - [ ] Flagship planogram UI polish vs Worlds puzzle chrome parity.
-- [ ] Invoice Book: stronger early-pay vs float decisions if players ignore Suppliers.
-- [ ] Flyer Desk: discount bands / promises more than aisle picks if it still feels like one button.
-- [ ] Block events: ensure Land UI + bot reactions stay legible.
-- [ ] Hearing Docket: session UX + Minutes Clerk amend clarity.
-- [ ] Pocket Ops: concurrent trip upgrades as verb nodes (upgradeEffect), not silent buffs.
+- [ ] Regulars: three-at-once only if two-at-once feels thin in playtest.
 
-## Content / UX
+## Done in 40.0 (do not re-open without cause)
 
-- [ ] Ensure every new gate has a Next-goal with a bot `action` (audit `goals.ts` after edits).
-- [ ] Delete or quarantine debug tests (`_pace_debug`, `pace-measure`) if they pollute `npm test`.
-- [ ] Museum relic drip for new systems (keep 25/wing).
-- [x] Guide spoilers for stretch systems — keep short. (coach stretch tours + density pass; guide stays a recap)
-- [x] 390 px pass on stretch sheets (facing, shifts, flyers, cooler, dispatch, pockets, hearing). Re-check any sheet added later.
-- [x] Phase 0 shell UI: hub headers, invoice Sheet, HelpCard trim, dead bands, Empire rank/doctrine. Remeasure still open above.
-- [x] Density lock-in: Floor HubStage + tomato free verbs; HelpCards gone; night case tokens (2026-11-14).
-- [x] Marketing / Suppliers / Build / Cold card stacks cut (2026-11-14 density lock-in).
-- [x] Staff hire board → sheet (2026-11-14 customer-ready).
-- [x] Staff / Cold / Dock night punch (2026-11-14). Fleet harbor still open if graphics stay thin.
-- [x] Player news desk + GAME_VERSION (always update `content/news.ts` on visible ships).
-- [x] Feel overhaul Waves 0–7 day pass: cascade, PlayFrame trays, phone Money, decisions + plant power, motion, docs (SAVE 29).
-- [ ] Full legacy CSS deletion pass (continued cut of unused `ge-*` / `g2-*` rules).
-- [ ] Remeasure default pacing after SAVE 28 decisions (seeds 1 and 42).
-
-## Tech debt
-
-- [ ] `commands.ts` / `DepthState` size — split carefully if navigate cost hurts; keep one upgrade-effect path.
-- [ ] Migrate.ts growth — when adding fields, prefer helpers; never skip copy.
-- [ ] Bundle size warning on build (>500 kB) — pre-existing; code-split only if asked.
-- [ ] Confirm `VALUE.storefront` indices still match `builds.storefront` tiers after any build-track edit.
+- [x] Bots/horizon module split, tipSharpness, migrateSlice, LATE_MEMOS cleanup (Phase 0).
+- [x] Verb tray on every department; phone Hubs badges; FailReason; empty states (Phase 1).
+- [x] Palette, human undo, wholesale qty, SaveSlots, alert notifications, cross-links, sweep clause (Phase 2).
+- [x] Two regulars, float vs hire, facing want (SAVE 31).
+- [x] Flyer vs Penny/FreshWay, blast/tunnel suppress, all dept policies (SAVE 32).
+- [x] Manifest stance, two pockets chip, era 5–6 facings, Accept≈Rebrand (SAVE 33).
+- [x] Climate guest ban, stop personality, season bed lock (SAVE 34) + LONG_HORIZON green.
+- [x] Posted habit, charter fork on goal, clause hearing, rehearsal can miss (SAVE 35) · Era 12 ~40.10 h.
+- [x] Endless ban, Rebrand carry, museum sockets, PrestigeKeepSheet (SAVE 36).
+- [x] Guests, verb pads, projects, ration-week skim, News 40.0 (Phase 9).
+- [x] `@layer shell` chrome, scene punch, motion beats, cosmetics wired (Phase 10).
+- [x] Shelf glance, news bands, Awards on bar, Tools demoted duplicates (Phase 11).
+- [x] Pace debug already `describe.runIf(PACE_DEBUG)`.
+- [x] Guide Decisions topic + spoiler lock.
 
 ## Explicitly out of scope (unless user asks)
 
@@ -52,14 +39,15 @@ Use this as the “what’s left” list for the next agent. Check items off her
 - Multiplying all costs by a constant “to add length”
 - Lowering pacing CI floors to pass red tests
 - Editing Cursor `.cursor/plans/*` as living docs (update **this pack** instead)
+- Era 13 / twelfth aisle / resizing museum wings
 
 ## If the user says “keep expanding”
 
-**Authoritative megaplan:** [12-expansion-megaplan.md](12-expansion-megaplan.md) (lengthen toward 40–50h, one new hard gate per era, UI in every phase).
+**Live generation:** Grocery Empire **40.0** (Phases 0–12). The old [12-expansion-megaplan.md](12-expansion-megaplan.md) is **done** (SAVE 26 era gates) and is not the next work.
 
-Preferred order inside each phase:
+Preferred order for a follow-up:
 
-1. Validate pacing still inside windows after your last change.
-2. Deepen the **thinnest loop** that the bot still checkbox-skimms (measure with a debug print of gate progress).
-3. Add one new verb + hard gate + bot action + goal + pack update.
-4. Remeasure; only then raise CI numbers (with rationale in 07 + 2.0-plan decision log). Never lower floors.
+1. Human playtest the new decisions; note which still feel like waits.
+2. Remeasure after any DEPTH/HORIZON tweak (`LONG=1` / `LONG_HORIZON=1`).
+3. Add one decision that replaces a wait — never a bare cooldown pad — with goal + bot + pack update.
+4. Only then raise CI windows, with rationale in 07 + 2.0-plan decision log. Never lower floors.

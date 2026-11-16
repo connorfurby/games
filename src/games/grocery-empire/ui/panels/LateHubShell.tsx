@@ -1,25 +1,32 @@
 import type { ReactNode } from 'react'
-import { PlayFrame } from '../play'
+import { PlayFrame, type VerbTrayProps } from '../play'
 import './lateHubs.css'
 
 /**
  * Shared frame for the money hubs (Books, Invest, Politics): PlayFrame with a live scene.
+ * Prefer `tray`; `primary` / `stats` / `actions` are a deprecated escape hatch used only when `tray` is absent.
  */
 export function LateHubShell({
   title,
   purpose,
+  scene,
+  tray,
+  primary,
   stats,
   actions,
-  scene,
-  primary,
   children,
 }: {
   title: string
   purpose: string
-  stats?: ReactNode
-  actions?: ReactNode
   scene?: ReactNode
+  /** The verb tray (one primary verb, optional secondaries, fail reason). */
+  tray?: VerbTrayProps
+  /** @deprecated Use `tray`. Ignored when `tray` is set. */
   primary?: ReactNode
+  /** @deprecated Rendered in the primary slot only when `tray` is absent. */
+  stats?: ReactNode
+  /** @deprecated Rendered in the primary slot only when `tray` is absent. */
+  actions?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -28,8 +35,9 @@ export function LateHubShell({
         purpose={purpose}
         department={title}
         room={scene}
+        tray={tray}
         primarySlot={
-          primary || stats || actions ? (
+          !tray && (primary || stats || actions) ? (
             <div className="lh-primary-slot">
               {stats}
               {primary}

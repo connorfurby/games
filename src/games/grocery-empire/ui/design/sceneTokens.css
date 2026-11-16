@@ -4,6 +4,15 @@
 @layer scenes {
   .ge-root {
     --sc-room-bg: #12161c;
+    /* Night case: Rank Hall, Strategy Hall, Upgrades Hall, and the empire map share these. */
+    --sc-night-top: #1a2030;
+    --sc-night-bottom: #2a3348;
+    --sc-night-deep: #12162e;
+    --sc-night-water: #1a3350;
+    --sc-night-ground-top: #242a2c;
+    --sc-night-ground-bottom: #1a1e20;
+    --sc-night-wall: #121820;
+    --sc-night-trim: #3a4458;
     --sc-chip-fill: #0f1317;
     --sc-chip-stroke: #3a444e;
     --sc-chip-muted: #b4bfc9;

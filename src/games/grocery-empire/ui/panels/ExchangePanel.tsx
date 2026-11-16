@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { MENUS } from '../../content/menus'
 import { PLANET_SKUS, SKU_BY_ID, type PlanetRun } from '../../content/horizon'
 import { can } from '../../sim/commands'
 import { HORIZON } from '../../sim/balance'
@@ -6,14 +7,18 @@ import {
   circuitFreightCost,
   keelBuyoutCost,
   offerCrates,
+  pendingSettlement,
   planetDef,
   routeMatchScore,
   routeNetworkMul,
   stockedCount,
+  stopTariffMul,
+  stopTaxLine,
 } from '../../sim/systems/horizon'
 import { statMul } from '../../sim/systems/stats'
 import { useGame } from '../GameContext'
-import { Button, ScreenHeader } from '../kit'
+import { Button } from '../kit'
+import type { VerbTrayProps } from '../play'
 import { clock, money, qty } from '../format'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { HubStage } from '../components/HubStage'
@@ -90,7 +95,8 @@ export function ExchangePanel() {
     stockedCount(s) *
     HORIZON.freightPerPlanet *
     statMul(s, 'freight') *
-    (h.clauses.includes('local-shelf') ? 0.9 : 1)
+    (h.clauses.includes('local-shelf') ? 0.9 : 1) *
+    stopTariffMul(s)
   const layer = routeNetworkMul(s)
   const pinIndex = index ?? (h.circuits.length ? 0 : null)
   const pin =
@@ -118,92 +124,131 @@ export function ExchangePanel() {
   let goalTitle = 'File a circuit'
   let goalLabel = `${h.circuits.length}/${HORIZON.maxCircuits} circuits · mean ${mean > 0 ? mean.toFixed(2) : '—'}`
   let goalPayoff = `Stops have spoil/tariff/delay. Route layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${qty(layer)}`} on flagship sales`
-  let goalAction = (
-    <Button
-      tone={standard.ok ? 'primary' : 'ghost'}
-      coachId="exchange-standard"
-      disabled={!standard.ok}
-      title={gateTitle(standard, 'File a standard packed circuit. Fast is three at 0.85; slow is five at 0.72.')}
-      onClick={() =>
-        dispatch({
-          type: 'fileStandardConvoy',
-          ...(origin ? { origin } : {}),
-          ...(stop ? { stop } : {}),
-          ...(dest ? { dest } : {}),
-          ...(good ? { good } : {}),
-        })
-      }
-    >
-      File the standard
-    </Button>
-  )
+  const fileStandard = () =>
+    dispatch({
+      type: 'fileStandardConvoy',
+      ...(origin ? { origin } : {}),
+      ...(stop ? { stop } : {}),
+      ...(dest ? { dest } : {}),
+      ...(good ? { good } : {}),
+    })
+  let goalPrimary: VerbTrayProps['primary'] = {
+    label: 'File the standard',
+    tone: 'primary',
+    size: 'lg',
+    coachId: 'exchange-standard',
+    disabled: !standard.ok,
+    title: gateTitle(standard, 'File a standard packed circuit. Fast is three at 0.85; slow is five at 0.72.'),
+    onClick: fileStandard,
+  }
+  let goalFail: string | undefined = standard.ok ? undefined : standard.reason
   let goalReady = standard.ok || convoy.ok
 
   const settleCheck = can(s, { type: 'settleStop' })
   const settleNeed = HORIZON.settlementNeed
   const settleDone = h.settlements ?? 0
-  if (settleDone < settleNeed && (h.settlementUntil > 0 || settleCheck.ok)) {
-    goalTitle = 'Settle the stop'
+  const pendingStop = pendingSettlement(s)
+  const pendingCircuit = pendingStop ? h.circuits[pendingStop.index] : null
+  const taxLine = pendingStop ? stopTaxLine(pendingStop.kind) : null
+  const settling = settleDone < settleNeed && (h.settlementUntil > 0 || settleCheck.ok)
+  if (settling) {
+    goalTitle = pendingStop ? `Settle the ${pendingStop.kind} stop` : 'Settle the stop'
     goalLabel = `${settleDone}/${settleNeed} settlements`
-    goalPayoff = 'Stop settlements open cultivars with credited circuits'
+    goalPayoff = taxLine
+      ? `You live with: ${taxLine} while this circuit stands`
+      : 'Stop settlements open cultivars with credited circuits'
     goalReady = settleCheck.ok
-    goalAction = (
-      <Button
-        tone="free"
-        size="lg"
-        coachId="exchange-settle"
-        disabled={!settleCheck.ok}
-        title={gateTitle(settleCheck, 'Settle the middle stop after the ETA. Free.')}
-        onClick={() => dispatch({ type: 'settleStop' })}
-      >
-        Settle stop · {settleDone}/{settleNeed}
-      </Button>
-    )
+    goalPrimary = {
+      label: pendingStop
+        ? `Settle ${pendingStop.kind} stop · ${settleDone}/${settleNeed}`
+        : `Settle stop · ${settleDone}/${settleNeed}`,
+      tone: 'free',
+      size: 'lg',
+      coachId: 'exchange-settle',
+      disabled: !settleCheck.ok,
+      title: gateTitle(
+        settleCheck,
+        taxLine
+          ? `Settle ${pendingCircuit ? named(pendingCircuit.stop) : 'the middle stop'}. Accepts ${taxLine}.`
+          : 'Settle the middle stop after the ETA. Free.',
+      ),
+      onClick: () => dispatch({ type: 'settleStop' }),
+    }
+    goalFail = settleCheck.ok ? undefined : settleCheck.reason
   } else if (keelLive) {
     goalTitle = war.ok ? 'Keel is on your route' : 'Buy out Keel'
     goalLabel = `${h.keel.convoys} convoy${h.keel.convoys === 1 ? '' : 's'}${frozen > 0 ? ` · frozen ${clock(frozen)}` : ''}`
     goalPayoff = 'A war freezes growth; a buyout folds convoys into your network'
     goalReady = war.ok || buy.ok
-    goalAction = (
-      <Button
-        tone="primary"
-        disabled={!(war.ok || buy.ok)}
-        title={war.ok ? gateTitle(war, `Price war · ${money(warCost, numberFormat)}`) : gateTitle(buy, 'Buy out')}
-        onClick={() =>
-          setConfirm(
-            war.ok
-              ? {
-                  title: 'Start a price war?',
-                  body: `Spend ${money(warCost, numberFormat)} to freeze up to two Keel convoys.`,
-                  confirmLabel: 'Start the war',
-                  onConfirm: () => dispatch({ type: 'priceWarKeel' }),
-                }
-              : {
-                  title: 'Buy out Keel & Sons?',
-                  body: `Spend ${money(buyCost, numberFormat)}. Their convoys join your network.`,
-                  confirmLabel: 'Buy out',
-                  onConfirm: () => dispatch({ type: 'buyoutKeel' }),
-                },
-          )
-        }
-      >
-        {war.ok ? `Price war · ${money(warCost, numberFormat)}` : `Buy out · ${money(buyCost, numberFormat)}`}
-      </Button>
-    )
+    goalPrimary = {
+      label: war.ok ? `Price war · ${money(warCost, numberFormat)}` : `Buy out · ${money(buyCost, numberFormat)}`,
+      tone: 'primary',
+      size: 'lg',
+      disabled: !(war.ok || buy.ok),
+      title: war.ok ? gateTitle(war, `Price war · ${money(warCost, numberFormat)}`) : gateTitle(buy, 'Buy out'),
+      onClick: () =>
+        setConfirm(
+          war.ok
+            ? {
+                title: 'Start a price war?',
+                body: `Spend ${money(warCost, numberFormat)} to freeze up to two Keel convoys.`,
+                confirmLabel: 'Start the war',
+                onConfirm: () => dispatch({ type: 'priceWarKeel' }),
+              }
+            : {
+                title: 'Buy out Keel & Sons?',
+                body: `Spend ${money(buyCost, numberFormat)}. Their convoys join your network.`,
+                confirmLabel: 'Buy out',
+                onConfirm: () => dispatch({ type: 'buyoutKeel' }),
+              },
+        ),
+    }
+    goalFail = war.ok || buy.ok ? undefined : (buy.reason ?? war.reason)
+  }
+
+  const tray: VerbTrayProps = {
+    primary: goalPrimary,
+    failReason: goalFail,
+    secondaries: [
+      ...(goalPrimary.coachId !== 'exchange-standard'
+        ? [
+            {
+              key: 'standard',
+              label: 'File the standard',
+              fact: '0.72',
+              disabled: !standard.ok,
+              title: gateTitle(standard, 'File a standard packed circuit at 0.72.'),
+              onClick: fileStandard,
+            },
+          ]
+        : []),
+      {
+        key: 'circuit',
+        label: 'Open circuit',
+        fact: `${Math.ceil(freightCost)} freight`,
+        disabled: !open.ok,
+        title: gateTitle(open, 'Reserve an empty circuit'),
+        onClick: () => dispatch({ type: 'openCircuit' }),
+      },
+      {
+        key: 'clever',
+        label: 'Clever convoy',
+        title: 'Scrolls to the packing board. Pick the route, pack five bays, then commit.',
+        onClick: () =>
+          document.querySelector('[data-coach-id="exchange-commit"]')?.scrollIntoView({
+            block: 'center',
+            behavior: reducedMotion ? 'auto' : 'smooth',
+          }),
+      },
+    ],
   }
 
   return (
     <section className="ge-panel">
-      <ScreenHeader
-        hub
-        title="Exchange"
-        purpose={
-          <span title="Fast path is three circuits at 0.85. Slow path is five at 0.72.">
-            Pack a convoy and file the circuit.
-          </span>
-        }
-      />
       <HubStage
+        purpose={MENUS.exchange.purpose}
+        department={MENUS.exchange.name}
+        tray={tray}
         scene={
           <ExchangeScene
           origin={named(origin)}
@@ -215,45 +260,30 @@ export function ExchangePanel() {
           onOpen={() => dispatch({ type: 'openCircuit' })}
         />
         }
-        primary={
-          <>
-            <HorizonGoalStrip
-              title={goalTitle}
-              progress={h.circuits.length / HORIZON.maxCircuits}
-              progressLabel={goalLabel}
-              payoff={goalPayoff}
-              ready={goalReady}
-              coachId="exchange-goal"
-              action={goalAction}
-            />
-            <p
-              className="hz-pocket"
-              data-coach-id="exchange-freight"
-              title={
-                h.freight >= freightCost
-                  ? 'Circuit ready'
-                  : freightRate > 0
-                    ? `Next circuit in ${clock((freightCost - h.freight) / freightRate)}`
-                    : 'Freight reserves the circuit'
-              }
-            >
-              <span>Freight</span>
-              <strong>{pocket(h.freight, numberFormat)}</strong>
-              <span>+{freightRate.toFixed(2)}/s</span>
-            </p>
-          </>
+      >
+      <HorizonGoalStrip
+        title={goalTitle}
+        progress={h.circuits.length / HORIZON.maxCircuits}
+        progressLabel={goalLabel}
+        payoff={goalPayoff}
+        ready={goalReady}
+        coachId="exchange-goal"
+      />
+      <p
+        className="hz-pocket"
+        data-coach-id="exchange-freight"
+        title={
+          h.freight >= freightCost
+            ? 'Circuit ready'
+            : freightRate > 0
+              ? `Next circuit in ${clock((freightCost - h.freight) / freightRate)}`
+              : 'Freight reserves the circuit'
         }
       >
-      <div className="ge-chip-row">
-        <Button
-          tone={open.ok ? 'ghost' : 'ghost'}
-          disabled={!open.ok}
-          title={gateTitle(open, 'Reserve an empty circuit')}
-          onClick={() => dispatch({ type: 'openCircuit' })}
-        >
-          Open circuit · {Math.ceil(freightCost)} freight
-        </Button>
-      </div>
+        <span>Freight</span>
+        <strong>{pocket(h.freight, numberFormat)}</strong>
+        <span>+{freightRate.toFixed(2)}/s</span>
+      </p>
 
       <PuzzleFrame
         title="Convoy"
@@ -362,7 +392,10 @@ export function ExchangePanel() {
                   <strong>
                     {named(row.origin)} → {named(row.dest)}
                   </strong>
-                  <span>{SKU_BY_ID[row.good]?.name ?? row.good}</span>
+                  <span>
+                    {SKU_BY_ID[row.good]?.name ?? row.good}
+                    {row.settledKind ? ` · ${row.settledKind} tax` : row.stopKind ? ` · ${row.stopKind} stop` : ''}
+                  </span>
                   <em>{row.score.toFixed(2)}</em>
                 </button>
               </li>

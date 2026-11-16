@@ -95,6 +95,118 @@
     font: 700 10px var(--g2-mono, var(--ge-font-mono, monospace));
   }
 
+  /* Upgrades hall: tree plaques. Tag yellow = spend (a rank is affordable). */
+  .uh-plaque {
+    fill: var(--sc-night-wall, #121820);
+    stroke: var(--sc-night-trim, #3a4458);
+    stroke-width: 1.5;
+  }
+
+  .uh-plaque.is-ready {
+    stroke: color-mix(in srgb, var(--sc-lamp-counter, #f2c14e) 55%, transparent);
+  }
+
+  .uh-plaque.is-active {
+    stroke: var(--sc-lamp-counter, #f2c14e);
+    stroke-width: 2.5;
+  }
+
+  .uh-ready {
+    fill: var(--sc-lamp-counter, #f2c14e);
+  }
+
+  /* ── Shop cosmetics in the rooms you play in (presentation only) ─────────────────── */
+
+  /* Unpack FX: same three packs, on the Floor room's Unpack station. */
+  html.unpack-fx--confetti-crumbs .rm-hit--unpack .rm-hit__ring {
+    stroke: var(--ge-accent, var(--sc-tomato, #ff5a43));
+    opacity: 0.35;
+  }
+
+  html.unpack-fx--stamp-thud .rm-hit--unpack:active {
+    filter: contrast(1.1);
+  }
+
+  html.unpack-fx--can-clink .rm-hit--unpack:active {
+    filter: brightness(1.08);
+  }
+
+  /* Ledger skins: Books room wears the equipped skin as a light wash. Numbers stay legible. */
+  .rm.ls-skin {
+    position: relative;
+  }
+
+  .rm.ls-skin::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .rm.ls-skin--torn-receipt {
+    border-image: repeating-linear-gradient(
+        90deg,
+        transparent 0 6px,
+        color-mix(in srgb, var(--ge-ink, #efe9dc) 35%, transparent) 6px 7px
+      )
+      1;
+  }
+
+  .rm.ls-skin--carbon-copy::after {
+    background: color-mix(in srgb, #1a2a44 45%, transparent);
+    mix-blend-mode: soft-light;
+  }
+
+  .rm.ls-skin--thermal-fade::after {
+    background: linear-gradient(180deg, transparent 35%, color-mix(in srgb, #1c1a18 55%, transparent));
+  }
+
+  /* Harbor ornaments: equipped shelf ornaments, hung on the pier. */
+  .hb-orn__tape {
+    fill: color-mix(in srgb, var(--sc-chip-ink, #efe9dc) 28%, transparent);
+  }
+
+  .hb-orn__star {
+    fill: var(--sc-lamp-counter, #f2c14e);
+    opacity: 0.85;
+  }
+
+  .hb-orn__tag {
+    fill: var(--sc-lamp-counter, #f2c14e);
+    opacity: 0.85;
+  }
+
+  .hb-orn__tag-text {
+    fill: var(--ge-tag-ink, #2b2208);
+    font: 700 10px var(--g2-mono, var(--ge-font-mono, monospace));
+  }
+
+  .hb-orn__open-box {
+    fill: var(--sc-chip-fill, #0f1317);
+    stroke: var(--sc-tomato, #ff5a43);
+    stroke-width: 1.5;
+  }
+
+  .hb-orn__open {
+    fill: var(--sc-tomato, #ff5a43);
+    font: 700 11px var(--g2-ui, var(--ge-font-ui, sans-serif));
+    letter-spacing: 0.12em;
+  }
+
+  .hb-orn__paper {
+    fill: var(--sc-chip-ink, #efe9dc);
+    opacity: 0.8;
+  }
+
+  .hb-orn__stamp {
+    fill: none;
+    stroke: var(--sc-chip-muted, #b4bfc9);
+    stroke-width: 0.6;
+    font: 700 12px var(--g2-ui, var(--ge-font-ui, sans-serif));
+    letter-spacing: 0.14em;
+    opacity: 0.7;
+  }
+
   .rm-empty__title {
     fill: #efe9dc;
     font: 700 15px var(--g2-ui, var(--ge-font-ui, sans-serif));
@@ -118,6 +230,27 @@
 
   .rm.is-live .rm-pulse {
     animation: rm-pulse 1.6s ease-in-out infinite;
+  }
+
+  /* Second regular steps into the aisle: two opacity pulses, then rests. Live rooms only. */
+  .rm.is-live .rm-arrive {
+    animation: rm-arrive 0.9s ease-out 1 both;
+  }
+
+  @keyframes rm-arrive {
+    0% {
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+    75%,
+    100% {
+      opacity: 1;
+    }
   }
 
   @keyframes rm-bob {
@@ -157,6 +290,7 @@
   @media (prefers-reduced-motion: reduce) {
     .rm.is-live .rm-person,
     .rm.is-live .rm-pulse,
+    .rm.is-live .rm-arrive,
     .rm.is-live.is-brownout .rm-brownout-flash {
       animation: none;
     }
@@ -166,6 +300,7 @@
 @layer motion {
   html.ge-reduced-motion .rm.is-live .rm-person,
   html.ge-reduced-motion .rm.is-live .rm-pulse,
+  html.ge-reduced-motion .rm.is-live .rm-arrive,
   html.ge-reduced-motion .rm.is-live.is-brownout .rm-brownout-flash {
     animation: none;
   }

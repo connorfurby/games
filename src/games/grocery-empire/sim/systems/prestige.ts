@@ -1,3 +1,5 @@
+import { BUILD_VARIANT_BY_ID, variantSlotKey } from '../../content/builds'
+import { DOCTRINE_BY_ID } from '../../content/era2'
 import { HORIZON, REBRAND } from '../balance'
 import { log } from '../helpers'
 import { createInitialState, type GameState } from '../state'
@@ -26,7 +28,88 @@ export function canRebrand(s: GameState): string | null {
   return null
 }
 
-export function rebrand(s: GameState, now = Date.now()): GameState {
+/**
+ * SAVE 36: the one thing a Rebrand or Accept carries across on top of the standard keep-list.
+ * Exactly one doctrine OR exactly one build facing — never both. Null carries nothing extra.
+ */
+export type RebrandCarry =
+  | { type: 'doctrine'; id: string }
+  | { type: 'facing'; track: string; variantId: string }
+  | null
+
+export interface CarryOption {
+  carry: Exclude<RebrandCarry, null>
+  name: string
+  blurb: string
+}
+
+/** Every doctrine you own and every facing you chose — the menu the "what you keep" sheet offers. */
+export function carryOptions(s: GameState): { doctrines: CarryOption[]; facings: CarryOption[] } {
+  const doctrines: CarryOption[] = []
+  for (const [id, n] of Object.entries(s.doctrines ?? {})) {
+    const def = DOCTRINE_BY_ID[id]
+    if (!def || (n ?? 0) <= 0) continue
+    doctrines.push({ carry: { type: 'doctrine', id }, name: def.name, blurb: def.blurb })
+  }
+  doctrines.sort((a, b) => (DOCTRINE_BY_ID[(a.carry as { id: string }).id]?.order ?? 0) - (DOCTRINE_BY_ID[(b.carry as { id: string }).id]?.order ?? 0))
+  const facings: CarryOption[] = []
+  const seen = new Set<string>()
+  for (const variantId of Object.values(s.buildVariants ?? {})) {
+    const def = BUILD_VARIANT_BY_ID[variantId]
+    if (!def || seen.has(variantId)) continue
+    seen.add(variantId)
+    facings.push({ carry: { type: 'facing', track: def.track, variantId }, name: def.name, blurb: def.blurb })
+  }
+  return { doctrines, facings }
+}
+
+/** Why this carry is not allowed (null when it is, or when nothing is carried). One doctrine OR one facing. */
+export function canCarry(s: GameState, carry: RebrandCarry | undefined): string | null {
+  if (carry == null) return null
+  const raw = carry as unknown as Record<string, unknown>
+  if (carry.type === 'doctrine') {
+    if ('track' in raw || 'variantId' in raw) return 'Carry one doctrine or one facing, not both.'
+    if (!DOCTRINE_BY_ID[carry.id] || (s.doctrines?.[carry.id] ?? 0) <= 0) return 'You do not own that doctrine.'
+    return null
+  }
+  if (carry.type === 'facing') {
+    if ('id' in raw) return 'Carry one doctrine or one facing, not both.'
+    const def = BUILD_VARIANT_BY_ID[carry.variantId]
+    if (!def || def.track !== carry.track) return 'Unknown facing.'
+    if (!Object.values(s.buildVariants ?? {}).includes(carry.variantId)) return 'You have not chosen that facing.'
+    return null
+  }
+  return 'Carry one doctrine or one facing.'
+}
+
+/** Short name for the log and the sheet. */
+export function carryName(carry: RebrandCarry): string {
+  if (!carry) return 'nothing extra'
+  if (carry.type === 'doctrine') return DOCTRINE_BY_ID[carry.id]?.name ?? carry.id
+  return BUILD_VARIANT_BY_ID[carry.variantId]?.name ?? carry.variantId
+}
+
+/** Put the carried piece into the fresh run. A facing sits dormant until its tier is rebuilt. */
+function applyCarry(fresh: GameState, carry: Exclude<RebrandCarry, null>) {
+  if (carry.type === 'doctrine') {
+    fresh.doctrines[carry.id] = 1
+    return
+  }
+  const def = BUILD_VARIANT_BY_ID[carry.variantId]
+  if (def) fresh.buildVariants[variantSlotKey(def.track, def.minTier)] = carry.variantId
+}
+
+/**
+ * The Rebrand keep-list, shared by `rebrand()` (Engine.rebrand) and Era 6 Accept.
+ * Keeps: Empire (rank / trait points / perks), prestigeCarry (appetite, tipSharpness, universe, mutators),
+ * Goodwill (+ whatever this run banked), tutorials / seen lines / tips, museum, speed, and the filed Worlds
+ * standing route. Everything else — store, staff, depth board, upgrades, cash — is a fresh run.
+ */
+export function freshRunKeepingMeta(
+  s: GameState,
+  now = Date.now(),
+  carry: RebrandCarry = null,
+): { fresh: GameState; gain: number } {
   const gain = pendingGoodwill(s)
   const fresh = createInitialState((s.seed * 7919 + s.rebrand.count + 1) % 2147483647, now)
   // Keep the meta layer.
@@ -47,10 +130,24 @@ export function rebrand(s: GameState, now = Date.now()): GameState {
     // The filed manifest also carries a crumb of freight across the sign change.
     fresh.horizon.freight = Math.min(HORIZON.freightCap, fresh.horizon.freight + manifestCrumb(s))
   }
+  // SAVE 36: one doctrine OR one facing rides along. An invalid or doubled carry is dropped, never half-applied.
+  if (carry && !canCarry(s, carry)) applyCarry(fresh, carry)
+  return { fresh, gain }
+}
+
+export function rebrand(s: GameState, now = Date.now(), carry: RebrandCarry = null): GameState {
+  const { fresh, gain } = freshRunKeepingMeta(s, now, carry)
   log(
     fresh,
     `Rebrand #${fresh.rebrand.count}: a new sign over the same door. +${gain} Goodwill (${fresh.rebrand.goodwill} total).`,
     'era',
   )
+  if (carry && !canCarry(s, carry)) log(fresh, `Carried across: ${carryName(carry)}.`, 'good')
   return fresh
+}
+
+/** Command handlers mutate state in place — swap every field for the fresh run's. */
+export function replaceStateInPlace(s: GameState, next: GameState): void {
+  for (const key of Object.keys(s)) delete (s as unknown as Record<string, unknown>)[key]
+  Object.assign(s, next)
 }

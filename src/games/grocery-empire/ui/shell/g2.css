@@ -2,6 +2,9 @@
  * Grocery Empire 2.0 shell.
  * Palette comes from the active texture pack (--ge-*), plus --tag (shelf-tag yellow)
  * for every price and buy action. Display: Fraunces. UI: Space Grotesk.
+ *
+ * Phase 10: live chrome (HUD, stats, goal bar, hubs, hub header, menu drawer / inbox,
+ * command palette) moved to shell.css under @layer shell. Do not re-add those selectors here.
  */
 
 .ge-root.g2-root {
@@ -62,207 +65,6 @@
 
 .g2-root .ge-devbar {
   grid-area: devbar;
-}
-
-/* ── HUD ─────────────────────────────────────────────────────────────── */
-
-.g2-hud {
-  grid-area: hud;
-  display: grid;
-  grid-template-columns: auto auto minmax(280px, 1fr) auto;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 0.6rem 1rem 0.6rem 1.1rem;
-  min-height: var(--g2-hud-h);
-  border-bottom: 1px solid var(--g2-line);
-  background: color-mix(in srgb, var(--ge-bg) 88%, #000);
-  position: relative;
-  z-index: 20;
-}
-
-.g2-hud__brand {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 9.5rem;
-}
-
-.g2-hud__home {
-  font-family: var(--g2-display);
-  font-size: 1.15rem;
-  font-weight: 650;
-  /* Fraunces default import is wght-only; don't set unused SOFT/WONK axes. */
-  color: var(--ge-ink);
-  text-decoration: none;
-  letter-spacing: -0.01em;
-}
-
-.g2-hud__home:hover {
-  color: var(--g2-tag);
-}
-
-.g2-hud__era {
-  font-size: 0.78rem;
-  color: var(--ge-muted);
-}
-
-.g2-hud__ver {
-  font-size: 0.68rem;
-  font-family: var(--ge-font-mono, monospace);
-  letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--ge-tag, #f2c14e) 75%, var(--ge-muted));
-  margin-left: 0.35rem;
-}
-
-.g2-hud__money {
-  display: flex;
-  gap: 1.4rem;
-  align-items: flex-end;
-}
-
-.g2-stat {
-  display: grid;
-  gap: 0.05rem;
-}
-
-.g2-stat__label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.74rem;
-  color: var(--ge-muted);
-}
-
-.g2-stat__value {
-  position: relative;
-  font-family: var(--g2-display);
-  font-size: 1.75rem;
-  font-weight: 600;
-  line-height: 1.05;
-  font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: -0.015em;
-  min-width: 7.5ch;
-}
-
-.g2-stat__value--small {
-  font-size: 1.2rem;
-  min-width: 5ch;
-}
-
-.g2-stat__rate {
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--ge-success);
-}
-
-.g2-stat__rate.is-neg {
-  color: var(--ge-danger);
-}
-
-/* ── Next goal: a shelf tag ─────────────────────────────────────────── */
-
-.g2-goal {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  column-gap: 0.9rem;
-  row-gap: 0.4rem;
-  align-items: center;
-  padding: 0.5rem 0.55rem 0.5rem 0.9rem;
-  border-radius: var(--g2-r-md);
-  background: color-mix(in srgb, var(--ge-bg2) 90%, var(--g2-tag) 4%);
-  border: 1px solid color-mix(in srgb, var(--g2-tag) 22%, transparent);
-  min-width: 0;
-}
-
-.g2-goal.is-ready {
-  border-color: color-mix(in srgb, var(--g2-tag) 65%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--g2-tag) 14%, transparent);
-}
-
-.g2-goal.is-done {
-  display: flex;
-}
-
-.g2-goal__copy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.g2-goal__title {
-  font-family: var(--g2-display);
-  font-weight: 600;
-  font-size: 1.02rem;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: flex;
-  align-items: baseline;
-  gap: 0.45rem;
-  min-width: 0;
-}
-
-.g2-goal__stars {
-  flex: 0 0 auto;
-  font-family: var(--g2-body, inherit);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--g2-tag) 75%, var(--ge-ink));
-  opacity: 0.92;
-  white-space: nowrap;
-}
-
-/* Keep the star chip readable at 390px even when the title ellipsizes. */
-@media (max-width: 420px) {
-  .g2-goal__title {
-    font-size: 0.92rem;
-    gap: 0.35rem;
-  }
-
-  .g2-goal__stars {
-    font-size: 0.68rem;
-  }
-
-  .g2-goal__hint {
-    font-size: 0.72rem;
-  }
-}
-
-.g2-goal__hint {
-  font-size: 0.78rem;
-  color: var(--ge-muted);
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.g2-goal__eta {
-  color: var(--ge-ink);
-}
-
-.g2-goal__meter {
-  grid-column: 1 / 2;
-  height: 5px;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
-  overflow: hidden;
-}
-
-.g2-goal__meter span {
-  display: block;
-  height: 100%;
-  background: var(--g2-tag);
-  transform-origin: left;
-  transition: transform 0.4s ease;
-}
-
-.g2-goal .g2-tag {
-  grid-column: 2;
-  grid-row: 1 / 3;
 }
 
 /* Shelf-tag button: yellow tag, punched hole, price first. */
@@ -346,85 +148,6 @@
   opacity: 0.8;
 }
 
-/* ── HUD controls ───────────────────────────────────────────────────── */
-
-.g2-hud__controls {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.g2-transport {
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: var(--g2-r-sm);
-  background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
-}
-
-.g2-icon-btn {
-  appearance: none;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--ge-ink);
-  min-width: 2.1rem;
-  height: 2.1rem;
-  padding: 0 0.45rem;
-  border-radius: 6px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.78rem;
-  font-family: var(--g2-ui);
-}
-
-.g2-icon-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
-}
-
-.g2-icon-btn.is-on {
-  background: var(--ge-ink);
-  color: var(--ge-bg);
-}
-
-.g2-icon-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.g2-icon-btn__label {
-  margin-left: 0.2rem;
-}
-
-.g2-icon-btn--text,
-.g2-icon-btn--speed,
-.g2-icon-btn--undo {
-  font-variant-numeric: tabular-nums;
-}
-
-.g2-inbox-btn {
-  position: relative;
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  height: 2.3rem;
-  padding: 0 0.8rem;
-  border-radius: var(--g2-r-sm);
-  border: 1px solid var(--g2-line-strong);
-  background: transparent;
-  color: var(--ge-ink);
-  cursor: pointer;
-  font-family: var(--g2-ui);
-  font-size: 0.85rem;
-}
-
-.g2-inbox-btn:hover,
-.g2-inbox-btn.is-on {
-  background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
-}
-
 .g2-badge {
   min-width: 1.25rem;
   height: 1.25rem;
@@ -437,88 +160,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.g2-alert {
-  appearance: none;
-  border: none;
-  cursor: pointer;
-  font-family: var(--g2-ui);
-  font-size: 0.78rem;
-  padding: 0.35rem 0.7rem;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--g2-tag) 16%, transparent);
-  color: var(--g2-tag);
-  max-width: 15rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.g2-alert.is-danger {
-  background: color-mix(in srgb, var(--ge-danger) 18%, transparent);
-  color: color-mix(in srgb, var(--ge-danger) 85%, #fff);
-}
-
-/* ── Hubs ───────────────────────────────────────────────────────────── */
-
-.g2-hubs {
-  grid-area: hubs;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.8rem 0.5rem;
-  border-right: 1px solid var(--g2-line);
-  background: color-mix(in srgb, var(--ge-bg) 94%, #000);
-}
-
-.g2-hub {
-  position: relative;
-  appearance: none;
-  border: none;
-  background: transparent;
-  color: var(--ge-muted);
-  display: grid;
-  justify-items: center;
-  gap: 0.3rem;
-  padding: 0.75rem 0.25rem 0.65rem;
-  border-radius: var(--g2-r-md);
-  cursor: pointer;
-  font-family: var(--g2-ui);
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.g2-hub:hover {
-  color: var(--ge-ink);
-  background: color-mix(in srgb, var(--ge-ink) 5%, transparent);
-}
-
-.g2-hub.is-active {
-  color: var(--ge-ink);
-}
-
-.g2-hub__indicator {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--g2-r-md);
-  background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
-  box-shadow: inset 3px 0 0 var(--g2-tag);
-  z-index: -1;
-}
-
-.g2-hub > * {
-  position: relative;
-}
-
-.g2-hub__dot {
-  position: absolute;
-  top: 0.55rem;
-  right: 1.2rem;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--g2-tag);
 }
 
 /* ── Main ───────────────────────────────────────────────────────────── */
@@ -768,47 +409,6 @@
   }
 }
 
-/* ── Inbox drawer ───────────────────────────────────────────────────── */
-
-.ge-root.g2-root .g2-inbox {
-  position: fixed;
-  top: var(--g2-hud-h);
-  right: 0;
-  bottom: 0;
-  width: min(520px, 92vw);
-  max-height: none;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  background: color-mix(in srgb, var(--ge-bg) 96%, #000);
-  border-left: 1px solid var(--g2-line-strong);
-  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.35);
-  padding: 0;
-}
-
-.g2-root--dev .g2-inbox {
-  top: calc(var(--g2-hud-h) + 2rem);
-}
-
-.g2-inbox__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.7rem 0.8rem 0.5rem;
-  border-bottom: 1px solid var(--g2-line);
-}
-
-.g2-inbox__tabs {
-  display: flex;
-  gap: 0.3rem;
-}
-
-.g2-inbox__body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.6rem 0.8rem 2rem;
-}
-
 /* ── Floating story line, toasts, whispers ──────────────────────────── */
 
 .g2-dialogue {
@@ -861,23 +461,6 @@
   outline-offset: 2px;
 }
 
-/* ── Medium screens ─────────────────────────────────────────────────── */
-
-@media (max-width: 1180px) {
-  .g2-hud {
-    grid-template-columns: auto auto minmax(0, 1fr);
-    grid-template-rows: auto auto;
-  }
-  .g2-hud__controls {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-content: flex-end;
-  }
-  .ge-root.g2-root {
-    --g2-hud-h: 128px;
-  }
-}
-
 /* ── Phones ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 720px) {
@@ -900,69 +483,6 @@
       'hubs';
   }
 
-  .g2-hud {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto auto;
-    gap: 0.5rem 0.75rem;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .g2-hud__brand {
-    display: none;
-  }
-
-  .g2-hud__money {
-    grid-column: 1;
-    grid-row: 1;
-    gap: 1rem;
-  }
-
-  .g2-hud__controls {
-    grid-column: 2;
-    grid-row: 1;
-    gap: 0.25rem;
-  }
-
-  .g2-hud__controls .g2-alert,
-  .g2-inbox-btn span:not(.g2-badge) {
-    display: none;
-  }
-
-  /* Keep speed / Undo reachable: icon stays, wide label hides. */
-  .g2-hud__controls .g2-icon-btn--speed .g2-icon-btn__label,
-  .g2-hud__controls .g2-icon-btn--undo .g2-icon-btn__label {
-    display: none;
-  }
-
-  .g2-hud__controls .g2-icon-btn--speed,
-  .g2-hud__controls .g2-icon-btn--undo {
-    min-width: 2.1rem;
-    padding-inline: 0.35rem;
-  }
-
-  .g2-goal {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .g2-stat__value {
-    font-size: 1.2rem;
-    min-width: 0;
-  }
-
-  .g2-stat--baskets {
-    display: flex;
-  }
-
-  .g2-stat--baskets .g2-stat__label {
-    font-size: 0.62rem;
-  }
-
-  .g2-hud__money {
-    min-width: 0;
-    gap: 0.55rem;
-  }
-
   .g2-root .g2-whisper {
     bottom: calc(4.75rem + env(safe-area-inset-bottom));
     left: 0.75rem;
@@ -974,24 +494,6 @@
     bottom: calc(5rem + env(safe-area-inset-bottom));
   }
 
-  .g2-hubs {
-    flex-direction: row;
-    justify-content: space-around;
-    padding: 0.25rem 0.25rem calc(0.25rem + env(safe-area-inset-bottom));
-    border-right: none;
-    border-top: 1px solid var(--g2-line);
-  }
-
-  .g2-hub {
-    flex: 1;
-    padding: 0.45rem 0.1rem 0.35rem;
-    font-size: 0.72rem;
-  }
-
-  .g2-hub__indicator {
-    box-shadow: inset 0 3px 0 var(--g2-tag);
-  }
-
   .g2-main {
     padding: 0.75rem 0.75rem 5rem;
   }
@@ -1000,17 +502,7 @@
     height: clamp(168px, 28vh, 220px);
   }
 
-  .ge-root.g2-root .g2-inbox {
-    top: 0;
-    width: 100vw;
-  }
-
-  .g2-dialogue {
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: 4.5rem;
-    width: auto;
-  }
+  /* .g2-dialogue phone placement: one rule, "Phone story line" below. */
 
   .g2-subtabs {
     flex-wrap: nowrap;
@@ -1033,42 +525,6 @@
 }
 
 /* ── Floor, re-laid as three cards ──────────────────────────────────── */
-
-.g2-root .ge-floor {
-  border: none;
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-}
-
-.g2-root .ge-floor::before,
-.g2-root .ge-floor::after {
-  display: none;
-}
-
-.g2-root .ge-floor__desk {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 0.85rem;
-  align-items: stretch;
-}
-
-.g2-root .ge-floor__actions,
-.g2-root .ge-floor__buy,
-.g2-root .ge-floor__shelf-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 1rem;
-  border-radius: var(--g2-r-md);
-  background: var(--g2-raised);
-  border: 1px solid var(--g2-line);
-  min-width: 0;
-}
-
-.g2-root .ge-floor__actions {
-  grid-template-columns: none;
-}
 
 /* Unpack: the store's main verb — big, tactile, not a purchase. */
 .g2-root .ge-btn--primary.ge-unpack {
@@ -1113,11 +569,6 @@
   background: rgba(0, 0, 0, 0.18);
 }
 
-.g2-root .ge-floor__buy .ge-btn--primary {
-  min-height: 2.7rem;
-  font-size: 0.95rem;
-}
-
 .g2-root .ge-dept-callout {
   border-radius: var(--g2-r-md);
   background: color-mix(in srgb, var(--g2-tag) 7%, var(--g2-surface));
@@ -1133,16 +584,7 @@
   border-radius: var(--g2-r-md);
 }
 
-@media (max-width: 960px) {
-  .g2-root .ge-floor__desk {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 @media (max-width: 720px) {
-  .g2-root .ge-floor__desk {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .g2-root .ge-btn--primary.ge-unpack {
     min-height: 4.25rem;
     font-size: 1.35rem;
@@ -2877,13 +2319,14 @@
   align-items: center;
 }
 
-/* Phone story line: a slim banner at the top, so it never covers the action dock. */
+/* Phone story line: the single source of truth. A slim banner just above the hub bar. */
 @media (max-width: 720px) {
   .g2-dialogue {
-    top: 0.5rem;
-    bottom: auto;
+    top: auto;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
     left: 0.5rem;
     right: 0.5rem;
+    width: auto;
   }
 
   .g2-dialogue .ge-dialogue {
@@ -2924,73 +2367,16 @@
   }
 }
 
-/* ── Menu drawer (tools) ────────────────────────────────────────────── */
-.g2-tools__tabs {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  min-width: 0;
+.g2-root .ge-more-also {
+  margin: 0.65rem 0 0;
+  font-size: 0.72rem;
+  opacity: 0.7;
 }
 
-.g2-tools .g2-inbox__head {
-  gap: 0.5rem;
-}
-
-.g2-tools .g2-subtab {
-  flex-shrink: 0;
-  padding: 0.3rem 0.65rem;
-  font-size: 0.8rem;
-}
-
-.g2-menu-btn.is-on {
-  background: var(--g2-raised);
-  color: var(--g2-tag);
-}
-
-.g2-tools .ge-more {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.g2-tools .ge-more-block {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.g2-tools .ge-more-block__head h3 {
-  font-family: var(--g2-display);
-  font-size: 1.05rem;
-  margin: 0 0 0.15rem;
-}
-
-.g2-tools .ge-more-block__head p {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem;
-  color: var(--ge-muted);
-}
-
-.g2-tools .ge-more-actions,
-.g2-tools .ge-more-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
-}
-
-.g2-tools .ge-more-slots {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin-bottom: 0.5rem;
-}
-
-.g2-tools .ge-more-slot {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 0.35rem;
+.g2-root .ge-more-also a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .ge-more-links {
@@ -3132,20 +2518,6 @@
 
 .ge-devbar__tools + .ge-devbar__link {
   margin-left: 0.9rem;
-}
-
-/* The Menu drawer covers the full height, over a dim scrim (click to close). */
-.ge-root.g2-root .g2-inbox.g2-tools {
-  top: 0;
-  z-index: 60;
-  width: min(460px, 100vw);
-}
-
-.g2-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 59;
-  background: rgba(5, 7, 10, 0.45);
 }
 
 /* Receipt paper is cream: ghost buttons need dark ink to be seen at all. */
@@ -3294,142 +2666,11 @@
   justify-content: flex-start;
 }
 
-/* ── Hub header: name on top, section tabs in their own bar ─────────── */
-.g2-hubhead {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.55rem;
-  padding: 0.15rem 0.1rem 0;
-  flex-shrink: 0;
-}
-
-.g2-hubhead__title {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  min-width: 0;
-  padding-bottom: 0.5rem;
-}
-
-.g2-hubhead__title h1 {
-  margin: 0;
-  font-family: var(--g2-display);
-  font-size: 1.35rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-}
-
-.g2-hubhead__title p {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--ge-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.g2-hubhead .g2-subtabs {
-  width: 100%;
-  gap: 0.3rem;
-  margin: 0;
-  padding: 0.28rem;
-  background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
-  border: 1px solid var(--g2-line);
-  border-radius: 12px;
-}
-
-.g2-root .g2-hubhead .g2-subtab {
-  flex: 1 1 7rem;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--ge-muted);
-  padding: 0.5rem 0.75rem;
-  min-height: 2.45rem;
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.g2-root .g2-hubhead .g2-subtab:hover {
-  color: var(--ge-ink);
-  background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
-}
-
-.g2-root .g2-hubhead .g2-subtab.is-active {
-  color: var(--ge-bg);
-  background: var(--ge-ink);
-  border-color: var(--ge-ink);
-  font-weight: 700;
-}
-
-.g2-root .g2-hubhead .g2-subtab.is-suggest:not(.is-active)::after {
-  content: '';
-  width: 6px;
-  height: 6px;
-  margin-left: 0.3rem;
-  border-radius: 50%;
-  background: var(--g2-tag);
-}
-
 /* Feel overhaul: hub purpose and ScreenHeader titles stay visible. */
 
 .g2-root .g2-main .gk-screen-head {
   padding-bottom: 0.45rem;
   margin-bottom: 0.45rem;
-}
-
-@media (max-width: 720px) {
-  .g2-hubhead {
-    gap: 0.45rem;
-  }
-
-  .g2-hubhead__title {
-    padding-bottom: 0.1rem;
-  }
-
-  .g2-hubhead .g2-subtabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
-}
-
-@media (max-width: 720px) {
-  /* Above the hub bar and the Unpack dock: never over the HUD controls. */
-  .g2-dialogue {
-    top: auto;
-    bottom: calc(4.6rem + 3.9rem + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-@media (max-width: 720px) {
-  /* Unpack dock: pinned just above the hub bar whenever the Floor is open. */
-  .fl-dock {
-    position: fixed;
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
-    margin: 0;
-    z-index: 20;
-  }
-
-  .g2-root:has(.fl-dock) .g2-main {
-    padding-bottom: 8.5rem;
-  }
-
-  .g2-root:has(.fl-dock) .g2-whisper,
-  .g2-root:has(.fl-dock) .g2-toasts {
-    bottom: calc(8.4rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  .g2-dialogue {
-    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  .g2-root:has(.fl-dock) .g2-dialogue {
-    bottom: calc(8.4rem + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 /* ── Fleet 2.0 ──────────────────────────────────────────────────────── */
@@ -3678,31 +2919,6 @@
   .rv-summary__label {
     font-size: 0.62rem;
   }
-}
-
-/* Ledger as its own drawer tab: flat list, no floating tab chrome. */
-.g2-inbox .ge-ledger.is-open {
-  position: static;
-  width: auto;
-  max-height: none;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
-
-.g2-inbox .ge-ledger__drawer {
-  position: static;
-  max-height: none;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
-
-.g2-inbox .ge-ledger__list {
-  max-height: none;
-  overflow: visible;
 }
 
 /* Toasts: bottom-right stack, solid cards (base styles pinned them to the top too). */
@@ -3963,27 +3179,6 @@
   color: #ffb08a;
 }
 
-.g2-root .g2-hubhead .g2-subtab {
-  position: relative;
-}
-
-.g2-root .g2-hubhead .g2-subtab__ink {
-  display: none;
-}
-
-.g2-hub.is-active svg {
-  animation: g2-hub-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-
-@keyframes g2-hub-pop {
-  0% {
-    transform: scale(0.8);
-  }
-  60% {
-    transform: scale(1.15);
-  }
-}
-
 .fl-chip {
   align-items: center;
 }
@@ -4015,7 +3210,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .g2-hub.is-active svg,
   .fl .ge-btn--primary.ge-unpack:active:not(:disabled) svg {
     animation: none;
   }
@@ -4616,45 +3810,6 @@
   }
 }
 
-/* ── Shell phase 5 ──────────────────────────────────────────────────── */
-
-/* Next goal: Go + Do it sit together in the tag column. */
-.g2-goal__acts {
-  grid-column: 2;
-  grid-row: 1 / 3;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.g2-goal__acts .g2-tag {
-  grid-column: auto;
-  grid-row: auto;
-}
-
-.g2-goal__go {
-  appearance: none;
-  cursor: pointer;
-  font-family: var(--g2-ui);
-  font-size: 0.8rem;
-  font-weight: 650;
-  min-height: 2.25rem;
-  padding: 0 0.85rem;
-  border-radius: 99px;
-  color: var(--ge-ink);
-  background: transparent;
-  border: 1px solid var(--g2-line-strong);
-}
-
-.g2-goal__go:hover {
-  background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
-}
-
-/* Alert chip: the in-controls one is desktop; a compact full-width one shows on phones. */
-.g2-alert--compact {
-  display: none;
-}
-
 /* Store scene strip */
 .g2-scenewrap {
   position: relative;
@@ -4701,11 +3856,6 @@
   background: color-mix(in srgb, var(--ge-ink) 10%, var(--ge-bg));
 }
 
-/* Hubs "More" sheet */
-.g2-hub__indicator--static {
-  z-index: -1;
-}
-
 .g2-more {
   list-style: none;
   margin: 0;
@@ -4750,118 +3900,24 @@
 }
 
 .g2-more__copy .g2-more__menus {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0.2rem;
+  color: var(--ge-muted);
+}
+
+.g2-more__copy .g2-more__menu {
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.g2-more__copy .g2-more__menu b {
   color: var(--ge-ink);
-  opacity: 0.8;
+  font-weight: 650;
 }
 
 .g2-more__copy kbd {
   font-size: 0.68rem;
   opacity: 0.6;
   margin-left: 0.25rem;
-}
-
-/* Command palette */
-.g2-palette {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: grid;
-  align-items: start;
-  justify-items: center;
-  padding: 14vh 1rem 1rem;
-  background: rgba(5, 7, 10, 0.55);
-}
-
-.g2-palette__box {
-  width: min(520px, 100%);
-  max-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--g2-r-lg);
-  background: color-mix(in srgb, var(--ge-bg) 96%, #000);
-  border: 1px solid var(--g2-line-strong);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-  overflow: hidden;
-}
-
-.g2-palette__input {
-  appearance: none;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--ge-ink);
-  font: inherit;
-  font-size: 1rem;
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid var(--g2-line);
-}
-
-.g2-palette__list {
-  list-style: none;
-  margin: 0;
-  padding: 0.3rem;
-  overflow-y: auto;
-}
-
-.g2-palette__empty {
-  padding: 0.8rem;
-  color: var(--ge-muted);
-  font-size: 0.85rem;
-}
-
-.g2-palette__row {
-  appearance: none;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.55rem 0.7rem;
-  border: none;
-  border-radius: var(--g2-r-md);
-  background: transparent;
-  color: var(--ge-ink);
-  font: inherit;
-  font-size: 0.9rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.g2-palette__row.is-active {
-  background: color-mix(in srgb, var(--g2-tag) 16%, transparent);
-}
-
-.g2-palette__row kbd {
-  font-size: 0.7rem;
-  color: var(--ge-muted);
-}
-
-@media (max-width: 720px) {
-  /* Show a compact alert chip on its own HUD row. */
-  .g2-hud .g2-alert--compact {
-    display: block;
-    grid-column: 1 / -1;
-    grid-row: 3;
-    max-width: none;
-    width: 100%;
-    text-align: left;
-    font-size: 0.74rem;
-    padding: 0.3rem 0.65rem;
-  }
-
-  .g2-goal__acts {
-    gap: 0.3rem;
-  }
-
-  .g2-goal__go {
-    padding: 0 0.65rem;
-  }
-
-  .g2-hub--more {
-    flex: 1;
-  }
-
-  .g2-palette {
-    padding-top: 6vh;
-  }
 }

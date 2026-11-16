@@ -77,6 +77,9 @@ describe('late eras smoke (3–6)', () => {
     s.depth.dispatch = {
       cleanManifests: DEPTH.cleanManifestsNeed,
       lastCycleAt: 0,
+      lastCleanAt: 0,
+      laneStances: {},
+      fastFiled: 0,
       examLaneId: null,
       examMix: null,
       examUntil: 0,

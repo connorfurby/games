@@ -41,6 +41,8 @@ export interface Circuit {
   stopKind: StopPersonality | null
   /** Credited fileStandard (post-practice) toward the era gate. */
   gateCredited?: boolean
+  /** SAVE 34: personality tax accepted by settleStop; applies while this circuit stands. */
+  settledKind?: StopPersonality | null
 }
 
 export interface Plot {
@@ -184,19 +186,58 @@ export interface HorizonState {
   /** Stop settlements after credited circuits (Era 9). */
   settlements: number
   settlementUntil: number
+  /** SAVE 34: circuit + personality the pending settlement will lock in. */
+  pendingStop: { index: number; kind: StopPersonality } | null
+  /** SAVE 34: the season chore holding the bed; other chores and clever crosses wait for the turn. */
+  bedLockedChore: SeasonChore | null
   /** Yield hauls after season chores (Era 10). */
   haulsDone: number
   haulUntil: number
   /** Habit watches after phrase credit (Era 11). */
   watchedPhrases: number
   watchUntil: number
+  /**
+   * SAVE 35: the habit a filed phrase posted. Until the watch resolves the posted agent keeps it
+   * (setAgentHabit / fire refuse) and skips their own habit job. agentId null = nobody matched yet.
+   */
+  postedHabit: PostedHabit | null
   /** Clause seatings after keep (Era 12). */
   seatingsDone: number
   seatingUntil: number
   seatingGapUntil: number
+  /** SAVE 35: the kept clause waiting on the seating seal. */
+  seatingClause: string | null
+  /** SAVE 35: clauses seated, in order. Concord's hearing asks about these. */
+  seatedClauses: string[]
+  /** SAVE 35: seated clauses Concord has already put to a hearing. */
+  heardClauses: string[]
+  /** SAVE 35: clauses whose grudge the Minutes Clerk amended away at a hearing. */
+  amendedClauses: string[]
   /** Accept rehearsal complete after list practice. */
   acceptRehearsal: boolean
   acceptRehearsalUntil: number
+  /** SAVE 35: list line the last missed rehearsal scratched (−1 = none). */
+  rehearsalScratch: number
+  /**
+   * SAVE 36: the loadout piece the last endless list mutation banned. A banned clause is released
+   * and cannot be kept again; a banned venture fork is unset and cannot be set again. Toggling
+   * another clause / setting another venture's fork clears it. Null = nothing banned.
+   */
+  endlessBan: EndlessBan | null
+}
+
+export type EndlessBanKind = 'clause' | 'ventureFork'
+
+export interface EndlessBan {
+  kind: EndlessBanKind
+  /** Clause id, or venture id for a fork. */
+  id: string
+}
+
+export interface PostedHabit {
+  habit: AgentHabit
+  until: number
+  agentId: number | null
 }
 
 export function emptyHorizon(): HorizonState {
@@ -261,14 +302,23 @@ export function emptyHorizon(): HorizonState {
     climateGuest: null,
     settlements: 0,
     settlementUntil: 0,
+    pendingStop: null,
+    bedLockedChore: null,
     haulsDone: 0,
     haulUntil: 0,
     watchedPhrases: 0,
     watchUntil: 0,
+    postedHabit: null,
     seatingsDone: 0,
     seatingUntil: 0,
     seatingGapUntil: 0,
+    seatingClause: null,
+    seatedClauses: [],
+    heardClauses: [],
+    amendedClauses: [],
     acceptRehearsal: false,
     acceptRehearsalUntil: 0,
+    rehearsalScratch: -1,
+    endlessBan: null,
   }
 }

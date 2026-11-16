@@ -86,4 +86,21 @@ describe('achievements no-dupe', () => {
     expect(pity).toBeGreaterThanOrEqual(1)
     expect(next.shelfTokens).toBe(base + pity)
   })
+
+  it('tracks the first bold facing, non-standard charter and endless mutation', () => {
+    const base = { ...DEFAULT_META, achievements: {}, unlockedPacks: [...DEFAULT_META.unlockedPacks] }
+    const s = createInitialState(3)
+    expect(evaluateAchievements(s, base).unlocked).not.toContain('first-bold-facing')
+    s.buildVariants = { 'storefront:2': 'deep-counter' }
+    s.horizon.charter = 'standard'
+    expect(evaluateAchievements(s, base).unlocked).toEqual(
+      expect.not.arrayContaining(['first-bold-facing', 'first-charter-fork', 'first-endless-mutation']),
+    )
+    s.buildVariants = { 'storefront:2': 'wide-glass' }
+    s.horizon.charter = 'coop'
+    s.horizon.listMutations = 1
+    expect(evaluateAchievements(s, base).unlocked).toEqual(
+      expect.arrayContaining(['first-bold-facing', 'first-charter-fork', 'first-endless-mutation']),
+    )
+  })
 })

@@ -58,7 +58,7 @@ export const HUBS: HubDef[] = [
     id: 'worlds',
     name: 'Worlds',
     purpose: 'Worlds beyond the ration: planets, routes, seasons, signals, and the charter.',
-    icon: 'empire',
+    icon: 'planets',
     menus: ['planets', 'exchange', 'cultivars', 'signal', 'charter', 'lastaisle'],
   },
   {

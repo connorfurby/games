@@ -2,7 +2,13 @@ import { cashLabel } from '@/shared/bn'
 import { valueMul } from './systems/network'
 import { buyout, canBuyout, canPriceWar, priceWar } from './systems/rivals'
 import type { RivalId } from '../content/rivals'
-import { TRACK_BY_ID, type BuildFilter, refundFrac } from '../content/builds'
+import {
+  BUILD_VARIANT_BY_ID,
+  TRACK_BY_ID,
+  type BuildFilter,
+  refundFrac,
+  variantSlotKey,
+} from '../content/builds'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { ERA2_EXPANSION_BY_ID } from '../content/era2'
 import { INTRO_BEATS } from '../content/intro'
@@ -105,6 +111,8 @@ import {
   orderPizza,
 } from './systems/events'
 import { collectVenture } from './systems/growth'
+import type { RebrandCarry } from './systems/prestige'
+import { hasAffordableMemo, planAffordableMemos } from './memoPlan'
 import { hasAffordableUpgrade, hasAffordableVenture, planAffordableUpgrades, planAffordableVentures } from './upgradePlan'
 import { unpackUnits, staffName } from './systems/people'
 import {
@@ -155,12 +163,16 @@ export type Command =
   | { type: 'dumpCooler'; includeShelf?: boolean }
   | { type: 'dumpCoolerPartial'; cat: CategoryId; qty: number; where?: DumpWhere }
   | { type: 'buyMemo'; id: string }
+  /** Buy the best affordable desk memos, cheapest first, until broke. */
+  | { type: 'buyMemoSweep' }
   | { type: 'buyUpgrade'; id: string; count?: number }
   /** Buy the best affordable ranks, one at a time, up to the sweep limit. */
   | { type: 'buyUpgradeSweep'; tree?: TreeId | 'all' }
   | { type: 'levelVentureSweep' }
   | { type: 'buyBuild'; track?: string; id?: BuildFilter }
   | { type: 'sellBuild'; track?: string; id?: BuildFilter }
+  | { type: 'setBuildVariant'; track: BuildFilter; variantId: string }
+  | { type: 'hibernateBuild'; track: BuildFilter }
   | { type: 'buyEndcap' }
   | { type: 'sellEndcap' }
   | { type: 'openVenture'; id: string }
@@ -180,6 +192,7 @@ export type Command =
       owned?: Record<string, number>
       levels?: Record<string, number>
       sockets?: string[]
+      litWings?: string[] | null
       dust?: number
     }
   | { type: 'walkDrifting' }
@@ -217,6 +230,8 @@ export type Command =
   | { type: 'assignShift'; slot: import('../content/depth').ShiftSlot; staffId: number }
   | { type: 'clearShift'; slot: import('../content/depth').ShiftSlot; staffId?: number }
   | { type: 'serveRegular' }
+  /** SAVE 31: swap which of two shoppers Serve targets. */
+  | { type: 'focusRegular'; which: 'active' | 'waiting' }
   | { type: 'dockCheckIn'; aisle?: import('../content/categories').CategoryId; short?: boolean }
   | { type: 'payInvoice'; id: number }
   /** Clear oldest unpaid invoice without cash (softlock rail / collections). */
@@ -273,7 +288,10 @@ export type Command =
   | { type: 'buyFuel' }
   | { type: 'openFranchise' }
   | { type: 'winBackFranchise'; franchiseId: string }
-  | { type: 'setManifest'; laneId: string; mix: string }
+  /** `stance` defaults to 'exam' (opens the exam hold). One filing = one stance. */
+  | { type: 'setManifest'; laneId: string; mix: string; stance?: 'clean' | 'fast' | 'exam' }
+  /** SAVE 33: file the lane's matched cargo as ONE of clean / fast / exam-ready. */
+  | { type: 'setManifestStance'; laneId: string; stance: 'clean' | 'fast' | 'exam' }
   | { type: 'swearExam' }
   | { type: 'stampLedger' }
   | { type: 'launchBarge'; class?: 'hauler' | 'replicator' | 'ark' }
@@ -292,7 +310,7 @@ export type Command =
   | { type: 'startDriftWar' }
   | { type: 'advanceDriftWar' }
   | { type: 'promoteSteward'; staffId: number }
-  | { type: 'acceptEnding' }
+  | { type: 'acceptEnding'; carry?: RebrandCarry }
   | { type: 'rejectEnding' }
   | { type: 'clearPendingAccept' }
   | { type: 'confirmHungryLaws'; mutators?: PrestigeMutatorId[] }
@@ -345,6 +363,7 @@ export type Command =
   | { type: 'cancelQueue' }
   | { type: 'socketRelic'; id: string }
   | { type: 'unsocketRelic'; id: string }
+  | { type: 'setWingSocket'; wing: string; on: boolean; swapOut?: string }
   | { type: 'dustRelic'; id: string }
   | { type: 'setAutoDust'; rarityCeiling: string | null }
   | { type: 'levelRelic'; id: string; count?: number }
@@ -973,6 +992,21 @@ const coreHandlers = {
       log(s, def.done, 'memo')
     },
   },
+  buyMemoSweep: {
+    can: (s) => {
+      if (!hasAffordableMemo(s)) return no('No desk memos ready to buy.')
+      return ok
+    },
+    run: (s) => {
+      const plan = planAffordableMemos(s)
+      let n = 0
+      for (const step of plan) {
+        if (!run(s, { type: 'buyMemo', id: step.id }).ok) break
+        n += 1
+      }
+      if (n > 0) log(s, `Bought ${n} memos, cheapest first.`, 'good')
+    },
+  },
   syncRelics: {
     can: () => ok,
     run: (s, cmd) => {
@@ -983,6 +1017,7 @@ const coreHandlers = {
         owned: { ...(c.owned ?? {}) },
         levels: { ...(c.levels ?? {}) },
         sockets: [...(c.sockets ?? [])],
+        litWings: c.litWings ? [...c.litWings] : null,
         dust: Math.max(0, Math.floor(c.dust ?? 0)),
         autoDust: s.relics.autoDust ?? null,
       }
@@ -1166,6 +1201,7 @@ const coreHandlers = {
       s.cash -= next.cost
       s.builds[id] = lvl + 1
       s.stats.buildsBought += 1
+      delete s.buildHibernated?.[id]
       log(s, `Built ${next.name}.`, 'good')
     },
   },
@@ -1186,7 +1222,79 @@ const coreHandlers = {
       const refund = round2((tier?.cost ?? 0) * refundFrac(s))
       s.builds[id] = lvl - 1
       s.cash += refund
+      // Drop facing slots that no longer meet minTier after the sell-back.
+      if (s.buildVariants) {
+        for (const [key, vid] of Object.entries(s.buildVariants)) {
+          const def = BUILD_VARIANT_BY_ID[vid]
+          if (!def || def.track !== id) continue
+          if ((s.builds[id] ?? 0) < def.minTier) delete s.buildVariants[key]
+        }
+      }
+      delete s.buildHibernated?.[id]
       log(s, `Sold back ${tier?.name ?? id} for $${refund.toFixed(2)}.`, 'info')
+    },
+  },
+  setBuildVariant: {
+    can: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'setBuildVariant' }>
+      const def = BUILD_VARIANT_BY_ID[c.variantId]
+      if (!def || def.track !== c.track) return no('Unknown facing.')
+      if ((s.builds[c.track] ?? 0) < def.minTier) return no(`Needs ${TRACK_BY_ID[c.track].tiers[def.minTier]?.name ?? 'higher tier'}.`)
+      const slot = variantSlotKey(c.track, def.minTier)
+      const legacy = s.buildVariants?.[c.track]
+      const existing = s.buildVariants?.[slot] ?? (def.minTier === 2 && legacy ? legacy : undefined)
+      if (existing && existing !== c.variantId) {
+        return no('Facing already chosen for this tier.')
+      }
+      return ok
+    },
+    run: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'setBuildVariant' }>
+      const def = BUILD_VARIANT_BY_ID[c.variantId]
+      if (!s.buildVariants) s.buildVariants = {}
+      if (def) {
+        const slot = variantSlotKey(c.track, def.minTier)
+        s.buildVariants[slot] = c.variantId
+        // Drop legacy track-only key once slotted.
+        if (s.buildVariants[c.track] && s.buildVariants[c.track] === c.variantId) {
+          delete s.buildVariants[c.track]
+        } else if (s.buildVariants[c.track] && BUILD_VARIANT_BY_ID[s.buildVariants[c.track]]?.minTier === def.minTier) {
+          delete s.buildVariants[c.track]
+        }
+      }
+      log(s, `Facing: ${def?.name ?? c.variantId}.`, 'good')
+    },
+  },
+  hibernateBuild: {
+    can: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'hibernateBuild' }>
+      const id = c.track
+      if (!TRACK_BY_ID[id]) return no('Unknown build.')
+      const lvl = s.builds[id] ?? 0
+      const min = id === 'storefront' || id === 'storage' ? 1 : 0
+      if (lvl <= min) return no('Nothing to hibernate.')
+      if (s.buildHibernated?.[id]) return no('Already hibernating.')
+      return ok
+    },
+    run: (s, cmd) => {
+      const c = cmd as Extract<Command, { type: 'hibernateBuild' }>
+      const id = c.track
+      const track = TRACK_BY_ID[id]
+      const lvl = s.builds[id] ?? 0
+      const tier = track.tiers[lvl]
+      const refund = round2((tier?.cost ?? 0) * refundFrac(s) * 0.35)
+      s.builds[id] = lvl - 1
+      s.cash += refund
+      if (!s.buildHibernated) s.buildHibernated = {}
+      s.buildHibernated[id] = true
+      if (s.buildVariants) {
+        for (const [key, vid] of Object.entries(s.buildVariants)) {
+          const def = BUILD_VARIANT_BY_ID[vid]
+          if (!def || def.track !== id) continue
+          if ((s.builds[id] ?? 0) < def.minTier) delete s.buildVariants[key]
+        }
+      }
+      log(s, `Hibernated ${tier?.name ?? id} · +$${refund.toFixed(2)}. Effects parked.`, 'warn')
     },
   },
   buyEndcap: {
@@ -1808,6 +1916,7 @@ export function tickAutoTournament(s: GameState) {
   if (s.era < 2 || !s.compute.unlocked) return
   if (s.compute.ideasUnlocked && s.compute.ideasOn) return
   if (s.time < (s.compute.nextAutoTourneyAt ?? 0)) return
+  if (s.time < (s.compute.nextTournamentAt ?? 0)) return
   const cap = attentionCap(s)
   if (cap <= 0 || s.compute.attention < cap * 0.98) return
   // Never eat Attention that a memo on the desk is waiting for.

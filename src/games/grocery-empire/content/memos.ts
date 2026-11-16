@@ -1,6 +1,5 @@
 import { DEPTH, LOT_SURVEY_LIFETIME } from '../sim/balance'
 import { rebootFee } from '../sim/formulas'
-import { LATE_MEMOS } from './lateEras'
 import { AMEND_MINUTES, STANDING_ORDERS } from '../sim/balance'
 import { log, queueTutorial, setEra, unlockMenu } from '../sim/helpers'
 import type { GameState } from '../sim/state'
@@ -1313,6 +1312,7 @@ export const MEMOS: MemoDef[] = [
 
 // Ghost lateEras doctrine-* memos removed (they were a Read faucet with no effects).
 // Late modifiers live as tournament archetypes / hasDoctrine hooks in later slices.
-void LATE_MEMOS
+// Eras 3–6 spine memos are authored inline above (and in HORIZON_MEMOS); lateEras.ts still
+// exports ENDING_BEATS / CHARTER for endings.
 
 export const MEMO_BY_ID: Record<string, MemoDef> = Object.fromEntries(MEMOS.map((m) => [m.id, m]))

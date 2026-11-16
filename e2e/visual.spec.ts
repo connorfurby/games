@@ -25,7 +25,7 @@ test.describe('visual baselines', () => {
     await page.locator('.ge-dev-stage, .dv-stage', { hasText: 'Era 1' }).first().click()
     await page.keyboard.press('Escape')
     await page.locator('.g2-hub', { hasText: 'Store' }).click()
-    await expect(page.locator('.fl-dock .ge-unpack, .ge-unpack').first()).toBeVisible()
+    await expect(page.locator('.ge-unpack').first()).toBeVisible()
     await expect(page.locator('.g2-stat--baskets')).toBeVisible()
     await expect(page.locator('.ge-root')).toHaveScreenshot('phone-floor.png', {
       maxDiffPixelRatio: 0.05,

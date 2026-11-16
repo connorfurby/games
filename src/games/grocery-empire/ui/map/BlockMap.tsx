@@ -183,12 +183,12 @@ export function BlockMap({
     >
       <defs>
         <linearGradient id="bm-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={orbit ? '#12162e' : '#24324f'} />
-          <stop offset="1" stopColor={water ? '#1a3350' : '#3a4a62'} />
+          <stop offset="0" style={{ stopColor: orbit ? 'var(--sc-night-deep)' : 'var(--sc-night-top)' }} />
+          <stop offset="1" style={{ stopColor: water ? 'var(--sc-night-water)' : 'var(--sc-night-bottom)' }} />
         </linearGradient>
         <linearGradient id="bm-ground" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#242a2c" />
-          <stop offset="1" stopColor="#1a1e20" />
+          <stop offset="0" style={{ stopColor: 'var(--sc-night-ground-top)' }} />
+          <stop offset="1" style={{ stopColor: 'var(--sc-night-ground-bottom)' }} />
         </linearGradient>
       </defs>
 
@@ -198,7 +198,7 @@ export function BlockMap({
             <circle key={x} cx={x} cy={18 + (i % 3) * 10} r={i % 2 ? 1.1 : 0.7} className="bm-star" />
           ))
         : null}
-      {water ? <rect x="0" y="96" width="1000" height="52" className="bm-water" /> : <rect x="0" y="96" width="1000" height="36" fill="#2a3548" />}
+      {water ? <rect x="0" y="96" width="1000" height="52" className="bm-water" /> : <rect x="0" y="96" width="1000" height="36" style={{ fill: 'var(--sc-night-bottom)' }} />}
       <rect x="0" y="148" width="1000" height="492" fill="url(#bm-ground)" />
 
       {view !== 'city' && districts.slice(0, 4).map((p, i) => {

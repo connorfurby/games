@@ -1,3 +1,4 @@
+import { MENUS } from '../../content/menus'
 import { MEMOS } from '../../content/memos'
 import { INVEST } from '../../sim/balance'
 import { can } from '../../sim/commands'
@@ -15,7 +16,8 @@ import type { GameState, InvestRisk } from '../../sim/state'
 import { useState } from 'react'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { Button, Card, DataTable, Disclosure, Meter, Sheet, Stat } from '../kit'
+import { Button, Card, DataTable, Disclosure, Meter, Sheet } from '../kit'
+import { StatusChip, type VerbTrayProps } from '../play'
 import type { Column } from '../kit'
 import { TickerScene } from '../scenes/live/TickerScene'
 import { HubCallout, LateHubShell, Rows } from './LateHubShell'
@@ -119,103 +121,140 @@ export function InvestPanel() {
     },
   ]
 
-  const kpis = (
-    <>
-      <Stat size="sm" label="Passbook" value={money(bal, numberFormat)} title="Slow, safe interest inside the cap" />
-      <Stat size="sm" label="Interest" value={`${money(perHour, numberFormat)}/hr`} title="Projected from the yielding balance" />
-      {book.unlocked ? <Stat size="sm" label="Risk book" value={money(book.balance, numberFormat)} /> : null}
-      {s.era >= 7 ? <Stat size="sm" label="Lots held" value={totalLots} title="Instrument lots across all positions" /> : null}
-    </>
+  const kpiChips = (
+    <div className="lh-chips" data-coach-id="invest-kpis">
+      <StatusChip tone="idle" title="Slow, safe interest inside the cap">
+        Passbook {money(bal, numberFormat)}
+      </StatusChip>
+      <StatusChip tone="idle" title="Projected from the yielding balance">
+        Interest {money(perHour, numberFormat)}/hr
+      </StatusChip>
+      {book.unlocked ? <StatusChip tone="idle">Risk book {money(book.balance, numberFormat)}</StatusChip> : null}
+      {s.era >= 7 ? (
+        <StatusChip tone="idle" title="Instrument lots across all positions">
+          Lots held {totalLots}
+        </StatusChip>
+      ) : null}
+    </div>
   )
+
+  // Primary verb: the advisor's deposit / withdraw when it has one, otherwise open the passbook sheet.
+  const depositCheck = can(s, { type: 'depositPassbook', amount: depositSuggest })
+  const withdrawCheck = can(s, { type: 'withdrawPassbook', amount: withdrawSuggest })
+  const moveSecondary = {
+    key: 'move',
+    label: 'Move cash',
+    fact: money(bal, numberFormat),
+    onClick: () => setMoveOpen(true),
+  }
+  const tray: VerbTrayProps = wantDeposit
+    ? {
+        primary: {
+          label: `Deposit ${money(depositSuggest, numberFormat)}`,
+          tone: 'primary',
+          size: 'lg',
+          coachId: 'invest-deposit',
+          disabled: !depositCheck.ok,
+          onClick: () => dispatch({ type: 'depositPassbook', amount: depositSuggest }),
+        },
+        failReason: depositCheck.ok ? undefined : depositCheck.reason,
+        secondaries: [moveSecondary],
+      }
+    : wantWithdraw
+      ? {
+          primary: {
+            label: `Withdraw ${money(withdrawSuggest, numberFormat)}`,
+            tone: 'primary',
+            size: 'lg',
+            coachId: 'invest-withdraw',
+            disabled: !withdrawCheck.ok,
+            onClick: () => dispatch({ type: 'withdrawPassbook', amount: withdrawSuggest }),
+          },
+          failReason: withdrawCheck.ok ? undefined : withdrawCheck.reason,
+          secondaries: [moveSecondary],
+        }
+      : {
+          primary: {
+            label: 'Move cash',
+            tone: 'free',
+            size: 'lg',
+            coachId: 'invest-move',
+            disabled: s.cash < 1 && bal < 0.01,
+            onClick: () => setMoveOpen(true),
+          },
+          failReason: s.cash < 1 && bal < 0.01 ? 'No cash or passbook balance to move yet.' : undefined,
+        }
 
   return (
     <LateHubShell
-      title="Invest"
-      purpose="Park surplus cash inside a capped yield."
-      stats={kpis}
+      title={MENUS.invest.name}
+      purpose={MENUS.invest.purpose}
       scene={<TickerScene />}
-      primary={
-        <>
-          {wantDeposit || wantWithdraw ? (
-            <HubCallout
-              coachId="invest-advisor"
-              tone="ready"
-              title={wantDeposit ? 'Surplus is idle' : 'Passbook is full'}
-              action={
-                wantDeposit ? (
-                  <Button tone="primary" onClick={() => dispatch({ type: 'depositPassbook', amount: depositSuggest })}>
-                    Deposit {money(depositSuggest, numberFormat)}
-                  </Button>
-                ) : (
-                  <Button tone="primary" onClick={() => dispatch({ type: 'withdrawPassbook', amount: withdrawSuggest })}>
-                    Withdraw {money(withdrawSuggest, numberFormat)}
-                  </Button>
-                )
-              }
-            >
-              {wantDeposit
-                ? `Park ${money(depositSuggest, numberFormat)} and keep ${money(reserve, numberFormat)} for bills.`
-                : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from the passbook.`}
-            </HubCallout>
-          ) : null}
-          <div className="lh-callout" data-coach-id="invest-passbook">
-            <div className="lh-callout__copy">
-              <h3>Passbook {money(bal, numberFormat)}</h3>
-              <p>
-                {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · cap {money(pbCap, numberFormat)}
-              </p>
-            </div>
-            <div className="lh-callout__action">
-              <Button size="sm" onClick={() => setMoveOpen(true)}>
-                Move cash
-              </Button>
-            </div>
-          </div>
-          <Sheet
-            open={moveOpen}
-            onClose={() => setMoveOpen(false)}
-            title="Passbook"
-            reducedMotion={reducedMotion}
-          >
-            <div className="lh-stack">
-              <Meter
-                tone={bal >= pbCap - 1 ? 'warn' : 'accent'}
-                value={pbYield}
-                max={pbCap}
-                label="Yielding"
-                eta={`${money(pbYield, numberFormat)} / ${money(pbCap, numberFormat)}`}
-              />
-              <Rows
-                rows={[
-                  { label: 'Balance', value: money(bal, numberFormat) },
-                  { label: 'Rate', value: `${(rate * 3600 * 100).toFixed(2)}% / hr` },
-                  {
-                    label: 'Time to cap',
-                    value: capRoom <= 0 ? 'at cap' : bal <= 0 ? 'deposit first' : duration(toCapSec),
-                    title: 'Interest alone; deposits get you there faster',
-                  },
-                  { label: 'Earned', value: money(s.stats?.interestEarned ?? 0, numberFormat) },
-                ]}
-              />
-              <div className="lh-actions">
-                <Button size="sm" tone="primary" onClick={() => deposit(0.25)} disabled={s.cash < 1}>
-                  In 25%
-                </Button>
-                <Button size="sm" onClick={() => deposit(0.5)} disabled={s.cash < 1}>
-                  In 50%
-                </Button>
-                <Button size="sm" onClick={() => withdraw(0.25)} disabled={bal < 1}>
-                  Out 25%
-                </Button>
-                <Button size="sm" onClick={() => withdraw(1)} disabled={bal < 0.01}>
-                  Out all
-                </Button>
-              </div>
-            </div>
-          </Sheet>
-        </>
-      }
+      tray={tray}
     >
+      {kpiChips}
+
+      {wantDeposit || wantWithdraw ? (
+        <HubCallout
+          coachId="invest-advisor"
+          tone="ready"
+          title={wantDeposit ? 'Surplus is idle' : 'Passbook is full'}
+        >
+          {wantDeposit
+            ? `Park ${money(depositSuggest, numberFormat)} and keep ${money(reserve, numberFormat)} for bills.`
+            : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from the passbook.`}
+        </HubCallout>
+      ) : null}
+      <div className="lh-callout" data-coach-id="invest-passbook">
+        <div className="lh-callout__copy">
+          <h3>Passbook {money(bal, numberFormat)}</h3>
+          <p>
+            {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · cap {money(pbCap, numberFormat)}
+          </p>
+        </div>
+      </div>
+      <Sheet
+        open={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        title="Passbook"
+        reducedMotion={reducedMotion}
+      >
+        <div className="lh-stack">
+          <Meter
+            tone={bal >= pbCap - 1 ? 'warn' : 'accent'}
+            value={pbYield}
+            max={pbCap}
+            label="Yielding"
+            eta={`${money(pbYield, numberFormat)} / ${money(pbCap, numberFormat)}`}
+          />
+          <Rows
+            rows={[
+              { label: 'Balance', value: money(bal, numberFormat) },
+              { label: 'Rate', value: `${(rate * 3600 * 100).toFixed(2)}% / hr` },
+              {
+                label: 'Time to cap',
+                value: capRoom <= 0 ? 'at cap' : bal <= 0 ? 'deposit first' : duration(toCapSec),
+                title: 'Interest alone; deposits get you there faster',
+              },
+              { label: 'Earned', value: money(s.stats?.interestEarned ?? 0, numberFormat) },
+            ]}
+          />
+          <div className="lh-actions">
+            <Button size="sm" tone="primary" onClick={() => deposit(0.25)} disabled={s.cash < 1}>
+              In 25%
+            </Button>
+            <Button size="sm" onClick={() => deposit(0.5)} disabled={s.cash < 1}>
+              In 50%
+            </Button>
+            <Button size="sm" onClick={() => withdraw(0.25)} disabled={bal < 1}>
+              Out 25%
+            </Button>
+            <Button size="sm" onClick={() => withdraw(1)} disabled={bal < 0.01}>
+              Out all
+            </Button>
+          </div>
+        </div>
+      </Sheet>
       {outgrown ? (
         <p className="lh-note" role="note">
           <strong>Small change now.</strong> A full passbook earns about {money(pbCap * rate, numberFormat)}/s against{' '}

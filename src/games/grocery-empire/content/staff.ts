@@ -399,7 +399,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   minutesClerk: {
     id: 'minutesClerk',
     name: 'Clerk of the Minutes',
-    blurb: 'Amend one clause per hearing. Concord cannot rush the vote.',
+    blurb: 'Amends one heard clause per docket: the seat stays, the grudge goes.',
     hireBase: 4.2e18,
     hireGrowth: 1.5,
     wagePerMin: 1.05e16,

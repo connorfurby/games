@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ACHIEVEMENTS, type AchievementDef } from '@/achievements/registry'
 import { createInitialState, type GameState } from '@/games/grocery-empire/sim/state'
+import { qty } from '@/games/grocery-empire/ui/format'
 import { loadGame } from '@/shared/save'
 import { downloadAchievementGallery, downloadAchievementShareCard } from './achievementShareCard'
 import { useMeta } from './MetaContext'
@@ -121,7 +122,7 @@ export function AchievementsPage() {
                   <span>
                     {got
                       ? 'Complete'
-                      : `${Math.floor(prog ?? 0).toLocaleString()} / ${a.progressMax.toLocaleString()}`}
+                      : `${qty(Math.floor(prog ?? 0), 'named')} / ${qty(a.progressMax, 'named')}`}
                   </span>
                 </div>
               ) : null}

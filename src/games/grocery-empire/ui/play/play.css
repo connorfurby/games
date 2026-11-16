@@ -162,6 +162,13 @@
     border-color: color-mix(in srgb, var(--ge-danger, #d9665b) 45%, transparent);
     color: var(--ge-danger, #d9665b);
   }
+
+  .pf-chip__link {
+    all: unset;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }
 
 @layer motion {

@@ -23,6 +23,7 @@ const DEST: Record<string, GoalDest> = {
   acquireRegion: 'politics',
   openLane: 'logistics',
   setManifest: 'logistics',
+  setManifestStance: 'logistics',
   swearExam: 'logistics',
   stampLedger: 'fleet',
   launchBarge: 'fleet',

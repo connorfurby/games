@@ -114,6 +114,13 @@ const STATION: Partial<Record<RoleId, { x: number; y: number }[]>> = {
   ],
 }
 
+const BOTTLENECK_WORD: Record<string, string> = {
+  demand: 'Shoppers',
+  unpack: 'Unpack',
+  checkout: 'Checkout',
+  shelf: 'Shelf',
+}
+
 const DESK_LABEL: Record<(typeof HORIZON_ROLE_IDS)[number], string> = {
   surveyor: 'Probe',
   planogramClerk: 'Shelf',
@@ -232,8 +239,9 @@ export function StaffFloor({
   const cashiers = counts.cashier ?? 0
   const overflowN = Object.values(overflow).reduce((a, n) => a + n, 0)
   const headcount = roster.length
-  const bnShort =
-    bottleneckLabel && bottleneckLabel.length > 28 ? `${bottleneckLabel.slice(0, 26)}…` : bottleneckLabel || bottleneck || '—'
+  // One word in the HUD chip so it never truncates when the room scales down to 390 px.
+  // The full sentence lives in the caption and the panel tooltip.
+  const bnShort = BOTTLENECK_WORD[bottleneck] ?? (bottleneck ? bottleneck.charAt(0).toUpperCase() + bottleneck.slice(1) : '—')
 
   const chips: RoomHudChip[] = [
     { label: 'Crew', value: String(headcount) },

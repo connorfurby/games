@@ -32,9 +32,9 @@ When adding a verb: extend the `Command` union, implement `can`/`run`, wire UI +
 
 ## `SAVE_VERSION`
 
-Current: **29** (`sim/balance.ts`). Display version for players is `GAME_VERSION` in `content/news.ts` (separate) — currently **3.0**.
+Current: **36** (`sim/balance.ts`). Display version for players is `GAME_VERSION` in `content/news.ts` (separate) — currently **40.0**.
 
-Tests that pin it: `horizon.test.ts`, `ge2.smoke.test.ts`, others that `expect(SAVE_VERSION).toBe(…)`.
+Tests that pin it: `horizon.test.ts`, `ge2.smoke.test.ts`, others that `expect(SAVE_VERSION).toBe(…)`; `phase6.worlds.test.ts` pins SAVE 34 (v33 → 34 migrate); `phase7.charter.test.ts` pins SAVE 35 (v34 → current); `phase8.loadout.test.ts` pins SAVE 36 (v35 → 36: `horizon.endlessBan`, `relics.litWings`); `phase5.stance.test.ts` keeps its v32 → current migrate check.
 
 ### Adding a field
 

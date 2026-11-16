@@ -5,6 +5,7 @@ import { valueMul } from './systems/network'
 import { freshWaySpoilMul, tunnelFreshAgeMul } from './systems/cold'
 import { rivalDemandMul } from './systems/rivals'
 import { statCut, statMul } from './systems/stats'
+import { buildVariantMul } from '../content/builds'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { FACING_BY_ID, policyOf } from '../content/depth'
 import { ROLES, STAFF_TRAITS, type RoleId, type StaffTraitId } from '../content/staff'
@@ -187,7 +188,10 @@ export function shelfCap(s: GameState) {
   // One Perfect Aisle: shelf growth from nesting stops; Wall of Cans adds asymptotic capacity.
   const nest = up(s, 'one-perfect-aisle') > 0 ? 0 : up(s, 'basket-nesting') * 0.03
   const fullShelves = memo(s, 'full-shelves') ? 0.03 : 0
-  return Math.floor(cap * (1 + nest + fullShelves + upgradeMagnitude(s, 'wall-of-cans')) * statMul(s, 'shelf'))
+  const facing = buildVariantMul(s, 'shelf')
+  return Math.floor(
+    cap * (1 + nest + fullShelves + upgradeMagnitude(s, 'wall-of-cans')) * statMul(s, 'shelf') * facing,
+  )
 }
 
 export function backroomCap(s: GameState) {
@@ -200,7 +204,8 @@ export function backroomCap(s: GameState) {
   if (st >= 7) cap += 8000
   if (s.expansions['side-yard']) cap += 40
   if (memo(s, 'dock-plate')) cap += 20
-  return Math.floor(cap * (1 + up(s, 'case-cube') * 0.03) * statMul(s, 'backroom'))
+  const facing = buildVariantMul(s, 'backroom')
+  return Math.floor(cap * (1 + up(s, 'case-cube') * 0.03) * statMul(s, 'backroom') * facing)
 }
 
 /** Door overflow Refuse Softener lets a truck squeeze past the backroom cap. */
@@ -242,8 +247,23 @@ export function featuredFacing(s: GameState, cat: CategoryId) {
   return id ? FACING_BY_ID[id] ?? null : null
 }
 
+/**
+ * The pull multiplier a climate guest's ban leaves on a facing. Guest Patience (and the Guest
+ * Awning project) soften the cut itself, never past `guestPatienceCap` of it.
+ */
+export function climateBanPullMul(s: GameState): number {
+  const patience = Math.min(
+    DEPTH.guestPatienceCap,
+    upgradeEffect(s, 'guest-patience') + (s.projects?.done?.['pj-guest-awning'] ? DEPTH.guestAwningPatience : 0),
+  )
+  return 1 - (1 - DEPTH.climateFacingBanPullMul) * (1 - patience)
+}
+
 export function facingPullMul(s: GameState, cat: CategoryId) {
-  return featuredFacing(s, cat)?.pullMul ?? DEPTH.facingPullDefault
+  const base = featuredFacing(s, cat)?.pullMul ?? DEPTH.facingPullDefault
+  const ban = s.depth?.climateFacingBan
+  const banned = !!ban && ban.cat === cat && ban.until > s.time && s.depth?.facings?.[cat] === ban.tag
+  return banned ? base * climateBanPullMul(s) : base
 }
 
 export function facingMarginMul(s: GameState, cat: CategoryId) {
@@ -393,7 +413,7 @@ export function reputationMul(s: GameState) {
 }
 
 export function storefrontMul(s: GameState) {
-  const f = s.builds.storefront ?? 1
+  const f = s.buildHibernated?.storefront ? Math.max(1, (s.builds.storefront ?? 1) - 1) : (s.builds.storefront ?? 1)
   return [1, 1, 1.15, 1.25, 1.4, 1.6, 1.8, 2, 2.15, 2.3, 2.5][f] ?? 2.5
 }
 
@@ -568,6 +588,8 @@ export function demandBreakdown(s: GameState) {
       s.era >= 6 && (s.depth?.rationWeekUntil ?? 0) > 0 && s.time < (s.depth?.rationWeekUntil ?? 0)
         ? DEPTH.rationTaxMul * (1 - upgradeEffect(s, 'stipend-pad') * 0.15)
         : 1,
+    /** Build facing choices (soft-capped in buildVariantMul). */
+    buildFacing: buildVariantMul(s, 'demand'),
   }
   let total = 1
   for (const v of Object.values(parts)) total *= v
@@ -789,6 +811,8 @@ export function checkoutCap(s: GameState) {
   if (memo(s, 'express-lane')) cap *= CHECKOUT.expressLaneMul
   cap *= 1 + up(s, 'two-way-radio') * 0.03 + upgradeMagnitude(s, 'register-glance')
   if (memo(s, 'two-way-radio-memo')) cap *= 1.03
+  // tipSharpness: Accept carry (checkout grace / star recovery)
+  cap *= 1 + Math.min(3, Math.max(0, s.prestigeCarry?.tipSharpness ?? 0)) * 0.05
   return cap * Math.min(1, s.morale + 0.1) * statMul(s, 'checkout')
 }
 
@@ -1051,6 +1075,8 @@ export function agingMul(s: GameState, where: 'shelf' | 'backroom', cat?: Catego
   if (where === 'backroom' && hasFork(s, 'bondedSealed')) m *= LATE.bondedSealedAgeMul
   if (hasFork(s, 'ghostRush') && (!cat || CATEGORIES[cat].life != null)) m *= LATE.ghostRushAgeMul
   if (memo(s, 'cold-law-draft')) m *= 0.99
+  // Facing spoilCut > 1 slows aging (divide).
+  m /= buildVariantMul(s, 'spoilCut')
   return m * statCut(s, 'spoilCut')
 }
 

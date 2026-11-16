@@ -60,12 +60,15 @@ function clearActive(s: GameState) {
   s.depth.regulars.layaway = false
 }
 
-export function resolveRegular(s: GameState, satisfied: boolean) {
-  if (!s.depth) return
-  const id = s.depth.regulars.activeId
-  if (!id) return
+function clearWaiting(s: GameState) {
+  s.depth.regulars.waitingId = null
+  s.depth.regulars.waitingPatienceUntil = 0
+  s.depth.regulars.waitingLayaway = false
+}
+
+/** Stats / stars / log for one finished visit (shared by active and waiting). */
+function settleVisit(s: GameState, id: string, satisfied: boolean, wasLayaway: boolean) {
   const def = REGULAR_BY_ID[id]
-  const wasLayaway = !!s.depth.regulars.layaway
   s.depth.regulars.seen[id] = (s.depth.regulars.seen[id] ?? 0) + 1
   if (satisfied) {
     s.depth.regularSatisfied += 1
@@ -84,10 +87,51 @@ export function resolveRegular(s: GameState, satisfied: boolean) {
     s.depth.regularMissUntil = s.time + DEPTH.regularMissDemandSec
     log(s, `${def?.name ?? 'A regular'} left disappointed.`, 'warn')
   }
+}
+
+export function resolveRegular(s: GameState, satisfied: boolean) {
+  if (!s.depth) return
+  const r = s.depth.regulars
+  const id = r.activeId
+  if (!id) return
+  const wasLayaway = !!r.layaway
+  settleVisit(s, id, satisfied, wasLayaway)
   clearActive(s)
   // Layaway visits use the longer gap so slips cannot skim beside auto traffic.
   const gap = wasLayaway ? DEPTH.layawayVisitGapSec : DEPTH.regularVisitGapSec
-  s.depth.regulars.arrivesAt = s.time + gap
+  r.arrivesAt = s.time + gap
+  // Second shopper steps up with whatever patience they have left.
+  if (r.waitingId) {
+    r.activeId = r.waitingId
+    r.patienceUntil = r.waitingPatienceUntil
+    r.layaway = r.waitingLayaway
+    clearWaiting(s)
+  }
+}
+
+/** Waiting shopper ran out of patience: same star nick as an active miss. */
+function expireWaiting(s: GameState) {
+  const r = s.depth.regulars
+  const id = r.waitingId
+  if (!id) return
+  settleVisit(s, id, false, !!r.waitingLayaway)
+  clearWaiting(s)
+}
+
+/** Swap primary and waiting so Serve targets the other shopper. */
+export function swapRegularFocus(s: GameState): boolean {
+  const r = s.depth?.regulars
+  if (!r?.activeId || !r.waitingId) return false
+  const id = r.activeId
+  const pat = r.patienceUntil
+  const lay = r.layaway
+  r.activeId = r.waitingId
+  r.patienceUntil = r.waitingPatienceUntil
+  r.layaway = r.waitingLayaway
+  r.waitingId = id
+  r.waitingPatienceUntil = pat
+  r.waitingLayaway = lay
+  return true
 }
 
 /** Manual or auto serve when shelf + facing match. */
@@ -109,7 +153,9 @@ export function tickRegulars(s: GameState, dt: number) {
     sumQty(s.shelf) > 0 &&
     s.depth.stars < DEPTH.starsStart
   ) {
-    s.depth.stars = clampStars(s.depth.stars + DEPTH.starRegenPerSec * dt)
+    // tipSharpness: Accept carry (checkout grace / star recovery)
+    const tipRegenMul = 1 + Math.min(3, Math.max(0, s.prestigeCarry?.tipSharpness ?? 0)) * 0.1
+    s.depth.stars = clampStars(s.depth.stars + DEPTH.starRegenPerSec * tipRegenMul * dt)
   }
   if (starsFrozen(s) && s.depth.starsFrozenAt != null) {
     s.depth.stars = s.depth.starsFrozenAt
@@ -121,8 +167,22 @@ export function tickRegulars(s: GameState, dt: number) {
   if (r.activeId) {
     // Layaway visits never auto-serve — player/bot must push serveRegular.
     if (!r.layaway && tryServeRegular(s)) return
+    // Waiting shopper never auto-serves; they only run out of patience.
+    if (r.waitingId && s.time >= r.waitingPatienceUntil) expireWaiting(s)
     if (s.time >= r.patienceUntil) {
       resolveRegular(s, false)
+    }
+    // Second arrival: one more named shopper once the visit gap has passed.
+    if (r.activeId && !r.waitingId && s.time >= r.arrivesAt && sumQty(s.shelf) > 0) {
+      const seen = { ...r.seen, [r.activeId]: (r.seen[r.activeId] ?? 0) + 1000 }
+      const def = pickNextRegular(s.seed, s.time, s.categories, seen)
+      if (def.id !== r.activeId) {
+        r.waitingId = def.id
+        r.waitingPatienceUntil = s.time + DEPTH.regularPatienceSec
+        const visits = Object.values(r.seen).reduce((n, v) => n + v, 0)
+        r.waitingLayaway = visits >= 1
+        r.arrivesAt = s.time + DEPTH.regularVisitGapSec
+      }
     }
     return
   }
@@ -134,7 +194,8 @@ export function tickRegulars(s: GameState, dt: number) {
   }
   const def = pickNextRegular(s.seed, s.time, s.categories, r.seen)
   r.activeId = def.id
-  r.arrivesAt = s.time
+  // While this visit is live, arrivesAt is when a second shopper may walk in.
+  r.arrivesAt = s.time + DEPTH.regularVisitGapSec
   r.patienceUntil = s.time + DEPTH.regularPatienceSec
   // Deterministic layaway cadence: every visit after the first is a slip.
   const visits = Object.values(r.seen).reduce((n, v) => n + v, 0)

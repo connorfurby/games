@@ -123,6 +123,48 @@ export function relicLevelPower(level: number): number {
   return 1 + 0.8 * Math.pow((lv - 1) / 9, 0.7)
 }
 
+// ── Wing sockets (SAVE 36) ───────────────────────────────────────────────────
+// The museum's sockets also light finished wings. A finished wing's bonus only counts while it is
+// lit, and only `cap` wings (3, or 5 after pj-fifth-socket) can be lit at once, so turning one
+// wing's bonus on means leaving another wing dark. `lit === null` is the default: the first `cap`
+// finished wings (in wing order) are lit, so a fresh player never has to touch it.
+
+/** Sockets the run can use: 3, or 5 after pj-fifth-socket (or once the museum mirrored 5). */
+export function socketCapOf(s: GameState): number {
+  const later = !!s.projects?.done?.['pj-fifth-socket'] || (s.horizon?.socketsUnlocked ?? 0) >= 5
+  return later ? HORIZON.relicSocketsLater : HORIZON.relicSockets
+}
+
+/** The wings whose bonus is on: finished wings that hold a socket (or the first `cap` when unset). */
+export function effectiveLitWings(
+  completed: readonly string[],
+  lit: readonly string[] | null | undefined,
+  cap: number,
+): string[] {
+  const done = completed.filter((w, i) => completed.indexOf(w) === i)
+  if (!lit) return done.slice(0, cap)
+  return done.filter((w) => lit.includes(w)).slice(0, cap)
+}
+
+/** Why `wing` cannot be lit now (null when it can). Lighting at full needs another wing dark first. */
+export function wingLightBlock(
+  completed: readonly string[],
+  lit: readonly string[] | null | undefined,
+  cap: number,
+  wing: string,
+): string | null {
+  if (!completed.includes(wing)) return 'Finish that wing first.'
+  const now = effectiveLitWings(completed, lit, cap)
+  if (now.includes(wing)) return 'That wing is already lit.'
+  if (now.length >= cap) return 'Every socket is lit. Leave another wing dark first.'
+  return null
+}
+
+/** The run's lit wings (stats.ts reads this instead of every finished wing). */
+export function litWingIds(s: GameState): string[] {
+  return effectiveLitWings(s.relics?.wings ?? [], s.relics?.litWings, socketCapOf(s))
+}
+
 /** Socketed relics. hz-socket raises 1.35 to 1.45. */
 export function relicSocketMul(s: GameState): number {
   return (s.empire.perks['hz-socket'] ?? 0) > 0 ? 1.45 : 1.35

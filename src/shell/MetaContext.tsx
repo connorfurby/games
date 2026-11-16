@@ -489,5 +489,10 @@ export function useMeta() {
   return ctx
 }
 
+/** Like useMeta, but null outside a provider (scenes render in headless tests). */
+export function useMetaOptional() {
+  return useContext(Ctx)
+}
+
 /** Dev helper — pack list length stays 12. */
 export const PACK_COUNT = TEXTURE_PACKS.length

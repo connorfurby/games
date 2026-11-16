@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { MENUS } from '../../content/menus'
+import { can } from '../../sim/commands'
 import { VENTURES, ventureIncome, ventureLevelCost, venturePolicyIncomeMul } from '../../content/ventures'
 import { ventureOutgrownBelow } from '../../sim/systems/growth'
 import { hasAffordableVenture, planAffordableVentures } from '../../sim/upgradePlan'
@@ -8,7 +10,9 @@ import { useGame, useIsSuggested } from '../GameContext'
 import { money, rate } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Icon } from '../icons/Icon'
-import { Button, Card, Meter, ScreenHeader, Sheet } from '../kit'
+import { Button, Card, EmptyState, Meter, Sheet } from '../kit'
+import type { VerbTrayProps } from '../play'
+import { EndlessBanNote } from '../horizon/EndlessBanNote'
 import { VenturesStreet } from '../ventures/VenturesStreet'
 
 function duration(sec: number): string {
@@ -83,93 +87,134 @@ export function VenturesPanel() {
     return canCollect || canOpen || canLevel
   })
 
+  const levelSum = () => Object.values(s.ventures).reduce((n, v) => n + (v?.level ?? 0), 0)
+  const runSweep = () => {
+    const plan = planAffordableVentures(s)
+    const levels = plan.reduce((n, step) => n + step.count, 0)
+    if (levels <= 0) {
+      setSweepNote({ text: 'No open till can be raised right now.', levels: levelSum() })
+      return
+    }
+    const before = s.cash
+    dispatch({ type: 'levelVentureSweep' })
+    setSweepNote({
+      text: `Raised ${levels} levels · ${money(before - s.cash, numberFormat)}.`,
+      levels: levelSum(),
+    })
+  }
+  const claimAll = () => {
+    for (const { def } of claimable) dispatch({ type: 'collectVenture', id: def.id })
+  }
+
+  const anyOpened = open.some((r) => (r.vs?.level ?? 0) > 0)
+  const claimTotal = claimable.reduce((n, { vs }) => n + (vs?.stored ?? 0), 0)
+  // First till that is listed but not yet opened (the suggested "Open" verb).
+  const nextOpen = open.find(({ vs }) => (vs?.level ?? 0) === 0)
+  const nextOpenOk = nextOpen ? s.cash >= nextOpen.def.openCost : false
+  const nextLocked = locked[0]
+
+  const tray: VerbTrayProps = (() => {
+    if (claimable.length > 0) {
+      return {
+        primary: {
+          label: `Claim ${money(claimTotal, numberFormat)}`,
+          tone: 'free',
+          size: 'lg',
+          coachId: 'ventures-collect',
+          className: collectSuggested ? 'is-suggested' : undefined,
+          onClick: claimAll,
+        },
+        secondaries: [
+          ...(anyOpened
+            ? [
+                {
+                  key: 'sweep',
+                  label: 'Upgrade all',
+                  disabled: !canSweep,
+                  title: 'Raises open tills in order of income per dollar. Does not open a new one.',
+                  onClick: runSweep,
+                },
+              ]
+            : []),
+          ...(open.length > 0
+            ? [
+                {
+                  key: 'ready',
+                  label: 'Ready only',
+                  fact: readyOnly ? 'on' : 'off',
+                  onClick: () => setReadyOnly((v) => !v),
+                },
+              ]
+            : []),
+        ],
+      }
+    }
+    if (nextOpen && nextOpenOk) {
+      return {
+        primary: {
+          label: `Open ${nextOpen.def.name} · ${money(nextOpen.def.openCost, numberFormat)}`,
+          tone: 'primary',
+          size: 'lg',
+          coachId: nextOpen.def.id === 'coffee' ? 'ventures-coffee' : `venture-open-${nextOpen.def.id}`,
+          icon: <Icon name="venture" size={14} />,
+          onClick: () => dispatch({ type: 'openVenture', id: nextOpen.def.id }),
+        },
+        secondaries: [
+          ...(anyOpened
+            ? [{ key: 'sweep', label: 'Upgrade all', disabled: !canSweep, onClick: runSweep }]
+            : []),
+          { key: 'ready', label: 'Ready only', fact: readyOnly ? 'on' : 'off', onClick: () => setReadyOnly((v) => !v) },
+        ],
+      }
+    }
+    if (anyOpened) {
+      return {
+        primary: {
+          label: 'Upgrade all',
+          tone: 'primary',
+          size: 'lg',
+          disabled: !canSweep,
+          title: 'Raises open tills in order of income per dollar. Does not open a new one.',
+          onClick: runSweep,
+        },
+        failReason: canSweep
+          ? undefined
+          : nextOpen
+            ? `Need ${money(nextOpen.def.openCost, numberFormat)} to open ${nextOpen.def.name}, or cash for a level.`
+            : 'No open till is affordable to raise yet.',
+        secondaries: [
+          { key: 'ready', label: 'Ready only', fact: readyOnly ? 'on' : 'off', onClick: () => setReadyOnly((v) => !v) },
+        ],
+      }
+    }
+    return {
+      primary: {
+        label: nextOpen ? `Open ${nextOpen.def.name} · ${money(nextOpen.def.openCost, numberFormat)}` : 'Open a till',
+        tone: 'primary',
+        size: 'lg',
+        disabled: true,
+        onClick: () => undefined,
+      },
+      failReason: nextOpen
+        ? `Need ${money(nextOpen.def.openCost, numberFormat)}.`
+        : nextLocked
+          ? `${nextLocked.def.name} opens at ${nextLocked.def.opensAt}.`
+          : 'No side tills have unlocked yet.',
+    }
+  })()
+
+  const noteVisible = sweepNote && sweepNote.levels === levelSum()
+
   return (
     <section className="ge-panel vt">
-      <ScreenHeader
-        hub
-        title={
-          <>
-            <Icon name="venture" size={20} tone="accent" /> Ventures
-          </>
-        }
-        purpose="Open a side till, then Upgrade it on the card."
-      />
-
       <HubStage
+        purpose={MENUS.ventures.purpose}
+        department={MENUS.ventures.name}
         scene={<VenturesStreet />}
-        primary={
-          <>
-            {claimable.length > 0 ? (
-              <div
-                data-suggest-id="ventures-collect"
-                className={`ge-dept-callout is-ready${collectSuggested ? ' is-suggested' : ''}`.trim()}
-              >
-                <div className="ge-dept-callout__copy">
-                  <h3>
-                    Claim{' '}
-                    {money(
-                      claimable.reduce((n, { vs }) => n + (vs?.stored ?? 0), 0),
-                      numberFormat,
-                    )}
-                  </h3>
-                  <p>
-                    {claimable.length} till{claimable.length === 1 ? '' : 's'} ready — overflow stops stacking when
-                    full.
-                  </p>
-                </div>
-                <Button
-                  tone="primary"
-                  onClick={() => {
-                    for (const { def } of claimable) dispatch({ type: 'collectVenture', id: def.id })
-                  }}
-                >
-                  Claim all
-                </Button>
-              </div>
-            ) : open.some((r) => (r.vs?.level ?? 0) > 0) ? (
-              <div className="u2-sweep">
-                <Button
-                  tone="primary"
-                  disabled={!canSweep}
-                  title="Raises open tills in order of income per dollar. Does not open a new one."
-                  onClick={() => {
-                    const plan = planAffordableVentures(s)
-                    const levels = plan.reduce((n, step) => n + step.count, 0)
-                    if (levels <= 0) {
-                      const now = Object.values(s.ventures).reduce((n, v) => n + (v?.level ?? 0), 0)
-                      setSweepNote({ text: 'No open till can be raised right now.', levels: now })
-                      return
-                    }
-                    const before = s.cash
-                    dispatch({ type: 'levelVentureSweep' })
-                    const now = Object.values(s.ventures).reduce((n, v) => n + (v?.level ?? 0), 0)
-                    setSweepNote({
-                      text: `Raised ${levels} levels · ${money(before - s.cash, numberFormat)}.`,
-                      levels: now,
-                    })
-                  }}
-                >
-                  Upgrade all
-                </Button>
-                <span className="u2-sweep__note">
-                  {sweepNote &&
-                  sweepNote.levels === Object.values(s.ventures).reduce((n, v) => n + (v?.level ?? 0), 0)
-                    ? sweepNote.text
-                    : 'Best income per dollar, then the next. Cards still upgrade one at a time.'}
-                </span>
-              </div>
-            ) : open.length > 0 ? (
-              <p className="ge-muted" style={{ margin: 0, fontSize: '0.78rem' }}>
-                None opened yet. Open a card to start the till — Upgrade shows up on that card right after.
-              </p>
-            ) : (
-              <p className="ge-empty" style={{ margin: 0 }}>
-                Cards below list unlocks. Open one to put Upgrade on that card.
-              </p>
-            )}
-          </>
-        }
+        tray={tray}
       >
+        {noteVisible ? <p className="ge-muted">{sweepNote.text}</p> : null}
+      <EndlessBanNote />
       {small.length > 0 ? (
         <div className="vt-small" title="These tills are maxed and earn under 0.5% of your income. They collect themselves.">
           <span className="vt-small__label">Small change · collects itself</span>
@@ -181,19 +226,6 @@ export function VenturesPanel() {
         </div>
       ) : null}
 
-      {open.length > 0 ? (
-        <div className="ge-dept-toolbar">
-          <label className="ge-check">
-            <input
-              type="checkbox"
-              checked={readyOnly}
-              onChange={(e) => setReadyOnly(e.target.checked)}
-            />
-            Ready only
-          </label>
-        </div>
-      ) : null}
-
       {readyOnly && open.length > 0 && shown.length === 0 ? (
         <p className="ge-empty">Nothing ready right now.</p>
       ) : null}
@@ -202,6 +234,8 @@ export function VenturesPanel() {
         {shown.map(({ def, vs }) => {
           const level = vs?.level ?? 0
           const opened = level > 0
+          const forkA = can(s, { type: 'setVenturePolicy', id: def.id, policy: 'a' })
+          const forkB = can(s, { type: 'setVenturePolicy', id: def.id, policy: 'b' })
           const storeCap = ventureIncome(def, Math.max(1, level)) * def.storeSec
           const stored = vs?.stored ?? 0
           const nextCost = opened ? ventureLevelCost(def, level) : def.openCost
@@ -343,13 +377,28 @@ export function VenturesPanel() {
                   </p>
                   {!vs?.policy ? (
                     <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                      <Button tone="primary" onClick={() => dispatch({ type: 'setVenturePolicy', id: def.id, policy: 'a' })}>
+                      <Button
+                        tone="primary"
+                        disabled={!forkA.ok}
+                        title={forkA.ok ? undefined : forkA.reason}
+                        onClick={() => dispatch({ type: 'setVenturePolicy', id: def.id, policy: 'a' })}
+                      >
                         {def.policies.a.name}
                       </Button>
-                      <Button tone="ghost" onClick={() => dispatch({ type: 'setVenturePolicy', id: def.id, policy: 'b' })}>
+                      <Button
+                        tone="ghost"
+                        disabled={!forkB.ok}
+                        title={forkB.ok ? undefined : forkB.reason}
+                        onClick={() => dispatch({ type: 'setVenturePolicy', id: def.id, policy: 'b' })}
+                      >
                         {def.policies.b.name}
                       </Button>
                     </div>
+                  ) : null}
+                  {s.horizon?.endlessBan?.kind === 'ventureFork' && s.horizon.endlessBan.id === def.id ? (
+                    <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>
+                      Banned by the mutated list. Set another venture’s fork to clear it.
+                    </p>
                   ) : null}
                 </div>
               ) : null}
@@ -415,28 +464,15 @@ export function VenturesPanel() {
         })}
       </div>
 
-      {locked.length > 0 ? (
-        <section className="ge-empire-block">
-          <header className="ge-empire-block__head">
-            <h3>Not open yet</h3>
-            <p>These stay listed so the unlock is visible. Opening one puts Upgrade on the card.</p>
-          </header>
-          <div className="ge-card-grid">
-            {locked.map(({ def }) => (
-              <Card key={def.id} state="locked" className="ge-card">
-                <div className="ge-card__head">
-                  <div>
-                    <strong>{def.name}</strong>
-                    <p className="ge-muted">{def.blurb}</p>
-                  </div>
-                </div>
-                <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>
-                  Opens at {def.opensAt}.
-                </p>
-              </Card>
-            ))}
-          </div>
-        </section>
+      {listed.length === 0 ? (
+        <EmptyState
+          title="No side tills unlocked yet"
+          body={nextLocked ? `${nextLocked.def.name} opens at ${nextLocked.def.opensAt}.` : 'Keep growing the store.'}
+        />
+      ) : nextLocked ? (
+        <p className="ge-muted">
+          Next till: {nextLocked.def.name} opens at {nextLocked.def.opensAt}.
+        </p>
       ) : null}
       </HubStage>
     </section>

@@ -16,6 +16,7 @@ export const GUIDE_TOPICS: { id: string; label: string }[] = [
   { id: 'faq', label: 'How do I…' },
   { id: 'systems', label: 'Systems' },
   { id: 'ops', label: 'Standing orders' },
+  { id: 'choices', label: 'Decisions' },
   { id: 'era2', label: 'Chain & capital' },
   { id: 'era3', label: 'Cold & politics' },
   { id: 'late', label: 'Globe & beyond' },
@@ -645,7 +646,83 @@ COOLER LOG + DISPATCH (Cold / Logistics)
   Sign timed logs for leave. Match lane cargo for clean manifests before the barge.
 
 POCKET OPS + HEARING DOCKET (Fleet / Charter)
-  Hauler ETAs clear pockets (trips open Era 6). Concord hearings (3 sessions) before the stamp.`,
+  Hauler ETAs clear pockets (trips open Era 6). Concord hearings (3 sessions) before the stamp.
+
+FORKS
+  Facings, stances, and the charter each have an entry under Decisions.`,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DECISIONS (40.0) — one entry per fork the game asks you to make
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'choice-facing',
+    title: 'Safe or Bold facing',
+    era: 1,
+    topic: 'choices',
+    blurb: 'Build raises ask for a facing: the steady card or the sharper one.',
+    body: `Storefront, cold and transit raises open a facing slot at certain tiers (Build panel). Each slot is
+a pick between two cards: Safe (the steadier effect, usually shelf, backroom or spoil) or Bold (the sharper one,
+often demand). The pick is permanent for that slot. Facing bonuses soft-cap at ×1.35 across the whole store.
+
+If a raise is blocked, the Build panel says "Pick a facing" — choose before the next tier.
+SEE ALSO  Systems · Build ladder.`,
+  },
+  {
+    id: 'choice-regulars',
+    title: 'Two regulars and the invoice fork',
+    era: 1,
+    topic: 'choices',
+    blurb: 'Who to serve first, and whether to float the bill.',
+    body: `Two regulars can wait at once. Each keeps its own patience; switch between them on the Floor. The Facing
+sheet says what each wants and which facing they notice.
+
+Invoices (Suppliers) ask: pay now for the early discount, float the bill (late fee, stars suffer), or hire the
+clerk. The slip shows both prices. A floated bill ages and its late fee hits your stars.
+SEE ALSO  Eight depth systems.`,
+  },
+  {
+    id: 'choice-flyer',
+    title: 'Flyer stance: deep, mid, soft',
+    era: 2,
+    topic: 'choices',
+    blurb: 'Your weekly flyer is a stance against Penny and FreshWay.',
+    body: `Deep pulls Penny in: she locks your aisles sooner. Soft lets FreshWay spoil your produce faster.
+Mid keeps the peace. The stance lasts only while the week runs; finished weeks still count toward the cold
+permit whatever the stance. Print deep when you can afford a lock, soft when your cooler is signed.
+SEE ALSO  Era 2 systems detail · Flyer Desk.`,
+  },
+  {
+    id: 'choice-manifest',
+    title: 'Manifest stance: clean, exam, fast',
+    era: 4,
+    topic: 'choices',
+    blurb: 'One filing is one stance. They never stack.',
+    body: `Clean credits a clean manifest now (the barge gate). Exam opens the exam hold; swear it to credit an
+exam instead. Fast spends the lane for a quick burst of cash, credits neither, and leaves the lane open to
+MegaMart. The button note under each stance says why it is blocked.
+SEE ALSO  Era 4–6 systems detail · Dispatch.`,
+  },
+  {
+    id: 'choice-charter',
+    title: 'Charter fork: Standard, Boutique, Co-op',
+    era: 12,
+    topic: 'choices',
+    blurb: 'Sign one before the Last Aisle. It reshapes your multipliers.',
+    body: `Standard: network ×1.25, but only File the standard is a legal commit and scores lock at 0.72.
+Boutique: no network multiplier, puzzle scores may reach 1, excess over 0.72 scales that layer only (cap ×1.5).
+Co-op: ventures ×1.12, network ×0.92. The fork sits on your Next Goal until you sign.
+SEE ALSO  Eras 7–12 · Worlds puzzles (charter → Last Aisle).`,
+  },
+  {
+    id: 'choice-endless',
+    title: 'Endless mutations',
+    era: 12,
+    topic: 'choices',
+    blurb: 'After Accept the standing order keeps changing. Ease the Ration Board to restore.',
+    body: `Each mutation scratches a line and may ban a clause or fork. Toggle another clause (or set another venture's
+fork) to lift a ban. Endless Edit Pad slows mutations; Mutation Clear Pad restores a scarred line.
+SEE ALSO  After Accept · the standing order.`,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -715,7 +792,8 @@ POCKET OPS
   Wrong ration wastes the trip. Four cleared pockets + Orbit Mid + Hold + ration facing open Era 6.
 
 ENDINGS
-  Ration week freezes the Star Board. Stamp the ration ledger once per shift-day before Continue.
+  Ration week freezes the Star Board. Stamp the ration ledger once per shift-day before Continue —
+  a day left unstamped lets the Ration Board skim a slice of demand until you do.
   Accept = prestige soft-reset. Reject = ordered silence.`,
   },
   {
@@ -731,10 +809,48 @@ ENDINGS
 ERA LOOPS
   Serve climate neighbors on stocked worlds (Era 8). Settle each credited stop (Era 9).
   Season chore arms a yield haul — bring it in before the season turns (Era 10).
-  Habit watches finish after each credited phrase (Era 11). Seat each kept clause, then wait the gap (Era 12).
+  Each credited phrase posts its habit: that agent is locked to it (off their own job) until the watch resolves (Era 11).
+  Seat each kept clause, then wait the gap (Era 12).
 
 CHARTER → LAST AISLE
-  Keep four clauses (serial seating), clear Concord’s hearing docket (3 sessions), then stamp.
-  Finish list practice, rehearse Accept (desk gap), then Accept — Reject is unchanged.`,
+  Keep four clauses (serial seating). Concord puts each clause you seat to a hearing (3 sessions); a Minutes Clerk can amend one grudge away.
+  Sign Standard, Boutique or Co-op. Finish list practice, rehearse at a 0.85 mean (a miss scratches a line), then Accept — Reject is unchanged.`,
+  },
+  {
+    id: 'late-worlds-guests',
+    title: 'Climate guests',
+    era: 7,
+    topic: 'late',
+    blurb: 'Who walks in, and what they ban.',
+    body: `A guest walks in for the climate of a world you stock. Serving them bans your strongest featured facing
+until the shift turns — swap the facing to dodge it. Guest Patience (Pantry) softens the cut; the Guest Awning
+project softens it further.`,
+  },
+  {
+    id: 'late-worlds-bed',
+    title: 'The bed lock',
+    era: 9,
+    topic: 'late',
+    blurb: 'A chore holds the bed until the turn.',
+    body: `A season chore locks the bed to that chore until the season turns. Bed Lock Pad (Cultivar) lifts the lock for the
+last stretch of the season; the Bed Glass project lifts it a little earlier. The standard cross always files.`,
+  },
+  {
+    id: 'late-worlds-table',
+    title: 'The hearing table',
+    era: 11,
+    topic: 'late',
+    blurb: 'How many grudges the clerk can strike.',
+    body: `The Minutes Clerk strikes one grudge per docket. Clause Amend Pad and the Embassy Chair each add one more.`,
+  },
+  {
+    id: 'late-worlds-endless',
+    title: 'After Accept · the standing order',
+    era: 12,
+    topic: 'late',
+    blurb: 'Mutations and the pads that help.',
+    body: `Past the named worlds the list mutates a line every few worlds, and the Ration Board leans on it. Clear the
+pressure from the Last Aisle. Endless Edit Pad stretches the gap between mutations; Mutation Clear Pad
+restores a scarred line when you clear it. More under Decisions.`,
   },
 ]

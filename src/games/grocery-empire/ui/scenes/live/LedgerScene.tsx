@@ -1,3 +1,5 @@
+import { LEDGER_SKINS } from '@/cosmetics/packs'
+import { useMetaOptional } from '@/shell/MetaContext'
 import { HORIZON } from '../../../sim/balance'
 import { useGame } from '../../GameContext'
 import { money, rate } from '../../format'
@@ -14,6 +16,8 @@ const HORIZON_GAUGES = [
 /** Books room: log-friendly income chart, horizon gauges with full names, Hits to fix burn/sales. */
 export function LedgerScene() {
   const { state: s, numberFormat } = useGame()
+  const meta = useMetaOptional()?.meta
+  const skin = LEDGER_SKINS.find((k) => k.id === meta?.equippedLedgerSkin) ?? LEDGER_SKINS[0]
   const net = s.rates.cashPerSec
   const rising = net >= 0
   const store = Math.max(0, s.rates.revenuePerSec)
@@ -30,6 +34,7 @@ export function LedgerScene() {
         { label: 'Burn', value: rate(burn), neg: burn > store },
         { label: 'Side', value: rate(side) },
       ]}
+      className={`ls-skin ls-skin--${skin.id}`}
       skyTop="#171c22"
       skyBottom="#2a323a"
     >

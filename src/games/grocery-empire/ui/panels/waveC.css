@@ -1,0 +1,269 @@
+/* Wave C departments: Planets, Memos, Upgrades. Layout only; colour comes from tokens. */
+@layer kit {
+  /* ── Planets ───────────────────────────────────────────── */
+  .wc-room {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+
+  .wc-survey {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    margin: 0;
+    font: 600 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .wc-survey strong {
+    color: var(--ge-ink);
+  }
+
+  .wc-worlds {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+
+  .wc-worlds__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  /* Wants stay pinned while the shelf scrolls under them. */
+  .wc-wants {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-1) var(--s-2);
+    margin: 0 0 var(--s-2);
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--ge-line);
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--ge-raised, var(--ge-bg)) 94%, transparent);
+    backdrop-filter: blur(8px);
+    font: 600 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+  }
+
+  .wc-wants__label {
+    color: var(--ge-ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .wc-wants .hz-want {
+    font-style: normal;
+    padding: 1px var(--s-2);
+    border-radius: var(--r-pill);
+    border: 1px solid var(--ge-line);
+  }
+
+  .wc-wants .hz-want.is-hit {
+    border-color: color-mix(in srgb, var(--ge-success, #7cc47f) 55%, transparent);
+    color: var(--ge-success, #7cc47f);
+  }
+
+  .wc-wants__score {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wc-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  /* Planogram: breathing room between wants / slots / goods. */
+  .hz-planogram {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-width: 0;
+  }
+
+  .hz-planogram .hz-slots {
+    gap: var(--s-2);
+  }
+
+  .hz-planogram .hz-slot {
+    min-height: 3.25rem;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md, 8px);
+    gap: 2px;
+  }
+
+  .hz-planogram .hz-slot.is-empty {
+    border-style: dashed;
+    background: color-mix(in srgb, var(--ge-sunken, var(--ge-bg)) 70%, transparent);
+  }
+
+  .hz-planogram .hz-chips--sku {
+    gap: var(--s-2);
+    padding-top: var(--s-1);
+    border-top: 1px solid var(--ge-line);
+  }
+
+  .hz-planogram .hz-chip--sku {
+    min-height: 2.75rem;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md, 8px);
+    text-align: left;
+  }
+
+  .hz-puzzle {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-width: 0;
+  }
+
+  .hz-puzzle__head {
+    gap: var(--s-2);
+    margin-bottom: 0;
+  }
+
+  .hz-puzzle__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  /*
+   * While a shelf is open the tray rides the bottom of the scrollport, after the puzzle,
+   * so Commit / File the standard is always one thumb away at 390px.
+   */
+  .wc-planets--puzzle > .pf__tray {
+    order: 99;
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 calc(-1 * var(--s-1, 0.25rem));
+    padding: var(--s-3) var(--s-2) calc(var(--s-2) + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--ge-plate, var(--ge-bg)) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--ge-line);
+  }
+
+  .wc-planets--puzzle > .pf__tray .gk-btn--free,
+  .wc-planets--puzzle > .pf__tray .gk-btn--primary {
+    min-height: 2.75rem;
+    border-radius: var(--r-md, 8px);
+  }
+
+  /* ── Memos ─────────────────────────────────────────────── */
+  .wc-memo-room {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+
+  .wc-att {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+
+  .wc-att__note,
+  .wc-att__warn {
+    margin: 0;
+    font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .wc-att__warn {
+    color: var(--ge-warn, #e09f3e);
+  }
+
+  .wc-office .ge-office__warn {
+    margin: var(--s-1) 0 0;
+    font-size: var(--t-xs);
+    color: var(--ge-warn, #e09f3e);
+  }
+
+  .wc-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .wc-filters .ge-filter-bar__input {
+    flex: 1 1 10rem;
+    min-width: 0;
+  }
+
+  .wc-fork-label {
+    margin: 0 0 var(--s-1);
+    font-size: var(--t-xs);
+  }
+
+  .wc-fork-state {
+    font-size: var(--t-2xs);
+  }
+
+  .wc-standing-effect {
+    margin: 0;
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+  }
+
+  .wc-memos {
+    min-width: 0;
+  }
+
+  .wc-memos .pf__dept {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  /* ── Upgrades ──────────────────────────────────────────── */
+  .wc-up-room {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+
+  .wc-up-room__line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    margin: 0;
+  }
+
+  .wc-up-room__blurb {
+    min-width: 0;
+    font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .wc-up-room .pf-chip {
+    flex: 0 0 auto;
+  }
+
+  .wc-up-room__note {
+    margin: 0;
+    font: 600 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-success, #7cc47f);
+  }
+
+  .wc-up-view {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+    margin-bottom: var(--s-2);
+  }
+}

@@ -178,8 +178,18 @@ function PerkDetail({ p, onBuy, onJump }: { p: PerkDef; onBuy: () => void; onJum
  * Unique Empire sections (Hungry Laws, Autonomous, doctrines) for EmpireBoard.
  * No second "Empire" panel header — the board already owns rank/XP hero copy.
  */
-export function EmpireSections() {
-  const { state: s, dispatch, setActiveMenu, reducedMotion } = useGame()
+export function EmpireSections({
+  doctrineOpen,
+  autoOpen,
+  onDoctrineClose,
+  onAutoClose,
+}: {
+  doctrineOpen: boolean
+  autoOpen: boolean
+  onDoctrineClose: () => void
+  onAutoClose: () => void
+}) {
+  const { state: s, dispatch, reducedMotion } = useGame()
   const { metaRef, replaceMeta } = useMeta()
   const confirm = useConfirm()
   const autoBlock = canReleaseAutonomous(s)
@@ -187,11 +197,8 @@ export function EmpireSections() {
   const showLaws =
     s.pendingAccept || s.prestigeCarry.universeIndex > 0 || activeLaws.length > 0
   const points = s.empire.points
-  const ownedDoctrines = Object.values(s.empire.perks).reduce((n, v) => n + ((v ?? 0) > 0 ? 1 : 0), 0)
   const [focusId, setFocusId] = useState<string | null>(null)
   const [branch, setBranch] = useState<PerkBranch>('floorcraft')
-  const [doctrineOpen, setDoctrineOpen] = useState(false)
-  const [autoOpen, setAutoOpen] = useState(false)
 
   const spent = useMemo(
     () =>
@@ -211,31 +218,6 @@ export function EmpireSections() {
 
   return (
     <>
-      <div className="ge-chip-row" style={{ marginBottom: '0.55rem' }}>
-        <Button tone="ghost" onClick={() => setActiveMenu('upgrades')}>
-          Open Upgrades (cash trees)
-        </Button>
-        <Button tone="ghost" onClick={() => setDoctrineOpen(true)} data-coach-id="empire-doctrine">
-          {points > 0 ? `Doctrine · ${points} ready` : `Doctrine · ${ownedDoctrines}`}
-        </Button>
-        {s.era >= 2 && !s.autonomous ? (
-          <Button
-            tone={autoBlock ? 'ghost' : 'primary'}
-            coachId="empire-autonomous"
-            title={autoBlock ?? 'Release Autonomous'}
-            onClick={() => setAutoOpen(true)}
-          >
-            Autonomous
-          </Button>
-        ) : null}
-      </div>
-
-      {s.autonomous ? (
-        <p className="ge-muted" data-coach-id="empire-autonomous">
-          Autonomous is live. Habits run from Books.
-        </p>
-      ) : null}
-
       {showLaws ? (
         <section className="ge-panel e2-section ge-empire-block">
           <header className="ge-empire-block__head">
@@ -270,7 +252,7 @@ export function EmpireSections() {
 
       <Sheet
         open={autoOpen}
-        onClose={() => setAutoOpen(false)}
+        onClose={onAutoClose}
         title="Release Autonomous"
         reducedMotion={reducedMotion}
       >
@@ -282,7 +264,7 @@ export function EmpireSections() {
           title={autoBlock ?? 'Release Autonomous'}
           onClick={() => {
             dispatch({ type: 'releaseAutonomous' })
-            setAutoOpen(false)
+            onAutoClose()
           }}
         >
           Release
@@ -291,7 +273,7 @@ export function EmpireSections() {
 
       <Sheet
         open={doctrineOpen}
-        onClose={() => setDoctrineOpen(false)}
+        onClose={onDoctrineClose}
         title={points > 0 ? `Doctrine board · ${points} ready` : 'Doctrine board'}
         reducedMotion={reducedMotion}
       >
@@ -372,7 +354,26 @@ export function EmpireSections() {
   )
 }
 
-/** Thin re-export of sections for callers that still import EmpirePanel. */
+/** Standalone wrapper for callers that still import EmpirePanel (EmpireBoard drives the sheets itself). */
 export function EmpirePanel() {
-  return <EmpireSections />
+  const [doctrineOpen, setDoctrineOpen] = useState(false)
+  const [autoOpen, setAutoOpen] = useState(false)
+  return (
+    <>
+      <div className="ge-chip-row">
+        <Button tone="ghost" onClick={() => setDoctrineOpen(true)} data-coach-id="empire-doctrine">
+          Doctrine
+        </Button>
+        <Button tone="ghost" onClick={() => setAutoOpen(true)} data-coach-id="empire-autonomous">
+          Autonomous
+        </Button>
+      </div>
+      <EmpireSections
+        doctrineOpen={doctrineOpen}
+        autoOpen={autoOpen}
+        onDoctrineClose={() => setDoctrineOpen(false)}
+        onAutoClose={() => setAutoOpen(false)}
+      />
+    </>
+  )
 }

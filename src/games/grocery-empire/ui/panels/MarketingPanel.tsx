@@ -4,12 +4,13 @@ import { can } from '../../sim/commands'
 import { adMul, demandPerSec, salesBottleneck, varietyMul } from '../../sim/formulas'
 import { celebrityCashCost, postureFee } from '../../sim/lateCost'
 import { matchCouponCost, RIVAL_COPY, rivalAnswerCost } from '../../sim/systems/events'
+import { FLYER_STANCE_COPY } from '../../sim/systems/flyerStance'
 import { broadcastClimates, wireAdActive } from '../../sim/systems/late'
 import type { MarketingPosture, RivalKind } from '../../sim/state'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { PlayFrame } from '../play'
-import { Badge, Button, Chip, SegmentedControl, Sheet } from '../kit'
+import { ActionRow, PlayFrame, StatusChip } from '../play'
+import { Button, EmptyState, SegmentedControl, Sheet } from '../kit'
 import { BillboardScene } from '../scenes/live/BillboardScene'
 
 const POSTURES: { id: MarketingPosture; label: string; blurb: string }[] = [
@@ -28,6 +29,8 @@ const RIVAL_EFFECT: Record<RivalKind, string> = {
 export function MarketingPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
   const [flyerSheet, setFlyerSheet] = useState(false)
+  const [postureSheet, setPostureSheet] = useState(false)
+  const [celebSheet, setCelebSheet] = useState(false)
   const war = s.events?.couponWar
   const matchCost = matchCouponCost(s)
   const celebUntil = s.campaigns?.celebrityUntil ?? 0
@@ -95,7 +98,7 @@ export function MarketingPanel() {
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose="Staff, marketing, rivals and side businesses."
+        purpose="Ads, flyers and loyalty pull more shoppers through the door."
         department="Marketing"
         room={<BillboardScene />}
         tray={{
@@ -169,117 +172,73 @@ export function MarketingPanel() {
               title: !refundCheck.ok ? refundCheck.reason : undefined,
               onClick: () => dispatch({ type: 'refundAd' }),
             },
+            {
+              key: 'posture',
+              label: 'Posture',
+              fact: POSTURES.find((p) => p.id === posture)?.label ?? 'Neighborhood',
+              title: `Posture fee ${money(fee, numberFormat)}`,
+              onClick: () => setPostureSheet(true),
+            },
           ],
         }}
       >
-        <div className="p6-row">
-          <Badge tone="muted">Ads Lv {s.ads}</Badge>
-          {bottleneck.kind !== 'demand' ? (
-            <Badge tone="warn" title={`Limit is ${bottleneck.kind}. ${bottleneck.label}`}>
-              Ads won’t move baskets
-            </Badge>
-          ) : (
-            <Badge tone="success">Shoppers are the limit · payback {paybackText}</Badge>
-          )}
-          {celebLeft > 0 ? <Badge tone="muted">Celeb {celebLeft}s</Badge> : null}
-        </div>
-      <div className="p6-row">
-        <Button
-          tone="ghost"
-          size="sm"
-          disabled={!refundCheck.ok}
-          title={!refundCheck.ok ? refundCheck.reason : undefined}
-          onClick={() => dispatch({ type: 'refundAd' })}
-        >
-          Undo ad
-        </Button>
-        {showCelebBuy ? (
-          <Button
-            tone={celebCheck.ok ? 'primary' : 'ghost'}
-            size="sm"
-            disabled={!celebCheck.ok}
-            title={
-              !celebCheck.ok
-                ? celebCheck.reason
-                : `+25% for ${CELEBRITY_ENDCAP.durationSec}s · ${money(celebrityCashCost(s), numberFormat)} + ${CELEBRITY_ENDCAP.ideasCost} Ideas`
-            }
-            onClick={() => dispatch({ type: 'buyMemo', id: 'celebrity-endcap' })}
+        <div className="p6-stack">
+          <StatusChip
+            tone={bottleneck.kind !== 'demand' ? 'warn' : 'ready'}
+            title={bottleneck.kind !== 'demand' ? `Limit is ${bottleneck.kind}. ${bottleneck.label}` : undefined}
           >
-            Celebrity
-          </Button>
-        ) : null}
-      </div>
+            {bottleneck.kind !== 'demand'
+              ? `Ads won’t move baskets · payback ${paybackText}`
+              : `Shoppers are the limit · payback ${paybackText}`}
+          </StatusChip>
 
-      <div className="p6-stack">
-        <div className="p6-row" title={`Posture fee ${money(fee, numberFormat)}`}>
-          {POSTURES.map((p) => {
-            const on = posture === p.id
-            const check = can(s, { type: 'setMarketingPosture', posture: p.id })
-            return (
-              <span key={p.id} title={on ? p.blurb : !check.ok ? check.reason : p.blurb}>
-                <Chip
-                  selected={on}
-                  disabled={on || !check.ok}
-                  onClick={() => dispatch({ type: 'setMarketingPosture', posture: p.id })}
-                >
-                  {p.label}
-                </Chip>
-              </span>
-            )
-          })}
-        </div>
+          {s.era >= 2 ? (
+            <ActionRow
+              label="Flyer desk"
+              fact={`${flyerWeeks}/${DEPTH.flyerWeeksNeed} weeks`}
+              trail={flyerLive ? 'Live' : 'Print'}
+              title={flyerCopy}
+              onClick={() => setFlyerSheet(true)}
+            />
+          ) : null}
 
-        {s.era >= 2 ? (
-          <Sheet
-            open={flyerSheet}
-            onClose={() => setFlyerSheet(false)}
-            title="Flyer Desk"
-            reducedMotion={reducedMotion}
-            footer={
-              <Button tone="ghost" onClick={() => setFlyerSheet(false)}>
-                Done
-              </Button>
-            }
-          >
-            <div className="p6-stack" data-coach-id="marketing-flyer-band">
-              <p className="p6-copy">{flyerCopy}</p>
-              <SegmentedControl
-                aria-label="Discount band"
-                value={discountBand}
-                onChange={(v) => setDiscountBand(v as 'soft' | 'mid' | 'deep')}
-                options={[
-                  { value: 'soft', label: 'Soft', title: 'Safe, pays less' },
-                  { value: 'mid', label: 'Mid', title: 'Balanced week' },
-                  { value: 'deep', label: 'Deep', title: 'Higher pull · spoil risk on perishables' },
-                ]}
+          {celebLeft > 0 || showCelebBuy ? (
+            <ActionRow
+              label="Celebrity endcap"
+              fact={celebLeft > 0 ? `${celebLeft}s left` : money(celebrityCashCost(s), numberFormat)}
+              trail={celebLeft > 0 ? 'Live' : 'Open'}
+              title={`+25% for ${CELEBRITY_ENDCAP.durationSec}s · ${CELEBRITY_ENDCAP.ideasCost} Ideas`}
+              onClick={() => setCelebSheet(true)}
+            />
+          ) : null}
+
+          {loyaltyOn ? (
+            <div data-coach-id="marketing-loyalty">
+              <ActionRow
+                label={`Loyalty · tier ${s.loyalty.tier}`}
+                fact={`owed ${money(s.loyalty.liability, numberFormat)}`}
+                trail={s.loyalty.liability >= 0.5 && s.cash >= 0.5 ? 'Redeem' : undefined}
+                disabled={s.loyalty.liability < 0.5 || s.cash < 0.5}
+                title="Pay down what the punch cards owe."
+                onClick={() => dispatch({ type: 'redeemLoyalty' })}
               />
-              <Button
-                tone="primary"
-                size="lg"
-                disabled={!flyerCheck.ok}
-                title={flyerCheck.ok ? undefined : flyerCheck.reason}
-                onClick={printFlyer}
-              >
-                Print week · {discountBand}
-              </Button>
             </div>
-          </Sheet>
-        ) : null}
+          ) : null}
 
           {s.era >= 7 ? (
-            <div data-coach-id="marketing-broadcast" className="p6-row">
-              <span className="p6-muted">Broadcast</span>
+            <div data-coach-id="marketing-broadcast" className="p6-stack" aria-label="Broadcast">
               {climates.length === 0 ? (
-                <span className="p6-muted">Stock a world first.</span>
+                <EmptyState title="Nothing to broadcast" body="Stock a world first." />
               ) : (
                 climates.map((climate) => {
                   const check = can(s, { type: 'broadcast', climate })
                   const left = Math.ceil(s.late?.broadcasts?.[climate] ?? 0)
                   return (
-                    <Button
+                    <ActionRow
                       key={climate}
-                      size="sm"
-                      tone={left > 0 || check.ok ? 'primary' : 'secondary'}
+                      label={`Broadcast · ${climate}`}
+                      fact={left > 0 ? `${left}s on air` : `${LATE.broadcastSurveyCost} survey`}
+                      trail={left > 0 ? 'Live' : check.ok ? 'Air' : undefined}
                       disabled={!check.ok}
                       title={
                         !check.ok
@@ -287,9 +246,7 @@ export function MarketingPanel() {
                           : `+${Math.round(LATE.broadcastSalesBump * 100)}% off-world sales per world in this climate for ${LATE.broadcastDurationSec}s.`
                       }
                       onClick={() => dispatch({ type: 'broadcast', climate })}
-                    >
-                      {climate} · {left > 0 ? `${left}s` : `${LATE.broadcastSurveyCost} survey`}
-                    </Button>
+                    />
                   )
                 })
               )}
@@ -297,39 +254,127 @@ export function MarketingPanel() {
           ) : null}
 
           {s.era >= 10 ? (
-            <div data-coach-id="marketing-wire-ad" className="p6-row">
-              <Button
-                size="sm"
-                tone={wireCheck.ok ? 'primary' : 'secondary'}
+            <div data-coach-id="marketing-wire-ad">
+              <ActionRow
+                label="Wire ad"
+                fact={wireLeft > 0 ? `${wireLeft}s left` : `${LATE.wireAdSignalCost} signal`}
+                trail={`×${LATE.wireAdMul}`}
                 disabled={!wireCheck.ok}
-                title={!wireCheck.ok ? wireCheck.reason : undefined}
+                title={
+                  !wireCheck.ok
+                    ? wireCheck.reason
+                    : `×${LATE.wireAdMul} for ${LATE.wireAdDurationSec}s · Signal ${(s.horizon?.signal ?? 0).toFixed(1)}`
+                }
                 onClick={() => dispatch({ type: 'wireAd' })}
-              >
-                {wireLeft > 0 ? `Wire ad · ${wireLeft}s` : `Wire ad · ${LATE.wireAdSignalCost} signal`}
-              </Button>
-              <span className="p6-muted">
-                ×{LATE.wireAdMul} for {LATE.wireAdDurationSec}s · Signal {(s.horizon?.signal ?? 0).toFixed(1)}
-              </span>
+              />
             </div>
           ) : null}
-      </div>
+        </div>
+      </PlayFrame>
 
-        {loyaltyOn ? (
-          <div className="p6-row" data-coach-id="marketing-loyalty" role="group">
-            <span>
-              Loyalty T{s.loyalty.tier} · owed {money(s.loyalty.liability, numberFormat)}
-            </span>
+      <Sheet
+        open={postureSheet}
+        onClose={() => setPostureSheet(false)}
+        title="Posture"
+        reducedMotion={reducedMotion}
+        footer={
+          <Button tone="ghost" onClick={() => setPostureSheet(false)}>
+            Done
+          </Button>
+        }
+      >
+        <div className="p6-stack">
+          <p className="p6-copy">Switching posture costs {money(fee, numberFormat)}.</p>
+          {POSTURES.map((p) => {
+            const on = posture === p.id
+            const check = can(s, { type: 'setMarketingPosture', posture: p.id })
+            return (
+              <ActionRow
+                key={p.id}
+                label={p.label}
+                fact={p.blurb}
+                trail={on ? '✓' : undefined}
+                disabled={on || !check.ok}
+                title={on ? p.blurb : !check.ok ? check.reason : p.blurb}
+                onClick={() => dispatch({ type: 'setMarketingPosture', posture: p.id })}
+              />
+            )
+          })}
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={celebSheet}
+        onClose={() => setCelebSheet(false)}
+        title="Celebrity endcap"
+        reducedMotion={reducedMotion}
+        footer={
+          <Button tone="ghost" onClick={() => setCelebSheet(false)}>
+            Done
+          </Button>
+        }
+      >
+        <div className="p6-stack">
+          <p className="p6-copy">
+            {celebLeft > 0
+              ? `A famous face is on the endcap — ${celebLeft}s left.`
+              : `+25% shoppers for ${CELEBRITY_ENDCAP.durationSec}s. Costs ${money(celebrityCashCost(s), numberFormat)} and ${CELEBRITY_ENDCAP.ideasCost} Ideas.`}
+          </p>
+          <Button
+            tone="primary"
+            size="lg"
+            cost={money(celebrityCashCost(s), numberFormat)}
+            disabled={celebLeft > 0 || !celebCheck.ok}
+            title={celebLeft > 0 ? 'Already on the endcap' : !celebCheck.ok ? celebCheck.reason : undefined}
+            onClick={() => {
+              dispatch({ type: 'buyMemo', id: 'celebrity-endcap' })
+              setCelebSheet(false)
+            }}
+          >
+            Book celebrity
+          </Button>
+        </div>
+      </Sheet>
+
+      {s.era >= 2 ? (
+        <Sheet
+          open={flyerSheet}
+          onClose={() => setFlyerSheet(false)}
+          title="Flyer Desk"
+          reducedMotion={reducedMotion}
+          footer={
+            <Button tone="ghost" onClick={() => setFlyerSheet(false)}>
+              Done
+            </Button>
+          }
+        >
+          <div className="p6-stack" data-coach-id="marketing-flyer-band">
+            <p className="p6-copy">{flyerCopy}</p>
+            <SegmentedControl
+              aria-label="Discount band"
+              value={discountBand}
+              onChange={(v) => setDiscountBand(v as 'soft' | 'mid' | 'deep')}
+              options={[
+                { value: 'soft', label: 'Soft', title: 'Safe, pays less' },
+                { value: 'mid', label: 'Mid', title: 'Balanced week' },
+                { value: 'deep', label: 'Deep', title: 'Higher pull · spoil risk on perishables' },
+              ]}
+            />
+            <p className="p6-muted" data-coach-id="marketing-flyer-stance">
+              {FLYER_STANCE_COPY}
+            </p>
             <Button
-              tone="ghost"
-              size="sm"
-              disabled={s.loyalty.liability < 0.5 || s.cash < 0.5}
-              onClick={() => dispatch({ type: 'redeemLoyalty' })}
+              tone="primary"
+              size="lg"
+              disabled={!flyerCheck.ok}
+              title={flyerCheck.ok ? undefined : flyerCheck.reason}
+              onClick={printFlyer}
             >
-              Redeem
+              Print week · {discountBand}
             </Button>
           </div>
-        ) : null}
-      </PlayFrame>
+        </Sheet>
+      ) : null}
     </section>
   )
 }

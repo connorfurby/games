@@ -36,7 +36,6 @@ import {
   suggestedChannels,
   type Suggestion,
 } from '../sim/suggestions'
-import { canUndo } from '../sim/undo'
 import { GameProvider, type GameCtxValue } from './GameContext'
 import { FxLayer, useMilestones } from './fx'
 import { DevModeBar } from './components/DevModeBar'
@@ -56,6 +55,8 @@ import { HubNav } from './shell/HubNav'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
 import { onInboxRequest } from './shell/uiBus'
+import { computeHudAlert } from './shell/hudAlert'
+import { onToastRequest, performUndo } from './shell/undoAction'
 import { ConfirmProvider, ToastProvider } from './kit'
 import { useFxDeltas } from './hooks/useFxDeltas'
 import { Icon } from './icons/Icon'
@@ -198,7 +199,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const fx = useFxDeltas(state, reducedMotion)
   useMilestones({ muted: meta.settings.muted, enabled: !devMode })
 
-  const notifySig = useRef({ intervention: state.recovery?.lastInterventionAt ?? 0, brownouts: state.cold?.brownouts ?? 0 })
+  const notifySig = useRef<{ intervention: number; brownouts: number; alert: string }>({
+    intervention: state.recovery?.lastInterventionAt ?? 0,
+    brownouts: state.cold?.brownouts ?? 0,
+    alert: '',
+  })
+  const alertSince = useRef(0)
+  const alertFired = useRef('')
   const lastEraRef = useRef(state.era)
   const escDownAt = useRef<number | null>(null)
   const holdingEsc = useRef(false)
@@ -348,8 +355,21 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     }
     if (intervention > prev.intervention) fire('Grocery Empire', 'Operations intervened — recovery kicked in.')
     if (brownouts > prev.brownouts) fire('Grocery Empire', 'Cold brownout — check Freshness.')
-    notifySig.current = { intervention, brownouts }
+    // Same condition that drives the HUD banner (bottleneck / board waiting / drifting store).
+    // Fire once per onset, not every pulse; a cleared alert re-arms it. Offline receipts never notify.
+    const hudAlert = computeHudAlert(state)
+    const alertKey = hudAlert ? hudAlert.kind : ''
+    const nowMs = Date.now()
+    if (alertKey !== prev.alert) alertSince.current = nowMs
+    // Bottlenecks flap with every crate: only notify once the same alert has held for a few seconds.
+    if (hudAlert && alertKey !== alertFired.current && nowMs - alertSince.current >= 6000) {
+      alertFired.current = alertKey
+      fire('Grocery Empire', hudAlert.text)
+    }
+    if (!hudAlert) alertFired.current = ''
+    notifySig.current = { intervention, brownouts, alert: alertKey }
   }, [
+    snap,
     state.recovery?.lastInterventionAt,
     state.cold?.brownouts,
     meta.settings.notifyEnabled,
@@ -367,6 +387,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ms)
   }
   useMuseumEarning(pushToast)
+  // Undo (HUD, Tools, Ctrl+Z) confirms through the shell bus; works even when the icon label is hidden.
+  const pushToastRef = useRef(pushToast)
+  pushToastRef.current = pushToast
+  useEffect(() => onToastRequest((text) => pushToastRef.current(text, 2400)), [])
   const museum = useMuseum()
 
   // Stable identity so the GameContext value only rebuilds when the sim (or a UI field) changes.
@@ -427,7 +451,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       // Ctrl/Cmd+Z → undo last spend only while undoGate.ok (5s window). Leave bare U for Unpack.
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault()
-        if (canUndo().ok) engine.undo()
+        performUndo()
         return
       }
 
@@ -759,7 +783,11 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
               <div className="g2-hubhead">
                 <div className="g2-hubhead__title">
                   <h1>{HUB_BY_ID[hub].name}</h1>
-                  <p>{HUB_BY_ID[hub].purpose}</p>
+                  {hubMenus(hub).length > 1 && MENUS[menu] && hubMenus(hub).includes(menu) ? (
+                    <p className="g2-hubhead__dept" aria-hidden="true">
+                      {MENUS[menu].name}
+                    </p>
+                  ) : null}
                 </div>
                 {hubMenus(hub).length > 1 ? (
                   <div className="g2-subtabs" role="tablist" aria-label={HUB_BY_ID[hub].name}>

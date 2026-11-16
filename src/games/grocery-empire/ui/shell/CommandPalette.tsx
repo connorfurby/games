@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MENUS, type MenuId } from '../../content/menus'
-import type { Command } from '../../sim/commands'
+import { MEMOS } from '../../content/memos'
+import { ROLES, ROLE_IDS } from '../../content/staff'
+import { UPGRADES } from '../../content/upgrades'
+import { can, type Command } from '../../sim/commands'
 import type { GameState } from '../../sim/state'
 import { fuzzyScore } from './fuzzy'
 import { HUBS } from './hubs'
@@ -11,6 +14,9 @@ interface Item {
   hint: string
   run: () => void
 }
+
+/** Show only the best fuzzy matches so a broad query doesn't dump hundreds of rows. */
+const MAX_RESULTS = 40
 
 const typing = (t: EventTarget | null) =>
   t instanceof HTMLElement &&
@@ -62,6 +68,10 @@ export function CommandPalette({
         list.push({ id: `go-${id}`, label: `Go to ${MENUS[id].name}`, hint: h.name, run: () => onMenu(id) })
       }
     }
+    // Coach lives outside the hubs (SIDE_MENUS), so it needs its own entry.
+    if (state.menus.coach) {
+      list.push({ id: 'go-coach', label: `Go to ${MENUS.coach.name}`, hint: 'Side', run: () => onMenu('coach') })
+    }
     list.push(
       { id: 'unpack', label: 'Unpack a crate', hint: 'U', run: () => dispatch({ type: 'unpack' }) },
       { id: 'pause', label: state.paused ? 'Resume time' : 'Pause time', hint: 'Space', run: () => dispatch({ type: 'setPaused', paused: !state.paused }) },
@@ -72,14 +82,45 @@ export function CommandPalette({
     // state mutates in place; paused is the only live field read here.
   }, [state.menus, state.paused, onMenu, dispatch, onInbox, onTools])
 
+  // Upgrades, memos and roles are only indexed while searching, so the empty palette stays short.
   const shown = useMemo(() => {
     if (!query.trim()) return items
-    return items
+    const pool: Item[] = [...items]
+    if (open) {
+      if (state.menus.upgrades) {
+        for (const def of UPGRADES) {
+          const owned = (state.upgrades[def.id] ?? 0) > 0
+          if (!owned && !can(state, { type: 'buyUpgrade', id: def.id }).ok) continue
+          pool.push({ id: `up-${def.id}`, label: `Upgrade: ${def.name}`, hint: 'Upgrades', run: () => onMenu('upgrades') })
+        }
+      }
+      for (const m of MEMOS) {
+        if (m.era > state.era) continue
+        let seen = (state.memos[m.id] ?? 0) > 0 || !!state.memoSeen[m.id]
+        if (!seen) {
+          try {
+            seen = m.visible(state)
+          } catch {
+            seen = false
+          }
+        }
+        if (seen) pool.push({ id: `memo-${m.id}`, label: `Memo: ${m.name}`, hint: 'Memos', run: onInbox })
+      }
+      if (state.menus.staff) {
+        for (const id of ROLE_IDS) {
+          const role = ROLES[id]
+          if (!role || (role.era ?? 0) > state.era || id === 'shiftLead') continue
+          pool.push({ id: `hire-${id}`, label: `Hire: ${role.name}`, hint: 'Staff', run: () => onMenu('staff') })
+        }
+      }
+    }
+    return pool
       .map((it) => ({ it, s: Math.max(fuzzyScore(query, it.label), fuzzyScore(query, `${it.hint} ${it.label}`)) }))
       .filter((r) => r.s >= 0)
       .sort((a, b) => b.s - a.s)
+      .slice(0, MAX_RESULTS)
       .map((r) => r.it)
-  }, [items, query])
+  }, [items, query, open, state, onMenu, onInbox])
 
   if (!open) return null
 

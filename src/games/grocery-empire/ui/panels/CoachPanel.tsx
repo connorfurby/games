@@ -47,6 +47,7 @@ function stretchTourForGoal(s: GameState): DoctorPick | null {
     printFlyerWeek: { tourId: 'stretch-flyers', why: 'Print a flyer week on Marketing.' },
     signCoolerLog: { tourId: 'stretch-cooler', why: 'Sign the cooler log on Cold.' },
     setManifest: { tourId: 'stretch-dispatch', why: 'Lock a matching manifest on Dispatch.' },
+    setManifestStance: { tourId: 'stretch-dispatch', why: 'File a clean, exam-ready, or fast manifest on Dispatch.' },
     dispatchHauler: { tourId: 'stretch-pockets', why: 'Send a Hauler on a Pocket Ops trip.' },
     answerHearing: { tourId: 'stretch-hearing', why: 'Answer the Concord hearing on Charter.' },
     toggleClause: { tourId: 'stretch-hearing', why: 'Keep the next charter clause, then clear hearings.' },

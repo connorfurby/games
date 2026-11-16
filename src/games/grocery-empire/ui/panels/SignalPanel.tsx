@@ -1,11 +1,13 @@
 import { useState } from 'react'
+import { MENUS } from '../../content/menus'
 import { type AgentHabit } from '../../content/horizon'
 import { can } from '../../sim/commands'
 import { HORIZON } from '../../sim/balance'
-import { relayCost, relayNetworkMul } from '../../sim/systems/horizon'
+import { postedAgentId, relayCost, relayNetworkMul } from '../../sim/systems/horizon'
 import { phraseClueBonus } from '../../sim/systems/lateHubs'
 import { useGame } from '../GameContext'
-import { Button, ScreenHeader } from '../kit'
+import { Button } from '../kit'
+import type { VerbTrayProps } from '../play'
 import { clock, money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { HorizonGoalStrip } from '../horizon/HorizonGoalStrip'
@@ -56,19 +58,94 @@ export function SignalPanel() {
   const signalRate = h.relays * HORIZON.signalPerRelay
   const wageEach = Math.max(HORIZON.agentMinWage, Math.max(0, s.rates.revenuePerSec) * HORIZON.agentWageFrac)
   const nextPhrase = Math.max(0, h.nextPhraseAt - s.time)
+  const post = h.watchUntil > 0 ? h.postedHabit : null
+  const postedId = postedAgentId(s)
+  const postedName = postedId != null ? (h.agents.find((a) => a.id === postedId)?.name ?? null) : null
+  const watchLeft = Math.max(0, h.watchUntil - s.time)
+
+  const fileStandard = () => dispatch({ type: 'fileStandardPhrase' })
+  const buyRelay = () => dispatch({ type: 'buyRelay' })
+  const hireAgent = () => dispatch({ type: 'hireAgent', habit: hireHabit })
+  const primaryKind: 'standard' | 'relay' | 'hire' = standard.ok
+    ? 'standard'
+    : relay.ok
+      ? 'relay'
+      : hire.ok && h.relays >= 1
+        ? 'hire'
+        : h.relays < 1
+          ? 'relay'
+          : 'standard'
+  const relayLabel = `Buy relay · ${money(relayPrice, numberFormat)}`
+  const hireLabel = `Hire ${hireHabit} · ${HORIZON.agentHireSignal} signal`
+  const primary: VerbTrayProps['primary'] =
+    primaryKind === 'standard'
+      ? {
+          label: 'File the standard',
+          tone: 'primary',
+          size: 'lg',
+          coachId: 'signal-standard',
+          disabled: !standard.ok,
+          title: gateTitle(standard, `File the two shown marks and the world’s own mark · ${HORIZON.phraseSignalCost} signal`),
+          onClick: fileStandard,
+        }
+      : primaryKind === 'relay'
+        ? {
+            label: relayLabel,
+            tone: 'primary',
+            size: 'lg',
+            coachId: 'signal-relay',
+            disabled: !relay.ok,
+            title: gateTitle(relay, 'Light a relay'),
+            onClick: buyRelay,
+          }
+        : {
+            label: hireLabel,
+            tone: 'primary',
+            size: 'lg',
+            disabled: !hire.ok,
+            title: gateTitle(hire, `Hire for ${hireHabit}`),
+            onClick: hireAgent,
+          }
+  const primaryFail =
+    primaryKind === 'standard' ? standard : primaryKind === 'relay' ? relay : hire
+  const tray: VerbTrayProps = {
+    primary,
+    failReason: primaryFail.ok ? undefined : primaryFail.reason,
+    secondaries: [
+      ...(primaryKind !== 'relay'
+        ? [
+            {
+              key: 'relay',
+              label: 'Buy relay',
+              fact: money(relayPrice, numberFormat),
+              coachId: 'signal-relay',
+              disabled: !relay.ok,
+              title: gateTitle(relay, 'Light a relay'),
+              onClick: buyRelay,
+            },
+          ]
+        : []),
+      ...(primaryKind !== 'hire'
+        ? [
+            {
+              key: 'hire',
+              label: `Hire ${hireHabit}`,
+              fact: `${HORIZON.agentHireSignal} signal`,
+              disabled: !hire.ok,
+              title: gateTitle(hire, `Hire for ${hireHabit}`),
+              onClick: hireAgent,
+            },
+          ]
+        : []),
+    ],
+  }
 
   return (
     <section className="ge-panel">
-      <ScreenHeader
-        hub
-        title="Signal"
-        purpose={
-          <span title="A standard phrase is about 0.72. Fast needs a perfect phrase plus a habit.">
-            Bind the phrase the wire is asking for.
-          </span>
-        }
-      />
       <HubStage
+        purpose={MENUS.signal.purpose}
+        department={MENUS.signal.name}
+        tray={tray}
         scene={
           <SignalScene
           symbols={symbols}
@@ -79,58 +156,31 @@ export function SignalPanel() {
           }}
         />
         }
-        primary={
-          <>
-            <HorizonGoalStrip
-              title={standard.ok ? 'File the standard phrase' : h.relays < 1 ? 'Buy a relay' : 'Clear the phrase'}
-              progress={h.phraseScores.length ? h.phraseScores.reduce((a, b) => a + b, 0) / h.phraseScores.length : null}
-              progressLabel={`${h.phrasesCleared} cleared · ${h.relays} relay${h.relays === 1 ? '' : 's'}`}
-              payoff={`Signal layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}
-              eta={phrase ? 'phrase on the wire' : nextPhrase > 0 ? `next phrase in ${clock(nextPhrase)}` : null}
-              ready={standard.ok || relay.ok}
-              coachId="signal-goal"
-              action={
-                standard.ok ? (
-                  <Button
-                    tone="primary"
-                    coachId="signal-standard"
-                    disabled={!standard.ok}
-                    title={gateTitle(standard, `File the two shown marks and the world’s own mark · ${HORIZON.phraseSignalCost} signal`)}
-                    onClick={() => dispatch({ type: 'fileStandardPhrase' })}
-                  >
-                    File the standard
-                  </Button>
-                ) : (
-                  <Button
-                    tone={relay.ok ? 'primary' : 'ghost'}
-                    coachId="signal-relay"
-                    disabled={!relay.ok}
-                    title={gateTitle(relay, 'Light a relay')}
-                    onClick={() => dispatch({ type: 'buyRelay' })}
-                  >
-                    Buy relay · {money(relayPrice, numberFormat)}
-                  </Button>
-                )
-              }
-            />
-            <p
-              className="hz-pocket"
-              data-coach-id="signal-currency"
-              title={
-                h.signal >= HORIZON.phraseSignalCost
-                  ? 'Phrase ready'
-                  : signalRate > 0
-                    ? `Phrase spend in ${clock((HORIZON.phraseSignalCost - h.signal) / signalRate)}`
-                    : 'Signal buys phrases and agents'
-              }
-            >
-              <span>Signal</span>
-              <strong>{pocket(h.signal, numberFormat)}</strong>
-              <span>+{signalRate.toFixed(2)}/s</span>
-            </p>
-          </>
+      >
+      <HorizonGoalStrip
+        title={standard.ok ? 'File the standard phrase' : h.relays < 1 ? 'Buy a relay' : 'Clear the phrase'}
+        progress={h.phraseScores.length ? h.phraseScores.reduce((a, b) => a + b, 0) / h.phraseScores.length : null}
+        progressLabel={`${h.phrasesCleared} cleared · ${h.relays} relay${h.relays === 1 ? '' : 's'}`}
+        payoff={`Signal layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}
+        eta={phrase ? 'phrase on the wire' : nextPhrase > 0 ? `next phrase in ${clock(nextPhrase)}` : null}
+        ready={standard.ok || relay.ok}
+        coachId="signal-goal"
+      />
+      <p
+        className="hz-pocket"
+        data-coach-id="signal-currency"
+        title={
+          h.signal >= HORIZON.phraseSignalCost
+            ? 'Phrase ready'
+            : signalRate > 0
+              ? `Phrase spend in ${clock((HORIZON.phraseSignalCost - h.signal) / signalRate)}`
+              : 'Signal buys phrases and agents'
         }
       >
+        <span>Signal</span>
+        <strong>{pocket(h.signal, numberFormat)}</strong>
+        <span>+{signalRate.toFixed(2)}/s</span>
+      </p>
       <PuzzleFrame
         title="Phrase"
         purpose="Four marks, two showing. Clues name the world mark."
@@ -182,33 +232,44 @@ export function SignalPanel() {
             ))}
           </select>
         </label>
-        <div className="ge-chip-row">
-          <Button
-            tone={hire.ok ? 'primary' : 'ghost'}
-            disabled={!hire.ok}
-            title={gateTitle(hire, `Hire for ${hireHabit}`)}
-            onClick={() => dispatch({ type: 'hireAgent', habit: hireHabit })}
+        {post ? (
+          <p
+            className={`hz-pocket${post.agentId == null ? ' hz-pocket--warn' : ''}`}
+            data-coach-id="signal-posted"
+            title="Filing a phrase posts its habit. The posted agent keeps it, and skips their own job, until the watch resolves. A mismatch fails the watch."
           >
-            Hire · {HORIZON.agentHireSignal} signal
-          </Button>
-        </div>
+            <span>Posted</span>
+            <strong>
+              {post.habit} · {postedName ?? 'unheld'}
+            </strong>
+            <span>watch {clock(watchLeft)}</span>
+          </p>
+        ) : null}
         <ul className="hz-roster">
           {h.agents.length === 0 ? <li className="hz-empty">The desk is empty.</li> : null}
           {h.agents.map((agent) => {
             const fire = can(s, { type: 'fireAgent', id: agent.id })
+            const locked = postedId === agent.id
+            const habitCheck = can(s, {
+              type: 'setAgentHabit',
+              id: agent.id,
+              habit: HABITS.find((habit) => habit !== agent.habit) ?? 'price',
+            })
             return (
-              <li key={agent.id} className="ge-card hz-agent">
+              <li key={agent.id} className={`ge-card hz-agent${locked ? ' is-on' : ''}`}>
                 <div className="hz-agent__who">
                   <HabitMark habit={agent.habit} />
                   <strong>{agent.name}</strong>
                   <span>
-                    {agent.habit} · xp {agent.xp} · {money(wageEach, numberFormat)}/s
+                    {locked ? `posted on ${agent.habit} · locked` : agent.habit} · xp {agent.xp} ·{' '}
+                    {money(wageEach, numberFormat)}/s
                   </span>
                 </div>
-                <label className="hz-field">
-                  <span>Habit</span>
+                <label className="hz-field" title={locked ? gateTitle(habitCheck) : undefined}>
+                  <span>{locked ? 'Habit · posted' : 'Habit'}</span>
                   <select
                     aria-label={`${agent.name} habit`}
+                    disabled={locked}
                     value={agent.habit}
                     onChange={(e) => dispatch({ type: 'setAgentHabit', id: agent.id, habit: e.target.value as AgentHabit })}
                   >

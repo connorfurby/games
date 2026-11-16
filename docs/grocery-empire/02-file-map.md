@@ -18,7 +18,9 @@ Root of the game: `src/games/grocery-empire/`.
 | `sim/commandsHorizon.ts` | Era 7–12 |
 | `sim/formulas.ts` | Demand, wages, seats, hire cost, bottlenecks |
 | `sim/unlocks.ts` | Menus, Era 0→1 `tickEra`, tutorials hooks |
-| `sim/bots.ts` | Campaign / pacing bot (slow legal path) |
+| `sim/bots.ts` | Campaign / pacing bot composer + `runPacing` |
+| `sim/botsShared.ts` | Shared bot types, attentive/recovery/fuzz |
+| `sim/botsEarly.ts` / `botsChain.ts` / `botsFleet.ts` / `botsWorlds.ts` | Era-band campaign pushes |
 | `sim/pacing.test.ts` | **Pacing CI** — do not weaken casually |
 | `sim/invariants.ts` | Clamp / repair state each tick |
 | `sim/staffDept.ts` | Department seat pools (not floor seats) |
@@ -29,7 +31,10 @@ Root of the game: `src/games/grocery-empire/`.
 | `sim/systems/cold.ts` | Plants (typed), yield, Momentum, cooler log hooks |
 | `sim/systems/politics.ts` | Bills, leave region |
 | `sim/systems/fleet.ts` | Lanes, franchises, barges, Pocket Ops trips, Era 5–6 |
-| `sim/systems/horizon.ts` | Worlds puzzles, `maybeOpenEras`, practice credit |
+| `sim/systems/horizon.ts` | Worlds puzzles, `maybeOpenEras`, practice credit (coordinator) |
+| `sim/systems/horizonCore.ts` | ensureHorizon / practice / hearing shared |
+| `sim/systems/horizonVerbs.ts` | Climate/settle/haul/seat/rehearse + tickHorizonVerbs |
+| `sim/systems/horizonTick.ts` | Agents, seasons, phrases, keel, headlines, trickles, wages |
 | `sim/systems/regulars.ts` | Regulars spawn / serve / miss, shift day rollover |
 | `sim/systems/rivals.ts` | Named chains, locks, wars |
 | `sim/systems/late.ts` / `lateHubs.ts` | Post–Era 6 hub threading |
@@ -38,6 +43,7 @@ Root of the game: `src/games/grocery-empire/`.
 | `sim/depth.smoke.test.ts` | Depth / stretch gate smokes |
 | `sim/payroll.test.ts` | Wage soft-cap |
 | `sim/horizon.test.ts` | Horizon + `SAVE_VERSION` pin |
+| `sim/phase8.loadout.test.ts` | SAVE 36: endless ban, carry, wing sockets |
 
 ## Content (data)
 

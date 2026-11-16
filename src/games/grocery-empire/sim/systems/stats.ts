@@ -1,6 +1,6 @@
 import { EMPIRE_REWARDS } from '../../content/empireRewards'
 import { WING_BY_ID, relicsInWing, type WingId } from '../../content/relics'
-import { relicEffects } from '../../content/relicPerks'
+import { litWingIds, relicEffects } from '../../content/relicPerks'
 import { RELIC_DEMAND_PER } from '../balance'
 import { PERKS } from '../../content/perks'
 import { PROJECTS } from '../../content/projects'
@@ -38,7 +38,7 @@ function signature(s: GameState): string {
   let lv = 0
   for (const v of Object.values(s.relics?.levels ?? {})) lv = lv * 31 + (v ?? 0)
   const sockets = (s.relics?.sockets ?? []).join(',')
-  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}|${s.relics?.count ?? 0}|${s.relics?.wings?.length ?? 0}|${relicCopies(s)}|${lv}|${sockets}|${s.weather?.now}|${s.era}|${s.horizon?.clauses?.join('.') ?? ''}|${s.horizon?.charter ?? ''}`
+  return `${s.stats.upgradesBought}|${up}|${pk}|${s.empire.level}|${pj}|${s.compute.retrains}|${s.compute.perkRespecs}|${s.rebrand?.goodwill ?? 0}|${s.relics?.count ?? 0}|${s.relics?.wings?.length ?? 0}|${relicCopies(s)}|${lv}|${sockets}|${litWingIds(s).join('.')}|${s.weather?.now}|${s.era}|${s.horizon?.clauses?.join('.') ?? ''}|${s.horizon?.charter ?? ''}`
 }
 
 function wingRankMul(s: GameState, wing: WingId): number {
@@ -89,7 +89,7 @@ export function statSources(s: GameState): StatSource[] {
     })
   }
   // Relic Museum: each finished wing, plus a little per relic on the wall.
-  for (const w of s.relics?.wings ?? []) {
+  for (const w of litWingIds(s)) {
     const def = WING_BY_ID[w as WingId]
     if (def) sources.push({ effects: [{ stat: def.bonus.stat, per: def.bonus.per * wingRankMul(s, def.id) }], rank: 1 })
   }

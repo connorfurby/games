@@ -421,6 +421,11 @@
     color: var(--ge-ink-muted);
   }
   .gk-stat__value {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: var(--t-lg);
     line-height: var(--t-lg-lh);
     font-variant-numeric: tabular-nums;
@@ -657,6 +662,23 @@
     position: relative;
     z-index: 1;
   }
+  /* Many short options (e.g. Fleet pockets): wrap into an even grid instead of a hidden scroll. */
+  .gk-seg--wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5.25rem, 1fr));
+    width: 100%;
+    overflow: visible;
+  }
+  .gk-seg--wrap .gk-seg__item {
+    min-width: 0;
+    padding: 0 var(--s-2);
+    text-transform: capitalize;
+  }
+  .gk-seg--wrap .gk-seg__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .gk-seg__ink {
     position: absolute;
     inset: 0;
@@ -845,17 +867,29 @@
     position: relative;
     display: inline-flex;
     align-items: center;
+    min-width: 0;
   }
   .gk-select select {
     appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
     min-height: 40px;
-    padding: 0 var(--s-6) 0 var(--s-3);
-    border: 1px solid var(--ge-line-strong);
+    padding: 0 var(--s-7, 1.75rem) 0 var(--s-3);
+    border: 1px solid var(--ge-line-strong, var(--ge-line));
     border-radius: var(--r-sm);
-    background: var(--ge-sunken);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ge-raised, var(--ge-bg)) 88%, transparent), var(--ge-sunken, var(--ge-bg)));
     color: var(--ge-ink);
-    font: 500 var(--t-sm) / 1 var(--ge-font-ui, system-ui, sans-serif);
+    font: 600 var(--t-sm) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
     cursor: pointer;
+  }
+  .gk-select select:hover {
+    border-color: color-mix(in srgb, var(--ge-accent, #c9a15a) 45%, var(--ge-line));
+  }
+  .gk-select select:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ge-accent, #c9a15a) 70%, transparent);
+    outline-offset: 1px;
   }
   .gk-select select:disabled {
     opacity: 0.45;
@@ -867,6 +901,7 @@
     pointer-events: none;
     color: var(--ge-ink-muted);
     font-size: var(--t-xs);
+    line-height: 1;
   }
 
   /* ── Slider ─────────────────────────────────────────────────── */

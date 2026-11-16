@@ -97,6 +97,17 @@ const PANTRY_VERBS: UpgradeDef[] = [
     3,
     { scale: 'linear', effectCap: 0.08 },
   ),
+  verb(
+    'pantry',
+    'guest-patience',
+    'Guest Patience',
+    'A chair by the door. The climate guest sits, and their ban on your best facing bites less.',
+    'Softens the guest ban’s pull cut by 15% of itself.',
+    3,
+    7,
+    4,
+    { scale: 'linear', effectCap: 0.15 },
+  ),
 ]
 
 const PANTRY_STATS: StatRow[] = [
@@ -165,6 +176,17 @@ const CULTIVAR_VERBS: UpgradeDef[] = [
     2,
     { scale: 'linear', effectCap: 0.08 },
   ),
+  verb(
+    'cultivar',
+    'bed-lock-pad',
+    'Bed Lock Pad',
+    'A latch with a spring in it. Once the season is mostly done, the beds open to a clever cross again.',
+    'The bed lock lifts for the last 10% of the season.',
+    3,
+    9,
+    3,
+    { scale: 'linear', effectCap: 0.1 },
+  ),
 ]
 
 const CULTIVAR_STATS: StatRow[] = [
@@ -214,12 +236,45 @@ const SIGNAL_VERBS: UpgradeDef[] = [
     'signal',
     'accept-rehearsal-pad',
     'Accept Rehearsal Pad',
-    'A practice blotter on the Last Aisle desk. The desk gap shortens.',
-    '−8% accept rehearsal desk gap',
+    'A practice blotter on the Last Aisle desk. The desk gap shortens and fewer rehearsals scratch a line.',
+    '−8% accept rehearsal desk gap and scratch risk',
     5,
     12,
     5,
     { scale: 'linear', effectCap: 0.08 },
+  ),
+  verb(
+    'signal',
+    'clause-amend-pad',
+    'Clause Amend Pad',
+    'A second margin on the minutes. The clerk can strike one more grudge before the docket closes.',
+    '+1 Minutes Clerk amend per docket.',
+    2,
+    11,
+    6,
+    { scale: 'linear', effectCap: 1 },
+  ),
+  verb(
+    'signal',
+    'endless-edit-pad',
+    'Endless Edit Pad',
+    'An eraser on a string. The standing order mutates a line less often.',
+    '+1 world between list mutations.',
+    3,
+    12,
+    7,
+    { scale: 'linear', effectCap: 1, visible: (s: GameState) => s.era >= 12 && !!s.horizon?.endless },
+  ),
+  verb(
+    'signal',
+    'mutation-clear-pad',
+    'Mutation Clear Pad',
+    'When the Board’s pressure is lifted, the line it scarred comes back a little better.',
+    'Clearing Ration pressure restores 4% to a mutated line.',
+    3,
+    12,
+    8,
+    { scale: 'linear', effectCap: 0.04, visible: (s: GameState) => s.era >= 12 && !!s.horizon?.endless },
   ),
 ]
 

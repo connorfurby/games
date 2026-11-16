@@ -16,14 +16,17 @@ import { engine } from '../../sim/engine'
 import { COMPUTE } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { attentionCap, attentionPerSec } from '../../sim/formulas'
+import { hasAffordableMemo, memoSweepPreview, pickBestMemo } from '../../sim/memoPlan'
 import { chainAttentionDrainPerSec } from '../../sim/systems/chain'
 import { SPINE_MEMOS } from '../../sim/suggestions'
 import { officeRebalanceCost } from '../../sim/systems/office'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money, qty } from '../format'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { Button, EmptyState, Meter, Section } from '../kit'
+import { Button, Chip, Disclosure, EmptyState, Meter, SegmentedControl, useConfirm } from '../kit'
 import { Icon } from '../icons/Icon'
+import { PlayFrame, StatusChip } from '../play'
+import './waveC.css'
 
 function costLabel(def: MemoDef, s: Parameters<MemoDef['cost']>[0], fmt: NumberFormat) {
   let c: { cash?: number; attention?: number; ideas?: number } = {}
@@ -280,6 +283,19 @@ function OfficeSuggestBtn({
   )
 }
 
+/** One line for why a memo is not buyable right now (null when it is). */
+function memoGate(m: MemoDef, s: GS, check: { ok: boolean; reason?: string }): string | null {
+  if (check.ok) return null
+  const costs = memoCosts(m, s)
+  const attCap = attentionCap(s)
+  if (costs.attention > 0 && (s.compute.attention < costs.attention || costs.attention > attCap)) {
+    return `Att cap ${qty(attCap)} · memo needs ${qty(costs.attention)}${
+      s.compute.attention < costs.attention ? ` · have ${qty(s.compute.attention)}` : ' · buy Archives'
+    }`
+  }
+  return memoBlockReason(m, s) ?? check.reason ?? null
+}
+
 function MemoRow({
   m,
   s,
@@ -303,20 +319,7 @@ function MemoRow({
   const suggested = useIsSuggested(sid)
   const check = engine.can({ type: 'buyMemo', id: m.id })
   const affordable = check.ok
-  const costs = memoCosts(m, s)
-  const attCap = attentionCap(s)
-  let gate = memoBlockReason(m, s) ?? (!affordable ? check.reason ?? null : null)
-  if (
-    !affordable &&
-    costs.attention > 0 &&
-    (s.compute.attention < costs.attention || costs.attention > attCap)
-  ) {
-    gate = `Att cap ${qty(attCap)} · memo needs ${qty(costs.attention)}${
-      s.compute.attention < costs.attention
-        ? ` · have ${qty(s.compute.attention)}`
-        : ' · buy Archives'
-    }`
-  }
+  const gate = memoGate(m, s, check)
   const fav = !!s.memoFavorites?.[m.id]
   const cost = costLabel(m, s, numberFormat)
   return (
@@ -424,14 +427,21 @@ function OfficeRebalance({ ask }: { ask: (spec: ConfirmSpec) => void }) {
 export const MemosPanel = memo(MemosPanelInner)
 
 function MemosPanelInner({ compact }: { compact?: boolean }) {
-  const { state: s, tick, dispatch, numberFormat, reducedMotion } = useGame()
+  const { state: s, tick, dispatch, numberFormat, reducedMotion, setActiveMenu } = useGame()
   const { meta } = useMeta()
+  const kitConfirm = useConfirm()
   const [q, setQ] = useState('')
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
-  const [affordableOnly, setAffordableOnly] = useState(false)
+  const [readyOnly, setReadyOnly] = useState(false)
   const [tab, setTab] = useState<'desk' | 'filed' | 'standing'>('desk')
-  const [eraFilter, setEraFilter] = useState<'all' | 'horizon' | number>('all')
-  const sortReady = true
+  const spineOwned = SPINE_MEMOS.filter((id) => (s.memos[id] ?? 0) > 0).length
+  // Back office opens for the first spine memos, then folds away once, on its own.
+  const [officeOpen, setOfficeOpen] = useState(spineOwned < 3)
+  const [officeFolded, setOfficeFolded] = useState(spineOwned >= 3)
+  if (spineOwned >= 3 && !officeFolded) {
+    setOfficeFolded(true)
+    setOfficeOpen(false)
+  }
   const listRef = useRef<HTMLUListElement>(null)
   const scrollRef = useRef<HTMLElement | null>(null)
   const scrollTopRef = useRef(0)
@@ -446,8 +456,6 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
       const owned = s.memos[m.id] ?? 0
       if (owned > 0 && !m.repeatable) return false
       if (m.max != null && owned >= m.max) return false
-      if (eraFilter === 'horizon' && m.era < 7) return false
-      if (typeof eraFilter === 'number' && m.era !== eraFilter) return false
       if (s.memoSeen?.[m.id]) return true
       try {
         return m.visible(s)
@@ -455,12 +463,12 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
         return false
       }
     }).filter((m) => {
-      if (affordableOnly && !canAfford(m, s)) return false
+      if (readyOnly && !canAfford(m, s)) return false
       if (!needle) return true
       return `${m.name} ${m.voice} ${m.effect}`.toLowerCase().includes(needle)
     })
 
-    // Ready → Att in cap (unblocked) → blocked gate → Att over cap. Then blended cheap.
+    // Favorites → ready → unblocked → Att in cap → blended cheap → authored order.
     return [...rows].sort((a, b) => {
       const fa = s.memoFavorites?.[a.id] ? 1 : 0
       const fb = s.memoFavorites?.[b.id] ? 1 : 0
@@ -474,15 +482,13 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
       const wa = attWithinCap(a, s) ? 1 : 0
       const wb = attWithinCap(b, s) ? 1 : 0
       if (wa !== wb) return wb - wa
-      if (sortReady) {
-        const ca = cheapScore(a, s)
-        const cb = cheapScore(b, s)
-        if (ca !== cb) return ca - cb
-      }
+      const ca = cheapScore(a, s)
+      const cb = cheapScore(b, s)
+      if (ca !== cb) return ca - cb
       return (MEMO_INDEX.get(a.id) ?? 0) - (MEMO_INDEX.get(b.id) ?? 0)
     })
     // `tick` — GameState is mutated in place; `s` identity never changes.
-  }, [tick, s, q, affordableOnly, sortReady, eraFilter])
+  }, [tick, s, q, readyOnly])
 
   const readyCount = useMemo(
     () => visible.reduce((n, m) => n + (canAfford(m, s) ? 1 : 0), 0),
@@ -558,51 +564,96 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
   const archivesWarn = archivesFirstWarn(s)
   const scannerCheck = can(s, { type: 'pulseScanner' })
   const scannerWait = Math.max(0, Math.ceil(s.compute.scannerReadyAt - s.time))
+  const attCap = attentionCap(s)
 
   const jumpAffordable = () => {
-    const first = visible.find((m) => canAfford(m, s))
-    if (!first) return
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-memo-id="${first.id}"]`)
-    if (!el) return
-    el.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
-    el.focus()
+    setTab('desk')
+    requestAnimationFrame(() => {
+      const first = visible.find((m) => canAfford(m, s))
+      if (!first) return
+      const el = listRef.current?.querySelector<HTMLElement>(`[data-memo-id="${first.id}"]`)
+      if (!el) return
+      el.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
+      el.focus()
+    })
   }
 
-  return (
-    <div className={`ge-memos ${compact ? 'ge-memos--rail' : ''}`.trim()} data-coach-id="floor-memos">
-      {!compact ? (
-        <header className="ge-panel__head">
-          <h2 className="ge-panel__title">
-            <Icon name="memo" size={18} /> Memos
-          </h2>
-          <p className="ge-panel__purpose">Projects that open the next door.</p>
-        </header>
-      ) : (
-        <div className="ge-memos__rail-head">
-          <div className="ge-memos__rail-title-row">
-            <div className="ge-memos__rail-title">
-              <Icon name="memo" size={16} /> Memos
-            </div>
-            <span className="ge-memos__count" title="Affordable now">
-              {readyCount}/{visible.length}
-            </span>
-          </div>
-          <p className="ge-memos__rail-blurb">Voice first, cost second.</p>
-        </div>
-      )}
+  const openOffice = () => {
+    setOfficeOpen(true)
+    requestAnimationFrame(() => {
+      document.querySelector('.wc-office')?.scrollIntoView({
+        block: 'nearest',
+        behavior: reducedMotion ? 'auto' : 'smooth',
+      })
+    })
+  }
 
+  const buyBestReady = hasAffordableMemo(s)
+  // Same pick the sweep files first: effect weight per blended cost, then cheapest.
+  const bestMemoId = buyBestReady ? pickBestMemo(s)?.id : undefined
+  const bestMemo = bestMemoId ? MEMOS.find((m) => m.id === bestMemoId) : undefined
+  const bestHint = bestMemo ? `Best: ${bestMemo.name} · ${bestMemo.effect} (effect per cost)` : undefined
+  const buyBest = async () => {
+    const preview = memoSweepPreview(s)
+    if (preview.count <= 0) return
+    if (preview.count >= 8) {
+      const parts: string[] = []
+      if (preview.cash > 0) parts.push(money(preview.cash, numberFormat))
+      if (preview.attention > 0) parts.push(`${qty(preview.attention)} Att`)
+      if (preview.ideas > 0) parts.push(`${qty(preview.ideas)} Ide`)
+      const ok = await kitConfirm({
+        title: `Buy ${preview.count} memos?`,
+        body: `Spend about ${parts.join(' · ') || 'nothing'} on the best-value desk memos.`,
+        confirmLabel: 'Buy Best',
+      })
+      if (!ok) return
+    }
+    dispatch({ type: 'buyMemoSweep' })
+  }
+
+  // Why Buy Best is grey: the top desk row is the nearest memo, so name its gate.
+  const nearest = visible.find((m) => !canAfford(m, s)) ?? visible[0]
+  const deskGate = buyBestReady
+    ? null
+    : nearest
+      ? `${nearest.name}: ${memoGate(nearest, s, engine.can({ type: 'buyMemo', id: nearest.id })) ?? 'not yet'}`
+      : 'Nothing on the desk yet. Buy crates and clear goals.'
+  const attGate = !!deskGate && /\bAtt\b/.test(deskGate) && !!s.compute?.unlocked
+  // Read is banked by Strategy tournaments — a memo gated on Read points there.
+  const readGate = !!deskGate && /\bRead\b/.test(deskGate) && !!s.menus.strategy
+
+  const filterOn = readyOnly || q.trim().length > 0
+
+  const room = (
+    <div className="wc-memo-room">
       {s.compute?.unlocked ? (
-        <Section title="Back office" collapsible defaultOpen={false}>
+        <div className="wc-att" data-coach-id="compute-attention">
+          <Meter
+            value={s.compute.attention}
+            max={Math.max(1, attCap)}
+            label={`Att ${qty(s.compute.attention)} / ${qty(attCap)}`}
+          />
+          <p className="wc-att__note">{attentionNote(s)}</p>
+          {archivesWarn ? (
+            <p className="wc-att__warn" role="status">
+              <StatusChip tone="warn">Archives first</StatusChip>{' '}
+              <button type="button" className="pf-chip__link" onClick={openOffice}>
+                Open Back office
+              </button>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      <SpinePath s={s} fmt={numberFormat} />
+      <ColdChainGraph s={s} />
+      {s.compute?.unlocked ? (
+        <Disclosure
+          className="wc-office"
+          title="Back office"
+          open={officeOpen}
+          onOpenChange={setOfficeOpen}
+        >
           <div className="ge-office">
-            <div className="ge-office__att" data-coach-id="compute-attention">
-              <Meter
-                value={s.compute.attention}
-                max={Math.max(1, attentionCap(s))}
-                label={`Att ${qty(s.compute.attention)} / ${qty(attentionCap(s))}`}
-              />
-              <p className="ge-office__rep">{attentionNote(s)}</p>
-            </div>
-
             <div className="ge-office__stats">
               <div>
                 <span>Analysts</span>
@@ -655,7 +706,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
                     body: archivesWarn
                       ? `${archivesWarn} Hiring an Analyst now mostly wastes the Reputation.`
                       : 'Spend 1 Reputation to fill Attention faster.',
-                    detail: `Cap stays ${qty(attentionCap(s))}.`,
+                    detail: `Cap stays ${qty(attCap)}.`,
                     confirmLabel: archivesWarn ? 'Hire anyway · 1 Rep' : 'Hire · 1 Rep',
                     onConfirm: () => dispatch({ type: 'buyAnalyst' }),
                   })
@@ -667,7 +718,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
                 disabled={s.compute.reputation < 1}
                 title="Spend 1 Reputation — raise Attention cap by 1,000"
                 onClick={() => {
-                  const nextCap = attentionCap(s) + COMPUTE.capPerArchive
+                  const nextCap = attCap + COMPUTE.capPerArchive
                   setConfirm({
                     title: 'Open Archive',
                     body: 'Spend 1 Reputation to raise the Attention ceiling.',
@@ -703,132 +754,250 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
             </div>
 
             {archivesWarn ? (
-              <p
-                className="ge-muted ge-office__warn"
-                role="status"
-                style={{ margin: '0.35rem 0 0', fontSize: '0.72rem', color: 'var(--ge-warn, #e09f3e)' }}
-              >
+              <p className="ge-muted ge-office__warn" role="status">
                 ⚠ Archives first — {archivesWarn}
               </p>
             ) : null}
 
             <OfficeRebalance ask={setConfirm} />
           </div>
-        </Section>
+        </Disclosure>
       ) : null}
+    </div>
+  )
 
-      <SpinePath s={s} fmt={numberFormat} />
-      <ColdChainGraph s={s} />
+  return (
+    <div className={`ge-memos ${compact ? 'ge-memos--rail' : ''}`.trim()} data-coach-id="floor-memos">
+      <PlayFrame
+        className="wc-memos"
+        department={
+          <>
+            <Icon name="memo" size={compact ? 14 : 16} /> Memos{' '}
+            <StatusChip tone={readyCount > 0 ? 'ready' : 'idle'} title="Affordable now">
+              {readyCount}/{visible.length}
+            </StatusChip>
+          </>
+        }
+        purpose={compact ? 'Voice first, cost second.' : 'Projects that open the next door.'}
+        room={room}
+        tray={{
+          primary: {
+            label: buyBestReady ? `Buy Best · ${readyCount} ready` : 'Buy Best',
+            tone: 'primary',
+            size: 'lg',
+            coachId: 'memo-buy-best',
+            disabled: !buyBestReady,
+            title:
+              'Buys the best-value affordable desk memos (effect per cost, then cheapest) until cash, Attention, or Ideas run out. Archive and Analyst buys stay manual.',
+            onClick: () => void buyBest(),
+          },
+          hint: bestHint,
+          failReason: deskGate ? (
+            <>
+              {deskGate}
+              {attGate ? (
+                <>
+                  {' '}
+                  <button type="button" className="pf-chip__link" onClick={openOffice}>
+                    Open Back office
+                  </button>
+                </>
+              ) : null}
+              {readGate ? (
+                <>
+                  {' '}
+                  <button type="button" className="pf-chip__link" onClick={() => setActiveMenu('strategy')}>
+                    Open Strategy
+                  </button>
+                </>
+              ) : null}
+            </>
+          ) : undefined,
+          secondaries: [
+            {
+              key: 'jump',
+              label: 'Jump to ready',
+              fact: readyCount > 0 ? `${readyCount} on desk` : 'none yet',
+              disabled: readyCount === 0,
+              onClick: jumpAffordable,
+            },
+            ...(s.compute?.unlocked
+              ? [
+                  {
+                    key: 'office',
+                    label: 'Back office',
+                    fact: officeOpen ? 'open' : 'folded',
+                    onClick: () => setOfficeOpen((o) => !o),
+                  },
+                ]
+              : []),
+          ],
+        }}
+      >
+        <SegmentedControl
+          aria-label="Memo desk"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'desk', label: `Desk ${visible.length}` },
+            { value: 'standing', label: 'Standing' },
+            { value: 'filed', label: `Filed ${filedCount}` },
+          ]}
+        />
 
+        {tab === 'filed' ? <FiledList s={s} /> : null}
 
-      <div className="ge-dept-tabs" role="tablist" aria-label="Memo desk">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'desk'}
-          className={`ge-dept-tab${tab === 'desk' ? ' is-on' : ''}`.trim()}
-          onClick={() => setTab('desk')}
-        >
-          Desk
-          <em>{visible.length}</em>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'standing'}
-          className={`ge-dept-tab${tab === 'standing' ? ' is-on' : ''}`.trim()}
-          onClick={() => setTab('standing')}
-        >
-          Standing
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'filed'}
-          className={`ge-dept-tab${tab === 'filed' ? ' is-on' : ''}`.trim()}
-          onClick={() => setTab('filed')}
-        >
-          Filed
-          <em>{filedCount}</em>
-        </button>
-      </div>
-
-      {tab === 'filed' ? <FiledList s={s} /> : null}
-
-      {tab === 'standing' ? (
-        <>
-      <div className="ge-fork-strip" aria-label="Standing-order forks">
-        {FORK_IDS.map((fork) => {
-          const pair = FORK_PAIR[fork]
-          if (!pair) return null
-          const [a, b] = pair
-          const da = MEMO_BY_ID[a]
-          const db = MEMO_BY_ID[b]
-          if (!da || !db) return null
-          let show = false
-          try {
-            show = !!s.memoSeen?.[a] || !!s.memoSeen?.[b] || da.visible(s) || db.visible(s)
-          } catch {
-            show = FORK_IDS_OWNED(s, fork)
-          }
-          if (!show) return null
-          const ownedA = owned(s, a)
-          const ownedB = owned(s, b)
-          return (
-            <div key={fork}>
-              <p className="ge-muted" style={{ margin: '0 0 0.25rem', fontSize: '0.68rem' }}>
-                {FORK_LABELS[fork] ?? fork} standing order
-              </p>
-              <div className="ge-fork-pair">
-                {[da, db].map((m) => {
-                  const got = owned(s, m.id)
-                  const blocked = !got && (ownedA || ownedB)
-                  const check = engine.can({ type: 'buyMemo', id: m.id })
-                  return (
-                    <div
-                      key={m.id}
-                      className={`ge-fork-choice${got ? ' is-filed' : ''}${
-                        blocked ? ' is-blocked' : ''
-                      }`.trim()}
-                    >
-                      <strong>{m.name}</strong>
-                      <span>{m.effect}</span>
-                      {got ? (
-                        <em className="ge-muted" style={{ fontSize: '0.62rem' }}>
-                          Filed
-                        </em>
-                      ) : blocked ? (
-                        <em className="ge-muted" style={{ fontSize: '0.62rem' }}>
-                          Other path filed
-                        </em>
-                      ) : (
-                        <Button
-                          tone={check.ok ? 'primary' : 'ghost'}
-                          disabled={!check.ok}
-                          title={check.reason ?? costLabel(m, s, numberFormat)}
-                          onClick={() => dispatch({ type: 'buyMemo', id: m.id })}
-                        >
-                          {check.ok ? costLabel(m, s, numberFormat) : check.reason ?? 'Locked'}
-                        </Button>
-                      )}
+        {tab === 'standing' ? (
+          <>
+            <div className="ge-fork-strip" aria-label="Standing-order forks">
+              {FORK_IDS.map((fork) => {
+                const pair = FORK_PAIR[fork]
+                if (!pair) return null
+                const [a, b] = pair
+                const da = MEMO_BY_ID[a]
+                const db = MEMO_BY_ID[b]
+                if (!da || !db) return null
+                let show = false
+                try {
+                  show = !!s.memoSeen?.[a] || !!s.memoSeen?.[b] || da.visible(s) || db.visible(s)
+                } catch {
+                  show = FORK_IDS_OWNED(s, fork)
+                }
+                if (!show) return null
+                const ownedA = owned(s, a)
+                const ownedB = owned(s, b)
+                return (
+                  <div key={fork}>
+                    <p className="ge-muted wc-fork-label">{FORK_LABELS[fork] ?? fork} standing order</p>
+                    <div className="ge-fork-pair">
+                      {[da, db].map((m) => {
+                        const got = owned(s, m.id)
+                        const blocked = !got && (ownedA || ownedB)
+                        const check = engine.can({ type: 'buyMemo', id: m.id })
+                        return (
+                          <div
+                            key={m.id}
+                            className={`ge-fork-choice${got ? ' is-filed' : ''}${blocked ? ' is-blocked' : ''}`.trim()}
+                          >
+                            <strong>{m.name}</strong>
+                            <span>{m.effect}</span>
+                            {got ? (
+                              <em className="ge-muted wc-fork-state">Filed</em>
+                            ) : blocked ? (
+                              <em className="ge-muted wc-fork-state">Other path filed</em>
+                            ) : (
+                              <Button
+                                tone={check.ok ? 'primary' : 'ghost'}
+                                disabled={!check.ok}
+                                title={check.reason ?? costLabel(m, s, numberFormat)}
+                                onClick={() => dispatch({ type: 'buyMemo', id: m.id })}
+                              >
+                                {check.ok ? costLabel(m, s, numberFormat) : check.reason ?? 'Locked'}
+                              </Button>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
-              </div>
+                  </div>
+                )
+              })}
             </div>
-          )
-        })}
-      </div>
 
-      {again.length > 0 ? (
-        <ul className="ge-memo-list">
-          {again.map((m) => (
+            {again.length > 0 ? (
+              <ul className="ge-memo-list">
+                {again.map((m) => (
+                  <MemoRow
+                    key={m.id}
+                    m={m}
+                    s={s}
+                    numberFormat={numberFormat}
+                    fresh={false}
+                    muted={meta.settings.muted}
+                    reducedMotion={reducedMotion}
+                    onBuy={() => dispatch({ type: 'buyMemo', id: m.id })}
+                    onFav={() => dispatch({ type: 'toggleFavoriteMemo', id: m.id })}
+                  />
+                ))}
+              </ul>
+            ) : null}
+
+            <div className="ge-standing-grid">
+              {STANDING_ORDER_MEMOS.filter((m) => {
+                try {
+                  return m.visible(s) || (s.memos[m.id] ?? 0) > 0
+                } catch {
+                  return false
+                }
+              }).map((m) => {
+                const lvl = s.memos[m.id] ?? 0
+                const max = m.max ?? 10
+                const check = engine.can({ type: 'buyMemo', id: m.id })
+                return (
+                  <article key={m.id} className={`ge-standing-card${check.ok ? ' is-ready' : ''}`.trim()}>
+                    <div className="ge-perk-card__top">
+                      <strong>{m.name}</strong>
+                      <span className="ge-perk-card__lvl">
+                        {lvl}/{max}
+                      </span>
+                    </div>
+                    <p className="wc-standing-effect">{m.effect}</p>
+                    <div className="ge-perk-card__pips" aria-hidden>
+                      {Array.from({ length: max }, (_, i) => (
+                        <i key={i} className={i < lvl ? 'is-on' : undefined} />
+                      ))}
+                    </div>
+                    <Button
+                      tone={check.ok ? 'primary' : 'ghost'}
+                      disabled={!check.ok}
+                      title={check.reason ?? costLabel(m, s, numberFormat)}
+                      onClick={() => dispatch({ type: 'buyMemo', id: m.id })}
+                    >
+                      {lvl >= max ? 'Maxed' : costLabel(m, s, numberFormat)}
+                    </Button>
+                  </article>
+                )
+              })}
+            </div>
+          </>
+        ) : null}
+
+        {tab === 'desk' ? (
+          <div className="wc-filters" role="search">
+            <input
+              type="search"
+              className="ge-filter-bar__input"
+              placeholder="Search memos…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="Search memos"
+            />
+            <Chip selected={readyOnly} onClick={() => setReadyOnly((v) => !v)}>
+              Ready only
+            </Chip>
+          </div>
+        ) : null}
+
+        {tab === 'desk' && visible.length === 0 ? (
+          filterOn ? (
+            <EmptyState title="Nothing matches" body="Clear the search or turn off Ready only." />
+          ) : (
+            <EmptyState title="No memos on the desk" body="Buy crates and clear goals — new projects land here." />
+          )
+        ) : null}
+
+        <ul
+          className="ge-memo-list"
+          ref={listRef}
+          style={tab === 'filed' || tab === 'standing' ? { display: 'none' } : undefined}
+        >
+          {visible.map((m) => (
             <MemoRow
               key={m.id}
               m={m}
               s={s}
               numberFormat={numberFormat}
-              fresh={false}
+              fresh={freshIds.has(m.id)}
               muted={meta.settings.muted}
               reducedMotion={reducedMotion}
               onBuy={() => dispatch({ type: 'buyMemo', id: m.id })}
@@ -836,127 +1005,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
             />
           ))}
         </ul>
-      ) : null}
-
-        <div className="ge-standing-grid">
-          {STANDING_ORDER_MEMOS.filter((m) => {
-            try {
-              return m.visible(s) || (s.memos[m.id] ?? 0) > 0
-            } catch {
-              return false
-            }
-          }).map((m) => {
-            const lvl = s.memos[m.id] ?? 0
-            const max = m.max ?? 10
-            const check = engine.can({ type: 'buyMemo', id: m.id })
-            return (
-              <article
-                key={m.id}
-                className={`ge-standing-card${check.ok ? ' is-ready' : ''}`.trim()}
-              >
-                <div className="ge-perk-card__top">
-                  <strong>{m.name}</strong>
-                  <span className="ge-perk-card__lvl">
-                    {lvl}/{max}
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--ge-muted)' }}>{m.effect}</p>
-                <div className="ge-perk-card__pips" aria-hidden>
-                  {Array.from({ length: max }, (_, i) => (
-                    <i key={i} className={i < lvl ? 'is-on' : undefined} />
-                  ))}
-                </div>
-                <Button
-                  tone={check.ok ? 'primary' : 'ghost'}
-                  disabled={!check.ok}
-                  title={check.reason ?? costLabel(m, s, numberFormat)}
-                  onClick={() => dispatch({ type: 'buyMemo', id: m.id })}
-                >
-                  {lvl >= max ? 'Maxed' : costLabel(m, s, numberFormat)}
-                </Button>
-              </article>
-            )
-          })}
-        </div>
-        </>
-      ) : null}
-
-      <div
-        className="ge-filter-bar ge-memos__filters"
-        style={tab === 'filed' || tab === 'standing' ? { display: 'none' } : undefined}
-      >
-        <input
-          type="search"
-          className="ge-filter-bar__input"
-          placeholder="Search…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label="Search memos"
-        />
-        <label className="ge-check">
-          <input
-            type="checkbox"
-            checked={affordableOnly}
-            onChange={(e) => setAffordableOnly(e.target.checked)}
-          />
-          Affordable
-        </label>
-        <Button tone="ghost" size="sm" onClick={jumpAffordable} disabled={readyCount === 0}>
-          Jump
-        </Button>
-      </div>
-      {tab === 'desk' ? (
-        <div className="ge-chip-row" role="tablist" aria-label="Memo era">
-          <Button tone={eraFilter === 'all' ? 'primary' : 'ghost'} size="sm" onClick={() => setEraFilter('all')}>
-            All
-          </Button>
-          {[0, 1, 2, 3, 4, 5, 6].map((era) =>
-            s.era >= era ? (
-              <Button
-                key={era}
-                size="sm"
-                tone={eraFilter === era ? 'primary' : 'ghost'}
-                onClick={() => setEraFilter(era)}
-              >
-                {eraChipLabel(era)}
-              </Button>
-            ) : null,
-          )}
-          {s.era >= 7 ? (
-            <Button
-              size="sm"
-              tone={eraFilter === 'horizon' ? 'primary' : 'ghost'}
-              onClick={() => setEraFilter('horizon')}
-            >
-              Horizon
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {tab === 'desk' && visible.length === 0 ? (
-        <EmptyState title="No memos on the desk" body="Buy crates and clear goals — new projects land here." />
-      ) : null}
-
-      <ul
-        className="ge-memo-list"
-        ref={listRef}
-        style={tab === 'filed' || tab === 'standing' ? { display: 'none' } : undefined}
-      >
-        {visible.map((m) => (
-          <MemoRow
-            key={m.id}
-            m={m}
-            s={s}
-            numberFormat={numberFormat}
-            fresh={freshIds.has(m.id)}
-            muted={meta.settings.muted}
-            reducedMotion={reducedMotion}
-            onBuy={() => dispatch({ type: 'buyMemo', id: m.id })}
-            onFav={() => dispatch({ type: 'toggleFavoriteMemo', id: m.id })}
-          />
-        ))}
-      </ul>
+      </PlayFrame>
 
       <ConfirmModal
         open={!!confirm}

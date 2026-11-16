@@ -247,6 +247,10 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
     can: (s) => {
       if (s.era < 2) return no('Need Era 2.')
       if (!s.menus.strategy && !s.memos['doctrine-room']) return no('Strategy locked.')
+      if (s.time < (s.compute.nextTournamentAt ?? 0)) {
+        const left = Math.ceil((s.compute.nextTournamentAt ?? 0) - s.time)
+        return no(`Tournament cools for ${left}s.`)
+      }
       if (s.compute.attention < CAPITAL.tournamentAttention) {
         return no(`Need ${CAPITAL.tournamentAttention} Attention.`)
       }
@@ -257,6 +261,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       const payout = tournamentReadPayout(s)
       s.read = round2(s.read + payout)
       s.stats.tournamentsRun += 1
+      s.compute.nextTournamentAt = s.time + CAPITAL.tournamentCooldownSec
       unlockMenu(s, 'strategy')
       log(s, `Tournament complete. +${payout} Read.`, 'good')
     },
@@ -289,6 +294,9 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.depot) return no('Depot already built.')
       if (s.stores.length < 2 && !s.memos['depot-permit']) {
         return no('Open a second store or buy Depot Permit.')
+      }
+      if (s.read < CAPITAL.depotReadNeed) {
+        return no(`Need ${CAPITAL.depotReadNeed} Read (Strategy). Have ${Math.floor(s.read)}.`)
       }
       if (s.cash < CHAIN.depotCash) return no(`Need ${cashLabel(CHAIN.depotCash)}.`)
       return ok

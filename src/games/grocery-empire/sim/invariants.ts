@@ -267,11 +267,12 @@ export function repair(s: GameState): GameState {
   if (!s.projects.done || typeof s.projects.done !== 'object') s.projects.done = {}
   if (!s.rivals || typeof s.rivals !== 'object') s.rivals = {}
   if (!s.relics || !Array.isArray(s.relics.wings)) {
-    s.relics = { wings: [], count: 0, owned: {}, levels: {}, sockets: [], dust: 0, autoDust: null }
+    s.relics = { wings: [], count: 0, owned: {}, levels: {}, sockets: [], litWings: null, dust: 0, autoDust: null }
   }
   if (!s.relics.owned || typeof s.relics.owned !== 'object') s.relics.owned = {}
   if (!s.relics.levels || typeof s.relics.levels !== 'object') s.relics.levels = {}
   if (!Array.isArray(s.relics.sockets)) s.relics.sockets = []
+  if (!Array.isArray(s.relics.litWings)) s.relics.litWings = null
   if (typeof s.relics.dust !== 'number' || !Number.isFinite(s.relics.dust)) s.relics.dust = 0
   if (s.relics.autoDust === undefined) s.relics.autoDust = null
   if (s.prestigeCarry) {
@@ -327,6 +328,17 @@ export function repair(s: GameState): GameState {
     s.depth.regulars.arrivesAt = Math.max(0, finite(s.depth.regulars.arrivesAt))
     s.depth.regulars.patienceUntil = Math.max(0, finite(s.depth.regulars.patienceUntil))
     s.depth.regulars.layaway = !!s.depth.regulars.layaway
+    if (typeof s.depth.regulars.waitingId !== 'string') s.depth.regulars.waitingId = null
+    s.depth.regulars.waitingPatienceUntil = Math.max(0, finite(s.depth.regulars.waitingPatienceUntil))
+    s.depth.regulars.waitingLayaway = !!s.depth.regulars.waitingLayaway
+    if (
+      s.depth.regulars.waitingId &&
+      (!s.depth.regulars.activeId || s.depth.regulars.waitingId === s.depth.regulars.activeId)
+    ) {
+      s.depth.regulars.waitingId = null
+      s.depth.regulars.waitingPatienceUntil = 0
+      s.depth.regulars.waitingLayaway = false
+    }
   }
   if (!s.depth.shifts || typeof s.depth.shifts !== 'object') {
     s.depth.shifts = emptyDepth().shifts
@@ -411,6 +423,11 @@ export function repair(s: GameState): GameState {
   } else {
     s.depth.dispatch.cleanManifests = Math.max(0, Math.floor(finite(s.depth.dispatch.cleanManifests)))
     s.depth.dispatch.lastCycleAt = Math.max(0, finite(s.depth.dispatch.lastCycleAt))
+    s.depth.dispatch.lastCleanAt = Math.max(0, finite(s.depth.dispatch.lastCleanAt ?? 0))
+    s.depth.dispatch.fastFiled = Math.max(0, Math.floor(finite(s.depth.dispatch.fastFiled ?? 0)))
+    if (!s.depth.dispatch.laneStances || typeof s.depth.dispatch.laneStances !== 'object') {
+      s.depth.dispatch.laneStances = {}
+    }
     if (typeof s.depth.dispatch.examLaneId !== 'string') s.depth.dispatch.examLaneId = null
     if (typeof s.depth.dispatch.examMix !== 'string') s.depth.dispatch.examMix = null
     s.depth.dispatch.examUntil = Math.max(0, finite(s.depth.dispatch.examUntil ?? 0))

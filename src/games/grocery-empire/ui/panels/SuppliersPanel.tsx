@@ -3,19 +3,26 @@ import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categor
 import { DEPTH, PRICE_LOCK, WHOLESALE } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import {
+  backroomCap,
   crateCost,
   crateSize,
+  hireCost,
+  doorOverflow,
   deliveryTime,
   shortShipChance,
   unitCost,
 } from '../../sim/formulas'
+import { sumQty } from '../../sim/helpers'
 import { canCoopOrder, coopCrateCost } from '../../sim/systems/late'
 import { useGame } from '../GameContext'
 import { clock, money, qty } from '../format'
 import { MixPriority } from '../components/MixPriority'
-import { ActionRow, PlayFrame } from '../play'
+import { MENUS } from '../../content/menus'
+import { ActionRow, FailReason, PlayFrame } from '../play'
 import { Badge, Button, Chip, Disclosure, EmptyState, Meter, Sheet, Toggle, Tooltip } from '../kit'
 import { DockScene } from '../scenes/live'
+
+const MAX_CRATES = 200
 
 function indexMood(index: number): { label: string; hint: string } {
   if (index < 0.88) return { label: 'Cheap', hint: 'Wholesale is soft — good time to buy.' }
@@ -24,15 +31,32 @@ function indexMood(index: number): { label: string; hint: string } {
 }
 
 export function SuppliersPanel() {
-  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion, setActiveMenu } = useGame()
   const [invoiceBook, setInvoiceBook] = useState(false)
   const [dockSheet, setDockSheet] = useState(false)
+  const [qtyPick, setQtyPick] = useState<number | 'fill'>(1)
   const cat = (s.orderCat in CATEGORIES ? s.orderCat : 'cans') as CategoryId
   const unlocked = CATEGORY_IDS.filter((c) => s.categories[c])
   const supplier = s.supplier === 'b' ? 'b' : 'a'
-  const crates = supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
-  const cost = crateCost(s, cat, supplier) * crates
-  const units = crateSize(s) * crates
+  const minCrates = supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
+  const eachCost = crateCost(s, cat, supplier)
+  const eachUnits = crateSize(s)
+  const pendingUnits = (s.orders ?? []).reduce((n, o) => n + o.qty, 0)
+  const backRoom = Math.max(0, backroomCap(s) + doorOverflow(s) - sumQty(s.backroom) - pendingUnits)
+  // Fill = as many crates as cash covers, never more than the backroom can take (door refunds the rest).
+  const fillCrates = Math.max(
+    minCrates,
+    Math.min(
+      eachCost > 0 ? Math.floor(s.cash / eachCost) : 1,
+      Math.floor(backRoom / Math.max(1, eachUnits)),
+      MAX_CRATES,
+    ),
+  )
+  const qtySteps = Array.from(new Set([minCrates, 5].filter((n) => n >= minCrates)))
+  const crates = qtyPick === 'fill' ? fillCrates : Math.max(minCrates, qtyPick)
+  const cost = eachCost * crates
+  const units = eachUnits * crates
+  const backroomTight = backRoom < units && s.menus.build
   const buyCheck = can(s, { type: 'buyWholesale', cat, crates })
   const dockCheck = can(s, { type: 'dockCheckIn', aisle: cat })
   const emergencyCheck = can(s, { type: 'emergencyDelivery' })
@@ -100,7 +124,7 @@ export function SuppliersPanel() {
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose="Buy stock and move it — trucks, cold chain, ocean lanes."
+        purpose={MENUS.suppliers.purpose}
         department="Suppliers"
         room={<DockScene />}
         tray={{
@@ -113,7 +137,7 @@ export function SuppliersPanel() {
                 onClick: () => setDockSheet(true),
               }
             : {
-                label: `Buy ${crates > 1 ? `${crates} crates` : 'crate'}`,
+                label: `Buy ${crates > 1 ? `${crates} crates` : 'crate'}${qtyPick === 'fill' ? ' (fill)' : ''}`,
                 tone: 'primary',
                 size: 'lg',
                 coachId: 'floor-wholesale',
@@ -125,8 +149,7 @@ export function SuppliersPanel() {
                 feedback: true,
                 onClick: () => dispatch({ type: 'buyWholesale', cat, crates }),
               },
-          failReason: dockReady ? undefined : buyCheck.reason,
-          secondaries: [
+          failReason: dockReady ? undefined : buyCheck.reason,          secondaries: [
             {
               key: 'invoices',
               label: 'Invoices',
@@ -171,6 +194,27 @@ export function SuppliersPanel() {
             {openInvoices.length} open · {invoicesOnTime} on time
           </Badge>
         </div>
+
+        <div className="p6-row" role="group" aria-label="Crates per order">
+          {qtySteps.map((n) => (
+            <Chip key={n} selected={qtyPick !== 'fill' && crates === n} onClick={() => setQtyPick(n)}>
+              ×{n}
+            </Chip>
+          ))}
+          <span title={`Max crates your cash covers, up to the room left in the backroom (${fillCrates})`}>
+            <Chip selected={qtyPick === 'fill'} onClick={() => setQtyPick('fill')}>
+              Fill · {fillCrates}
+            </Chip>
+          </span>
+          <span className="p6-copy">
+            {crates} × {qty(eachUnits)} = {qty(units)} units · {money(cost, numberFormat)}
+          </span>
+        </div>
+        {backroomTight ? (
+          <FailReason action={{ label: 'Open Build', onClick: () => setActiveMenu('build') }}>
+            Backroom can’t hold this order — extra crates are refused at the door.
+          </FailReason>
+        ) : null}
 
         <div className="p6-row">
           {unlocked.map((c) => (
@@ -325,6 +369,10 @@ export function SuppliersPanel() {
             <p className="p6-copy">
               Pay now (×{DEPTH.invoiceEarlyDisc}) keeps the greengrocer deal. Float (×{DEPTH.invoiceLateFee}) ages
               produce.
+            </p>
+            <p className="p6-copy" data-coach-id="suppliers-float-vs-hire">
+              Early pay saves {money(openInvoices.reduce((n, i) => n + i.amount * (1 - DEPTH.invoiceEarlyDisc), 0), numberFormat)}{' '}
+              · next clerk costs {money(hireCost(s, 'clerk'), numberFormat)}
             </p>
             {openInvoices.map((inv) => {
               const early = s.time <= inv.dueAt

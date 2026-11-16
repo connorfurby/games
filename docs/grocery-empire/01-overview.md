@@ -38,9 +38,10 @@ Hubs (no seventh hub): **Store · Supply · Team · Money · Empire · Worlds ·
 3. Follow the **Next-goal** bar (`content/goals.ts`) — the campaign bot is the unhurried path.
 4. Hit the era door (hard `can()` / `setEra` checks, not flavor goals alone).
 
-## Two overhauls on top of 2.0
+## Two overhauls on top of 2.0, then 40.0
 
 1. **Era depth overhaul** — departments, facings, typed plants, pockets, puzzle 0.72/0.85 bars, more roles. Lengthened content but bot still raced (~9 min Era 1).
 2. **Pacing stretch megaplan** — replaced one-shot checkboxes with sustained loops (regulars, shifts, invoices, flyer weeks, cooler logs, dispatch, pocket trips, practice filings, hearing docket). CI floors moved to the real plan windows. Bot Last Aisle ~32 h.
+3. **Grocery Empire 40.0** (`GAME_VERSION` 40.0 · `SAVE_VERSION` 36) — one PlayFrame/tray on every department, phone Hubs that badge late game, QoL (palette/undo/qty/slots), era decisions that replace waits with tradeoffs (two regulars → flyer stance → manifest stance → Worlds taxes → charter fork), Accept≈Rebrand, endless/museum loadout, visual `@layer shell`, app shell Awards + News bands. Bot Last Aisle still ~40.1 h inside the plan window.
 
 See [10-changelog-chat.md](10-changelog-chat.md).

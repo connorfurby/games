@@ -1,24 +1,25 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { NumberFormat } from '@/shared/bn'
 import { deserializeState, exportSave, importSave, loadGame, loadMeta } from '@/shared/save'
 import { DEFAULT_META, type MetaSave } from '@/shared/types'
+import { GAME_VERSION } from '@/games/grocery-empire/content/news'
 import { engine } from '@/games/grocery-empire/sim/engine'
 import { migrate } from '@/games/grocery-empire/sim/migrate'
 import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
 import { clearDailyPending, deactivateDailyChallenge } from './dailyChallenge'
 import { useMeta } from './MetaContext'
+import { SaveSlots, ShellConfirm } from './SaveSlots'
 
 interface GroceryPlayGlance {
   stats?: { playSec?: number }
 }
 
-type Slot = 1 | 2 | 3
-const SLOTS: Slot[] = [1, 2, 3]
-
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { meta, updateSettings, replaceMeta } = useMeta()
   const [msg, setMsg] = useState('')
   const [resetDraft, setResetDraft] = useState('')
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [, bump] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
   const titleId = useId()
@@ -90,7 +91,6 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
         setMsg('Imported meta.')
         return
       }
-      if (!window.confirm('Load this save into the current Grocery Empire run?')) return
       importSave('grocery-empire', text)
       engine.replaceState(migrate(parsed))
       setMsg('Loaded save into play.')
@@ -98,29 +98,6 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     } catch {
       setMsg('Import failed.')
     }
-  }
-
-  const saveSlot = (slot: Slot) => {
-    if (!engine.saveToSlot(slot)) {
-      setMsg(`Could not write slot ${slot}.`)
-      return
-    }
-    setMsg(`Saved to slot ${slot}.`)
-    bump((n) => n + 1)
-  }
-
-  const loadSlot = (slot: Slot) => {
-    if (!engine.hasSlot(slot)) {
-      setMsg(`Slot ${slot} is empty.`)
-      return
-    }
-    if (!window.confirm(`Load slot ${slot}? Live progress will be overwritten.`)) return
-    if (!engine.loadFromSlot(slot)) {
-      setMsg(`Failed to load slot ${slot}.`)
-      return
-    }
-    setMsg(`Loaded slot ${slot}.`)
-    bump((n) => n + 1)
   }
 
   const onNotifyToggle = async (enabled: boolean) => {
@@ -196,6 +173,9 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 <option value="engineering">Engineering</option>
                 <option value="full">Full</option>
               </select>
+              <small className="muted">
+                Named = short labels on HUD, Shelf, and crowded chips. Full still shows in Books detail and tooltips.
+              </small>
             </label>
             <label className="settings-field">
               <span>Presentation</span>
@@ -302,31 +282,22 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 </li>
               </ul>
             </div>
-            <p className="muted settings-hint">Press ? anytime for the hotkey map.</p>
+            <p className="muted settings-hint">
+              Press ? anytime for the hotkey map. <Link to="/news">Bulletin · v{GAME_VERSION}</Link>
+            </p>
           </section>
 
           <section className="settings-block settings-block--wide">
             <h3>Saves</h3>
             <p className="muted settings-hint">Autosave is always on. Slots are manual copies.</p>
-            <div className="settings-slots">
-              {SLOTS.map((slot) => {
-                const filled = engine.hasSlot(slot)
-                return (
-                  <div key={slot} className="settings-slots__row">
-                    <span>
-                      Slot {slot}
-                      {filled ? '' : ' · empty'}
-                    </span>
-                    <button type="button" onClick={() => saveSlot(slot)}>
-                      Save
-                    </button>
-                    <button type="button" disabled={!filled} onClick={() => loadSlot(slot)}>
-                      Load
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
+            <SaveSlots
+              variant="shell"
+              reducedMotion={meta.settings.reducedMotion}
+              onNote={(m) => {
+                setMsg(m)
+                bump((n) => n + 1)
+              }}
+            />
             <div className="settings-io-row">
               <button type="button" className="settings-btn settings-btn--accent" onClick={exportGrocery}>
                 Download save…
@@ -347,13 +318,23 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 const file = e.target.files?.[0] ?? null
                 e.target.value = ''
                 if (!file) return
-                const kind = window.confirm(
-                  'OK = load as Grocery Empire run.\nCancel = import cosmetics/meta only.',
-                )
-                  ? 'grocery-empire'
-                  : 'meta'
-                void onImportFile(file, kind)
+                setPendingFile(file)
               }}
+            />
+            <ShellConfirm
+              spec={
+                pendingFile
+                  ? {
+                      title: 'Load this file as your run?',
+                      body: 'Replace the current Grocery Empire run with this file, or import cosmetics / meta only.',
+                      confirmLabel: 'Load as run',
+                      tone: 'danger',
+                      onConfirm: () => void onImportFile(pendingFile, 'grocery-empire'),
+                    }
+                  : null
+              }
+              alt={pendingFile ? { label: 'Meta only', onClick: () => void onImportFile(pendingFile, 'meta') } : undefined}
+              onClose={() => setPendingFile(null)}
             />
             {msg ? (
               <p className="settings-msg" role="status">

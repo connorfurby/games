@@ -1,3 +1,4 @@
+import { MENUS } from '../../content/menus'
 import { BILL_DEFS, BILL_IDS, type BillId } from '../../content/depth'
 import { POLITICS } from '../../sim/balance'
 import { can } from '../../sim/commands'
@@ -6,7 +7,8 @@ import { councilPayingSeats, councilSeatAdd, councilSeatCap, councilSeats } from
 import { acquireCost, billCost, billsPassed } from '../../sim/systems/politics'
 import { useGame } from '../GameContext'
 import { money, pct } from '../format'
-import { Button, Card, Chip, Disclosure, Meter, Stat } from '../kit'
+import { Button, Card, Chip, Disclosure, EmptyState, Meter } from '../kit'
+import { StatusChip, type VerbTrayProps } from '../play'
 import { Icon } from '../icons/Icon'
 import { CouncilScene } from '../scenes/live/CouncilScene'
 import { HubCallout, LateHubShell } from './LateHubShell'
@@ -35,52 +37,89 @@ export function PoliticsPanel() {
   const seatCap = councilSeatCap(s)
   const scrutiny = s.late?.scrutiny ?? 0
 
-  const kpis = (
-    <>
-      <Stat
-        size="sm"
-        label="Capital"
-        value={`${p.capital.toFixed(1)} PC`}
-        rate={`${capitalNet >= 0 ? '+' : ''}${capitalNet.toFixed(3)} PC/s`}
+  const kpiChips = (
+    <div className="lh-chips" data-coach-id="politics-kpis">
+      <StatusChip
+        tone="idle"
         title={`Leak ${POLITICS.leakPerSec}/s while you hold any; each ${council ? 'whip' : 'lobbyist'} +${POLITICS.lobbyGainPerSec}/s`}
-      />
-      <Stat
-        size="sm"
-        label={council ? 'Seats' : 'Neighbors'}
-        value={council ? `${paying}/${seatCap}` : p.acquisitions}
+      >
+        Capital {p.capital.toFixed(1)} PC · {capitalNet >= 0 ? '+' : ''}
+        {capitalNet.toFixed(3)}/s
+      </StatusChip>
+      <StatusChip
+        tone="idle"
         title={council ? `${seats} held · ${paying} paying at the annex cap` : 'Neighbors bought'}
-      />
-      <Stat size="sm" label="Heat" value={pct(p.monopolyRisk)} title="Acquisition pressure — a gauge, not a gavel" />
-      {council ? <Stat size="sm" label="Scrutiny" value={pct(scrutiny)} title="Past 60% it trims instrument yield" /> : null}
-    </>
+      >
+        {council ? 'Seats' : 'Neighbors'} {council ? `${paying}/${seatCap}` : p.acquisitions}
+      </StatusChip>
+      <StatusChip tone={p.monopolyRisk > 0.6 ? 'warn' : 'idle'} title="Acquisition pressure — a gauge, not a gavel">
+        Heat {pct(p.monopolyRisk)}
+      </StatusChip>
+      {council ? (
+        <StatusChip tone={scrutiny > 0.6 ? 'warn' : 'idle'} title="Past 60% it trims instrument yield">
+          Scrutiny {pct(scrutiny)}
+        </StatusChip>
+      ) : null}
+    </div>
   )
+
+  const tray: VerbTrayProps = {
+    primary: {
+      label: `${council ? 'Seat a delegate' : 'Acquire a neighbor'} · ${money(acq.cash, numberFormat)} + ${acq.capital} PC`,
+      tone: 'primary',
+      size: 'lg',
+      coachId: 'politics-acquire',
+      disabled: !acquireCheck.ok,
+      onClick: () => dispatch({ type: 'acquireRegion' }),
+    },
+    failReason: acquireCheck.ok ? undefined : acquireCheck.reason,
+    secondaries: [
+      {
+        key: 'lobby',
+        label: council ? 'Retain a whip' : 'Hire lobbyist',
+        fact: money(POLITICS.lobbyCost, numberFormat),
+        icon: <Icon name="lobby" size={14} />,
+        coachId: 'politics-lobby',
+        disabled: !lobbyCheck.ok,
+        title: lobbyCheck.ok
+          ? `+${POLITICS.lobbyCapitalGain} PC now, then +${POLITICS.lobbyGainPerSec}/s`
+          : lobbyCheck.reason,
+        onClick: () => dispatch({ type: 'hireLobby' }),
+      },
+      ...(council
+        ? []
+        : [
+            {
+              key: 'leave',
+              label: p.leftRegion ? 'Left the region' : 'Leave the Region',
+              coachId: 'politics-leave',
+              disabled: !leaveCheck.ok,
+              title: leaveCheck.ok
+                ? s.cold.yieldLeft <= 0
+                  ? 'Yield is empty'
+                  : 'Yield still flowing'
+                : leaveCheck.reason,
+              onClick: () => dispatch({ type: 'leaveRegion' }),
+            },
+          ]),
+    ],
+  }
 
   return (
     <LateHubShell
-      title={council ? 'Council' : 'Politics'}
-      purpose={council ? 'Seat a delegate. Seats pay the network.' : 'Spend political capital on a neighbor or a bill.'}
-      stats={kpis}
+      title={MENUS.politics.name}
+      purpose={council ? 'Seat a delegate. Seats pay the network.' : MENUS.politics.purpose}
       scene={<CouncilScene />}
-      primary={
-        <HubCallout
-          title={council ? `Seat a delegate · ${paying}/${seatCap}` : `Acquire · ${p.acquisitions} owned`}
-          action={
-            <Button
-              tone="primary"
-              disabled={!acquireCheck.ok}
-              title={!acquireCheck.ok ? acquireCheck.reason : undefined}
-              onClick={() => dispatch({ type: 'acquireRegion' })}
-            >
-              {council ? 'Seat' : 'Acquire'} · {money(acq.cash, numberFormat)} + {acq.capital} PC
-            </Button>
-          }
-        >
-          {council
-            ? `+${councilSeatAdd(s).toFixed(2)} store-equivalents${seats > seatCap ? ' · extras pay 40%' : ''}.`
-            : `${p.acquisitions} neighbor${p.acquisitions === 1 ? '' : 's'} bought.`}
-        </HubCallout>
-      }
+      tray={tray}
     >
+      {kpiChips}
+
+      <HubCallout title={council ? `Seat a delegate · ${paying}/${seatCap}` : `Acquire · ${p.acquisitions} owned`}>
+        {council
+          ? `+${councilSeatAdd(s).toFixed(2)} store-equivalents${seats > seatCap ? ' · extras pay 40%' : ''}.`
+          : `${p.acquisitions} neighbor${p.acquisitions === 1 ? '' : 's'} bought.`}
+      </HubCallout>
+
       <div className="lh-split">
         <Card
           header={
@@ -88,24 +127,19 @@ export function PoliticsPanel() {
               <strong>{council ? `Whips · ${p.lobby}` : `Lobby · ${p.lobby}`}</strong>
             </div>
           }
-          footer={
-            <Button
-              tone="primary"
-              coachId="politics-lobby"
-              disabled={!lobbyCheck.ok}
-              title={!lobbyCheck.ok ? lobbyCheck.reason : `+${POLITICS.lobbyCapitalGain} PC now, then +${POLITICS.lobbyGainPerSec}/s`}
-              onClick={() => dispatch({ type: 'hireLobby' })}
-              icon={<Icon name="lobby" size={14} />}
-            >
-              {council ? 'Retain a whip' : 'Hire lobbyist'} · {money(POLITICS.lobbyCost, numberFormat)}
-            </Button>
-          }
         >
-          <p className="lh-note">
-            {p.lobby === 0
-              ? `No retainers. Capital leaks ${POLITICS.leakPerSec}/s while you hold any.`
-              : `${capitalNet >= 0 ? '+' : ''}${capitalNet.toFixed(3)} PC/s · leak ${POLITICS.leakPerSec}/s, each ${council ? 'whip' : 'lobbyist'} +${POLITICS.lobbyGainPerSec}/s.`}
-          </p>
+          {p.lobby === 0 && p.capital <= 0 ? (
+            <EmptyState
+              title="No capital yet"
+              body={`Retain ${council ? 'a whip' : 'a lobbyist'} in the tray to start earning political capital.`}
+            />
+          ) : (
+            <p className="lh-note">
+              {capitalNet >= 0 ? '+' : ''}
+              {capitalNet.toFixed(3)} PC/s · leak {POLITICS.leakPerSec}/s, each {council ? 'whip' : 'lobbyist'} +
+              {POLITICS.lobbyGainPerSec}/s.
+            </p>
+          )}
         </Card>
 
         {council ? (
@@ -159,15 +193,6 @@ export function PoliticsPanel() {
                 )
               })}
             </div>
-            <Button
-              tone="primary"
-              coachId="politics-leave"
-              disabled={!leaveCheck.ok}
-              title={!leaveCheck.ok ? leaveCheck.reason : s.cold.yieldLeft <= 0 ? 'Yield is empty' : 'Yield still flowing'}
-              onClick={() => dispatch({ type: 'leaveRegion' })}
-            >
-              {p.leftRegion ? 'Left the region' : 'Leave the Region'}
-            </Button>
           </div>
           </>
         )}

@@ -456,6 +456,8 @@ export interface GameState {
     autoTourney: boolean
     /** Sim-time before the next automatic tournament. */
     nextAutoTourneyAt: number
+    /** Sim-time before any tournament (manual or auto) may run again. */
+    nextTournamentAt: number
     ideas: number
     reputation: number
     repEarned: number
@@ -480,6 +482,10 @@ export interface GameState {
   upgrades: Record<string, number>
   upgradeSpend: number
   builds: Record<string, number>
+  /** Facing choice per track (Build 4.0 variants). */
+  buildVariants: Record<string, string>
+  /** Tracks hibernated (tier parked; effect muted until rebuilt). */
+  buildHibernated: Record<string, boolean>
   endcaps: number
   ventures: Record<string, VentureState>
   passbook: { balance: number }
@@ -559,6 +565,8 @@ export interface GameState {
     /** Museum level per relic id. Missing means 1. */
     levels: Record<string, number>
     sockets: string[]
+    /** SAVE 36: wings whose bonus is lit. Null = the first `cap` finished wings (default). */
+    litWings: string[] | null
     /** Dust mirrored from the museum so level commands can spend it. */
     dust: number
     /** Rarity ceiling for auto-dust. Null is off. */
@@ -908,6 +916,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       ideasOn: true,
       autoTourney: true,
       nextAutoTourneyAt: 0,
+      nextTournamentAt: 0,
       ideas: 0,
       reputation: 2,
       repEarned: 2,
@@ -927,6 +936,8 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     upgrades: {},
     upgradeSpend: 0,
     builds: { storefront: 1, storage: 1 },
+    buildVariants: {},
+    buildHibernated: {},
     endcaps: 0,
     ventures: {},
     passbook: { balance: 0 },
@@ -990,7 +1001,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     prestigeCarry: emptyPrestigeCarry(),
     projects: { done: {}, active: [] },
     rivals: {},
-    relics: { wings: [], count: 0, owned: {}, levels: {}, sockets: [], dust: 0, autoDust: null },
+    relics: { wings: [], count: 0, owned: {}, levels: {}, sockets: [], litWings: null, dust: 0, autoDust: null },
     rebrand: { goodwill: 0, count: 0, bankedThisRun: 0 },
 
     menus,

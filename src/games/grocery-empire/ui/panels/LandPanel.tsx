@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MENUS } from '../../content/menus'
 import { STORE_TRAIT_BY_ID, isPlaceTraitId, policyMatchesTrait } from '../../content/depth'
 import { ERA2_EXPANSIONS } from '../../content/era2'
 import { CHAIN, DEPTH } from '../../sim/balance'
@@ -9,6 +10,7 @@ import {
   canWalkStore,
   chainAttentionDrainPerSec,
   openStoreCost,
+  hotTraitInfo,
   trainStoreCost,
   traitOfStore,
 } from '../../sim/systems/chain'
@@ -19,9 +21,10 @@ import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Line } from '../components/Line'
-import { Button, ScreenHeader, Stat } from '../kit'
+import { Button, EmptyState } from '../kit'
+import { StatusChip, type VerbSecondary, type VerbTrayProps } from '../play'
 import { OutpostStreetScene } from '../scenes/live/OutpostStreetScene'
-import { LandStreet } from '../land/LandStreet'
+import { EarlyLandStreet, LandStreet } from '../land/LandStreet'
 
 const EARLY = [
   {
@@ -117,6 +120,12 @@ function LandExpansionCard({
   )
 }
 
+function hotPolicyLabels(policies: string[]): string {
+  return policies
+    .map((p) => POLICIES.find((x) => x.id === p)?.label ?? p)
+    .join(' or ')
+}
+
 /** Era 2+ chain roster: one compact row per store, bulk actions on top. */
 function ChainRoster({
   focus,
@@ -125,18 +134,8 @@ function ChainRoster({
   focus: string | null
   onFocus: (id: string) => void
 }) {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch } = useGame()
   const stores = s.stores ?? []
-  const nextStoreCost = openStoreCost(s)
-  const openBlock =
-    stores.length >= CHAIN.maxStores
-      ? 'Store cap reached.'
-      : s.cash < nextStoreCost
-        ? `Need ${money(nextStoreCost, numberFormat)}.`
-        : null
-  const depotCheck = can(s, { type: 'buildDepot' })
-  const walkAll = can(s, { type: 'walkDrifting' })
-  const even = can(s, { type: 'evenAttention' })
   const drifting = stores.filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn).length
   const equiv = 1 + networkStores(s)
   const fair = 1 / Math.max(1, stores.length)
@@ -146,6 +145,7 @@ function ChainRoster({
 
   const block = s.depth?.blockEvent
   const blockLive = !!(block?.kind && (block.until ?? 0) > s.time)
+  const hot = hotTraitInfo(s)
   return (
     <section className="ld-chain" aria-label="Chain">
       {blockLive ? (
@@ -159,6 +159,7 @@ function ChainRoster({
                 ? `${STORE_TRAIT_BY_ID[block!.traitBias].name} doors pull hardest. `
                 : ''}
               {Math.ceil((block!.until - s.time) / 60)}m left.
+              {hot ? ` Matching policy: ${hotPolicyLabels(hot.policies)} (${hot.matchedDoors}/${stores.length} doors match).` : ''}
             </p>
           </div>
         </div>
@@ -187,34 +188,6 @@ function ChainRoster({
             <dd>{drifting}</dd>
           </div>
         </dl>
-        <div className="ld-chain__buy">
-          <button
-            type="button"
-            className="g2-tag"
-            data-coach-id="land-open-store"
-            disabled={!!openBlock}
-            title={openBlock ?? 'Open the next store'}
-            onClick={() => dispatch({ type: 'openStore' })}
-          >
-            <span className="g2-tag__price">{money(nextStoreCost, numberFormat)}</span>
-            <span className="g2-tag__label">Open store {stores.length + 1}</span>
-          </button>
-          {!s.depot ? (
-            <button
-              type="button"
-              className="g2-tag g2-tag--small"
-              data-coach-id="land-depot"
-              disabled={!depotCheck.ok}
-              title={depotCheck.ok ? 'Stores past the fourth run at full speed and the chain earns 20% more.' : depotCheck.reason}
-              onClick={() => dispatch({ type: 'buildDepot' })}
-            >
-              <span className="g2-tag__price">{money(CHAIN.depotCash, numberFormat)}</span>
-              <span className="g2-tag__label">Depot</span>
-            </button>
-          ) : (
-            <span className="ld-chain__depot">Depot online</span>
-          )}
-        </div>
       </div>
 
       {stores.length >= 5 && !s.depot ? (
@@ -222,27 +195,6 @@ function ChainRoster({
           {stores.length} stores without a depot: stores past the fourth run at 60%. Build a depot.
         </p>
       ) : null}
-
-      <div className="ld-chain__bulk">
-        <button
-          type="button"
-          className="ge-btn ge-btn--ghost"
-          disabled={!walkAll.ok}
-          title={walkAll.ok ? 'Walk every drifting store, worst first, while Attention lasts.' : walkAll.reason}
-          onClick={() => dispatch({ type: 'walkDrifting' })}
-        >
-          Walk all drifting{drifting > 0 ? ` (${drifting})` : ''}
-        </button>
-        <button
-          type="button"
-          className="ge-btn ge-btn--ghost"
-          disabled={!even.ok}
-          title={even.ok ? 'Give every store the same share of Attention.' : even.reason}
-          onClick={() => dispatch({ type: 'evenAttention' })}
-        >
-          Even out Attention
-        </button>
-      </div>
 
       <ol className="ld-roster">
         {stores.map((st, i) => {
@@ -345,13 +297,13 @@ function OutpostRoster() {
     <section className="ge-empire-block" data-coach-id="land-outposts">
       <header className="ge-empire-block__head">
         <h3>Outposts</h3>
-        <p>
-          {rows.length === 0
-            ? 'Stock a world and it shows up here.'
-            : `${rows.filter((r) => r.franchised).length} of ${rows.length} stocked worlds carry your name.`}
-        </p>
+        {rows.length > 0 ? (
+          <p>{`${rows.filter((r) => r.franchised).length} of ${rows.length} stocked worlds carry your name.`}</p>
+        ) : null}
       </header>
-      {rows.length > 0 ? (
+      {rows.length === 0 ? (
+        <EmptyState title="No stocked worlds yet" body="Stock a world and it shows up here." />
+      ) : (
         <ol className="ld-roster">
           {rows.map((r) => (
             <li key={r.id} className="ld-row">
@@ -364,7 +316,7 @@ function OutpostRoster() {
             </li>
           ))}
         </ol>
-      ) : null}
+      )}
       <div className="ge-chip-row">
         <Button
           tone={charter.ok ? 'primary' : 'ghost'}
@@ -392,65 +344,195 @@ export function LandPanel() {
     })
   }
 
+  const stores = s.stores ?? []
+  const chain = s.era >= 2
+  const nextStoreCost = openStoreCost(s)
+  const openBlock =
+    stores.length >= CHAIN.maxStores
+      ? 'Store cap reached.'
+      : s.cash < nextStoreCost
+        ? `Need ${money(nextStoreCost, numberFormat)}.`
+        : null
+  const depotCheck = can(s, { type: 'buildDepot' })
+  const walkAll = can(s, { type: 'walkDrifting' })
+  const evenCheck = can(s, { type: 'evenAttention' })
+  const drifting = stores.filter((st) => (st.drift ?? 0) >= CHAIN.driftWarn).length
+
+  const nextEra2 = ERA2_EXPANSIONS.find((e) => {
+    if (owned[e.id]) return false
+    try {
+      return !e.requires || e.requires(s)
+    } catch {
+      return false
+    }
+  })
+  const nextDeed =
+    EARLY.find((e) => !owned[e.id]) ??
+    (nextEra2 ? { id: nextEra2.id, name: nextEra2.name, cost: nextEra2.cost } : null)
+  const deedCheck = nextDeed ? can(s, { type: 'expandLot', id: nextDeed.id }) : null
+
+  // Primary: walk the drifting doors when it matters, else the next deed, else the next store.
+  const primary: VerbTrayProps['primary'] & { reason?: string } =
+    chain && drifting > 0 && walkAll.ok
+      ? {
+          label: `Walk all drifting (${drifting})`,
+          tone: 'primary',
+          size: 'lg',
+          onClick: () => dispatch({ type: 'walkDrifting' }),
+        }
+      : nextDeed && deedCheck
+        ? {
+            label: `Buy ${nextDeed.name} · ${money(nextDeed.cost, numberFormat)}`,
+            tone: 'primary',
+            size: 'lg',
+            disabled: !deedCheck.ok,
+            reason: deedCheck.ok ? undefined : deedCheck.reason,
+            onClick: () => dispatch({ type: 'expandLot', id: nextDeed.id }),
+          }
+        : chain
+          ? {
+              label: `Open store ${stores.length + 1} · ${money(nextStoreCost, numberFormat)}`,
+              tone: 'primary',
+              size: 'lg',
+              disabled: !!openBlock,
+              reason: openBlock ?? undefined,
+              onClick: () => dispatch({ type: 'openStore' }),
+            }
+          : {
+              label: 'All deeds filed',
+              tone: 'ghost',
+              size: 'lg',
+              disabled: true,
+              reason: 'Nothing left on the block.',
+              onClick: () => undefined,
+            }
+  const { reason: primaryReason, ...primaryProps } = primary
+  const primaryIsWalk = chain && drifting > 0 && walkAll.ok
+  const primaryIsStore = !primaryIsWalk && !(nextDeed && deedCheck) && chain
+
+  const secondaries: VerbSecondary[] = chain
+    ? [
+        ...(primaryIsStore
+          ? []
+          : [
+              {
+                key: 'store',
+                label: `Open store ${stores.length + 1}`,
+                fact: money(nextStoreCost, numberFormat),
+                coachId: 'land-open-store',
+                disabled: !!openBlock,
+                title: openBlock ?? 'Open the next store',
+                onClick: () => dispatch({ type: 'openStore' }),
+              },
+            ]),
+        ...(primaryIsWalk
+          ? []
+          : [
+              {
+                key: 'walk',
+                label: 'Walk all drifting',
+                fact: drifting > 0 ? String(drifting) : undefined,
+                disabled: !walkAll.ok,
+                title: walkAll.ok ? 'Walk every drifting store, worst first, while Attention lasts.' : walkAll.reason,
+                onClick: () => dispatch({ type: 'walkDrifting' }),
+              },
+            ]),
+        ...(!s.depot
+          ? [
+              {
+                key: 'depot',
+                label: 'Depot',
+                fact: money(CHAIN.depotCash, numberFormat),
+                coachId: 'land-depot',
+                disabled: !depotCheck.ok,
+                title: depotCheck.ok
+                  ? 'Stores past the fourth run at full speed and the chain earns 20% more.'
+                  : depotCheck.reason,
+                onClick: () => dispatch({ type: 'buildDepot' }),
+              },
+            ]
+          : []),
+        {
+          key: 'even',
+          label: 'Even out Attention',
+          disabled: !evenCheck.ok,
+          title: evenCheck.ok ? 'Give every store the same share of Attention.' : evenCheck.reason,
+          onClick: () => dispatch({ type: 'evenAttention' }),
+        },
+      ]
+    : []
+
+  const filed = Object.values(owned).filter(Boolean).length
+  const hotInfo = hotTraitInfo(s)
+
   return (
     <section className="ge-panel">
-      <ScreenHeader
-        hub
-        title="Land"
-        purpose="Buy the deed. Attention keeps the door managed."
-        stats={
-          <Stat
-            size="sm"
-            label="Filed"
-            value={Object.values(owned).filter(Boolean).length}
-            title="Buy the deed. Attention keeps the door managed."
-          />
-        }
-      />
       <HubStage
+        purpose={MENUS.land.purpose}
+        department={MENUS.land.name}
         scene={
           s.era >= 7 ? (
             <OutpostStreetScene />
           ) : s.era >= 2 ? (
             <LandStreet state={s} onPick={pickStore} />
-          ) : null
+          ) : (
+            <>
+              <EarlyLandStreet state={s} />
+              <EmptyState title="Side yard and lots unlock after the Corner Store era." />
+            </>
+          )
         }
-        primary={
-          <section className="ge-empire-block" aria-label="Expansions">
-            {(s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time) ||
-            (s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed ? (
-              <p className="ge-muted" data-coach-id="land-hot-trait" style={{ marginBottom: '0.55rem' }}>
-                {s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time
-                  ? `Hot trait live — match a door policy to ${
-                      s.depth.blockEvent.traitBias
-                        ? STORE_TRAIT_BY_ID[s.depth.blockEvent.traitBias as keyof typeof STORE_TRAIT_BY_ID]
-                            ?.name ?? s.depth.blockEvent.traitBias
-                        : 'the rush'
-                    } before the window ends.`
-                  : `Hot-trait walks ${s.depth?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed} toward the cold permit.`}
-              </p>
-            ) : null}
-            <header className="ge-empire-block__head">
-              <h3>Expansions</h3>
-              <p>Deeds on the block. Buy once; they stick.</p>
-            </header>
-            <div className="ge-card-grid" data-coach-id="land-expansions-primary">
-              {EARLY.map((e) => (
-                <LandExpansionCard
-                  key={e.id}
-                  id={e.id}
-                  name={e.name}
-                  blurb={e.blurb}
-                  cost={e.cost}
-                  have={!!owned[e.id]}
-                  numberFormat={numberFormat}
-                  onBuy={() => dispatch({ type: 'expandLot', id: e.id })}
-                />
-              ))}
-            </div>
-          </section>
-        }
+        tray={{
+          primary: primaryProps,
+          failReason: primaryReason,
+          secondaries,
+        }}
       >
+        <StatusChip tone="idle" title="Deeds filed">
+          Filed {filed}
+        </StatusChip>
+        {s.era >= 2 && hotInfo ? (
+          <StatusChip
+            tone={hotInfo.matchedDoors > 0 ? 'ready' : 'warn'}
+            title="A block event pulls one neighborhood trait. Set a door policy that matches it."
+          >
+            Hot trait · {hotInfo.traitName} · match {hotPolicyLabels(hotInfo.policies)} · {hotInfo.matchedDoors}/
+            {s.stores.length} doors
+          </StatusChip>
+        ) : null}
+        <section className="ge-empire-block" aria-label="Expansions">
+          {(s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time) ||
+          (s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed ? (
+            <p className="ge-muted" data-coach-id="land-hot-trait" style={{ marginBottom: '0.55rem' }}>
+              {s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time
+                ? `Hot trait live — match a door policy to ${
+                    s.depth.blockEvent.traitBias
+                      ? STORE_TRAIT_BY_ID[s.depth.blockEvent.traitBias as keyof typeof STORE_TRAIT_BY_ID]?.name ??
+                        s.depth.blockEvent.traitBias
+                      : 'the rush'
+                  } (${hotInfo ? hotPolicyLabels(hotInfo.policies) : 'matching policy'}) before the window ends.`
+                : `Hot-trait walks ${s.depth?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed} toward the cold permit.`}
+            </p>
+          ) : null}
+          <header className="ge-empire-block__head">
+            <h3>Expansions</h3>
+            <p>Deeds on the block. Buy once; they stick.</p>
+          </header>
+          <div className="ge-card-grid" data-coach-id="land-expansions-primary">
+            {EARLY.map((e) => (
+              <LandExpansionCard
+                key={e.id}
+                id={e.id}
+                name={e.name}
+                blurb={e.blurb}
+                cost={e.cost}
+                have={!!owned[e.id]}
+                numberFormat={numberFormat}
+                onBuy={() => dispatch({ type: 'expandLot', id: e.id })}
+              />
+            ))}
+          </div>
+        </section>
       {s.era >= 2 ? <ChainRoster focus={focus} onFocus={pickStore} /> : null}
       {s.era >= 7 ? <OutpostRoster /> : null}
 

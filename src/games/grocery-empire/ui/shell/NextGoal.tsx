@@ -1,4 +1,4 @@
-import { goalNeeds, nextGoal } from '../../content/goals'
+import { goalNeeds, nextGoal, type GoalChoice } from '../../content/goals'
 import { DEPTH } from '../../sim/balance'
 import { useSticky } from '../useStable'
 import { can } from '../../sim/commands'
@@ -56,6 +56,7 @@ function clauseHint(act: Command | null, fallback: string): string {
     case 'signCoolerLog':
       return 'Sign the cooler log.'
     case 'setManifest':
+    case 'setManifestStance':
       return 'Lock a matching manifest.'
     case 'openLane':
       return 'Open a logistics lane.'
@@ -73,15 +74,25 @@ function clauseHint(act: Command | null, fallback: string): string {
     case 'setCharter':
       return 'Sign the charter fork.'
     case 'answerHearing':
-      return 'Answer the hearing docket.'
+      return 'Answer the hearing on the clause you seated.'
+    case 'fileStandardPhrase':
+      return 'File a phrase to post its habit.'
+    case 'setAgentHabit':
+      return 'Put an agent on the posted habit.'
+    case 'seatClause':
+      return 'Seat this clause once the seal dries.'
+    case 'rehearseAccept':
+      return 'Rehearse the list. A miss scratches a line.'
+    case 'fileStandardList':
+      return 'File the list.'
     default:
       return fallback.includes(',') ? fallback.split(',')[0]!.trim() + '.' : fallback
   }
 }
 
 /**
- * The campaign spine as one shelf tag: what to do next, how far along you are,
- * and a button that does it when it's affordable.
+ * Campaign spine: one goal, one meter, one CTA.
+ * Free verbs use tomato chrome (no shelf-tag punch hole). Paid uses the yellow tag.
  */
 export function NextGoal({
   state: s,
@@ -93,14 +104,11 @@ export function NextGoal({
   state: GameState
   numberFormat: NumberFormat
   dispatch: (cmd: Command) => void
-  /** Current menu, so "Go" hides when you're already where the goal lives. */
   activeMenu?: MenuId
-  /** Jump to a menu (the shell checks it's unlocked). */
   onMenu?: (id: MenuId) => void
 }) {
   const g = nextGoal(s)
   const act0 = g?.action?.(s) ?? null
-  // "Do it" lights at once, but only falls back to "Saving" after a couple of quiet seconds.
   const readyCalm = useSticky(!!act0 && can(s, act0).ok, 2500)
   if (!g) {
     return (
@@ -129,36 +137,42 @@ export function NextGoal({
     if (dest === 'memos') requestInbox('memos')
     else if (dest && onMenu) onMenu(dest)
   }
-  const price = needs.cash > 0 ? money(needs.cash, numberFormat) : also.length ? also.shift()! : 'Free'
-  const hint = clauseHint(act, g.hint)
+  const isFree = needs.cash <= 0 && also.length === 0
+  const price = needs.cash > 0 ? money(needs.cash, numberFormat) : also.length ? also[0]! : 'Free'
+  let choices: GoalChoice[] | null = null
+  let counts = ''
+  try {
+    choices = g.choices?.(s) ?? null
+    counts = g.counts?.(s) ?? ''
+  } catch {
+    /* never break the HUD */
+  }
+  const hint = choices ? g.hint : clauseHint(act, g.hint)
 
   const stars = s.depth?.stars ?? DEPTH.starsStart
   const starsLocked =
     s.era >= 6 &&
     (s.depth?.rationWeekUntil ?? 0) > 0 &&
     s.time < (s.depth?.rationWeekUntil ?? 0)
+  const starsTitle = starsLocked
+    ? `Star Board ${stars.toFixed(1)}★ · frozen during ration week`
+    : `Star Board ${stars.toFixed(1)}★ — soft-caps demand and franchise loyalty`
   const pct = Math.round(progress * 100)
+
   return (
     <div className={`g2-goal${ready ? ' is-ready' : ''}`} role="group" aria-label={`Next goal: ${g.title}`}>
       <div className="g2-goal__copy">
-        <span className="g2-goal__title">
-          {g.title}
-          <span
-            className="g2-goal__stars"
-            title={
-              starsLocked
-                ? 'Star Board frozen during ration week'
-                : 'Star Board — soft-caps demand and franchise loyalty'
-            }
-          >
-            {stars.toFixed(1)}★{starsLocked ? ' lock' : ''}
-          </span>
+        <span className="g2-goal__title" title={starsTitle}>
+          <span className="g2-goal__title-text">{g.title}</span>
         </span>
         <span className="g2-goal__hint">
           {hint}
-          {also.length ? <span className="g2-goal__eta"> Also needs {also.join(' and ')}.</span> : null}
+          {also.length > (isFree ? 0 : 1) ? (
+            <span className="g2-goal__eta"> Also needs {also.slice(isFree ? 0 : 1).join(' and ')}.</span>
+          ) : null}
           {t ? <span className="g2-goal__eta"> Ready in {t}.</span> : null}
         </span>
+        {counts ? <span className="g2-goal__counts">{counts}</span> : null}
       </div>
       <div
         className="g2-goal__meter"
@@ -166,11 +180,30 @@ export function NextGoal({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pct}
-        aria-label={`${g.title} progress`}
+        aria-label={`${g.title} progress · ${starsTitle}`}
       >
         <span style={{ transform: `scaleX(${progress})` }} />
       </div>
-      {act ? (
+      {choices ? (
+        <div className="g2-goal__forks" role="group" aria-label={`${g.title} choices`}>
+          {choices.map((c) => {
+            const check = can(s, c.action)
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className="g2-goal__fork"
+                disabled={!check.ok}
+                onClick={() => dispatch(c.action)}
+                title={check.ok ? `${c.label}: ${c.line}` : (check.reason ?? 'Not yet')}
+              >
+                <strong>{c.label}</strong>
+                <span>{c.line}</span>
+              </button>
+            )
+          })}
+        </div>
+      ) : act ? (
         <div className="g2-goal__acts">
           {showGo ? (
             <button
@@ -182,16 +215,28 @@ export function NextGoal({
               Go
             </button>
           ) : null}
-          <button
-            type="button"
-            className="g2-tag"
-            disabled={!ready}
-            onClick={() => dispatch(act)}
-            title={ready ? 'Do it now' : (act ? can(s, act).reason : undefined) ?? 'Not yet'}
-          >
-            <span className="g2-tag__price">{price}</span>
-            <span className="g2-tag__label">{ready ? 'Do it' : 'Saving'}</span>
-          </button>
+          {isFree ? (
+            <button
+              type="button"
+              className="g2-goal__do g2-goal__do--free"
+              disabled={!ready}
+              onClick={() => dispatch(act)}
+              title={ready ? 'Do it now' : (can(s, act).reason ?? 'Not yet')}
+            >
+              Do it
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="g2-tag"
+              disabled={!ready}
+              onClick={() => dispatch(act)}
+              title={ready ? 'Do it now' : (can(s, act).reason ?? 'Not yet')}
+            >
+              <span className="g2-tag__price">{price}</span>
+              <span className="g2-tag__label">{ready ? 'Do it' : 'Saving'}</span>
+            </button>
+          )}
         </div>
       ) : null}
     </div>

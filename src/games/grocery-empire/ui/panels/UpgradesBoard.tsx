@@ -24,10 +24,13 @@ import { can } from '../../sim/commands'
 import { upgradeBulkCost, upgradeRankCap } from '../../sim/formulas'
 import type { GameState } from '../../sim/state'
 import { treeRanks } from '../../sim/systems/stats'
-import { hasAffordableUpgrade, planAffordableUpgrades } from '../../sim/upgradePlan'
+import { hasAffordableUpgrade, pickBestUpgrade, planAffordableUpgrades } from '../../sim/upgradePlan'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { Button, ScreenHeader } from '../kit'
+import { Chip, SegmentedControl, useConfirm } from '../kit'
+import { PlayFrame, StatusChip } from '../play'
+import { UpgradesHallScene } from '../scenes/live'
+import './waveC.css'
 
 type NodeView = {
   def: UpgradeDef
@@ -310,6 +313,7 @@ function UpgradeDetail({
 
 export function UpgradesBoard() {
   const { state: s, tick, dispatch, numberFormat, reducedMotion } = useGame()
+  const confirm = useConfirm()
   const [tree, setTree] = useState<TreeId>('floor')
   const [affordOnly, setAffordOnly] = useState(false)
   const [view, setView] = useState<'tree' | 'list'>('tree')
@@ -349,12 +353,27 @@ export function UpgradesBoard() {
   const treeReady = hasAffordableUpgrade(s, active.id)
   const allReady = hasAffordableUpgrade(s, 'all')
 
-  const sweep = (tree: TreeId | 'all') => {
+  const sweep = async (tree: TreeId | 'all') => {
     const plan = planAffordableUpgrades(s, tree)
     const ranks = plan.reduce((n, step) => n + step.count, 0)
     if (ranks <= 0) {
       setSweepNote({ text: 'Nothing affordable there. Capstones stay a choice.', bought: s.stats.upgradesBought })
       return
+    }
+    const draft = structuredClone(s)
+    let spend = 0
+    for (const step of plan) {
+      spend += upgradeBulkCost(draft, step.id, step.count)
+      draft.cash -= upgradeBulkCost(draft, step.id, step.count)
+      draft.upgrades[step.id] = (draft.upgrades[step.id] ?? 0) + step.count
+    }
+    if (ranks >= 8) {
+      const ok = await confirm({
+        title: `Buy ${ranks} ranks?`,
+        body: `Spend about ${money(spend, numberFormat)} on the best affordable upgrades.`,
+        confirmLabel: 'Upgrade Best',
+      })
+      if (!ok) return
     }
     const before = s.cash
     dispatch({ type: 'buyUpgradeSweep', tree })
@@ -364,143 +383,173 @@ export function UpgradesBoard() {
     })
   }
 
+  // Why Upgrade Best is grey: name the nearest rank so the wait has a number.
+  const nearest = active.views
+    .filter((v) => v.shown && !v.locked && v.lvl < v.def.max && v.maxCount > 0)
+    .sort((a, b) => a.cost1 - b.cost1)[0]
+  const treeFail = treeReady
+    ? undefined
+    : nearest
+      ? `Next rank: ${nearest.def.name} for ${money(nearest.cost1, numberFormat)}.`
+      : 'Nothing open in this tree yet. Capstones stay a choice.'
+  // Same pick the sweep makes first: best effect per dollar, capstones left alone.
+  const bestPick = treeReady ? pickBestUpgrade(s, active.id) : null
+  const bestDef = bestPick ? UPGRADE_BY_ID[bestPick.id] : null
+  const bestHint =
+    bestPick && bestDef
+      ? `Best: ${bestDef.name} · ${bestDef.per} for ${money(bestPick.cost, numberFormat)} (effect per cost)`
+      : undefined
+  const note = sweepNote && sweepNote.bought === s.stats.upgradesBought ? sweepNote.text : null
+
+  const room = (
+    <div className="wc-up-room">
+      <UpgradesHallScene
+        trees={trees.map((t) => ({ id: t.id, ranks: t.ranks, ready: t.ready }))}
+        activeId={active.id}
+        mastery={mastery}
+        totalReady={trees.reduce((n, t) => n + t.ready, 0)}
+        onPick={setTree}
+      />
+      <div data-coach-id="upgrades-floor">
+        <SegmentedControl
+          aria-label="Trees"
+          value={active.id}
+          onChange={(v) => setTree(v as TreeId)}
+          options={trees.map((t) => ({
+            value: t.id,
+            label: TREES[t.id].name,
+            badge: t.ready > 0 ? t.ready : undefined,
+            title: `${t.ranks} ranks`,
+          }))}
+        />
+      </div>
+      <p className="wc-up-room__line">
+        <span className="wc-up-room__blurb">{TREES[active.id].blurb}</span>
+        <StatusChip
+          tone={mastery > 1 ? 'ready' : 'idle'}
+          title={`Tree mastery. ${tr} ranks · next step at ${nextMastery} ranks. Every ${MASTERY.ranksPerStep} ranks add ${Math.round(MASTERY.perStep * 100)}%.`}
+        >
+          Mastery ×{mastery.toFixed(1)}
+        </StatusChip>
+      </p>
+      {note ? (
+        <p className="wc-up-room__note" role="status">
+          {note}
+        </p>
+      ) : null}
+    </div>
+  )
+
   return (
     <section className="ge-panel u2" aria-label="Upgrades">
-      <header className="u2-head">
-        <ScreenHeader
-          hub
-          title="Upgrades"
-          purpose={
-            <span
-              title={`Ranks 10 and 25 double a node. Every ${MASTERY.ranksPerStep} ranks in a tree add ${Math.round(MASTERY.perStep * 100)}%.`}
-            >
-              Buy ranks that multiply the store.
-            </span>
-          }
-          actions={
-            <div className="u2-tools">
-              <div className="u2-viewswitch" role="tablist" aria-label="View">
-                {(['tree', 'list'] as const).map((v) => (
-                  <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'is-on' : ''} onClick={() => setView(v)}>
-                    {v === 'tree' ? 'Tree' : 'List'}
-                  </button>
-                ))}
-              </div>
-              {view === 'list' ? (
-                <label className="u2-toggle">
-                  <input type="checkbox" checked={affordOnly} onChange={(e) => setAffordOnly(e.target.checked)} />
-                  Only what I can buy
-                </label>
-              ) : null}
-            </div>
-          }
-        />
-      </header>
-
-      <nav className="u2-trees" aria-label="Trees" data-coach-id="upgrades-floor">
-        {trees.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={`u2-tree${t.id === active.id ? ' is-active' : ''}`}
-            onClick={() => setTree(t.id)}
-            aria-pressed={t.id === active.id}
-            data-coach-id={t.id === 'floor' ? 'upgrades-floor-tree' : undefined}
+      <PlayFrame
+        className="wc-upgrades"
+        department="Upgrades"
+        purpose={
+          <span
+            title={`Ranks 10 and 25 double a node. Every ${MASTERY.ranksPerStep} ranks in a tree add ${Math.round(MASTERY.perStep * 100)}%.`}
           >
-            <span className="u2-tree__name">{TREES[t.id].name}</span>
-            <span className="u2-tree__meta">{t.ranks} ranks</span>
-            {t.ready > 0 ? <span className="g2-badge">{t.ready}</span> : null}
-          </button>
-        ))}
-      </nav>
-
-      <div className="u2-tree-head">
-        <p className="u2-tree-blurb">{TREES[active.id].blurb}</p>
-        <div className="u2-sweep">
-          <Button
-            tone="primary"
-            disabled={!treeReady}
-            title="Buys the best affordable ranks in this tree, strongest per dollar first. Capstones stay a choice."
-            onClick={() => sweep(active.id)}
-          >
-            Upgrade all
-          </Button>
-          <Button
-            tone="ghost"
-            disabled={!allReady}
-            title="Same pass across every tree. Capstones stay a choice."
-            onClick={() => sweep('all')}
-          >
-            All trees
-          </Button>
-          {sweepNote && sweepNote.bought === s.stats.upgradesBought ? (
-            <span className="u2-sweep__note">{sweepNote.text}</span>
+            Buy ranks that multiply the store.
+          </span>
+        }
+        room={room}
+        tray={{
+          primary: {
+            label: 'Upgrade Best',
+            tone: 'primary',
+            size: 'lg',
+            coachId: 'upgrades-best',
+            disabled: !treeReady,
+            title: 'Buys the best affordable ranks in this tree, strongest per dollar first. Capstones stay a choice.',
+            onClick: () => void sweep(active.id),
+          },
+          failReason: treeFail,
+          hint: bestHint,
+          secondaries: [
+            {
+              key: 'all',
+              label: 'All trees',
+              fact: allReady ? 'ready' : 'nothing yet',
+              disabled: !allReady,
+              title: 'Same pass across every tree. Capstones stay a choice.',
+              onClick: () => void sweep('all'),
+            },
+          ],
+        }}
+      >
+        <div className="wc-up-view">
+          <SegmentedControl
+            aria-label="View"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: 'tree', label: 'Tree' },
+              { value: 'list', label: 'List' },
+            ]}
+          />
+          {view === 'list' ? (
+            <Chip selected={affordOnly} onClick={() => setAffordOnly((v) => !v)}>
+              Can buy
+            </Chip>
           ) : null}
         </div>
-        <div className="u2-mastery" title="Tree mastery">
-          <span>
-            Mastery ×{mastery.toFixed(1)} · next at {nextMastery} ranks
-          </span>
-          <div className="u2-mastery__bar">
-            <span style={{ transform: `scaleX(${(tr % MASTERY.ranksPerStep) / MASTERY.ranksPerStep})` }} />
-          </div>
-        </div>
-      </div>
 
-      {view === 'tree' ? (
-        <SkillTree
-          nodes={active.views.map((v) => toTreeNode(v, numberFormat))}
-          tiers={BAND_IDS.map((b) => {
-            const open = UPGRADE_RANKS.bands[b].empireOpen
-            return {
-              label: BAND_LABELS[b],
-              note: s.empire.level >= open ? (b === 3 ? 'capstones: pick one' : 'open') : `opens at Empire ${open}`,
-            }
+        {view === 'tree' ? (
+          <SkillTree
+            nodes={active.views.map((v) => toTreeNode(v, numberFormat))}
+            tiers={BAND_IDS.map((b) => {
+              const open = UPGRADE_RANKS.bands[b].empireOpen
+              return {
+                label: BAND_LABELS[b],
+                note: s.empire.level >= open ? (b === 3 ? 'capstones: pick one' : 'open') : `opens at Empire ${open}`,
+              }
+            })}
+            tint={TREE_TINT[active.id]}
+            selected={sel && UPGRADE_BY_ID[sel]?.tree === active.id ? sel : null}
+            onSelect={setSel}
+            reducedMotion={reducedMotion}
+            renderDetail={(id) => (
+              <UpgradeDetail
+                v={active.views.find((x) => x.def.id === id)!}
+                s={s}
+                fmt={numberFormat}
+                mastery={mastery}
+                onBuy={(n) => dispatch({ type: 'buyUpgrade', id, count: n })}
+                onJump={setSel}
+              />
+            )}
+          />
+        ) : null}
+
+        {view === 'list' &&
+          BAND_IDS.map((band) => {
+            const views = active.views.filter(
+              (v) => bandOf(v.def) === (band as UpgradeBand) && v.shown && (!affordOnly || v.can1),
+            )
+            if (views.length === 0) return null
+            const open = UPGRADE_RANKS.bands[band].empireOpen
+            const isOpen = s.empire.level >= open
+            return (
+              <section key={band} className={`u2-band${isOpen ? '' : ' is-closed'}`}>
+                <h3 className="u2-band__title">
+                  {BAND_LABELS[band]}
+                  <span>{isOpen ? (band === 3 ? 'Capstones: pick one per tree' : 'Open') : `Opens at Empire ${open}`}</span>
+                </h3>
+                <div className="u2-grid">
+                  {views.map((v) => (
+                    <NodeCard
+                      key={v.def.id}
+                      v={v}
+                      s={s}
+                      fmt={numberFormat}
+                      onBuy={(n) => dispatch({ type: 'buyUpgrade', id: v.def.id, count: n })}
+                    />
+                  ))}
+                </div>
+              </section>
+            )
           })}
-          tint={TREE_TINT[active.id]}
-          selected={sel && UPGRADE_BY_ID[sel]?.tree === active.id ? sel : null}
-          onSelect={setSel}
-          reducedMotion={reducedMotion}
-          renderDetail={(id) => (
-            <UpgradeDetail
-              v={active.views.find((x) => x.def.id === id)!}
-              s={s}
-              fmt={numberFormat}
-              mastery={mastery}
-              onBuy={(n) => dispatch({ type: 'buyUpgrade', id, count: n })}
-              onJump={setSel}
-            />
-          )}
-        />
-      ) : null}
-
-      {view === 'list' && BAND_IDS.map((band) => {
-        const views = active.views.filter(
-          (v) => bandOf(v.def) === (band as UpgradeBand) && v.shown && (!affordOnly || v.can1),
-        )
-        if (views.length === 0) return null
-        const open = UPGRADE_RANKS.bands[band].empireOpen
-        const isOpen = s.empire.level >= open
-        return (
-          <section key={band} className={`u2-band${isOpen ? '' : ' is-closed'}`}>
-            <h3 className="u2-band__title">
-              {BAND_LABELS[band]}
-              <span>{isOpen ? (band === 3 ? 'Capstones: pick one per tree' : 'Open') : `Opens at Empire ${open}`}</span>
-            </h3>
-            <div className="u2-grid">
-              {views.map((v) => (
-                <NodeCard
-                  key={v.def.id}
-                  v={v}
-                  s={s}
-                  fmt={numberFormat}
-                  onBuy={(n) => dispatch({ type: 'buyUpgrade', id: v.def.id, count: n })}
-                />
-              ))}
-            </div>
-          </section>
-        )
-      })}
+      </PlayFrame>
     </section>
   )
 }

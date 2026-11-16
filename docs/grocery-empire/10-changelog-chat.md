@@ -1,6 +1,121 @@
 # Changelog — this chat arc (2026-11)
 
-Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**. `SAVE_VERSION` moved **12 → 29**.
+Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
+
+## U. Grocery Empire 40.0 Phase 12 — prove (2026-11-16) · SAVE **36** · GAME_VERSION **40.0**
+
+- `npm test` 374 passed / 4 skipped; `npm run build` + `npm run lint` green (warnings only).
+- `LONG=1` Era 3–6 green. `LONG_HORIZON=1` Era 12 green (~40.10 h seed 1).
+- Pack: README snapshot, 11-backlog rewritten for post-40.0, 07-pacing note, 12-expansion marked shipped.
+- Browser smoke: Shelf → Play Floor → Hubs/Charter path at 390 + 1280 when dev server available.
+
+## T. Grocery Empire 40.0 Phase 11 — app shell (2026-11-15) · SAVE unchanged
+
+- **Shelf:** `Shelf.tsx` — one primary (Continue with a save, Start without). A glance line under it reads `Era N · rate · age` (rate = `rates.soldPerSec` from the save, same format as the HUD). Today's corner carries a note that it parks the current run in slot 3 (also in its tooltip). Coming-soon spines lose hover lift and tap scale. The Guide/Awards/Shop link row is gone from the shelf (the shell bar already has them); only DevMode remains in dev.
+- **News:** `NewsArticle.bands` (`NewsBand`: `e01 | e23 | e46 | e712 | meta`, `NEWS_BANDS`). `/news` opens the newest receipt (40.0) above the list; `/news/:id` opens that one. Band filter tabs (All + five bands) narrow the list only. The list stays the dense two-row grid; the "All bulletins" back link is gone because the list is always on the page.
+- **Guide:** new topic **Decisions** (`choices`) with Safe/Bold facing, two regulars + invoice fork, flyer stance, manifest stance, charter fork, endless mutations. Era-gated like everything else (spoilers off hides E12 entries). `sys-depth-eight` and `late-worlds-endless` point to it. Search already indexes title, blurb, body and topic.
+- **Awards:** `ShellFrame` primary nav is now Play · News · Guide · Awards · Shop; Awards is removed from the waffle menu (one place, not two). Three decision achievements in `achievements/registry.ts`: `first-bold-facing` (bronze), `first-charter-fork` (gold; Boutique or Co-op), `first-endless-mutation` (gold; `horizon.listMutations ≥ 1`). Tier filter and share card unchanged; test in `registry.test.ts`.
+- **Settings / Tools:** both already render `SaveSlots` (Settings modal, and Tools → Saves via `MoreSections`). Export, import and hard reset stay.
+- **Tools → Go:** News, Guide, Awards and Shop no longer get full cards; Go keeps Home, Keys and Campaign/Dev, with one quiet `Also:` text row for the four site routes (play has no shell bar, so they must stay reachable). Version chip stays off the HUD; it lives on News (shell bar), More/Go footer and Settings.
+- **Tests:** `npm test` and `npm run build` green; e2e `shelf.spec.ts` updated (Start label, Awards in the bar, `/news` opens 40.0, Meta filter).
+
+## S. Grocery Empire 40.0 Phase 9 — content: guests, pads, projects, Ration Board, news (2026-11-15) · SAVE unchanged (content-only)
+
+- **Climate guests:** `content/horizon/guests.ts` — six named guests (Pilar Quenby, Ansel Voss, Orla Finch, Tamsin Rook, Bram Hollis, Ismay Crane) covering all eight climates, eras 7–9, each with an aisle want and a served line. `currentClimateGuest` (horizonVerbs) picks from the visiting climate + `climateServed`; `serveClimateNeighbor` logs the served line and names the guest in the ban warning. PlanetsPanel shows "At the door · name · want". No new aisle, no new state.
+- **Verb upgrades (five new nodes, `upgradeEffect`):** `guest-patience` (Pantry E7; `climateBanPullMul` in `formulas.ts`, used by `facingPullMul`, FloorPanel and PlanetsPanel), `bed-lock-pad` (Cultivar E9; `bedLockOpenFrac` / `bedLockOpensIn`, `canPlantCross`, CultivarPanel), `clause-amend-pad` (Signal E11; `amendsPerDocket`), `endless-edit-pad` (Signal E12, after Accept; `endlessMutateEvery`), `mutation-clear-pad` (Signal E12, after Accept; `clearHorizonRival('ration')` strips the `|mut` mark and restores line score). The climate-serve, yield-haul, clause-seat and rehearsal pads already existed. Constants in `DEPTH` / `HORIZON` (`guestPatienceCap`, `bedLockOpenCap`, `mutationClearCap`, `endlessEditMaxExtra`…).
+- **Projects:** `pj-guest-awning` (E7), `pj-bed-glass` (E9), `pj-embassy-chair` (E11) — timed builds whose reward is read in sim (`s.projects.done`) as the matching pad's flat bonus; `startProject` unchanged.
+- **Ration-week pressure:** `rationBoardBehind` / `rationBoardDemandMul` in `systems/rivals.ts` (folded into `rivalDemandMul`). During ration week, once `DEPTH.rationBoardGraceFrac` of the ledger day passes with no stamp, demand × `DEPTH.rationBoardDemandMul` (0.93) until `stampLedger`; one warn log per day. Stateless (no SAVE). `ledgerDayLength` moved from `fleet.ts` to `rivals.ts`. FleetPanel warn chip. The bot stamps as soon as it can, so pacing is unchanged.
+- **Copy:** checklist items (climate guest, season chore, optional amend, endless mutation); era-locked guide sections; News **40.0** article ("What's new in 40.0", Phases 1–9) and `GAME_VERSION` **40.0**.
+- **Tests:** `phase9.content.test.ts` (guest cast, patience/awning, bed lock tail, amend cap, mutate cadence, projects start, Board skim). `wired.test.ts` green. Pacing: see 07 (unchanged).
+
+## S′. Grocery Empire 40.0 Phase 8 — loadout: endless bans, carry, wing sockets (2026-11-15) · SAVE **36**
+
+- **Endless mutation bans a loadout piece:** `horizon.endlessBan { kind: 'clause' | 'ventureFork', id } | null`. `mutateEndlessList` (extracted from `launchProbe`, still gated by `endlessMutateEvery(s)`) now also picks one kept clause or one set venture fork (`pickEndlessBan`, deterministic) and `enforceEndlessBan` releases / unsets it (and re-checks every tick for loaded saves). `canToggleClause` / `canSetVenturePolicy` refuse the banned id; toggling another clause / setting another venture's fork lifts it. Probes stay climate copies, harmonic thinning unchanged. `EndlessBanNote` on LastAisle / Planets / Ventures + disabled fork buttons with the reason.
+- **Rebrand carry:** `RebrandCarry` (doctrine | facing | null) in `systems/prestige.ts`, `canCarry`, `carryOptions`; `freshRunKeepingMeta` / `rebrand` / `acceptEnding` / `Engine.rebrand` / `acceptEnding { carry? }` take it. Exactly one of doctrine or facing; a doubled or unowned carry is refused or dropped whole. Goodwill is still the cube-root curve; the bot never rebrands.
+- **Shared prestige sheet:** `PrestigeKeepSheet` (keep-list, Hungry laws, carry picker) shown through `ConfirmModal`'s new `sheet` slot by EmpireBoard (Rebrand) and FleetPanel (Era 6 Accept, replacing the old copy-only confirm).
+- **Museum wing sockets:** `MuseumSave.litWings` / `state.relics.litWings` (null = first `cap` finished wings). A finished wing pays only while lit; at full sockets, lighting one needs another left dark (`lightWing(..., swapOut)`, `setWingSocket` command). Cap is 3, or 5 with `pj-fifth-socket`. `stats.ts` reads `litWingIds`; the stat cache signature includes it. MuseumPanel "Wing sockets" section. Wing sizes untouched (25; Oddities 26). No new relics/feats — deferred.
+- **Migrate/tests:** `horizon.endlessBan` and `relics.litWings` explicit copies + junk drops (`migrate.ts`), defaults in `emptyHorizon` / `createInitialState` / `invariants.ts`, `normalizeMuseum` handles `litWings`. `phase8.loadout.test.ts`: mutation bans a clause / a fork and the lift rules, carry is exactly doctrine | facing (Rebrand and Accept), Goodwill curve, bot never rebrands, socket mutual exclusion (museum + command + stats), SAVE 36 pins. Older SAVE pins → 36 / "current". Pacing: unchanged (see 07).
+
+## R. Grocery Empire 40.0 Phase 7 — Signal / Charter / Last Aisle decisions (2026-11-15) · SAVE **35**
+
+- **Posted habit:** credited `fileStandardPhrase` (and a clever `commitPhrase` ≥0.85 with no live watch) calls `startHabitWatch` → `postHabitWatch`, writing `horizon.postedHabit { habit, until, agentId }`. The posted agent is locked (`canSetAgentHabit` / `canFireAgent` refuse), skipped by `tickAgents`, and the watch credits only if they still hold the habit. Unheld posts are claimed by `setAgentHabit` to the posted habit. Fixes the pre-35 bug where the watch read the (already cleared) phrase and always matched. SignalPanel: "Posted" pocket + locked agent row. Bot matches the phrase habit before filing and claims unheld posts.
+- **Seated-clause hearing:** `seatingClause` / `seatedClauses` / `heardClauses` / `amendedClauses`. `seatClause` opens Concord's session on the clause it seats (`nextHearingClause`, `openHearingSession` in `horizonCore.ts`); the Concord rival tick no longer picks from a random pool. Minutes Clerk amends one session per docket (grudge struck via `activeGrudges(kept, amended)`, seat kept) instead of deleting the clause. CharterPanel hearing sheet is a session (Clause · Grudge · Minutes Clerk) with one primary.
+- **Charter on Next Goal:** `GoalDef.choices` + `GoalChoice`; `charter-signed` offers Standard / Boutique / Co-op with `CHARTERS[id].fork` one-liners (`CHARTER_IDS`). NextGoal renders a three-up fork row (`.g2-goal__forks`). Bot action still signs Standard. Co-op confirm copy fixed (was showing Boutique's).
+- **Rehearsal can miss:** `rehearseAccept` tries below 0.85 (always misses) or at it (`HORIZON.rehearsalMissChance` 0.2 − pad, cap 0.08); a miss scratches the weakest filled line (`rehearsalScratch`) and waits `rehearsalRetrySec`. Accept still needs 0.85. LastAislePanel: "Scratch risk N%". Bot and the goal one-click only rehearse at 0.85.
+- **Goals 10–12:** "Post the habit", "Seat this clause", "Sign the charter" (forks), "Rehearse the list"; `GoalDef.counts` puts filing counts under the hint (`.g2-goal__counts`).
+- **Migrate/tests:** explicit copies + junk drops for all new fields; `phase7.charter.test.ts` (posted habit blocks setAgentHabit/fire, claim, fail; hearing uses the seated clause; amend; charter forks; rehearsal scratch; SAVE 35 pins). SAVE pins → 35 (Phase 6 pin now checks "current"). Pacing: see 07.
+
+## Q. Grocery Empire 40.0 Phase 6 — Worlds trade-offs (2026-11-15) · SAVE **34**
+
+- **Climate guest vs facing:** `serveClimateNeighbor` writes `depth.climateFacingBan { tag, cat, until }` for the strongest featured facing until the next shift-day boundary; `facingPullMul` cuts that category ×0.85 (`DEPTH.climateFacingBanPullMul`) while the facing stays featured. PlanetsPanel (goal room) and the Floor Facing sheet show a warn StatusChip; the serve tooltip names what the guest will ban.
+- **Stop personality:** credited standard convoys arm `horizon.pendingStop`; `settleStop` locks it as `circuit.settledKind`. Spoil cuts that circuit's route weight, tariff cuts the freight trickle, delay stretches the next settlement ETA (`HORIZON.stopSpoilCut / stopTariffCut / stopTariffFloor / stopDelayPerCircuit / stopDelayCap`). ExchangePanel: "Settle {kind} stop" + "You live with: …" before Settle, tax on circuit rows.
+- **Season bed lock:** `horizon.bedLockedChore` set by `doSeasonChore`, cleared at the season turn; blocks other chores and clever `plantCross` (standard cross still files). CultivarPanel: locked chip + named-chase line.
+- **Trays:** Planets secondary "Clever shelf" (reopens the shelf with File the standard), Exchange always offers "File the standard · 0.72" when Settle/Keel owns the primary, Cultivars always lists "File standard cross · 0.72" plus "Clever cross".
+- **Goals:** `climate-guest-facing` (Era 7), `settle-stop-tax` (Era 8), `season-chore` → "Lock a season bed" (Era 9); removed hire-only `hire-planogram-clerk` / `hire-stevedore`. Bot reads the chore from Next Goal.
+- **Migrate/tests:** explicit copies + junk drops for all new fields; `phase6.worlds.test.ts` (SAVE 34 pins, ban/dodge/expiry, settle taxes, bed lock, goals); SAVE pins → 34. Pacing: see 07.
+
+## P. Grocery Empire 40.0 Phase 5 — stance, two pockets, facings, Accept (2026-11-15) · SAVE **33**
+
+- **Manifest stance:** one filing = ONE of `clean | exam | fast` (`setManifestStance { laneId, stance }`; `setManifest` gains optional `stance`, default `exam`). Clean credits `cleanManifests` at once (own `lastCleanAt` clock); exam opens the exam hold and `swearExam` now credits `examsHeld` **only**; fast pays a cash burst, burns fuel, credits nothing and leaves the lane open so existing MegaMart pressure snipes it. `dispatch` gains `lastCleanAt`, `laneStances`, `fastFiled` (migrate/invariants/emptyDispatch). LogisticsPanel shows three ActionRows per lane with a FailReason under each blocked stance. Goals (`exam-holds`, `clean-manifests`, `launch`) use the stance command. Bot: exam-ready while exams short, else clean; cleans and exams tick separate 70-min clocks so pacing is unchanged (documented in `botsFleet.ts`).
+- **Two pockets, one hauler:** `pocketConcurrency` / `openPocketRations` / `pocketsOutrunHauler` in `systems/fleet.ts`; `pocket-concurrent` (Second Berth) is the choice to feed both. FleetPanel lists both open pockets, adds a StatusChip when 2+ rations are open and concurrency is 1, and the dispatch FailReason names Second Berth. Wrong ration still wastes.
+- **Era 5–6 facings:** `storefront:7`, `cold:5`, `transit:6` — safe/bold pairs, soft cap 1.35, Civic untouched; `normalizeBuildVariants` re-keys to the def's slot.
+- **Accept = Rebrand:** `freshRunKeepingMeta` (shared with `rebrand`) + `replaceStateInPlace`; Accept now wipes store/staff/upgrades/fleet/depth, keeps Empire, museum, Goodwill (banks pending), tutorials/tips and appetite/tipSharpness, then opens the Hungry laws board as before. Engine clears undo on Accept. FleetPanel: Continue / Accept / Reject ActionRows, Accept lists the law options.
+- **Tests:** `phase5.stance.test.ts` (SAVE 33 pins, stance mutual exclusion, two pockets, facings, Accept wipe); SAVE pins → 33. Pacing: see 07.
+
+## O. Grocery Empire 40.0 Phase 4 — rival stance & plant cost (2026-11-15) · SAVE **32**
+
+- **Flyer vs rivals:** live flyer band (read from `depth.flyer`, `sim/systems/flyerStance.ts`) — Deep raises Penny lock chance/shortens gap; Soft raises FreshWay spoil mul (even with tunnel + log); Mid neutral (bot). Cold permit still reads completed `flyerWeeks`. Marketing Flyer Desk sheet shows the one-line consequence.
+- **Plant power cost:** `depth.blastSuppressesTunnelUntilLog` — set when blast is powered (`setPlantPower` / blast buy), cleared on `signCoolerLog`; suppresses `tunnelFreshAgeMul` meanwhile. ColdPanel FailReason explains it. Bot unchanged (powers blast + tunnel, signs logs); pacing green.
+- **Staff policies:** StaffPanel lists every unlocked department's policies with blurbs (not just Fresh).
+- **Land hot trait:** callout/line/chip show the live trait and the matching store policies.
+- **Migrate/tests:** new flag copied explicitly in `migrate.ts`; `emptyDepth` default; SAVE pins → 32; `phase4.stance.test.ts`.
+
+## M. Grocery Empire 40.0 Phase 3 — concurrency (2026-11-15) · SAVE **31**
+
+- **Two regulars:** `DepthRegulars` gains `waitingId`, `waitingPatienceUntil`, `waitingLayaway`. Second shopper spawns after the visit gap while the primary is unserved; both patiences tick; waiting expiry = star nick (`settleVisit`). Serve targets `activeId`; promotion keeps remaining patience. New command `focusRegular { which: 'active' | 'waiting' }` swaps them. Migrate copies fields explicitly and drops orphan waiting; invariants sanitize.
+- **Bot:** `pushRegularsAndDock` switches focus only when the primary is unservable and the waiting shopper is servable. Pacing floors unchanged (Era 1 still >35m ≤55m; pacing suite green).
+- **Float vs hire:** Invoice Book shows "Early pay saves X · next clerk costs Y" (`hireCost(s,'clerk')`). Bot invoice logic untouched.
+- **Facing sheet:** "{Name} wants {facing} on {cats}" for the primary; "Also waiting: Name · Ns" + "Switch to Name" (tray secondary too below Era 7). `data-coach-id`: `floor-switch-regular`, `floor-regular-want`, `suppliers-float-vs-hire`.
+- **Tests:** `regulars.two.test.ts`; SAVE pins → 31.
+
+## N. Grocery Empire 40.0 Phase 2 — QoL (2026-11-15) · SAVE **31** (no bump; Phase 3 bumped)
+
+- Command palette: Coach + query search over upgrades/memos/roles (cap 40).
+- Human undo labels + seconds left + “Undid …” toast (`undoAction.ts`).
+- Suppliers ×min / ×5 / Fill quantity; unified `SaveSlots` in Settings + Tools; slot 3 labeled for Today’s corner.
+- Hidden-tab notifications reuse HUD alert (`hudAlert.ts`); FailReason actions (Suppliers→Build, Cold→log, Floor→Suppliers/Staff).
+- Upgrade Best / Buy Best show effect-per-cost clause under the primary.
+
+## L. Grocery Empire 40.0 Phase 1 — one frame + phone (2026-11-15) · SAVE **30**
+
+- LateHubShell / HubStage / ScreenPanel accept `tray`; Money + Worlds + Land/Ventures/Museum/Map on VerbTray.
+- Hub head drops purpose paragraph (PlayFrame owns the sentence); Floor/Suppliers/Cold/Logistics use `MENUS.*.purpose`.
+- Phone Hubs badges: Empire doctrine-ready, Worlds filing-ready, Museum chests; sheet lists each menu with purpose.
+- Worlds icon → `planets`. Subtab overflow fade. Single phone `.g2-dialogue` bottom above hub bar.
+- Staff tray owns Shifts/Hire (duplicate ActionRows removed). EmptyStates on Marketing/Rivals/Fleet/Politics/Land.
+- FailReason on disabled tray primaries across converted panels.
+
+## K. Grocery Empire 40.0 Phase 0 — foundation (2026-11-15) · SAVE **30**
+
+Refactor-only. Bot landings unchanged (seeds 1/42 identical over 40k sim-sec compare).
+
+- **Bots split:** `botsShared` / `botsEarly` / `botsChain` / `botsFleet` / `botsWorlds`; `bots.ts` composes `campaignCommands` + `runPacing`. Shared early helpers kill attentive/campaign facing/regular/dock/shift duplication.
+- **Horizon split:** `horizonCore` (ensure/practice/hearing), `horizonVerbs` (climate/settle/haul/seat/rehearse), `horizonTick` (agents/seasons/phrases/keel/headlines/trickles/wages). `horizon.ts` stays the puzzle + `maybeOpenEras` coordinator and re-exports public APIs.
+- **tipSharpness** now reads: checkout ×(1+min(3,tip)×0.05); star regen ×(1+min(3,tip)×0.1).
+- **LATE_MEMOS** dead import/`void` removed from `memos.ts` (`lateEras.ts` still exports ENDING_BEATS / CHARTER).
+- **migrateSlice** helper in `migrate.ts`; prestigeCarry uses it.
+- Pace debug already `describe.runIf(PACE_DEBUG)`.
+
+## J. Grocery Empire 4.0 real (2026-11-15) — GAME_VERSION **4.0** · SAVE **30**
+
+First 4.0 pass was sim tokens + skins; rebuild shipped as:
+
+- **Fix0 Next Goal HUD:** free goals use tomato CTA (no `.g2-tag` punch-hole); paid keep yellow tag; stars off title flex on phone; compact alert on its own HUD row.
+- **Wave A Strategy:** full doctrine ladder as ActionRows; RankHall-quality `StrategyHallScene`; FailReasons navigate Att→Memos / Read bank.
+- **Wave B Build:** facings across eras 1–4 (slot keys); soft-cap **1.35**; living track room + first-class facing beat; Books upkeep chip; museum FEAT `facing`.
+- **Wave C panels:** Fleet harbor, Empire rank ring, Planets sticky wants, Memos desk (filters simplified), Upgrades PlayFrame + Upgrade Best; Marketing Celebrity in sheet; Staff hire primary + annex rows; `buyMemoSweep` **effect/cost then cheapest**.
+- **Wave D shell:** denser News; calm Settings column; version chip only News/More/Settings; cross-links Strategy↔Memos, Build→Suppliers, Fleet→Strategy, Cold brownout FailReason; dead `.fl-dock` / `.ge-floor` cut.
+- **Sim knobs kept:** tournament cooldown 600s, doctrineGrowth 1.65, depot 12 / Autonomous 48 Read, `bank-read`, SAVE 30 migrate.
 
 ## I. Feel overhaul (2026-11-14) — GAME_VERSION **3.0** · SAVE **29**
 
@@ -103,6 +218,16 @@ No `SAVE_VERSION` bump. Baseline remeasure (seeds 1 and 42) was not run.
 - Invoice book is a one-line status plus a Sheet. HelpCards that restated Next Goal are gone from Floor, Staff, Suppliers, Charter, Cold, Logistics, and Marketing.
 - Empire rank line no longer repeats the header Stat. Doctrine board collapses once two doctrines are owned. Autonomous stays one line until release can succeed.
 - Deleted unused `DepartmentBands` and `StatusBand`.
+
+## G. 40.0 Phase 10 visual system (2026-11-15)
+
+No `SAVE_VERSION` bump. Presentation only.
+
+- **Shell layer:** HUD, stats, Next Goal bar, hubs, hub head, menu drawer / inbox and command palette moved from `g2.css` into `shell.css` under `@layer shell` (about 1,000 lines). Overlapping legacy and old shell rules were merged (the old shell overrides won in practice, so the dead legacy duplicates and the 1180px HUD block were dropped). Phone inbox label is now visually hidden instead of `display: none`.
+- **Rooms:** `UpgradesHallScene`, `EarlyLandStreet`, map sky/ground on `--sc-night-*` (Rank and Strategy Hall share them).
+- **Beats:** `useBeat` + `Beat` (fx), second regular arrival (Floor), manifest stance tick (Logistics), bed lock thunk + `ShelfFill` meter (Cultivar), `Seated n/3` meter + `CrateHop` (Charter).
+- **Shop:** ledger skin on the Books room, unpack FX on the Floor room, ornaments on the Fleet harbor; `useMetaOptional` so scenes render without a provider.
+- Verified: `npm test`, `npm run build`, `npm run lint` (no new warnings). Not browser-checked at 390px or in DevTools from this run.
 
 ## F. Related plans (Cursor)
 

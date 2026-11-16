@@ -1,4 +1,6 @@
 import { memo, useState } from 'react'
+import { BUILD_TRACKS } from '../../content/builds'
+import { MENUS } from '../../content/menus'
 import { CATEGORIES, CATEGORY_IDS } from '../../content/categories'
 import { CAPITAL, DEBT, RECOVERY } from '../../sim/balance'
 import {
@@ -8,8 +10,10 @@ import {
   salesBottleneck,
   unitCost,
   up,
+  upkeepPerSec,
   wagesPerSec,
 } from '../../sim/formulas'
+import { StatusChip, type VerbTrayProps } from '../play'
 import { sumQty } from '../../sim/helpers'
 import { canResolveBoard } from '../../sim/systems/capital'
 import type { BoardAgenda } from '../../sim/state'
@@ -77,6 +81,9 @@ function BooksPanelInner() {
   const wages = wagesPerSec(s)
   const burn = s.rates.costPerSec
   const peak = Math.max(80, s.stats.peakCash || 80)
+  const buildUpkeepSec = upkeepPerSec(s, BUILD_TRACKS)
+  const buildUpkeepMin = buildUpkeepSec * 60
+  const upkeepWarn = buildUpkeepSec > 0 && (s.rates.cashPerSec ?? 0) + 1e-9 < buildUpkeepSec
   const bottleneck = salesBottleneck(s)
   const repEta = reputationEtaSec(s)
   const storeRev = Math.max(0, s.rates.revenuePerSec)
@@ -210,43 +217,82 @@ function BooksPanelInner() {
 
   const wageShare = storeRev > 0.01 ? wages / storeRev : 0
 
-  const kpis = (
-    <>
-      <Stat size="sm" label="Cash" value={money(s.cash, numberFormat)} />
-      <Stat size="sm" label="Net" value={rate(net)} title="Till income minus burn, per second" />
-      <Stat size="sm" label="Burn" value={rate(burn)} title="Cost + rent + wages" />
-      <Stat
-        size="sm"
-        label="Runway"
-        value={net >= -1e-6 ? 'steady' : etaLabel(runwaySec)}
+  const kpiChips = (
+    <div className="lh-chips" data-coach-id="books-kpis">
+      <StatusChip tone="idle">Cash {money(s.cash, numberFormat)}</StatusChip>
+      <StatusChip tone={net < 0 ? 'warn' : 'ready'} title="Till income minus burn, per second">
+        Net {rate(net)}
+      </StatusChip>
+      <StatusChip tone="idle" title="Cost + rent + wages">
+        Burn {rate(burn)}
+      </StatusChip>
+      <StatusChip
+        tone={net < -1e-6 ? 'warn' : 'ready'}
         title="Cash ÷ net loss per second. Steady when income covers the bill."
-      />
-    </>
+      >
+        Runway {net >= -1e-6 ? 'steady' : etaLabel(runwaySec)}
+      </StatusChip>
+    </div>
   )
+
+  // The tray primary is the bottleneck jump; with no bottleneck it falls back to the next free move.
+  const incorporateOpen = s.era >= 2 && !s.incorporated
+  const tray: VerbTrayProps = target
+    ? {
+        primary: {
+          label: `Go to ${target.label}`,
+          tone: 'free',
+          size: 'lg',
+          coachId: 'books-bottleneck',
+          onClick: () => setActiveMenu(target.menu),
+        },
+      }
+    : incorporateOpen
+      ? {
+          primary: {
+            label: `Incorporate · $${CAPITAL.incorporateCash} + ${CAPITAL.incorporateRep} Rep`,
+            tone: 'primary',
+            size: 'lg',
+            disabled: !!incorporateBlocked,
+            onClick: () => dispatch({ type: 'incorporate' }),
+          },
+          failReason: incorporateBlocked,
+        }
+      : {
+          primary: {
+            label: 'Back to the floor',
+            tone: 'free',
+            size: 'lg',
+            onClick: () => setActiveMenu('floor'),
+          },
+        }
 
   return (
     <LateHubShell
-      title="Books"
-      purpose="Read the tape. Fix the bottleneck elsewhere."
-      stats={kpis}
+      title={MENUS.books.name}
+      purpose={MENUS.books.purpose}
       scene={<LedgerScene />}
-      primary={
-        target ? (
-          <HubCallout
-            title={bottleneck.label}
-            tone={bottleneck.kind !== 'demand' ? 'warn' : undefined}
-            action={
-              <Button tone={bottleneck.kind !== 'demand' ? 'primary' : 'ghost'} onClick={() => setActiveMenu(target.menu)}>
-                {target.label}
-              </Button>
-            }
-          />
-        ) : boardLifted ? (
-          boardCard
-        ) : null
-      }
+      tray={tray}
     >
-      {boardLifted && target ? boardCard : null}
+      {kpiChips}
+
+      {target ? (
+        <HubCallout title={bottleneck.label} tone={bottleneck.kind !== 'demand' ? 'warn' : undefined} />
+      ) : null}
+
+      {boardLifted ? boardCard : null}
+
+      {buildUpkeepSec > 0 ? (
+        <StatusChip tone={upkeepWarn ? 'warn' : 'ready'} title="Building upkeep">
+          {upkeepWarn ? (
+            <button type="button" className="pf-chip__link" onClick={() => setActiveMenu('build')}>
+              Upkeep {money(buildUpkeepMin, numberFormat)}/min exceeds cash/s — open Build
+            </button>
+          ) : (
+            <>Building upkeep {money(buildUpkeepMin, numberFormat)}/min</>
+          )}
+        </StatusChip>
+      ) : null}
 
       <Tabs
         aria-label="Books tape"

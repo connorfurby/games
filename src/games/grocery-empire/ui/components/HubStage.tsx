@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { PlayFrame } from '../play'
+import { PlayFrame, type VerbTrayProps } from '../play'
 import './hubStage.css'
 
 /**
@@ -9,6 +9,7 @@ import './hubStage.css'
  */
 export function HubStage({
   scene,
+  tray,
   primary,
   children,
   className = '',
@@ -19,7 +20,9 @@ export function HubStage({
   department,
 }: {
   scene?: ReactNode
-  /** Short column that sits beside the scene on wide screens (order CTA, KPIs, etc.). */
+  /** The verb tray (one primary verb, optional secondaries, fail reason). */
+  tray?: VerbTrayProps
+  /** @deprecated Use `tray`. Ignored when `tray` is set. */
   primary?: ReactNode
   children?: ReactNode
   className?: string
@@ -40,8 +43,9 @@ export function HubStage({
             <div className={`hub-stage__scene ${sceneClassName}`.trim()}>{scene}</div>
           ) : undefined
         }
+        tray={tray}
         primarySlot={
-          primary ? (
+          !tray && primary ? (
             <div className={`hub-stage__primary ${primaryClassName}`.trim()}>{primary}</div>
           ) : undefined
         }

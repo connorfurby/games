@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 29
+export const SAVE_VERSION = 36
 
 /** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
 export const PUZZLE_SLOW = 0.72
@@ -63,6 +63,16 @@ export const DEPTH = {
   plantPowerSlots: 2,
   /** Sim seconds per store day (Open → Mid → Close thirds). */
   shiftDaySec: 900,
+  /** SAVE 34: a served climate guest bans one featured facing's pull until the next shift day. */
+  climateFacingBanPullMul: 0.85,
+  /** Phase 9: Guest Patience (and the Guest Awning) soften the ban's cut, up to this share of it. */
+  guestPatienceCap: 0.6,
+  /** Phase 9: the Guest Awning project adds this much patience on its own. */
+  guestAwningPatience: 0.2,
+  /** Phase 9: ration week — an unstamped ledger after the first slice of the shift day feeds the Ration Board. */
+  rationBoardDemandMul: 0.93,
+  /** Share of the ledger day the Board waits before it counts the stamp as missed. */
+  rationBoardGraceFrac: 1 / 3,
   /** Side yard needs this many Open days covered (Phase 2 lengthen → ~3.5–4h). */
   openDaysNeedSideYard: 14,
   regularVisitGapSec: 120,
@@ -111,8 +121,15 @@ export const DEPTH = {
   flyerBandDeepMax: 0.8,
   /** Band-lock cooldown shortener (upgradeEffect('flyer-band-pad')). */
   flyerBandPadPerRank: 0.06,
+  /** SAVE 32: live deep flyer pulls Penny — lock chance ×, quiet gap × while the week runs. */
+  flyerDeepPennyLockChanceMul: 2.5,
+  flyerDeepPennyLockGapMul: 0.55,
+  /** SAVE 32: live soft flyer feeds FreshWay spoil (× on the FreshWay mul, even with tunnel + log). */
+  flyerSoftFreshWaySpoilMul: 1.25,
   /** Cold permit matched-store hard gate. */
   matchedStoresNeed: 4,
+  /** Era 2 companion: bank Read via tournaments before cold permit. */
+  bankReadNeed: 24,
   /** Cold permit star floor (memo block uses starMemoFloor for others). */
   coldPermitStarMin: 3.7,
   /** Hot-trait walks credited during block events (cold permit gate). */
@@ -197,8 +214,17 @@ export const DEPTH = {
   examHoldSec: 8 * 60,
   /** Exam hold shortener (upgradeEffect('exam-hold-pad')). */
   examHoldPadPerRank: 0.08,
-  /** Sim seconds between clean-manifest credits (loop stretch). */
+  /**
+   * Sim seconds between exam credits AND (separate clock) between clean credits (loop stretch).
+   * SAVE 33: one filing is ONE stance, so cleans and exams tick on their own clocks —
+   * a bot that files exam then clean each cycle keeps the old pacing.
+   */
   dispatchCycleSec: 70 * 60,
+  /** SAVE 33 fast stance: cash burst = matchedLaneCashPerSec × this (sim s), plus a fuel spend. */
+  fastManifestSec: 600,
+  fastManifestFuel: 8,
+  /** SAVE 33 fast stance: the next filing only waits this fraction of manifestCooldownSec. */
+  fastManifestCooldownFrac: 0.4,
   /** Barge berth / first launch star floor. */
   bargeStarMin: 3.5,
   /** Era 6 door star floor (Pocket Ops + Orbit Mid + Hold). */
@@ -667,13 +693,18 @@ export const CAPITAL = {
   tournamentAttention: 120,
   tournamentBaseRead: 4,
   readPerDoctrine: 1.5,
-  autonomousReadNeed: 40,
+  /** Sim seconds before the next tournament (manual or auto). */
+  tournamentCooldownSec: 600,
+  autonomousReadNeed: 48,
   /** Reachable gate — was 80 (~6e8 baskets). Analyst/Archive spend should clear ~18. */
   autonomousRepSpentNeed: 18,
+  /** First depot needs banked Read so Strategy cannot be skipped. */
+  depotReadNeed: 12,
   brandRegenPerSec: 0.002,
   covenantDebtRatio: 0.45,
   doctrineBaseRead: 6,
-  doctrineGrowth: 1.4,
+  /** Steeper ladder — multi-hour Read sink, not a one-sitting clear. */
+  doctrineGrowth: 1.65,
 }
 
 /** Era 3 — cold chain. */
@@ -934,6 +965,14 @@ export const HORIZON = {
   /** Stop settlements after circuit credit (Era 9). */
   settlementNeed: 6,
   settlementEtaSec: 900,
+  /** SAVE 34 stop tax, per settled circuit while it stands. Spoil cuts that circuit's route weight. */
+  stopSpoilCut: 0.12,
+  /** Tariff cuts the freight trickle (per tariffed circuit, floored). */
+  stopTariffCut: 0.06,
+  stopTariffFloor: 0.76,
+  /** Delay lengthens the next settlement ETA (per delayed circuit, capped). */
+  stopDelayPerCircuit: 0.08,
+  stopDelayCap: 0.24,
   /** Yield hauls after season chore (Era 10). */
   yieldHaulNeed: 4,
   yieldHaulSec: 1200,
@@ -942,10 +981,17 @@ export const HORIZON = {
   habitWatchSec: 900,
   /** Clause seatings after keep (Era 12). */
   clauseSeatingNeed: 4,
-  clauseSeatingSec: 720,
-  clauseSeatingGapSec: 600,
-  /** Accept rehearsal desk gap after clever fill. */
+  /** +80 each in 4.0 real — Era 12 landed ~145s under the 40h floor. */
+  clauseSeatingSec: 800,
+  clauseSeatingGapSec: 640,
+  /** Accept rehearsal desk gap after clever fill (post–Era 12 desk; does not move the door). */
   acceptRehearsalSec: 900,
+  /** SAVE 35: a rehearsal at ≥0.85 still misses this often and scratches the weakest line. */
+  rehearsalMissChance: 0.2,
+  /** Accept Rehearsal Pad cuts the miss chance by its effect, up to this much. */
+  rehearsalMissPadCap: 0.08,
+  /** Wait after a missed rehearsal before the next try (post-door, like the desk gap). */
+  rehearsalRetrySec: 120,
   /** Slow file-the-standard bar / slow era gates. */
   slowScore: 0.72,
   /** Fast clever gate. */
@@ -966,8 +1012,18 @@ export const HORIZON = {
   /** Concord hearing sessions before the charter may be signed. */
   hearingNeededMin: 3,
   hearingNeededMax: 3,
+  /** SAVE 35: Minutes Clerk amends (grudge struck, clause stays seated) per hearing docket. */
+  hearingAmendsPerDocket: 1,
+  /** Phase 9: Bed Lock Pad releases the lock for the last share of a season, up to this much of it. */
+  bedLockOpenCap: 0.45,
+  /** Phase 9: Bed Glass project opens this much more of the season's tail. */
+  bedGlassOpen: 0.1,
+  /** Phase 9: Mutation Clear Pad can restore a mutated line by at most this much score. */
+  mutationClearCap: 0.12,
   /** Endless list mutates every N worlds. */
   endlessMutateEvery: 5,
+  /** Phase 9: Endless Edit Pad stretches the mutate cadence by its rank, up to this many worlds. */
+  endlessEditMaxExtra: 3,
   /** Cap on department-lead endless bonuses (doubles safety). */
   leadBonusCap: 1.35,
   /** Per-world probe survey surcharge variance (±frac). */

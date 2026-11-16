@@ -167,6 +167,12 @@ function collapse(seq: string[]): SweepBuy[] {
   return out
 }
 
+/** The rank Upgrade Best would buy first (same effect-per-cost sort), without cloning state. */
+export function pickBestUpgrade(s: GameState, tree: TreeId | 'all' = 'all'): { id: string; cost: number } | null {
+  const pick = pickUpgrade(s, tree, treeRankMap(s), statWeights(s))
+  return pick ? { id: pick.id, cost: pick.cost } : null
+}
+
 /**
  * Greedy order: each next rank is the affordable one with the most effect per dollar.
  * Capstones you have not picked yet are left alone. Buying a prerequisite can come

@@ -32,8 +32,8 @@ test.describe('phone', () => {
     await page.locator('.ge-dev-stage', { hasText: 'Era 1' }).first().click()
     await page.keyboard.press('Escape')
     await page.locator('.g2-hub', { hasText: 'Store' }).click()
-    // On phones Unpack is docked above the hub bar, visible without scrolling.
-    const unpack = page.locator('.fl-dock .ge-unpack')
+    // Unpack lives in the PlayFrame verb tray, visible without scrolling.
+    const unpack = page.locator('.ge-unpack').first()
     await expect(unpack).toBeInViewport()
     await unpack.click()
     const hubs = await page.locator('.g2-hubs').boundingBox()

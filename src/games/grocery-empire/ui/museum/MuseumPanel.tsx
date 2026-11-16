@@ -11,6 +11,7 @@ import {
   type Rarity,
   type WingId,
 } from '../../content/relics'
+import { MENUS } from '../../content/menus'
 import { STAT_INFO, type StatId } from '../../content/upgrades/stats'
 import { perkText, relicEffects } from '../../content/relicPerks'
 import {
@@ -19,10 +20,14 @@ import {
   buyChest,
   buyHint,
   chestOdds,
+  canLightWing,
   completedWings,
+  darkenWing,
   dustRelic,
   hintCost,
   levelRelic,
+  lightWing,
+  litWingsOf,
   museumSync,
   partialName,
   relicCount,
@@ -37,7 +42,8 @@ import {
 } from '../../sim/museum'
 import { useGame } from '../GameContext'
 import { HubStage } from '../components/HubStage'
-import { Button, SegmentedControl, Sheet, useConfirm, usePhone } from '../kit'
+import { Button, EmptyState, SegmentedControl, Select, Sheet, useConfirm, usePhone } from '../kit'
+import type { VerbTrayProps } from '../play'
 import { ChestOpener } from './ChestOpener'
 import { MuseumGallery } from './MuseumGallery'
 import { ChestArt, RelicIcon } from './RelicIcon'
@@ -82,6 +88,46 @@ function PerkTotals() {
   )
 }
 
+/** Wing sockets: a finished wing's bonus is on only while lit. Lighting one at full means leaving another dark. */
+function WingSockets({ cap, dispatch }: { cap: number; dispatch: (cmd: { type: 'syncRelics' } & ReturnType<typeof museumSync>) => void }) {
+  const m = useMuseum()
+  const done = completedWings(m)
+  if (done.length === 0) return null
+  const lit = litWingsOf(m, cap)
+  const full = lit.length >= cap
+  return (
+    <section className="mu-sockets" aria-label="Wing sockets" data-coach-id="museum-wing-sockets">
+      <h3>
+        Wing sockets · {lit.length}/{cap}
+      </h3>
+      <p>A finished wing pays only while it holds a socket. To light another, leave one dark.</p>
+      <ul>
+        {done.map((id) => {
+          const on = lit.includes(id)
+          const why = on ? null : canLightWing(m, id, cap)
+          return (
+            <li key={id} className={on ? 'is-lit' : 'is-dark'}>
+              <span>{WING_BY_ID[id]?.name ?? id}</span>
+              <Button
+                tone={on ? 'ghost' : 'secondary'}
+                size="sm"
+                disabled={!on && !!why}
+                title={on ? 'Leave this wing dark' : (why ?? 'Light this wing')}
+                onClick={() => {
+                  museumStore.update((save) => (on ? darkenWing(save, id, cap) : lightWing(save, id, cap)))
+                  syncMuseum(dispatch)
+                }}
+              >
+                {on ? 'Leave dark' : full ? 'Dark · free a socket' : 'Light'}
+              </Button>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 export function MuseumPanel() {
   const { state: gs, dispatch, reducedMotion } = useGame()
   const confirm = useConfirm()
@@ -105,6 +151,60 @@ export function MuseumPanel() {
   const wings = wing === 'all' ? WINGS : WINGS.filter((w) => w.id === wing)
   const sel = selected ? RELIC_BY_ID[selected] : null
 
+  const firstGroup = RARITIES.map((r) => ({ r, list: byRarity[r] ?? [] })).find((g) => g.list.length > 0)
+  const exploreGallery = () =>
+    document.querySelector('.mu-wall')?.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' })
+  const openAll = () => {
+    void confirm({
+      title: `Open all ${m.chests.length} chests?`,
+      body: 'One burst opens every chest. You see the full haul on one sheet. Duplicates still dust.',
+      confirmLabel: `Open ${m.chests.length}`,
+      tone: m.chests.length >= 8 ? 'danger' : 'default',
+    }).then((ok) => {
+      if (ok) setQueue([...m.chests])
+    })
+  }
+  const perksSecondary = {
+    key: 'perks',
+    label: 'Active perks',
+    fact: showPerks ? 'hide' : String(owned),
+    onClick: () => setShowPerks((v) => !v),
+  }
+  const tray: VerbTrayProps = firstGroup
+    ? {
+        primary: {
+          label: `Open ${firstGroup.list.length > 1 ? `${firstGroup.list.length} ` : ''}${RARITY_INFO[firstGroup.r].label} chest${firstGroup.list.length === 1 ? '' : 's'}`,
+          tone: 'free',
+          size: 'lg',
+          onClick: () => setQueue(firstGroup.list),
+        },
+        secondaries: [
+          ...(m.chests.length > 1
+            ? [
+                {
+                  key: 'all',
+                  label: 'Open all',
+                  fact: String(m.chests.length),
+                  title: `Confirm before opening all ${m.chests.length} chests`,
+                  onClick: openAll,
+                },
+              ]
+            : []),
+          { key: 'gallery', label: 'Explore gallery', onClick: exploreGallery },
+          perksSecondary,
+        ],
+      }
+    : {
+        primary: {
+          label: 'Explore the gallery',
+          tone: 'free',
+          size: 'lg',
+          onClick: exploreGallery,
+        },
+        failReason: 'No chests waiting. Feats and the dust shop below fill the shelf.',
+        secondaries: [perksSecondary],
+      }
+
   return (
     <section className="ge-panel mu" aria-label="Relic Museum">
       <header className="mu-hero">
@@ -125,12 +225,19 @@ export function MuseumPanel() {
             <span>Dust</span>
             <strong className="mu-dust">{m.dust}</strong>
           </div>
-          <label className="mu-stat">
+          <label className="mu-stat mu-stat--select">
             <span>Auto-dust</span>
-            <select
-              value={m.autoDust ?? ''}
-              onChange={async (e) => {
-                const next = e.target.value
+            <Select
+              aria-label="Auto-dust rarity ceiling"
+              value={(m.autoDust ?? '') as '' | Rarity}
+              options={[
+                { value: '' as const, label: 'Off' },
+                ...RARITIES.map((r) => ({
+                  value: r,
+                  label: `${RARITY_INFO[r].label} and below`,
+                })),
+              ]}
+              onChange={async (next) => {
                 if (!next) {
                   museumStore.update((save) => setAutoDust(save, null))
                   syncMuseum(dispatch)
@@ -144,22 +251,12 @@ export function MuseumPanel() {
                   tone: 'danger',
                   confirmLabel: 'Dust them',
                 })
-                if (!ok) {
-                  e.target.value = m.autoDust ?? ''
-                  return
-                }
+                if (!ok) return
                 museumStore.update((save) => setAutoDust(save, rarity))
                 dispatch({ type: 'setAutoDust', rarityCeiling: rarity })
                 syncMuseum(dispatch)
               }}
-            >
-              <option value="">Off</option>
-              {RARITIES.map((r) => (
-                <option key={r} value={r}>
-                  {RARITY_INFO[r].label} and below
-                </option>
-              ))}
-            </select>
+            />
           </label>
           <div className="mu-stat">
             <span>Wings done</span>
@@ -167,17 +264,24 @@ export function MuseumPanel() {
               {done.length} <small>/ {WINGS.length}</small>
             </strong>
           </div>
-          <button type="button" className="mu-stat mu-stat--btn" onClick={() => setShowPerks((v) => !v)} aria-expanded={showPerks}>
+          <div className="mu-stat">
             <span>Active perks</span>
             <strong>{owned}</strong>
-            <small>{showPerks ? 'Hide' : 'See totals'}</small>
-          </button>
+          </div>
         </div>
       </header>
 
       {showPerks ? <PerkTotals /> : null}
 
+      <WingSockets
+        cap={socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'] || gs.horizon.socketsUnlocked >= 5)}
+        dispatch={dispatch}
+      />
+
       <HubStage
+        purpose={MENUS.relics.purpose}
+        department={MENUS.relics.name}
+        tray={tray}
         scene={
           <MuseumGallery
             m={m}
@@ -188,18 +292,13 @@ export function MuseumPanel() {
             onSelect={setSelected}
           />
         }
-        primary={
+      >
       <section className="mu-chests" aria-label="Chests" data-coach-id="museum-chests">
         <div className="mu-chests__head">
           <h3>Chests {m.chests.length > 0 ? <span className="mu-count">{m.chests.length}</span> : null}</h3>
-          {m.chests.length > 1 ? (
-            <Button tone="secondary" size="sm" onClick={() => setQueue([...m.chests])}>
-              Open all · {m.chests.length} chests
-            </Button>
-          ) : null}
         </div>
         {m.chests.length === 0 ? (
-          <p className="mu-empty">No chests waiting.</p>
+          <EmptyState title="No chests waiting" body="Feats and the dust shop fill the shelf." />
         ) : (
           <div className="mu-shelf">
             {RARITIES.filter((r) => byRarity[r]?.length).map((r) => (
@@ -223,16 +322,20 @@ export function MuseumPanel() {
         <details className="mu-shop">
           <summary>Dust shop: buy a chest with duplicates’ dust</summary>
           <div className="mu-shop__row">
-            <label>
-              Lean toward
-              <select value={shopWing} onChange={(e) => setShopWing(e.target.value as WingId | '')}>
-                <option value="">Any wing</option>
-                {WINGS.filter((w) => w.id !== 'oddities' && wingOpen(m, w.id)).map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+            <label className="mu-shop__lean">
+              <span>Lean toward</span>
+              <Select
+                aria-label="Dust shop wing lean"
+                value={shopWing}
+                onChange={(v) => setShopWing(v as WingId | '')}
+                options={[
+                  { value: '' as const, label: 'Any wing' },
+                  ...WINGS.filter((w) => w.id !== 'oddities' && wingOpen(m, w.id)).map((w) => ({
+                    value: w.id,
+                    label: w.name,
+                  })),
+                ]}
+              />
             </label>
             {(Object.entries(MUSEUM.shop) as [Rarity, number][]).map(([r, price]) => (
               <Button
@@ -251,8 +354,6 @@ export function MuseumPanel() {
           </div>
         </details>
       </section>
-        }
-      >
       <div className="mu-wings-seg">
         <SegmentedControl
           aria-label="Wings"
@@ -566,7 +667,15 @@ export function MuseumPanel() {
       </HubStage>
 
       {queue && queue.length > 0 ? (
-        <ChestOpener chests={queue} reducedMotion={reducedMotion} onClose={() => setQueue(null)} />
+        <ChestOpener
+          chests={queue}
+          bulk={queue.length > 1}
+          reducedMotion={reducedMotion}
+          onClose={() => {
+            setQueue(null)
+            syncMuseum(dispatch)
+          }}
+        />
       ) : null}
     </section>
   )

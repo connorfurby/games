@@ -1,7 +1,8 @@
 # Era expansion megaplan (B+B + UI throughout)
 
-**Status:** Phases 0–6 **done** · **SAVE_VERSION** **26**  
-**Authoritative verb names / UI north star:** Cursor plan `grocery_2.0_expansion` (supersedes older names below where they conflict).  
+**Status:** Phases 0–6 **done** · **SAVE_VERSION** **26** (era-gate megaplan).  
+**Superseded as living work by:** Grocery Empire **40.0** (Phases 0–12 in [10-changelog-chat.md](10-changelog-chat.md), `SAVE_VERSION` **36**, `GAME_VERSION` **40.0**). Keep this file as the historical expansion spine; do not reopen its phases.  
+**Authoritative verb names / UI north star (historical):** Cursor plan `grocery_2.0_expansion`.  
 **Choices locked:** intentionally lengthen campaign toward **~40–50 h** Last Aisle; **one new hard-gated verb per era**; **UI overhaul in every phase**, not a polish pass at the end.
 
 Also read: [00-agent-protocol.md](00-agent-protocol.md), [07-pacing.md](07-pacing.md), [09-ui.md](09-ui.md), [11-backlog.md](11-backlog.md).

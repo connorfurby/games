@@ -22,7 +22,7 @@ import { syncDeptRoster } from './staffDept'
 import type { GameState } from './state'
 import { canRunBrownoutDrill, canSignCoolerLog, runBrownoutDrill, signCoolerLog } from './systems/cold'
 import { dumpCooler, perishableQty } from './systems/recovery'
-import { applyStarHit, tryServeRegular } from './systems/regulars'
+import { applyStarHit, swapRegularFocus, tryServeRegular } from './systems/regulars'
 import { clearRivalLock } from './systems/rivals'
 
 const ok: Check = { ok: true }
@@ -43,6 +43,7 @@ export type DepthCmd =
   | Extract<Command, { type: 'assignShift' }>
   | Extract<Command, { type: 'clearShift' }>
   | Extract<Command, { type: 'serveRegular' }>
+  | Extract<Command, { type: 'focusRegular' }>
   | Extract<Command, { type: 'dockCheckIn' }>
   | Extract<Command, { type: 'payInvoice' }>
   | Extract<Command, { type: 'writeOffInvoice' }>
@@ -408,6 +409,19 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
       if (!tryServeRegular(s)) {
         log(s, 'Shelf or facing does not match their list yet.', 'warn')
       }
+    },
+  },
+  focusRegular: {
+    can: (s, cmd) => {
+      ensureDepth(s)
+      if (cmd.which !== 'active' && cmd.which !== 'waiting') return no('Unknown shopper.')
+      if (cmd.which === 'active') return ok
+      if (!s.depth.regulars.activeId || !s.depth.regulars.waitingId) return no('Nobody else is waiting.')
+      return ok
+    },
+    run: (s, cmd) => {
+      ensureDepth(s)
+      if (cmd.which === 'waiting') swapRegularFocus(s)
     },
   },
   dockCheckIn: {

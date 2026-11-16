@@ -274,7 +274,7 @@ a {
 
 .news-paper {
   margin: 0.5rem 0 1.5rem;
-  padding: 1.35rem 1.25rem 1.75rem;
+  padding: 1rem 1rem 1.25rem;
   background:
     linear-gradient(165deg, #f3e6d2 0%, #e8d4b8 55%, #ddc5a4 100%);
   color: #1a1410;
@@ -285,15 +285,15 @@ a {
 }
 
 .news-page .news-hero {
-  margin-bottom: 1.15rem;
-  padding-bottom: 0.85rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.55rem;
   border-bottom: 1px dashed color-mix(in srgb, #1a1410 28%, transparent);
 }
 
 .news-hero__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.85rem, 5vw, 2.6rem);
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #1a1410;
@@ -319,10 +319,15 @@ a {
 }
 
 .news-list__row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.85rem 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'meta headline'
+    '. dek';
+  column-gap: 0.65rem;
+  row-gap: 0.1rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
   text-decoration: none;
   color: inherit;
   border-bottom: 1px dashed color-mix(in srgb, #1a1410 22%, transparent);
@@ -333,25 +338,35 @@ a {
 }
 
 .news-list__meta {
+  grid-area: meta;
   display: flex;
-  gap: 0.55rem;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: flex-start;
+  min-width: 4.6rem;
   font-family: var(--font-mono, monospace);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: color-mix(in srgb, #1a1410 55%, transparent);
 }
 
 .news-list__headline {
+  grid-area: headline;
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1rem;
+  line-height: 1.25;
   font-weight: 600;
   color: #1a1410;
 }
 
 .news-list__dek {
-  font-size: 0.9rem;
+  grid-area: dek;
+  font-size: 0.82rem;
   color: color-mix(in srgb, #1a1410 58%, transparent);
-  line-height: 1.4;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .news-paper .news-chip {
@@ -390,22 +405,42 @@ a {
   line-height: 1.55;
 }
 
-.news-back {
-  margin-top: 1.35rem;
+.news-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 1.1rem 0 0.4rem;
   padding-top: 0.85rem;
-  border-top: 1px dashed color-mix(in srgb, #1a1410 22%, transparent);
+  border-top: 1px dashed color-mix(in srgb, #1a1410 28%, transparent);
+}
+
+.news-filter {
+  min-height: 1.9rem;
+  padding: 0 0.65rem;
+  border: 1px solid color-mix(in srgb, #1a1410 28%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  color: color-mix(in srgb, #1a1410 70%, transparent);
   font-family: var(--font-ui);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
 }
 
-.news-back a {
-  color: #6b3a1a;
-  text-decoration: none;
-  border-bottom: 1px solid color-mix(in srgb, #6b3a1a 45%, transparent);
-}
-
-.news-back a:hover {
+.news-filter.is-on {
+  background: color-mix(in srgb, #c48a2a 30%, transparent);
+  border-color: color-mix(in srgb, #8b3a1a 55%, transparent);
   color: #1a1410;
+}
+
+.news-empty {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, #1a1410 58%, transparent);
+}
+
+.news-list__row.is-open .news-list__headline {
+  color: color-mix(in srgb, #8b3a1a 80%, #1a1410);
 }
 
 .shelf-stage {
@@ -815,6 +850,10 @@ a {
   font-size: 0.72rem;
 }
 
+.game-card.coming-soon {
+  cursor: default;
+}
+
 .game-card.selected {
   outline: 2px solid var(--card-accent, var(--accent));
 }
@@ -901,6 +940,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -916,10 +956,28 @@ a {
 }
 
 .shelf-stats strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-weight: 600;
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
+}
+
+.shelf-glance {
+  margin: 0.1rem 0 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.shelf-corner-note {
+  margin: 0 0 0.5rem;
+  font-size: 0.74rem;
 }
 
 .shelf-links {
@@ -1142,6 +1200,11 @@ button.primary {
   font-size: 0.95rem;
   line-height: 1.45;
   color: color-mix(in srgb, var(--accent) 55%, var(--ink));
+}
+
+.shop-tab-hint {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
 }
 
 .shop-hero__meta {
@@ -1554,10 +1617,15 @@ button.primary {
   color: var(--ink);
 }
 
+.settings-modal {
+  width: min(520px, 100%);
+}
+
+/* Calm column: one block per row, never a two-up grid. */
 .settings-modal__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 .settings-block {
@@ -1712,10 +1780,6 @@ button.primary {
 }
 
 @media (max-width: 640px) {
-  .settings-modal__grid {
-    grid-template-columns: 1fr;
-  }
-
   .shelf-hero {
     text-align: center;
     max-width: none;

@@ -50,6 +50,8 @@ import {
   promoteSteward,
   rebootFleet,
   setManifest,
+  setManifestStance,
+  canSetManifestStance,
   stampLedger,
   startDriftWar,
   swearExam,
@@ -96,6 +98,7 @@ type EraLateCmd =
   | Extract<Command, { type: 'openFranchise' }>
   | Extract<Command, { type: 'winBackFranchise' }>
   | Extract<Command, { type: 'setManifest' }>
+  | Extract<Command, { type: 'setManifestStance' }>
   | Extract<Command, { type: 'swearExam' }>
   | Extract<Command, { type: 'stampLedger' }>
   | Extract<Command, { type: 'launchBarge' }>
@@ -211,10 +214,17 @@ export const eraLateHandlers: {
   },
   setManifest: {
     can: (s, cmd) => {
-      const r = canSetManifest(s, cmd.laneId, cmd.mix)
+      const r = canSetManifest(s, cmd.laneId, cmd.mix, cmd.stance ?? 'exam')
       return r ? no(r) : ok
     },
-    run: (s, cmd) => setManifest(s, cmd.laneId, cmd.mix),
+    run: (s, cmd) => setManifest(s, cmd.laneId, cmd.mix, cmd.stance ?? 'exam'),
+  },
+  setManifestStance: {
+    can: (s, cmd) => {
+      const r = canSetManifestStance(s, cmd.laneId, cmd.stance)
+      return r ? no(r) : ok
+    },
+    run: (s, cmd) => setManifestStance(s, cmd.laneId, cmd.stance),
   },
   swearExam: {
     can: (s) => {
@@ -311,11 +321,11 @@ export const eraLateHandlers: {
     run: (s, cmd) => promoteSteward(s, cmd.staffId),
   },
   acceptEnding: {
-    can: (s) => {
-      const r = canAcceptEnding(s)
+    can: (s, cmd) => {
+      const r = canAcceptEnding(s, cmd.carry ?? null)
       return r ? no(r) : ok
     },
-    run: (s) => acceptEnding(s),
+    run: (s, cmd) => acceptEnding(s, cmd.carry ?? null),
   },
   rejectEnding: {
     can: (s) => {

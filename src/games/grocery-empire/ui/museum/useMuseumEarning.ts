@@ -51,12 +51,13 @@ export function useMuseumEarning(toast: (text: string) => void) {
       for (const n of notes) toastRef.current(n)
 
       const sync = museumSync(museumStore.get())
-      const cur = s.relics ?? { wings: [], count: 0, owned: {} }
+      const cur = s.relics ?? { wings: [], count: 0, owned: {}, litWings: null }
       const copies = (o: Record<string, number> | undefined) => Object.values(o ?? {}).reduce((a, b) => a + b, 0)
       if (
         sync.count !== cur.count ||
         copies(sync.owned) !== copies(cur.owned) ||
         sync.wings.join() !== cur.wings.join() ||
+        JSON.stringify(sync.litWings) !== JSON.stringify(cur.litWings ?? null) ||
         (sync.unlocked && !s.menus.relics)
       ) {
         engine.dispatch({ type: 'syncRelics', ...sync })

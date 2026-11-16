@@ -1,7 +1,6 @@
 /*
- * Floor panel (Phase 6a). Lives in `@layer panels`, so legacy unlayered rules (`.ge-unpack`,
- * `.fl-dock`, `.g2-root:has(.fl-dock)`) keep winning where they overlap. New class names use
- * the `fp-` prefix to stay clear of the old `fl-*` rules still in g2.css.
+ * Floor panel (Phase 6a). Lives in `@layer panels`, so legacy unlayered rules (`.ge-unpack`)
+ * keep winning where they overlap. New class names use the `fp-` prefix.
  */
 @layer panels {
   .fp {
@@ -317,18 +316,8 @@
       grid-template-columns: minmax(0, 1fr);
     }
     /* Unpack lives in the docked button on phones. */
-    .fp-hero .fp-unpack:not(.fl-dock__btn) {
-      display: none;
-    }
     .fp-cats {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .fl-dock .fp-unpack {
-      width: 100%;
-      min-height: 3.25rem;
-      box-shadow:
-        inset 0 -3px 0 rgb(0 0 0 / 0.22),
-        0 6px 18px rgb(0 0 0 / 0.45);
     }
   }
 

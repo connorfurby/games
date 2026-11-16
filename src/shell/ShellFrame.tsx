@@ -7,6 +7,7 @@ const PRIMARY = [
   { id: 'play', label: 'Play', to: '/play/grocery-empire', match: (p: string) => p.startsWith('/play/') },
   { id: 'news', label: 'News', to: '/news', match: (p: string) => p.startsWith('/news') },
   { id: 'guide', label: 'Guide', to: '/guide/grocery-empire', match: (p: string) => p.startsWith('/guide') },
+  { id: 'awards', label: 'Awards', to: '/achievements', match: (p: string) => p.startsWith('/achievements') },
   { id: 'shop', label: 'Shop', to: '/shop', match: (p: string) => p.startsWith('/shop') },
 ] as const
 
@@ -51,9 +52,11 @@ export function ShellFrame({
         </nav>
 
         <div className="shell-bar__end">
-          <Link to="/news" className="shell-bar__ver news-chip" title="What’s new">
-            v{GAME_VERSION}
-          </Link>
+          {loc.pathname.startsWith('/news') ? (
+            <Link to="/news" className="shell-bar__ver news-chip" title="What’s new">
+              v{GAME_VERSION}
+            </Link>
+          ) : null}
           <AppMenu placement="inline" className="shell-bar__waffle" />
         </div>
       </header>

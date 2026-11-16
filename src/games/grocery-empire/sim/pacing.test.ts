@@ -5,13 +5,14 @@ import { runPacing } from './bots'
  * Pacing gate. The campaign bot is a steady, unhurried player;
  * real players beat it. Every balance change must keep these.
  *
- * Plan targets (CI windows) after Phase 2 SAVE 23:
+ * Plan targets (CI windows) after Phase 2 SAVE 23 / 4.0 SAVE 30:
  *   Era 1 at 35–55 min · Era 2 at 3.5–5 h · …
  *
- * Measured bot (seed 1, SAVE 23): Era 1 ≈ 40.5 min · Era 2 ≈ 3.50 h.
+ * Measured bot (seed 1, SAVE 26): Era 1 ≈ 40.5 min · Era 2 ≈ 3.50 h.
+ * 4.0 adds tournament cooldown + Read gates — default CI still green; pad waits if LONG slips.
  *
  * LONG=1: Era 3–6 plan windows (Phase 3 SAVE 24+).
- * LONG_HORIZON=1: Era 12 in 40–50 h; assert eraAt[12].
+ * LONG_HORIZON=1: Era 12 in 40–50 h; assert eraAt[12]. Seed 1 SAVE 35: Era 11 ≈ 39.11 h · Era 12 ≈ 40.10 h.
  */
 const SEEDS = [1, 42]
 const MIN = 60

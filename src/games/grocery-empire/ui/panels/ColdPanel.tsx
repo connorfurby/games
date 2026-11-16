@@ -2,12 +2,13 @@ import { useState } from 'react'
 import type { Command } from '../../sim/commands'
 import { can } from '../../sim/commands'
 import { engine } from '../../sim/engine'
-import { plantCost, tankCost } from '../../sim/systems/cold'
+import { blastSuppressesTunnel, hasTunnelCoverage, plantCost, tankCost } from '../../sim/systems/cold'
 import { cryoImmune } from '../../sim/systems/late'
 import { DEPTH, HORIZON } from '../../sim/balance'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { ActionRow, PlayFrame } from '../play'
+import { MENUS } from '../../content/menus'
+import { ActionRow, FailReason, PlayFrame } from '../play'
 import { Icon } from '../icons/Icon'
 import { Badge, Button, Meter, Sheet, useConfirm } from '../kit'
 import { ColdScene } from '../scenes/live'
@@ -37,11 +38,18 @@ export function ColdPanel() {
   const showCooler = s.era >= 3 && c.plants > 0
   const signCheck = can(s, { type: 'signCoolerLog' })
   const signReady = showCooler && signCheck.ok
+  const blastDrain = hasTunnelCoverage(s) && blastSuppressesTunnel(s)
+  // A missed Cooler Log adds load to the line, so a brownout points at the log first, tanks second.
+  const brownoutNote = showCooler
+    ? signCheck.ok
+      ? `Brownout — sign the Cooler Log (${missed} missed adds load), then add plant or tank.`
+      : `Brownout — ${signCheck.reason ?? 'log not due'} Add plant or tank to recover.`
+    : 'Brownout — supply is short of demand. Add plant or tank to recover.'
 
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose="Buy stock and move it — trucks, cold chain, ocean lanes."
+        purpose={MENUS.cold.purpose}
         department="Cold"
         room={<ColdScene />}
         tray={{
@@ -51,6 +59,8 @@ export function ColdPanel() {
                 tone: 'free',
                 size: 'lg',
                 feedback: true,
+                coachId: 'cold-sign-log',
+                title: c.browned ? brownoutNote : undefined,
                 onClick: () => dispatch({ type: 'signCoolerLog' }),
               }
             : {
@@ -95,6 +105,16 @@ export function ColdPanel() {
           ],
         }}
       >
+        {c.browned ? (
+          <FailReason action={showCooler ? { label: 'Open Cooler log', onClick: () => setCoolerSheet(true) } : undefined}>
+            {brownoutNote}
+          </FailReason>
+        ) : null}
+        {blastDrain ? (
+          <FailReason action={showCooler ? { label: 'Open Cooler log', onClick: () => setCoolerSheet(true) } : undefined}>
+            Blast is draining yield — tunnel spoil cut returns after Cooler log.
+          </FailReason>
+        ) : null}
         <div className="p6-row">
           <Badge tone={c.browned ? 'danger' : 'muted'}>
             {c.plants} plant{c.plants === 1 ? '' : 's'} · {c.tanks} tank{c.tanks === 1 ? '' : 's'}

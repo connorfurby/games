@@ -7,6 +7,13 @@
     min-width: 0;
   }
 
+  .lh-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+
   .lh-hub__body {
     display: flex;
     flex-direction: column;

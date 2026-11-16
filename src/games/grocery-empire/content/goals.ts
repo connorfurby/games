@@ -9,6 +9,7 @@ import { plantCost, plantCountOf } from '../sim/systems/cold'
 import { bargeCost, franchiseCost, laneCost, matchedLaneCount } from '../sim/systems/fleet'
 import { probeCost, relayCost, stockedCount } from '../sim/systems/horizon'
 import { broadcastClimates } from '../sim/systems/late'
+import { CHARTERS, CHARTER_IDS } from './horizon'
 import { MEMO_BY_ID } from './memos'
 import type { GameState } from '../sim/state'
 
@@ -32,6 +33,18 @@ export interface GoalDef {
   action?: (s: GameState) => Command | null
   /** Completing this goal moves to this era. */
   opensEra?: number
+  /** Filing counts shown under the hint (eras 10–12). */
+  counts?: (s: GameState) => string
+  /** A real fork: the HUD offers each choice; `action` stays the bot's pick. */
+  choices?: (s: GameState) => GoalChoice[] | null
+}
+
+export interface GoalChoice {
+  id: string
+  label: string
+  /** One line: what this fork does. */
+  line: string
+  action: Command
 }
 
 const memo = (s: GameState, id: string) => (s.memos[id] ?? 0) > 0
@@ -45,6 +58,38 @@ const memoCash = (s: GameState, id: string) => {
 }
 const frac = (have: number, need: number) => (need <= 0 ? 1 : Math.max(0, Math.min(1, have / need)))
 const matchedLaneDone = (s: GameState) => matchedLaneCount(s) >= 1
+
+/** Era 10: post the habit — claim an unheld post, wait out a live watch, else file. */
+function postHabitAction(s: GameState): Command | null {
+  const h = s.horizon
+  const post = h && h.watchUntil > 0 ? h.postedHabit : null
+  if (post && post.agentId == null) {
+    const agent = h!.agents[0]
+    return agent ? { type: 'setAgentHabit', id: agent.id, habit: post.habit } : null
+  }
+  return { type: 'fileStandardPhrase' }
+}
+
+function phraseCounts(s: GameState): string {
+  const credited = s.depth?.practice?.phrase.credited ?? 0
+  const watched = s.horizon?.watchedPhrases ?? 0
+  const post = s.horizon && s.horizon.watchUntil > 0 ? s.horizon.postedHabit : null
+  const posted = post ? ` · posted ${post.habit}${post.agentId == null ? ' (unheld)' : ''}` : ''
+  return `Watches ${watched}/${HORIZON.habitWatchNeed} · filed ${credited}/${HORIZON.slowPhrases}${posted}`
+}
+
+function seatingCounts(s: GameState): string {
+  const h = s.horizon
+  const docket = s.depth?.hearing
+  return `Seated ${h?.seatingsDone ?? 0}/${HORIZON.clauseSeatingNeed} · kept ${h?.clauses.length ?? 0}/${HORIZON.clauseKeep} · hearings ${docket?.answered ?? 0}/${docket?.needed ?? HORIZON.hearingNeededMax}`
+}
+
+function listCounts(s: GameState): string {
+  const left = s.depth?.practice?.list.left ?? 0
+  const mean = s.horizon?.listScore ?? 0
+  const scratch = s.horizon?.rehearsalScratch ?? -1
+  return `Mean ${mean.toFixed(2)}/${HORIZON.listAcceptScore} · practice left ${left}${scratch >= 0 ? ` · line ${scratch + 1} scratched` : ''}`
+}
 
 export const GOALS: GoalDef[] = [
   // ── Era 0 · The Counter
@@ -376,6 +421,15 @@ export const GOALS: GoalDef[] = [
     },
   },
   {
+    id: 'bank-read',
+    era: 2,
+    title: `Bank ${DEPTH.bankReadNeed} Read`,
+    hint: 'Fill Attention, run tournaments on Strategy, and keep the Read bank growing.',
+    done: (s) => s.read >= DEPTH.bankReadNeed || s.era >= 3,
+    progress: (s) => frac(s.read, DEPTH.bankReadNeed),
+    action: () => ({ type: 'runTournament' }),
+  },
+  {
     id: 'depot-or-commissary',
     era: 2,
     title: 'Depot or commissary',
@@ -652,7 +706,7 @@ export const GOALS: GoalDef[] = [
     id: 'exam-holds',
     era: 4,
     title: 'Swear exam holds',
-    hint: 'Lock a matched manifest, then swear the exam before the hold slips.',
+    hint: 'File a lane exam-ready, then swear before the hold slips. An exam is not a clean.',
     done: (s) => (s.depth?.dispatch?.examsHeld ?? 0) >= DEPTH.examHoldNeed,
     progress: (s) => frac(s.depth?.dispatch?.examsHeld ?? 0, DEPTH.examHoldNeed),
     action: (s) => {
@@ -661,39 +715,20 @@ export const GOALS: GoalDef[] = [
       }
       const lane = s.fleet.laneList?.[0]
       if (!lane) return { type: 'openLane', route: 'spice-route' }
-      const prefer =
-        lane.route === 'spice-route'
-          ? 'import'
-          : lane.route === 'cold-line'
-            ? 'frozen'
-            : lane.route === 'dry-haul'
-              ? 'household'
-              : 'bakery'
-      return { type: 'setManifest', laneId: lane.id, mix: prefer }
+      return { type: 'setManifestStance', laneId: lane.id, stance: 'exam' }
     },
   },
   {
     id: 'clean-manifests',
     era: 4,
     title: 'File clean manifests',
-    hint: 'Match wet cargo each dispatch cycle — swear exams, then clean filings.',
+    hint: 'File a lane clean — it credits at once, on its own clock, and never doubles as an exam.',
     done: (s) => (s.depth?.dispatch?.cleanManifests ?? 0) >= DEPTH.cleanManifestsNeed,
     progress: (s) => frac(s.depth?.dispatch?.cleanManifests ?? 0, DEPTH.cleanManifestsNeed),
     action: (s) => {
-      if (s.depth?.dispatch?.examLaneId && (s.depth.dispatch.examUntil ?? 0) > s.time) {
-        return { type: 'swearExam' }
-      }
       const lane = s.fleet.laneList?.[0]
       if (!lane) return { type: 'openLane', route: 'spice-route' }
-      const prefer =
-        lane.route === 'spice-route'
-          ? 'import'
-          : lane.route === 'cold-line'
-            ? 'frozen'
-            : lane.route === 'dry-haul'
-              ? 'household'
-              : 'bakery'
-      return { type: 'setManifest', laneId: lane.id, mix: prefer }
+      return { type: 'setManifestStance', laneId: lane.id, stance: 'clean' }
     },
   },
   {
@@ -751,9 +786,9 @@ export const GOALS: GoalDef[] = [
             const lane = s.fleet.laneList?.[0]
             if (!lane) return { type: 'openLane', route: 'spice-route' } as const
             return {
-              type: 'setManifest' as const,
+              type: 'setManifestStance' as const,
               laneId: lane.id,
-              mix: 'import',
+              stance: 'clean' as const,
             }
           })()
         : !memo(s, 'barge-berth')
@@ -1005,6 +1040,20 @@ export const GOALS: GoalDef[] = [
     },
   },
   {
+    id: 'climate-guest-facing',
+    era: 7,
+    title: 'Serve a guest against your facing',
+    hint: 'A climate guest bans your strongest facing until the shift turns. Serve anyway, or swap the facing.',
+    done: (s) => s.era > 7 || (s.horizon?.climateServed ?? 0) >= 1,
+    progress: (s) => ((s.horizon?.climateServed ?? 0) >= 1 ? 1 : stockedCount(s) >= 1 ? 0.5 : 0),
+    cash: () => 0,
+    action: (s) => {
+      if (stockedCount(s) >= 1) return { type: 'serveClimateNeighbor' }
+      const open = s.horizon?.planets.find((p) => p.revealed && !p.stocked)
+      return open ? { type: 'fileStandardPlanogram', planetId: open.id } : { type: 'launchProbe' }
+    },
+  },
+  {
     id: 'climate-neighbors',
     era: 7,
     title: 'Serve climate neighbors',
@@ -1062,16 +1111,6 @@ export const GOALS: GoalDef[] = [
     },
     opensEra: 8,
   },
-  {
-    id: 'hire-planogram-clerk',
-    era: 7,
-    title: 'Hire a Planogram Clerk',
-    hint: 'Survey desk — proposes a 0.85 shelf beside the Surveyor.',
-    done: (s) => s.era > 7 || s.staff.some((m) => m.role === 'planogramClerk'),
-    progress: (s) => (s.staff.some((m) => m.role === 'planogramClerk') ? 1 : 0),
-    cash: () => 0,
-    action: () => ({ type: 'hire', role: 'planogramClerk' }),
-  },
   // ── Era 8 · Exchange
   {
     id: 'first-circuit',
@@ -1105,6 +1144,16 @@ export const GOALS: GoalDef[] = [
       (s.horizon?.relays ?? 0) < 1 ? { type: 'buyRelay' } : { type: 'wireAd' },
   },
   {
+    id: 'settle-stop-tax',
+    era: 8,
+    title: 'Accept a stop’s tax',
+    hint: 'Settling locks the stop’s spoil, tariff, or delay onto that circuit for as long as it stands.',
+    done: (s) => s.era > 8 || (s.horizon?.settlements ?? 0) >= 1,
+    progress: (s) => ((s.horizon?.settlements ?? 0) >= 1 ? 1 : (s.horizon?.settlementUntil ?? 0) > 0 ? 0.5 : 0),
+    cash: () => 0,
+    action: (s) => ((s.horizon?.settlementUntil ?? 0) > 0 ? { type: 'settleStop' } : { type: 'fileStandardConvoy' }),
+  },
+  {
     id: 'stop-settlements',
     era: 8,
     title: 'Settle the stops',
@@ -1135,16 +1184,6 @@ export const GOALS: GoalDef[] = [
     opensEra: 9,
   },
   {
-    id: 'hire-stevedore',
-    era: 8,
-    title: 'Hire a Stevedore',
-    hint: 'Makes a 0.85 packing stick beside the Broker.',
-    done: (s) => s.era > 8 || s.staff.some((m) => m.role === 'stevedore'),
-    progress: (s) => (s.staff.some((m) => m.role === 'stevedore') ? 1 : 0),
-    cash: () => 0,
-    action: () => ({ type: 'hire', role: 'stevedore' }),
-  },
-  {
     id: 'first-planting',
     era: 9,
     title: 'Plant a cross',
@@ -1157,10 +1196,15 @@ export const GOALS: GoalDef[] = [
   {
     id: 'season-chore',
     era: 9,
-    title: 'Do a season chore',
-    hint: 'This season’s chore on the Shift Board — or a Season Hand on shift saves a miss.',
-    done: (s) => s.era > 9 || !!s.horizon?.seasonChore || (s.horizon?.weakYears ?? 0) >= 1,
-    progress: (s) => (s.horizon?.seasonChore || (s.horizon?.weakYears ?? 0) >= 1 ? 1 : 0),
+    title: 'Lock a season bed',
+    hint: 'The chore locks the bed until the season turns — no clever cross. Skipping it is a weak year.',
+    done: (s) =>
+      s.era > 9 ||
+      !!s.horizon?.bedLockedChore ||
+      (s.horizon?.haulsDone ?? 0) >= 1 ||
+      (s.horizon?.weakYears ?? 0) >= 1,
+    progress: (s) =>
+      s.horizon?.bedLockedChore || (s.horizon?.haulsDone ?? 0) >= 1 || (s.horizon?.weakYears ?? 0) >= 1 ? 1 : 0,
     cash: () => 0,
     action: (s) => {
       const chore = (['water', 'cover', 'harvest', 'rest'] as const)[(s.horizon?.season ?? 0) % 4]!
@@ -1259,11 +1303,12 @@ export const GOALS: GoalDef[] = [
   {
     id: 'habit-watches',
     era: 10,
-    title: 'Watch the habits',
-    hint: 'After each credited phrase, wait out the habit watch.',
+    title: 'Post the habit',
+    hint: 'Filing a phrase posts its habit. Keep that agent on it until the watch resolves.',
     done: (s) => (s.horizon?.watchedPhrases ?? 0) >= HORIZON.habitWatchNeed,
     progress: (s) => frac(s.horizon?.watchedPhrases ?? 0, HORIZON.habitWatchNeed),
-    action: () => ({ type: 'fileStandardPhrase' }),
+    counts: (s) => phraseCounts(s),
+    action: (s) => postHabitAction(s),
   },
   {
     id: 'first-agent',
@@ -1282,12 +1327,13 @@ export const GOALS: GoalDef[] = [
       return Math.min(1, Math.max(fast, slow) * 0.55 + desk + watched * 0.2)
     },
     cash: (s) => ((s.horizon?.relays ?? 0) >= 1 ? 0 : relayCost(s)),
+    counts: (s) => phraseCounts(s),
     action: (s) =>
       (s.horizon?.relays ?? 0) < 1
         ? { type: 'buyRelay' }
         : (s.horizon?.agents.length ?? 0) < 1
           ? { type: 'hireAgent', habit: 'price' }
-          : { type: 'fileStandardPhrase' },
+          : postHabitAction(s),
     opensEra: 11,
   },
   {
@@ -1348,10 +1394,11 @@ export const GOALS: GoalDef[] = [
   {
     id: 'clause-seatings',
     era: 11,
-    title: 'Seat the clauses',
-    hint: 'Keep a clause, wait the seal ETA, then seat it — gap before the next.',
+    title: 'Seat this clause',
+    hint: 'Keep a clause, wait out the seal, then seat it. Concord hears what you seat.',
     done: (s) => (s.horizon?.seatingsDone ?? 0) >= HORIZON.clauseSeatingNeed,
     progress: (s) => frac(s.horizon?.seatingsDone ?? 0, HORIZON.clauseSeatingNeed),
+    counts: (s) => seatingCounts(s),
     action: (s) => {
       if ((s.horizon?.seatingUntil ?? 0) > 0) return { type: 'seatClause' }
       const have = s.horizon?.clauses ?? []
@@ -1365,13 +1412,28 @@ export const GOALS: GoalDef[] = [
     id: 'charter-signed',
     era: 11,
     title: 'Sign the charter',
-    hint: 'Seatings + charter + four clauses open the Last Aisle.',
+    hint: 'Pick a fork. Seatings, the charter and four clauses open the Last Aisle.',
     done: (s) => s.era >= 12,
     progress: (s) =>
       (s.horizon?.charter ? 0.35 : 0) +
       Math.min(0.35, (s.horizon?.clauses.length ?? 0) / 4 / 2) +
       frac(s.horizon?.seatingsDone ?? 0, HORIZON.clauseSeatingNeed) * 0.3,
     cash: () => 0,
+    counts: (s) => seatingCounts(s),
+    // The fork is offered once the docket is clear; the bot's action below signs Standard.
+    choices: (s) => {
+      const h = s.horizon
+      if (!h || h.charter || s.era < 11) return null
+      if ((h.seatingsDone ?? 0) < HORIZON.clauseSeatingNeed || h.clauses.length < HORIZON.clauseKeep) return null
+      const docket = s.depth?.hearing
+      if (h.hearingClause || docket?.pendingClause || (docket && docket.answered < docket.needed)) return null
+      return CHARTER_IDS.map((id) => ({
+        id,
+        label: CHARTERS[id].name,
+        line: CHARTERS[id].fork,
+        action: { type: 'setCharter', charter: id } as Command,
+      }))
+    },
     action: (s) => {
       if ((s.horizon?.seatingsDone ?? 0) < HORIZON.clauseSeatingNeed) {
         if ((s.horizon?.seatingUntil ?? 0) > 0) return { type: 'seatClause' }
@@ -1409,13 +1471,15 @@ export const GOALS: GoalDef[] = [
     done: (s) => (s.horizon?.listScore ?? 0) >= 0.75,
     progress: (s) => Math.min(1, (s.horizon?.listScore ?? 0) / 0.75),
     cash: () => 0,
+    counts: (s) => listCounts(s),
     action: () => ({ type: 'fileStandardList' }),
   },
   {
     id: 'accept-rehearsal',
     era: 12,
-    title: 'Rehearse Accept',
-    hint: 'Finish list practice, then one clever fill and a desk gap before Accept.',
+    title: 'Rehearse the list',
+    hint: 'Practice the Accept at a 0.85 mean. A miss scratches a line to refill.',
+    counts: (s) => listCounts(s),
     done: (s) =>
       !!s.horizon?.acceptRehearsal && (s.horizon?.acceptRehearsalUntil ?? 0) <= s.time,
     progress: (s) =>
@@ -1426,7 +1490,9 @@ export const GOALS: GoalDef[] = [
         : (s.horizon?.listScore ?? 0) >= 0.85
           ? 0.4
           : 0.1,
-    action: () => ({ type: 'rehearseAccept' }),
+    // Below the mean a rehearsal always scratches a line, so the one-click waits for 0.85.
+    action: (s) =>
+      (s.horizon?.listScore ?? 0) + 1e-9 >= HORIZON.listAcceptScore ? { type: 'rehearseAccept' } : null,
   },
   {
     id: 'franchise-every-world',
@@ -1455,7 +1521,9 @@ export const GOALS: GoalDef[] = [
     cash: () => 0,
     action: (s) =>
       !s.horizon?.acceptRehearsal || (s.horizon.acceptRehearsalUntil ?? 0) > s.time
-        ? { type: 'rehearseAccept' }
+        ? (s.horizon?.listScore ?? 0) + 1e-9 >= HORIZON.listAcceptScore
+          ? { type: 'rehearseAccept' }
+          : null
         : { type: 'acceptLastAisle' },
   },
 ]

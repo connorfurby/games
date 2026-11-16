@@ -41,7 +41,18 @@ shoppers/s = DEMAND.baseShoppersPerSec
 
 Base shoppers **0.25**/s, elasticity **1.35**, ads **×1.08** per level (cost doubles).
 
-Multipliers include: Empire, reputation, variety, word of mouth `1 + 0.45·log10(1+baskets/60)`, marketing posture, rivals, stars, early-demand ramp, Open/Close, circular/flyer, ration week, mutators, etc.
+Multipliers include: Empire, reputation, variety, word of mouth `1 + 0.45·log10(1+baskets/60)`, marketing posture, rivals, stars, early-demand ramp, Open/Close, circular/flyer, ration week, Build facing (`buildVariantMul`, soft-cap **1.35**), mutators, etc.
+
+### Read / Strategy (`CAPITAL`, 4.0)
+
+| Knob | Value | Meaning |
+| --- | --- | --- |
+| tournamentAttention | 120 | Att spent per Read tournament |
+| tournamentCooldownSec | 600 | Sim seconds between tournaments |
+| tournamentBaseRead / readPerDoctrine | 4 / 1.5 | Payout base + per owned era2 doctrine |
+| doctrineBaseRead / doctrineGrowth | 6 / 1.65 | Rising Read cost for the ladder |
+| depotReadNeed | 12 | First depot hard gate |
+| autonomousReadNeed | 48 | Autonomous release (with repSpent) |
 
 **Bottlenecks** (`salesBottleneck`): `shelf` | `unpack` | `checkout` | `demand`.
 

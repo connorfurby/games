@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { CATEGORY_IDS } from '../../content/categories'
-import { ROLE_IDS, ROLES, STAFF_TRAITS, isDeptRole, isHorizonRole, type RoleId } from '../../content/staff'
+import {
+  ROLE_IDS,
+  ROLES,
+  STAFF_TRAITS,
+  isDeptRole,
+  isHorizonRole,
+  type RoleId,
+} from '../../content/staff'
 import { DEPARTMENTS } from '../../content/depth'
 import { HOURS, MORALE, STAFF_SEATS } from '../../sim/balance'
 import { engine } from '../../sim/engine'
@@ -11,7 +18,6 @@ import {
   annexWorkingIds,
   floorHeadcount,
 } from '../../sim/staffAnnex'
-import { deptHeadcount, deptSeatCap } from '../../sim/staffDept'
 import {
   checkoutCap,
   demandPerSec,
@@ -34,8 +40,8 @@ import { money, rate } from '../format'
 import { CardTitle } from '../components/ScreenPanel'
 import type { ExtraIcon } from '../icons/Icon'
 import { Icon } from '../icons/Icon'
-import { PlayFrame } from '../play'
-import { Badge, Button, Card, Chip, Disclosure, EmptyState, KeyValue, Meter, Sheet, Toggle, useConfirm } from '../kit'
+import { PlayFrame, StatusChip } from '../play'
+import { Button, Card, Chip, Disclosure, EmptyState, KeyValue, Meter, Sheet, Toggle, useConfirm } from '../kit'
 import { RolePortrait, StaffFloor } from '../staff/StaffFloor'
 
 const ROLE_ICON: Record<RoleId, ExtraIcon> = {
@@ -215,13 +221,10 @@ export function StaffPanel() {
     s.era >= 1 &&
     bottleneck.kind === 'shelf' &&
     !!(s.categories.produce || s.categories.dairy || s.categories.meat)
-  const repeatsSeats = !!shownRole && !annexRec
-  const repeatsAnnex = !!annexRec
-
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose="Staff, marketing, rivals and side businesses."
+        purpose="Hire the crew that clears your limit, then set who covers each shift."
         department="Staff"
         room={
           <StaffFloor
@@ -256,11 +259,13 @@ export function StaffPanel() {
                   onClick: () => dispatch({ type: 'hire', role: shownRole }),
                 }
               : {
-                  label: 'Open shift board',
-                  tone: 'free',
+                  label: 'Hire',
+                  tone: 'primary',
                   size: 'lg',
-                  coachId: 'hours',
-                  onClick: () => setShiftSheet(true),
+                  title: seatSources.length
+                    ? `Seats from ${seatSources.map((x) => `${x.label} +${x.n}`).join(', ')}`
+                    : 'Open the hire board',
+                  onClick: () => setHireSheet(true),
                 },
           failReason: shownRole && recommendCheck && !recommendCheck.ok ? recommendCheck.reason : undefined,
           secondaries: [
@@ -274,30 +279,70 @@ export function StaffPanel() {
             {
               key: 'hire',
               label: 'Hire board',
-              fact: String(roster.length),
+              fact: `${floorHeads}/${seats}`,
               onClick: () => setHireSheet(true),
             },
           ],
         }}
       >
-        <div className="p6-row">
-          {repeatsSeats ? null : (
-            <Badge tone="muted">
-              Seats {floorHeads}/{seats}
-            </Badge>
-          )}
-          {s.era >= 1 ? (
-            <Badge tone="muted">
-              Fresh {deptHeadcount(s, 'fresh')}/{deptSeatCap(s, 'fresh')}
-            </Badge>
+        <div className="p6-stack">
+          <StatusChip tone={bottleneck.kind === 'demand' ? 'ready' : 'warn'} title={bottleneck.label}>
+            Limit · {bottleneck.kind === 'demand' ? 'Shoppers' : bottleneck.kind} · wages {money(wages * 60, numberFormat)}/min
+          </StatusChip>
+          {freshBottleneck ? (
+            <StatusChip tone="warn">Fresh aisle is the shelf limit — hire a greengrocer or stocker.</StatusChip>
           ) : null}
-          {s.era >= 7 && !repeatsAnnex ? (
-            <Badge tone="success">
-              Annex {annexHeads}/{annexSeats}
-            </Badge>
+
+          <StatusChip tone="idle" title="Store hours multiplier. Set it on the Shifts sheet.">
+            Hours {s.hours.toFixed(1)}× · {s.depth?.shifts?.daysCoveredOpen ?? 0} open days covered
+          </StatusChip>
+          {s.era >= 7 ? (
+            <div data-coach-id="staff-annex">
+              <StatusChip
+                tone={annexRec ? 'waiting' : 'ready'}
+                title={annexRec?.why ?? 'Every annex desk you need is staffed.'}
+              >
+                Worlds annex · {annexHeads}/{annexSeats} seats ·{' '}
+                {annexRec ? `hire ${ROLES[annexRec.role].name}` : 'desks covered'}
+              </StatusChip>
+            </div>
           ) : null}
-          <Badge tone="muted">Wages {rate(wages)}</Badge>
         </div>
+
+        {s.era >= 1
+          ? DEPARTMENTS.filter((d) => s.era >= d.era).map((d) => {
+              const active = s.depth?.departments?.[d.id]?.policy ?? null
+              const leadCheck = engine.can({ type: 'setDeptPolicy', dept: d.id, policy: d.policies[0]?.id ?? '' })
+              return (
+                <Disclosure
+                  key={d.id}
+                  title={`${d.name} policy`}
+                  defaultOpen={d.id === 'fresh' && freshBottleneck}
+                >
+                  <div className="p6-stack" data-coach-id={`staff-policy-${d.id}`}>
+                    {!leadCheck.ok ? <p className="p6-muted">{leadCheck.reason}</p> : null}
+                    {d.policies.map((p) => {
+                      const check = engine.can({ type: 'setDeptPolicy', dept: d.id, policy: p.id })
+                      return (
+                        <div key={p.id} className="p6-row" style={{ alignItems: 'center' }}>
+                          <Button
+                            size="sm"
+                            tone={active === p.id ? 'primary' : 'ghost'}
+                            disabled={!check.ok}
+                            title={check.ok ? p.blurb : check.reason}
+                            onClick={() => dispatch({ type: 'setDeptPolicy', dept: d.id, policy: p.id })}
+                          >
+                            {p.name}
+                          </Button>
+                          <span className="p6-muted">{p.blurb}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Disclosure>
+              )
+            })
+          : null}
       </PlayFrame>
       <Sheet
         open={shiftSheet}
@@ -506,26 +551,6 @@ export function StaffPanel() {
         </div>
       </Sheet>
 
-      {s.era >= 1 && DEPARTMENTS.some((d) => s.era >= d.era) ? (
-        <Disclosure title="Fresh policy" defaultOpen={freshBottleneck}>
-          <div className="p6-stack">
-            <div className="p6-row">
-              {(DEPARTMENTS.find((d) => d.id === 'fresh')?.policies ?? []).map((p) => (
-                <Button
-                  key={p.id}
-                  size="sm"
-                  tone={s.depth?.departments?.fresh?.policy === p.id ? 'primary' : 'ghost'}
-                  disabled={!engine.can({ type: 'setDeptPolicy', dept: 'fresh', policy: p.id }).ok}
-                  title={p.blurb}
-                  onClick={() => dispatch({ type: 'setDeptPolicy', dept: 'fresh', policy: p.id })}
-                >
-                  {p.name}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </Disclosure>
-      ) : null}
     </section>
   )
 }

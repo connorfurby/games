@@ -1,0 +1,44 @@
+@layer panels {
+  /* Cultivar bed lock: chip over a draining shelf meter (tag yellow = the season you are spending). */
+  .hz-bedlock {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--s-1, 0.25rem);
+    min-width: 11rem;
+    vertical-align: middle;
+  }
+
+  .hz-bedlock__meter {
+    width: 100%;
+  }
+
+  /* Charter seating: seated count, a filling shelf, and a crate that hops when a clause lands. */
+  .hz-seat {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2, 0.5rem);
+    margin: 0;
+    font: 500 var(--t-xs, 0.75rem) / var(--t-xs-lh, 1rem) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .hz-seat strong {
+    font-family: var(--ge-font-mono);
+    font-weight: 500;
+    color: var(--ge-ink);
+  }
+
+  .hz-seat__meter {
+    flex: 1 1 auto;
+    min-width: 4rem;
+    --fx-meter-ink: var(--ge-free, #e85d4c);
+  }
+
+  .hz-seat__crate {
+    display: block;
+    width: 0.7rem;
+    height: 0.55rem;
+    border-radius: 2px;
+    background: var(--ge-free, #e85d4c);
+  }
+}

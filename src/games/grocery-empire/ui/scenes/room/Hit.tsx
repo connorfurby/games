@@ -13,6 +13,7 @@ export function Hit({
   menu,
   coachId,
   onActivate,
+  className = '',
   children,
 }: {
   x: number
@@ -23,6 +24,8 @@ export function Hit({
   menu?: string
   coachId?: string
   onActivate?: () => void
+  /** Extra hook for cosmetic CSS (e.g. unpack FX). */
+  className?: string
   children?: ReactNode
 }) {
   const { setActiveMenu, focusSuggestion, suggestions, reducedMotion } = useGame()
@@ -53,7 +56,7 @@ export function Hit({
 
   return (
     <g
-      className="rm-hit pf-press"
+      className={`rm-hit pf-press${className ? ` ${className}` : ''}`}
       role="button"
       tabIndex={0}
       aria-label={label}

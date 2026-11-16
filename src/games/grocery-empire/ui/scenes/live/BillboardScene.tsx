@@ -33,6 +33,10 @@ export function BillboardScene() {
   const air = Object.keys(s.late?.broadcasts ?? {}).filter((k) => (s.late?.broadcasts?.[k] ?? 0) > 0)
   const wire = s.era >= 10 && wireAdActive(s)
   const dish = s.era >= 7
+  const flyerLive = s.era >= 2 && (s.depth?.flyer?.until ?? 0) > s.time
+  const flyerCool = s.era >= 2 && !flyerLive && (s.depth?.flyer?.cooldownUntil ?? 0) > s.time
+  const flyerWeeks = s.depth?.flyerWeeks ?? 0
+  const loyal = s.loyalty.tier > 0 || !!s.memos['punch-card']
 
   return (
     <RoomScene
@@ -43,7 +47,11 @@ export function BillboardScene() {
         { label: 'Ads', value: `Lv ${ads}` },
         { label: 'Celeb', value: celebrity ? clock(celebLeft) : '—' },
         { label: 'War', value: war ? clock(warLeft) : 'off', neg: war },
-        { label: 'On air', value: air.length ? String(air.length) : '0' },
+        s.era >= 7
+          ? { label: 'On air', value: air.length ? String(air.length) : '0' }
+          : s.era >= 2
+            ? { label: 'Flyer', value: flyerLive ? 'live' : flyerCool ? 'cooling' : `${flyerWeeks} wk` }
+            : { label: 'Loyalty', value: loyal ? `T${s.loyalty.tier}` : '—' },
       ]}
       skyTop="#201a2e"
       skyBottom="#3a3330"
@@ -100,6 +108,41 @@ export function BillboardScene() {
           <Person x={290} y={236} tint="#f2c14e" delay={0.2} scale={1.1} working />
           <path d="M290 200 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1z" fill="#f2c14e" opacity="0.9" />
           <Sign x={290} y={188} text={clock(celebLeft)} small anchor="middle" />
+        </Hit>
+      ) : null}
+
+      {s.era >= 2 ? (
+        <Hit x={684} y={150} w={76} h={100} label="Flyer rack" menu="marketing" coachId="marketing-flyer-band">
+          <g transform="translate(692 156)">
+            <rect x="26" y="40" width="6" height="42" fill="#4a423a" />
+            <rect x="8" y="80" width="42" height="6" rx="2" fill="#4a423a" />
+            <rect x="0" y="0" width="58" height="42" rx="3" fill="#171210" stroke="#6a5c4a" strokeWidth="2" />
+            {[0, 1, 2].map((i) => (
+              <rect
+                key={i}
+                x={6 + i * 17}
+                y={7}
+                width="13"
+                height="28"
+                rx="1"
+                fill={flyerLive ? '#ffd98c' : '#efe9dc'}
+                opacity={flyerLive ? 0.95 - i * 0.1 : 0.35}
+              />
+            ))}
+            <Sign x={29} y={98} text={flyerLive ? 'FLYERS' : `${flyerWeeks} WK`} small anchor="middle" />
+          </g>
+        </Hit>
+      ) : null}
+
+      {loyal ? (
+        <Hit x={130} y={96} w={60} h={70} label="Loyalty card" menu="marketing" coachId="marketing-loyalty">
+          <g transform="translate(138 106)">
+            <rect width="44" height="28" rx="4" fill="#2a2420" stroke="#c9a15a" strokeWidth="2" />
+            {[0, 1, 2, 3].map((i) => (
+              <circle key={i} cx={9 + i * 9} cy="14" r="3" fill={i < s.loyalty.tier ? '#ffd98c' : '#4a4036'} />
+            ))}
+            <Sign x={22} y={46} text={`TIER ${s.loyalty.tier}`} small anchor="middle" />
+          </g>
         </Hit>
       ) : null}
 

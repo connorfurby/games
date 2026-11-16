@@ -97,11 +97,6 @@
   padding: 0.5rem;
 }
 
-.ge-root--dense .ge-floor__storefront,
-.ge-root--dense .ge-floor__strip {
-  display: none;
-}
-
 /* Atmospheric — roomier padding + pack pattern */
 .ge-root--atmospheric {
   --ge-panel-pad: 1rem;
@@ -1134,16 +1129,6 @@
   margin-right: 0.25rem;
 }
 
-.ge-floor__shelf-head {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.ge-floor__shelf-head .ge-meter {
-  flex: 1;
-}
-
 .ge-baskets__label,
 .ge-top__cash-label,
 .ge-price__tag {
@@ -1357,227 +1342,10 @@
 }
 
 /* Floor */
-.ge-floor {
-  position: relative;
-  isolation: isolate;
-}
-
-.ge-floor--dense {
-  --ge-shelf-fill: 0.45;
-  padding: 0.15rem 0;
-}
-
-.ge-floor--dense .ge-floor__storefront,
-.ge-floor--dense .ge-floor__aisle {
-  display: none;
-}
-
-.ge-floor--dense .ge-floor__hero {
-  gap: 0.65rem;
-  grid-template-columns: minmax(8rem, 11rem) minmax(10rem, 1fr);
-}
-
-.ge-floor--dense .ge-unpack {
-  min-height: 3.75rem;
-  font-size: 1.1rem;
-}
-
-.ge-floor--map {
-  --ge-shelf-fill: 0.45;
-  padding: 0.55rem 0.5rem 0.75rem;
-  border: 1px dashed color-mix(in srgb, var(--ge-ink) 22%, transparent);
-  border-radius: var(--ge-radius);
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--ge-ink) 5%, transparent) 1px, transparent 1px) 0 0 / 16px 16px,
-    linear-gradient(0deg, color-mix(in srgb, var(--ge-ink) 5%, transparent) 1px, transparent 1px) 0 0 / 16px 16px,
-    color-mix(in srgb, var(--ge-bg2) 40%, transparent);
-}
-
-.ge-floor--map .ge-floor__storefront {
-  display: none;
-}
-
-.ge-floor--map .ge-floor__aisle {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.35rem;
-  margin: 0.35rem 0 0.65rem;
-  height: auto;
-  background: none;
-  box-shadow: none;
-  opacity: 1;
-}
-
-.ge-floor--map .ge-floor__bay {
-  min-height: 1.6rem;
-  border: 1px solid color-mix(in srgb, var(--ge-ink) 18%, transparent);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in srgb, var(--ge-accent) calc(var(--ge-shelf-fill) * 28%), transparent)
-  );
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ge-muted);
-  display: grid;
-  place-items: end start;
-  padding: 0.2rem 0.3rem;
-}
 
 /* Atmospheric storefront strip — one idea: awning + shelf silhouette (CSS plate) */
-.ge-floor--atmospheric {
-  --ge-shelf-fill: 0.45;
-  position: relative;
-  padding: 1rem 0.75rem 0.85rem;
-  border-radius: var(--ge-radius);
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 22%, transparent);
-  background:
-    /* scalloped awning */
-    radial-gradient(
-        ellipse 11% 70% at 6% 0%,
-        color-mix(in srgb, var(--ge-accent) 26%, transparent),
-        transparent 72%
-      )
-      0 0 / 12.5% 0.9rem repeat-x,
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ge-accent) 20%, var(--ge-bg2)) 0,
-      color-mix(in srgb, var(--ge-accent) 20%, var(--ge-bg2)) 0.7rem,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-bg2)) 85%, #000) 0.7rem,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-bg2)) 85%, #000) 0.84rem,
-      transparent 0.84rem
-    ),
-    linear-gradient(180deg, color-mix(in srgb, var(--ge-paper) 7%, transparent) 0%, transparent 40%),
-    var(--pack-pattern, none),
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 3px,
-      var(--ge-grain) 3px,
-      var(--ge-grain) 4px
-    ),
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ge-bg2) 82%, var(--chrome-edge, #2a2218)),
-      color-mix(in srgb, var(--ge-bg) 88%, transparent) 72%
-    );
-}
 
 /* Decorative strip slot — content lives in CSS backgrounds, not cards */
-.ge-floor__storefront {
-  display: none;
-  height: 0.7rem;
-  margin: 0 0 0.85rem;
-  pointer-events: none;
-}
-
-.ge-floor--atmospheric .ge-floor__storefront {
-  display: none; /* status band carries shelf fill now */
-  background:
-    linear-gradient(
-      90deg,
-      transparent 2%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 30%, transparent) 2%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 30%, transparent) calc(2% + 2px),
-      transparent calc(2% + 2px),
-      transparent 34%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 22%, transparent) 34%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 22%, transparent) calc(34% + 1.5px),
-      transparent calc(34% + 1.5px),
-      transparent 66%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 22%, transparent) 66%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 22%, transparent) calc(66% + 1.5px),
-      transparent calc(66% + 1.5px),
-      transparent 97%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 30%, transparent) 97%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 30%, transparent) calc(97% + 2px),
-      transparent calc(97% + 2px)
-    ),
-    linear-gradient(
-      180deg,
-      transparent 35%,
-      color-mix(in srgb, var(--ge-accent) calc(var(--ge-shelf-fill) * 28%), transparent) 100%
-    );
-  opacity: 0.75;
-}
-
-.ge-floor__aisle {
-  display: none;
-  height: 0.5rem;
-  margin: 0 0 0.85rem;
-  border-radius: 1px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--ge-ink) 10%, transparent),
-    color-mix(in srgb, var(--ge-accent) calc(var(--ge-shelf-fill) * 42%), transparent) 45%,
-    color-mix(in srgb, var(--ge-ink) 10%, transparent)
-  );
-  box-shadow:
-    0 -0.9rem 0 -0.72rem color-mix(in srgb, var(--ge-ink) 10%, transparent),
-    0 -1.75rem 0 -1.45rem
-      color-mix(in srgb, var(--ge-accent) calc(var(--ge-shelf-fill) * 16%), transparent);
-  opacity: 0.85;
-  transition: opacity 0.3s ease, box-shadow 0.3s ease;
-}
-
-.ge-floor--atmospheric .ge-floor__aisle {
-  display: block;
-}
-
-.ge-floor--atmospheric::before {
-  content: '';
-  position: absolute;
-  inset: 0.55rem 0.2rem 0.35rem;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.35;
-  background-image:
-    radial-gradient(
-      ellipse 88% 34% at 50% 100%,
-      color-mix(in srgb, var(--ge-bg) 78%, #000),
-      transparent 58%
-    ),
-    linear-gradient(
-      90deg,
-      transparent 4%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 26%, transparent) 4%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 26%, transparent) calc(4% + 2px),
-      transparent calc(4% + 2px),
-      transparent 50%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 20%, transparent) 50%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 20%, transparent) calc(50% + 1.5px),
-      transparent calc(50% + 1.5px),
-      transparent 95%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 26%, transparent) 95%,
-      color-mix(in srgb, var(--chrome-edge, var(--ge-ink)) 26%, transparent) calc(95% + 2px),
-      transparent calc(95% + 2px)
-    );
-  mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 100%);
-}
-
-.ge-floor--atmospheric::after {
-  display: none;
-}
-
-.ge-floor > * {
-  position: relative;
-  z-index: 1;
-}
-
-.ge-floor--wx-rain.ge-floor--atmospheric {
-  box-shadow: inset 0 0 48px color-mix(in srgb, var(--ge-muted) 18%, transparent);
-}
-.ge-floor--wx-heat.ge-floor--atmospheric {
-  box-shadow: inset 0 0 48px color-mix(in srgb, var(--ge-accent) 14%, transparent);
-}
-.ge-floor--wx-cold.ge-floor--atmospheric {
-  box-shadow: inset 0 0 48px color-mix(in srgb, var(--ge-success) 12%, transparent);
-}
-.ge-floor--wx-fair.ge-floor--atmospheric {
-  box-shadow: inset 0 0 40px color-mix(in srgb, var(--chrome-shine, var(--ge-paper)) 32%, transparent);
-}
 
 /* Weather chip — readable in every presentation (dense, map, atmospheric), not tint-only. */
 .ge-wx-chip {
@@ -1648,40 +1416,6 @@
   );
 }
 
-.ge-floor--dense .ge-planogram {
-  display: none;
-}
-
-.ge-floor--map .ge-planogram__bar {
-  border-style: dashed;
-}
-
-.ge-floor--cold-glow .ge-floor__bay--cold {
-  box-shadow: inset 0 0 12px color-mix(in srgb, #8eb4d4 35%, transparent);
-  color: color-mix(in srgb, #b8d4ec 70%, var(--ge-muted));
-}
-
-.ge-floor__stars {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 0.35rem;
-  justify-content: center;
-  padding: 0.2rem 0 0;
-  min-height: 0.7rem;
-}
-
-.ge-floor__star {
-  width: 0.28rem;
-  height: 0.28rem;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--ge-ink) 55%, transparent);
-  opacity: 0.65;
-}
-
-.ge-floor--stars .ge-floor__star:nth-child(odd) {
-  background: color-mix(in srgb, var(--ge-accent) 50%, var(--ge-ink));
-}
-
 .ge-cat-chip--spoil {
   background: color-mix(in srgb, #c9a84a calc(var(--ge-spoil, 0.4) * 18%), transparent);
 }
@@ -1697,13 +1431,6 @@
   100% {
     transform: none;
   }
-}
-
-.ge-floor__hero {
-  display: grid;
-  grid-template-columns: minmax(10rem, 14rem) minmax(12rem, 1fr);
-  gap: 1.25rem;
-  align-items: start;
 }
 
 .ge-unpack {
@@ -2713,6 +2440,43 @@
   color: var(--ge-muted);
 }
 
+/* Shared "what you keep" sheet (Rebrand + Era 6 Accept). */
+.ge-keep {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0;
+  max-height: min(46vh, 22rem);
+  overflow-y: auto;
+  text-align: left;
+}
+
+.ge-keep__head {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ge-keep__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.ge-keep__note {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--ge-muted);
+}
+
+.ge-keep__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
 .ge-confirm__actions {
   display: flex;
   flex-wrap: wrap;
@@ -3152,53 +2916,6 @@
 
 .ge-details__body {
   margin-top: 0.45rem;
-}
-
-.ge-floor__desk {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
-  gap: 0.55rem 0.85rem;
-  align-items: stretch;
-  margin-top: 0.55rem;
-  padding: 0.55rem 0.6rem;
-  border: 1px solid color-mix(in srgb, var(--ge-accent) 22%, transparent);
-  background:
-    linear-gradient(
-      120deg,
-      color-mix(in srgb, var(--ge-accent) 10%, transparent),
-      color-mix(in srgb, var(--ge-bg2) 75%, transparent) 60%,
-      transparent
-    );
-}
-
-.ge-floor__actions {
-  display: grid;
-  grid-template-columns: minmax(6.5rem, 8.5rem) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.45rem 0.55rem;
-  align-items: start;
-}
-
-.ge-floor__buy {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-.ge-floor__shelf-block {
-  min-width: 0;
-}
-
-.ge-floor__flow,
-.ge-floor__nudge {
-  margin: 0.45rem 0 0;
-  max-width: 28rem;
-  line-height: 1.35;
-}
-
-.ge-floor__nudge {
-  color: color-mix(in srgb, var(--ge-accent) 70%, var(--ge-ink));
 }
 
 .ge-cat-grid {
@@ -3851,9 +3568,10 @@
 
 /* More — clean settings grid */
 .ge-more {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.7rem;
+  max-width: 34rem;
 }
 
 .ge-more-block {
@@ -4006,19 +3724,6 @@
   border: 1px solid color-mix(in srgb, var(--ge-danger) 35%, transparent);
 }
 
-.ge-floor__control {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.ge-floor__hint {
-  margin: 0.2rem 0 0;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  color: var(--ge-muted);
-}
-
 .ge-intro {
   position: fixed;
   inset: 0;
@@ -4148,19 +3853,6 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
-}
-
-.ge-floor__glow {
-  position: absolute;
-  inset: 10% 8% auto;
-  height: 40%;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at 50% 0%,
-    color-mix(in srgb, var(--ge-accent) 18%, transparent),
-    transparent 70%
-  );
-  opacity: 0.85;
 }
 
 /* Keep fixed centering from the shared overlay block above — do not reset position. */
@@ -4549,23 +4241,6 @@
     border-left: none;
     border-top: 1px solid color-mix(in srgb, var(--ge-ink) 10%, transparent);
   }
-
-  .ge-floor__hero {
-    grid-template-columns: 1fr;
-  }
-
-  .ge-floor__desk {
-    grid-template-columns: 1fr;
-  }
-
-  .ge-floor__actions {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .ge-floor__actions .ge-unpack {
-    grid-column: 1 / -1;
-    min-height: 3.75rem;
-  }
 }
 
 /* C5 / N — mobile department strip as bottom sheet; Floor stays tappable */
@@ -4726,10 +4401,6 @@
   }
 
   /* Floor: Unpack / wholesale / price stay ≥44px without hover-only affordances */
-  .ge-floor .ge-btn,
-  .ge-floor__hero .ge-btn {
-    min-height: 44px;
-  }
 
   .ge-price__row .ge-btn {
     min-width: 44px;
@@ -4744,10 +4415,6 @@
 
   .ge-unpack {
     min-height: max(5.5rem, 44px);
-  }
-
-  .ge-floor__cta-hint {
-    margin: 0.35rem 0 0;
   }
 }
 
@@ -5898,12 +5565,6 @@
     transition: opacity 0.2s ease;
   }
 
-  .ge-floor--atmospheric::before,
-  .ge-floor--atmospheric::after,
-  .ge-floor__aisle {
-    transition: none;
-  }
-
   .ge-chapter__card {
     will-change: auto;
   }
@@ -6233,6 +5894,45 @@
   line-height: 1.4;
 }
 
+/* Era 11 hearing session: clause, grudge, Minutes Clerk — the footer holds the one primary. */
+.hz-hearing {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.hz-hearing__row {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.45rem 0.55rem;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ge-ink) 4%, transparent);
+}
+
+.hz-hearing__row dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ge-muted);
+}
+
+.hz-hearing__row dd {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.hz-hearing__row.is-struck dd {
+  text-decoration: line-through;
+  color: var(--ge-muted);
+}
+
+.hz-pocket--warn strong {
+  color: var(--ge-warn, #c0392b);
+}
+
 .hz-list,
 .hz-plots,
 .hz-clauses,
@@ -6314,7 +6014,14 @@
 .hz-puzzle {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.75rem;
+}
+
+.hz-planogram {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .hz-puzzle__head {
@@ -6441,10 +6148,11 @@
 
 .hz-goal__bar,
 .hz-meter__bar {
-  height: 0.35rem;
+  height: 0.45rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ge-ink) 10%, transparent);
+  background: color-mix(in srgb, var(--ge-ink) 12%, transparent);
   overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ge-ink) 8%, transparent);
 }
 
 .hz-goal__bar > i,
@@ -6453,7 +6161,12 @@
   height: 100%;
   width: 100%;
   transform-origin: left center;
-  background: var(--ge-accent, #c4a574);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ge-accent, #c4a574) 75%, #8a6a3a),
+    var(--ge-accent, #c4a574)
+  );
+  border-radius: inherit;
 }
 
 .hz-goal__payoff,
@@ -6750,7 +6463,7 @@
 .hz-choices,
 .hz-tray {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .hz-slots {

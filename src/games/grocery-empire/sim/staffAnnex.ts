@@ -134,7 +134,7 @@ export function annexRecommendation(s: GameState): AnnexRecommendation | null {
     ['nightOperator', (h.relays ?? 0) > 0, 'Night-only phrases need a Night Operator or a closed store.'],
     ['handler', (h.agents ?? []).length >= 1, 'The desk is capped. A handler raises how many agents it can keep.'],
     ['diplomat', (h.embassies ?? 0) > 0 || !!h.charter, 'Clause toggles cost seal. A diplomat cuts the price and speeds the table.'],
-    ['minutesClerk', !!h.hearingClause, 'A Minutes Clerk can strike Concord’s clause at a hearing.'],
+    ['minutesClerk', !!h.hearingClause, 'A Minutes Clerk can amend a heard clause’s grudge away.'],
     ['whip', (s.politics?.acquisitions ?? 0) >= 1, 'A Council Whip holds scrutiny while seats sit empty of diplomats.'],
   ]
   for (const [role, needed, why] of picks) {

@@ -155,6 +155,8 @@ export function ShopPage() {
       )}
 
       {tab === 'ledger' && (
+        <>
+        <p className="shop-tab-hint muted">Seen in the Ledger drawer and the Books room. Never the math.</p>
         <div className="shop-grid">
           {LEDGER_SKINS.map((skin, i) => {
             const owned = meta.unlockedLedgerSkins.includes(skin.id)
@@ -186,9 +188,12 @@ export function ShopPage() {
             )
           })}
         </div>
+        </>
       )}
 
       {tab === 'unpack' && (
+        <>
+        <p className="shop-tab-hint muted">Seen on the Floor Unpack button, in the room and the verb tray.</p>
         <div className="shop-grid">
           {UNPACK_FX.map((fx, i) => {
             const owned = meta.unlockedUnpackFx.includes(fx.id)
@@ -219,9 +224,12 @@ export function ShopPage() {
             )
           })}
         </div>
+        </>
       )}
 
       {tab === 'ornaments' && (
+        <>
+        <p className="shop-tab-hint muted">Seen on the shelf page and hung on the Fleet harbor pier.</p>
         <div className="shop-grid">
           {ORNAMENTS.map((orn, i) => {
             const owned = unlockedOrnaments.includes(orn.id)
@@ -252,6 +260,7 @@ export function ShopPage() {
             )
           })}
         </div>
+        </>
       )}
 
       {tab === 'bundles' && (

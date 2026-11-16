@@ -94,7 +94,7 @@ export const BUILD_TRACKS: BuildTrack[] = [
     blurb: 'Faster deliveries and bigger loads.',
     visible: (s) => s.stats.ordersPlaced >= 5,
     tiers: [
-      { name: 'Walking', cost: 0, upkeepPerMin: 0, effect: '', era: 0 },
+      { name: 'Walking', cost: 0, upkeepPerMin: 0, effect: '', era: 1 },
       { name: 'Cargo Bike', cost: 90, upkeepPerMin: 0.2, effect: 'Deliveries −25% time', era: 1 },
       { name: 'Van', cost: 1_200, upkeepPerMin: 1.5, effect: 'Deliveries −50% time · +12 per crate', era: 1 },
       { name: 'Truck', cost: 30_000, upkeepPerMin: 10, effect: 'Bulk orders', era: 2 },
@@ -132,4 +132,363 @@ export function buildLevel(s: GameState, id: BuildFilter): number {
 /** Early-era sell-back refund; plan: partial before Era 3, full from Era 3. */
 export function refundFrac(s: GameState) {
   return s.era >= 3 ? 1 : 0.5
+}
+
+export type BuildVariantStat = 'demand' | 'shelf' | 'backroom' | 'spoilCut'
+
+export interface BuildVariantDef {
+  id: string
+  track: BuildFilter
+  /** Minimum owned tier before this facing can be chosen. */
+  minTier: number
+  name: string
+  blurb: string
+  /** Bot picks the slow/safe option. */
+  safe: boolean
+  effect: { stat: BuildVariantStat; mul: number }
+}
+
+/** Slot key for a facing decision at a given track + tier gate. */
+export function variantSlotKey(track: BuildFilter, minTier: number) {
+  return `${track}:${minTier}`
+}
+
+/**
+ * Facing choices across eras 1–4 — meaningful tradeoffs, soft-capped in formulas.
+ * One choice per (track, minTier); bot always picks `safe: true`.
+ */
+export const BUILD_VARIANTS: BuildVariantDef[] = [
+  // Storefront · Corner Store (era 1)
+  {
+    id: 'wide-glass',
+    track: 'storefront',
+    minTier: 2,
+    name: 'Wide glass',
+    blurb: 'Passers-by see the aisle. More foot traffic.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.12 },
+  },
+  {
+    id: 'deep-counter',
+    track: 'storefront',
+    minTier: 2,
+    name: 'Deep counter',
+    blurb: 'Extra shelf behind the glass. Safer stock.',
+    safe: true,
+    effect: { stat: 'shelf', mul: 1.14 },
+  },
+  // Storefront · Standard Store (era 2)
+  {
+    id: 'open-aisle',
+    track: 'storefront',
+    minTier: 3,
+    name: 'Open aisle',
+    blurb: 'Wide lanes pull shoppers deeper.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.1 },
+  },
+  {
+    id: 'endcap-bay',
+    track: 'storefront',
+    minTier: 3,
+    name: 'Endcap bay',
+    blurb: 'Built-in display wall — more shelf faces.',
+    safe: true,
+    effect: { stat: 'shelf', mul: 1.12 },
+  },
+  // Storefront · Supermarket (era 2–3)
+  {
+    id: 'gallery-front',
+    track: 'storefront',
+    minTier: 4,
+    name: 'Gallery front',
+    blurb: 'Glass atrium that draws the block.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.12 },
+  },
+  {
+    id: 'stock-spine',
+    track: 'storefront',
+    minTier: 4,
+    name: 'Stock spine',
+    blurb: 'Central spine shelves double the facing.',
+    safe: true,
+    effect: { stat: 'shelf', mul: 1.15 },
+  },
+  // Storage · Stockroom (era 1)
+  {
+    id: 'dry-racks',
+    track: 'storage',
+    minTier: 2,
+    name: 'Dry racks',
+    blurb: 'More backroom cubes, dry goods first.',
+    safe: true,
+    effect: { stat: 'backroom', mul: 1.14 },
+  },
+  {
+    id: 'cold-corner',
+    track: 'storage',
+    minTier: 2,
+    name: 'Cold corner',
+    blurb: 'A chill nook slows spoil on the edge.',
+    safe: false,
+    effect: { stat: 'spoilCut', mul: 1.12 },
+  },
+  // Storage · Warehouse (era 2)
+  {
+    id: 'high-bay',
+    track: 'storage',
+    minTier: 3,
+    name: 'High bay',
+    blurb: 'Tall racks — maximum cube.',
+    safe: true,
+    effect: { stat: 'backroom', mul: 1.15 },
+  },
+  {
+    id: 'climate-zone',
+    track: 'storage',
+    minTier: 3,
+    name: 'Climate zone',
+    blurb: 'Zoned cool aisle cuts spoil.',
+    safe: false,
+    effect: { stat: 'spoilCut', mul: 1.12 },
+  },
+  // Cold · Walk-in (era 1–2)
+  {
+    id: 'deep-shelves',
+    track: 'cold',
+    minTier: 2,
+    name: 'Deep shelves',
+    blurb: 'Cooler holds more SKUs safely.',
+    safe: true,
+    effect: { stat: 'shelf', mul: 1.1 },
+  },
+  {
+    id: 'blast-ready',
+    track: 'cold',
+    minTier: 2,
+    name: 'Blast-ready bay',
+    blurb: 'Preps the plant path — demand when cold is online.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.1 },
+  },
+  // Cold · Cold Plant (era 3)
+  {
+    id: 'tunnel-feed',
+    track: 'cold',
+    minTier: 3,
+    name: 'Tunnel feed',
+    blurb: 'Feeds freshness into the store — spoil eases.',
+    safe: true,
+    effect: { stat: 'spoilCut', mul: 1.14 },
+  },
+  {
+    id: 'display-frost',
+    track: 'cold',
+    minTier: 3,
+    name: 'Display frost',
+    blurb: 'Frosted cases that pull the aisle.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.1 },
+  },
+  // Production · Farm (era 2)
+  {
+    id: 'row-crops',
+    track: 'production',
+    minTier: 2,
+    name: 'Row crops',
+    blurb: 'Steady produce trickle — safer yield.',
+    safe: true,
+    effect: { stat: 'backroom', mul: 1.1 },
+  },
+  {
+    id: 'market-plot',
+    track: 'production',
+    minTier: 2,
+    name: 'Market plot',
+    blurb: 'Show garden that draws shoppers.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.1 },
+  },
+  // Transit · Van (era 1–2)
+  {
+    id: 'reefer-kit',
+    track: 'transit',
+    minTier: 2,
+    name: 'Reefer kit',
+    blurb: 'Chilled cargo — spoil eases on the road.',
+    safe: true,
+    effect: { stat: 'spoilCut', mul: 1.1 },
+  },
+  {
+    id: 'billboard-van',
+    track: 'transit',
+    minTier: 2,
+    name: 'Billboard van',
+    blurb: 'Rolling ads pull demand.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.1 },
+  },
+  // ── SAVE 33 · Era 5–6 facings: one binary slot on Storefront, Cold, Transit (Civic stays a pure ladder).
+  // Storefront has no tier that opens in Era 5–6, so its slot sits on the last tier before Probe Plaza
+  // (Autonomous Hub, index 7). Same shape as above: one safe, one bold; buildVariantMul soft-caps at 1.35.
+  // Storefront · Autonomous Hub (Era 4 → carries through Eras 5–6)
+  {
+    id: 'hub-beacon',
+    track: 'storefront',
+    minTier: 7,
+    name: 'Beacon facade',
+    blurb: 'The hub lights the whole block. More shoppers, thinner stock.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.08 },
+  },
+  {
+    id: 'hub-stacks',
+    track: 'storefront',
+    minTier: 7,
+    name: 'Autonomous stacks',
+    blurb: 'Self-sorting shelves hold more facings.',
+    safe: true,
+    effect: { stat: 'shelf', mul: 1.1 },
+  },
+  // Cold · Cryo Hub (Era 5)
+  {
+    id: 'cryo-showcase',
+    track: 'cold',
+    minTier: 5,
+    name: 'Cryo showcase',
+    blurb: 'Frosted ration cases that pull the aisle.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.08 },
+  },
+  {
+    id: 'cryo-bays',
+    track: 'cold',
+    minTier: 5,
+    name: 'Deep-cold bays',
+    blurb: 'Colder racks — spoil eases everywhere.',
+    safe: true,
+    effect: { stat: 'spoilCut', mul: 1.1 },
+  },
+  // Transit · Barge Berth (Era 5)
+  {
+    id: 'berth-flags',
+    track: 'transit',
+    minTier: 6,
+    name: 'Berth flags',
+    blurb: 'Harbor-side banners draw a crowd from the dock.',
+    safe: false,
+    effect: { stat: 'demand', mul: 1.08 },
+  },
+  {
+    id: 'berth-reefer',
+    track: 'transit',
+    minTier: 6,
+    name: 'Berth reefer rack',
+    blurb: 'Chilled loading rack — cargo spoils less in the dark.',
+    safe: true,
+    effect: { stat: 'spoilCut', mul: 1.1 },
+  },
+]
+
+export const BUILD_VARIANT_BY_ID = Object.fromEntries(BUILD_VARIANTS.map((v) => [v.id, v])) as Record<
+  string,
+  BuildVariantDef
+>
+
+export function variantsAtSlot(track: BuildFilter, minTier: number): BuildVariantDef[] {
+  return BUILD_VARIANTS.filter((v) => v.track === track && v.minTier === minTier)
+}
+
+/** Choice tiers for a track that are unlocked at this build level, ascending. */
+export function unlockedVariantTiers(track: BuildFilter, tier: number): number[] {
+  const set = new Set<number>()
+  for (const v of BUILD_VARIANTS) {
+    if (v.track === track && tier >= v.minTier) set.add(v.minTier)
+  }
+  return [...set].sort((a, b) => a - b)
+}
+
+export function variantsForTrack(track: BuildFilter, tier: number): BuildVariantDef[] {
+  return BUILD_VARIANTS.filter((v) => v.track === track && tier >= v.minTier)
+}
+
+/** First unlocked facing slot on this track that has no choice yet. */
+export function pendingVariantChoice(s: GameState, track: BuildFilter): BuildVariantDef[] | null {
+  const lvl = buildLevel(s, track)
+  for (const t of unlockedVariantTiers(track, lvl)) {
+    const key = variantSlotKey(track, t)
+    const legacy = s.buildVariants?.[track]
+    const picked = s.buildVariants?.[key] ?? (t === 2 && legacy && BUILD_VARIANT_BY_ID[legacy]?.minTier === 2 ? legacy : null)
+    if (!picked) return variantsAtSlot(track, t)
+  }
+  return null
+}
+
+export function safeVariantId(track: BuildFilter, tier: number): string | null {
+  const pending = pendingVariantChoice(
+    { builds: { [track]: tier }, buildVariants: {} } as GameState,
+    track,
+  )
+  // Prefer safe among the pending slot at this exact level
+  const slots = unlockedVariantTiers(track, tier)
+  for (const t of slots) {
+    const opts = variantsAtSlot(track, t)
+    if (opts.length) return opts.find((v) => v.safe)?.id ?? opts[0]?.id ?? null
+  }
+  return null
+}
+
+/** Safe pick for the first pending slot given live state. */
+export function safePendingVariantId(s: GameState, track: BuildFilter): string | null {
+  const pending = pendingVariantChoice(s, track)
+  if (!pending?.length) return null
+  return pending.find((v) => v.safe)?.id ?? pending[0]?.id ?? null
+}
+
+/** Soft-capped product of owned facing multipliers for one stat (~1.35 feel cap). */
+export function buildVariantMul(s: GameState, stat: BuildVariantStat): number {
+  let m = 1
+  const seen = new Set<string>()
+  for (const [key, id] of Object.entries(s.buildVariants ?? {})) {
+    const def = BUILD_VARIANT_BY_ID[id]
+    if (!def) continue
+    // Support legacy track-only keys and slot keys.
+    const slot = key.includes(':') ? key : variantSlotKey(def.track, def.minTier)
+    if (seen.has(slot)) continue
+    seen.add(slot)
+    if (buildLevel(s, def.track) < def.minTier) continue
+    if (def.effect.stat !== stat) continue
+    m *= def.effect.mul
+  }
+  return Math.min(1.35, m)
+}
+
+/** Owned facing defs for a track (legacy + slot keys). */
+export function ownedVariantsForTrack(s: GameState, track: BuildFilter): BuildVariantDef[] {
+  const out: BuildVariantDef[] = []
+  const seen = new Set<string>()
+  for (const [key, id] of Object.entries(s.buildVariants ?? {})) {
+    const def = BUILD_VARIANT_BY_ID[id]
+    if (!def || def.track !== track) continue
+    const slot = key.includes(':') ? key : variantSlotKey(def.track, def.minTier)
+    if (seen.has(slot)) continue
+    seen.add(slot)
+    if (buildLevel(s, track) < def.minTier) continue
+    out.push(def)
+  }
+  return out.sort((a, b) => a.minTier - b.minTier)
+}
+
+/** Migrate legacy `storefront` → `storefront:2` keys in place. */
+export function normalizeBuildVariants(raw: Record<string, string> | undefined): Record<string, string> {
+  const out: Record<string, string> = {}
+  if (!raw) return out
+  for (const id of Object.values(raw)) {
+    const def = BUILD_VARIANT_BY_ID[id]
+    if (!def) continue
+    // SAVE 33: always re-key to the def's own slot so a stale/foreign slot key can't shadow a real one.
+    out[variantSlotKey(def.track, def.minTier)] = id
+  }
+  return out
 }

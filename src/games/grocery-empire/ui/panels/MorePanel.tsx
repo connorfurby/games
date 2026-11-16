@@ -14,12 +14,14 @@ import {
 import { localDayKey } from '@/shell/dailyStamp'
 import { openHotkeyMap } from '@/shell/AppMenu'
 import { useMeta } from '@/shell/MetaContext'
+import { SaveSlots } from '@/shell/SaveSlots'
 import { SettingsModal } from '@/shell/SettingsModal'
 import { PLAYER_CHECKLIST } from '../../content/checklist'
 import { GAME_VERSION } from '../../content/news'
 import { engine } from '../../sim/engine'
 import { migrate } from '../../sim/migrate'
-import { canUndo } from '../../sim/undo'
+import { canUndo, undoLabel, undoSecondsLeft } from '../../sim/undo'
+import { performUndo } from '../shell/undoAction'
 import { isDevSave } from '../../sim/saveKey'
 import { useGame } from '../GameContext'
 import { clock, qty } from '../format'
@@ -219,12 +221,12 @@ export function MoreSections({ only }: { only?: MoreSection }) {
               disabled={!undoGate.ok}
               title={
                 undoGate.ok
-                  ? `Undo ${undoGate.label ?? 'last action'} (5s)`
+                  ? `Undo ${undoLabel(undoGate.label ?? 'last action')} · ${undoSecondsLeft()}s left`
                   : 'Nothing to undo (5s window)'
               }
-              onClick={() => engine.undo()}
+              onClick={() => performUndo()}
             >
-              Undo{undoGate.ok && undoGate.label ? ` · ${undoGate.label}` : ''}
+              Undo{undoGate.ok && undoGate.label ? ` · ${undoLabel(undoGate.label)}` : ''}
             </Btn>
           </div>
           <div className="ge-more-sparks">
@@ -345,40 +347,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
                 : 'Autosave is on. Slots are manual copies.'}
             </p>
           </header>
-          <div className="ge-more-slots">
-            {([1, 2, 3] as const).map((slot) => (
-              <div key={slot} className="ge-more-slot">
-                <span>Slot {slot}</span>
-                <Btn
-                  tone="ghost"
-                  onClick={() => {
-                    engine.saveToSlot(slot)
-                    setIoMsg(`Saved slot ${slot}.`)
-                  }}
-                >
-                  Save
-                </Btn>
-                <Btn
-                  tone="ghost"
-                  disabled={!engine.hasSlot(slot)}
-                  onClick={() =>
-                    setConfirm({
-                      title: `Load slot ${slot}?`,
-                      body: 'Replace the current run with the copy in this slot.',
-                      confirmLabel: `Load slot ${slot}`,
-                      tone: 'danger',
-                      onConfirm: () => {
-                        if (engine.loadFromSlot(slot)) setIoMsg(`Loaded slot ${slot}.`)
-                        else setIoMsg(`Slot ${slot} failed.`)
-                      },
-                    })
-                  }
-                >
-                  Load
-                </Btn>
-              </div>
-            ))}
-          </div>
+          <SaveSlots variant="ge" reducedMotion={reducedMotion} onNote={setIoMsg} />
           <div className="ge-more-actions">
             <Btn tone="ghost" onClick={exportRun}>
               Download JSON
@@ -486,28 +455,12 @@ export function MoreSections({ only }: { only?: MoreSection }) {
         <section className="ge-more-block">
           <header className="ge-more-block__head">
             <h3>Go</h3>
-            <p>Leave the store for the rest of the site.</p>
+            <p>Leave the store, or open the shelf for the rest of the site.</p>
           </header>
           <div className="ge-more-links">
             <Link className="ge-more-link" to="/">
               <strong>Home</strong>
               <span>The shelf of games</span>
-            </Link>
-            <Link className="ge-more-link" to="/news">
-              <strong>News</strong>
-              <span>Bulletin · v{GAME_VERSION}</span>
-            </Link>
-            <Link className="ge-more-link" to="/guide/grocery-empire">
-              <strong>Guide</strong>
-              <span>Ops Wiki and strategy</span>
-            </Link>
-            <Link className="ge-more-link" to="/achievements">
-              <strong>Awards</strong>
-              <span>Achievements</span>
-            </Link>
-            <Link className="ge-more-link" to="/shop">
-              <strong>Shop</strong>
-              <span>Cosmetics and packs</span>
             </Link>
             <button type="button" className="ge-more-link" onClick={() => openHotkeyMap()}>
               <strong>Keys</strong>
@@ -525,7 +478,12 @@ export function MoreSections({ only }: { only?: MoreSection }) {
               </Link>
             ) : null}
           </div>
-          <p className="ge-muted" style={{ marginTop: '0.65rem', fontSize: '0.75rem' }}>
+          <p className="ge-more-also">
+            Also:{' '}
+            <Link to="/news">News</Link> · <Link to="/guide/grocery-empire">Guide</Link> ·{' '}
+            <Link to="/achievements">Awards</Link> · <Link to="/shop">Shop</Link>
+          </p>
+          <p className="ge-muted" style={{ marginTop: '0.4rem', fontSize: '0.75rem' }}>
             Grocery Empire v{GAME_VERSION}
           </p>
         </section>

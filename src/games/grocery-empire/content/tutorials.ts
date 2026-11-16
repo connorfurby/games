@@ -1308,7 +1308,7 @@ export const TUTORIALS: TutorialDef[] = [
         id: 'stretch-hearing-spot',
         coachId: 'charter-clauses',
         title: 'Answer the hearing',
-        body: 'After four clauses, Concord opens a hearing docket. Answer each session from Charter before you stamp.',
+        body: 'Concord puts each clause you seat to a hearing. Answer each session from Charter before you stamp.',
         recovery: 'Skipping a session only delays the fork — answer when the docket lights.',
         action: { type: 'openMenu', params: { menu: 'charter' } },
         doneWhen: { kind: 'always' },

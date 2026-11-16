@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { MENUS, type MenuId } from '../../content/menus'
 import { RIVALS, type RivalId } from '../../content/rivals'
 import type { GameState } from '../../sim/state'
 import { networkBreakdown, storeEngineWeight } from '../../sim/systems/network'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { ScreenHeader, Sheet, usePhone } from '../kit'
+import { Sheet, usePhone } from '../kit'
+import { PlayFrame, type VerbTrayProps } from '../play'
 import { BlockMap, type MapPin } from '../map/BlockMap'
 import { planetDef } from '../../sim/systems/horizon'
 
@@ -192,7 +194,7 @@ function describe(s: GameState, p: Pin, fmt: ReturnType<typeof useGame>['numberF
 }
 
 export function EmpireMap() {
-  const { state: s, tick, numberFormat, reducedMotion } = useGame()
+  const { state: s, tick, numberFormat, reducedMotion, setActiveMenu } = useGame()
   const phone = usePhone()
   const open = VIEWS.filter((v) => s.era >= v.era)
   const [viewId, setViewId] = useState<View['id']>(() => open[open.length - 1]!.id)
@@ -262,23 +264,52 @@ export function EmpireMap() {
     ['Network', `×${net.total >= 100 ? Math.round(net.total) : net.total.toFixed(2)}`],
   ]
 
+  // The primary verb jumps to the department that runs whatever is selected.
+  const MENU_FOR_PIN = {
+    flagship: 'floor',
+    store: 'land',
+    district: 'politics',
+    plant: 'cold',
+    port: 'logistics',
+    franchise: 'logistics',
+    barge: 'fleet',
+    rival: 'rivals',
+  } as const satisfies Record<Pin['kind'], MenuId>
+  const targetMenu: MenuId = worldZoom ? 'planets' : MENU_FOR_PIN[sel.kind]
+  const targetOpen = targetMenu === 'floor' || !!s.menus[targetMenu]
+  const viewIdx = open.findIndex((v) => v.id === view.id)
+  const zoomOut = viewIdx > 0 ? open[viewIdx - 1] : null
+  const zoomIn = viewIdx >= 0 && viewIdx < open.length - 1 ? open[viewIdx + 1] : null
+
+  const tray: VerbTrayProps = {
+    primary: {
+      label: `Open ${MENUS[targetMenu].name}`,
+      tone: 'free',
+      size: 'lg',
+      disabled: !targetOpen,
+      title: `Go to ${MENUS[targetMenu].name} for ${info.title}.`,
+      onClick: () => setActiveMenu(targetMenu),
+    },
+    failReason: targetOpen ? undefined : `${MENUS[targetMenu].name} is not open yet.`,
+    secondaries: [
+      ...(zoomOut ? [{ key: 'out', label: 'Zoom out', fact: zoomOut.label, onClick: () => setViewId(zoomOut.id) }] : []),
+      ...(zoomIn ? [{ key: 'in', label: 'Zoom in', fact: zoomIn.label, onClick: () => setViewId(zoomIn.id) }] : []),
+      ...(phone ? [{ key: 'details', label: 'Details', fact: info.title, onClick: () => setDetailOpen(true) }] : []),
+    ],
+  }
+
   return (
     <div className="mp">
       <section className="ge-panel mp-head">
-        <ScreenHeader
-          hub
-          title="Map"
-          purpose="Tap a building on your block."
-          stats={
-            <p className="mp-counts mp-counts--line">
-              {counts.map(([k, v]) => (
-                <span key={k}>
-                  {k} {v}
-                </span>
-              ))}
-            </p>
-          }
-        />
+        <PlayFrame purpose={MENUS.map.purpose} department={MENUS.map.name} tray={tray}>
+          <p className="mp-counts mp-counts--line">
+            {counts.map(([k, v]) => (
+              <span key={k}>
+                {k} {v}
+              </span>
+            ))}
+          </p>
+        </PlayFrame>
       </section>
 
       <section className="ge-panel mp-stage">

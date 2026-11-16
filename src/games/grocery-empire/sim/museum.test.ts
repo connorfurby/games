@@ -14,11 +14,16 @@ function rng(seed: number) {
 }
 
 describe('relic catalog', () => {
-  it('has hundreds of unique relics, 25 per wing', () => {
-    expect(RELICS.length).toBe(525)
+  it('has hundreds of unique relics, ~25 per wing', () => {
+    expect(RELICS.length).toBe(526)
     expect(new Set(RELICS.map((r) => r.id)).size).toBe(RELICS.length)
     expect(new Set(RELICS.map((r) => r.name)).size).toBe(RELICS.length)
-    for (const w of WINGS) expect(relicsInWing(w.id)).toHaveLength(25)
+    for (const w of WINGS) {
+      const n = relicsInWing(w.id).length
+      // Oddities gained Facing Choice (feat) in 4.0; other wings stay at 25.
+      if (w.id === 'oddities') expect(n).toBe(26)
+      else expect(n).toBe(25)
+    }
   })
 })
 

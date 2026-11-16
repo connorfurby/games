@@ -1,5 +1,6 @@
 import type { GameState } from '@/games/grocery-empire/sim/state'
 import type { MetaSave } from '@/shared/types'
+import { BUILD_VARIANT_BY_ID } from '@/games/grocery-empire/content/builds'
 import { emitAchievementToast } from './toastBus'
 
 export interface AchievementDef {
@@ -188,6 +189,11 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'war', name: 'Driftwar Veteran', blurb: 'Enter the Off-Brand war.', tier: 'gold', tokens: 5, test: (s) => s.fleet.warOn, unlockPack: 'off-brand-neon' },
   { id: 'drift-win', name: 'Brand Seal Holds', blurb: 'Win a drift contest.', tier: 'gold', tokens: 4, test: (s) => s.fleet.driftWins >= 1 },
   { id: 'biomass-clear', name: 'Empty Sky', blurb: 'Clear universe biomass.', tier: 'mythic', tokens: 8, test: (s) => s.fleet.launched && s.fleet.biomass <= 0 },
+
+  // Decisions (40.0) — the first time you take each fork.
+  { id: 'first-bold-facing', name: 'Bold Facing', blurb: 'Pick the bold card on a build facing.', tier: 'bronze', tokens: 1, test: (s) => Object.values(s.buildVariants ?? {}).some((id) => BUILD_VARIANT_BY_ID[id] && !BUILD_VARIANT_BY_ID[id].safe) },
+  { id: 'first-charter-fork', name: 'Off the Standard', blurb: 'Sign Boutique or Co-op instead of the Standard charter.', tier: 'gold', tokens: 3, test: (s) => s.horizon?.charter === 'boutique' || s.horizon?.charter === 'coop' },
+  { id: 'first-endless-mutation', name: 'The List Moved', blurb: 'Live through an endless mutation of the standing order.', tier: 'gold', tokens: 3, test: (s) => (s.horizon?.listMutations ?? 0) >= 1 },
 
   // Endings (s.endingChoice)
   { id: 'accept', name: 'Exile', blurb: 'Accept a hungry universe.', tier: 'mythic', tokens: 10, test: (s) => s.endingChoice === 'accept', unlockPack: 'hungry-universe' },

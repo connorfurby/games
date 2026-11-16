@@ -1,4 +1,5 @@
 import { RARITIES, RARITY_INFO, RELIC_BY_ID, type Rarity } from '../content/relics'
+import { effectiveLitWings, socketCapOf, wingLightBlock } from '../content/relicPerks'
 import { HORIZON } from './balance'
 import type { Check, Command } from './commands'
 import { relicLevelCost } from './museum'
@@ -163,6 +164,7 @@ type HorizonCmd =
   | Extract<Command, { type: 'cancelQueue' }>
   | Extract<Command, { type: 'socketRelic' }>
   | Extract<Command, { type: 'unsocketRelic' }>
+  | Extract<Command, { type: 'setWingSocket' }>
   | Extract<Command, { type: 'dustRelic' }>
   | Extract<Command, { type: 'setAutoDust' }>
   | Extract<Command, { type: 'levelRelic' }>
@@ -192,8 +194,12 @@ type HorizonHandler<C extends HorizonCmd = HorizonCmd> = {
 }
 
 function socketCap(s: GameState): number {
-  if (s.projects?.done?.['pj-fifth-socket'] || s.horizon.socketsUnlocked >= 5) return HORIZON.relicSocketsLater
-  return HORIZON.relicSockets
+  return socketCapOf(s)
+}
+
+/** Materialise the lit list (null = the first `cap` finished wings) so an edit has something to edit. */
+function litList(s: GameState): string[] {
+  return effectiveLitWings(s.relics.wings, s.relics.litWings, socketCap(s))
 }
 
 function levelBlock(s: GameState, id: string): string | null {
@@ -455,6 +461,35 @@ export const horizonHandlers: {
     can: (s, cmd) => (s.relics.sockets.includes(cmd.id) ? ok : no('That relic is not socketed.')),
     run: (s, cmd) => {
       s.relics.sockets = s.relics.sockets.filter((id) => id !== cmd.id)
+    },
+  },
+  setWingSocket: {
+    can: (s, cmd) => {
+      const cap = socketCap(s)
+      if (!cmd.on) {
+        if (!litList(s).includes(cmd.wing)) return no('That wing is already dark.')
+        return ok
+      }
+      // Lighting a wing at full needs another wing left dark: name it with `swapOut`.
+      const lit = litList(s)
+      if (cmd.swapOut) {
+        if (cmd.swapOut === cmd.wing) return no('Leave a different wing dark.')
+        if (!lit.includes(cmd.swapOut)) return no('That wing is already dark.')
+        const after = lit.filter((w) => w !== cmd.swapOut)
+        const why = wingLightBlock(s.relics.wings, after, cap, cmd.wing)
+        return why ? no(why) : ok
+      }
+      const why = wingLightBlock(s.relics.wings, lit, cap, cmd.wing)
+      return why ? no(why) : ok
+    },
+    run: (s, cmd) => {
+      let lit = litList(s)
+      if (!cmd.on) lit = lit.filter((w) => w !== cmd.wing)
+      else {
+        if (cmd.swapOut) lit = lit.filter((w) => w !== cmd.swapOut)
+        lit = [...lit, cmd.wing]
+      }
+      s.relics.litWings = lit
     },
   },
   dustRelic: {

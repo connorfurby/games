@@ -98,7 +98,7 @@ describe('Grocery Empire 2.0 smoke', () => {
   })
 
   it('SAVE_VERSION is current and migrate sets it', () => {
-    expect(SAVE_VERSION).toBe(29)
+    expect(SAVE_VERSION).toBe(36)
     const m = migrate({ version: 3, cash: 10, baskets: 1 })
     expect(m.version).toBe(SAVE_VERSION)
     expect(m.board.expandDiscount).toBeDefined()
@@ -309,7 +309,8 @@ describe('Grocery Empire 2.0 smoke', () => {
     expect(s.seenLines['open-shelf']).toBeUndefined()
     expect(s.seenLines['first-sale']).toBeUndefined()
     expect(s.seenLines['depot-online']).toBe(true)
-    expect(s.dialogueQueue).toEqual(['depot-online'])
+    // Accept now rebuilds like a Rebrand: the queue starts over, so the early line is gone.
+    expect(s.dialogueQueue).not.toContain('first-hire')
   })
 
   it('autonomous habit gates behaviors and migrate defaults to balanced', () => {

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button, type ButtonProps } from '../kit/Button'
-import { FailReason } from './FailReason'
+import { FailReason, type FailAction } from './FailReason'
 
 export interface VerbSecondary {
   key: string
@@ -20,9 +20,13 @@ export interface VerbTrayProps {
   secondaries?: VerbSecondary[]
   /** Shown under a disabled primary — usually can() reason. */
   failReason?: ReactNode
+  /** Optional cross-link shown beside the fail reason (e.g. jump to Build). */
+  failAction?: FailAction
+  /** One clause under an enabled primary — why this is the pick (e.g. sweep "Best: …"). */
+  hint?: ReactNode
 }
 
-export function VerbTray({ primary, secondaries = [], failReason }: VerbTrayProps) {
+export function VerbTray({ primary, secondaries = [], failReason, failAction, hint }: VerbTrayProps) {
   const { label, tone = 'free', className, ...rest } = primary
   const secs = secondaries.slice(0, 4)
   return (
@@ -35,7 +39,8 @@ export function VerbTray({ primary, secondaries = [], failReason }: VerbTrayProp
         >
           {label}
         </Button>
-        {failReason && rest.disabled ? <FailReason>{failReason}</FailReason> : null}
+        {hint && !rest.disabled ? <p className="pf__hint">{hint}</p> : null}
+        {failReason && rest.disabled ? <FailReason action={failAction}>{failReason}</FailReason> : null}
       </div>
       {secs.length ? (
         <div className="pf__secondaries">

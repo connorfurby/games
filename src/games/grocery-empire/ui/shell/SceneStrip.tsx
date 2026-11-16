@@ -7,7 +7,20 @@ export const SCENE_KEY = 'ge-scene-expanded'
 
 /** Store-hub panels that already paint their own live scene — the banner steps aside for them. */
 /** Panels that paint their own room — storefront strip collapses by default. */
-const OWN_SCENE: ReadonlySet<MenuId> = new Set<MenuId>(['floor', 'backroom', 'build'])
+const OWN_SCENE: ReadonlySet<MenuId> = new Set<MenuId>([
+  'floor',
+  'backroom',
+  'build',
+  'marketing',
+  'staff',
+  'cold',
+  'suppliers',
+  'strategy',
+  'rivals',
+  'empire',
+  'fleet',
+  'logistics',
+])
 
 function readPref(): boolean | null {
   try {

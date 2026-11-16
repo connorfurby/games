@@ -1,11 +1,21 @@
 import { useState } from 'react'
+import { MENUS } from '../../content/menus'
 import { HORIZON } from '../../sim/balance'
-import { SEASON_NAMES, SEASON_WANTS, crossTraits, matchScore, type TraitId } from '../../content/horizon'
+import {
+  NAMED_BY_ID,
+  SEASON_NAMES,
+  SEASON_WANTS,
+  crossTraits,
+  matchScore,
+  namedFromChild,
+  type TraitId,
+} from '../../content/horizon'
 import { upgradeEffect } from '../../content/upgrades'
 import { can } from '../../sim/commands'
-import { greenhouseCost, greenhouseNetworkMul } from '../../sim/systems/horizon'
+import { bedLockOpensIn, greenhouseCost, greenhouseNetworkMul } from '../../sim/systems/horizon'
 import { useGame } from '../GameContext'
-import { Button, ScreenHeader } from '../kit'
+import { Button, EmptyState } from '../kit'
+import { StatusChip, type VerbTrayProps } from '../play'
 import { clock, money } from '../format'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { HubStage } from '../components/HubStage'
@@ -13,6 +23,34 @@ import { GreenhouseScene } from '../horizon/GreenhouseScene'
 import { HorizonGoalStrip } from '../horizon/HorizonGoalStrip'
 import { Cross } from '../puzzles/Cross'
 import { PuzzleFrame, gateTitle, pocket } from '../puzzles/PuzzleFrame'
+import { Beat, ShelfFill, useBeat } from '../fx'
+import '../horizon/beats.css'
+
+/** Bed lock chip: thunks once when the chore locks the bed; a shelf meter drains to the season turn. */
+function BedLockChip({
+  chore,
+  clockLabel,
+  remaining,
+}: {
+  chore: string
+  clockLabel: string
+  /** 0..1 of the season still to run. */
+  remaining: number
+}) {
+  const beat = useBeat(chore)
+  return (
+    <span className="hz-bedlock">
+      <Beat on={beat} kind="lock">
+        <StatusChip tone="locked" title="Other chores and clever crosses wait for the season to turn.">
+          Bed locked · {chore} · {clockLabel}
+        </StatusChip>
+      </Beat>
+      <span className="fx-meter hz-bedlock__meter" aria-hidden>
+        <ShelfFill fill={remaining} />
+      </span>
+    </span>
+  )
+}
 
 export function CultivarPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
@@ -54,6 +92,17 @@ export function CultivarPanel() {
   const haulCheck = can(s, { type: 'haulYield' })
   const haulPending =
     (h.haulsDone ?? 0) < HORIZON.yieldHaulNeed && ((h.haulUntil ?? 0) > 0 || haulCheck.ok)
+  const bedLock = h.bedLockedChore && bedLockOpensIn(s) !== 0 ? h.bedLockedChore : null
+  // Partway to a named cultivar: the picked parents make one, or a named bed sits under the line.
+  const picked = a && b ? namedFromChild(crossTraits(a, b)) : null
+  const underLine = h.namedBest > 0 && h.namedBest + 1e-9 < 0.85
+  const chaseName = picked?.name ?? (underLine ? NAMED_BY_ID[h.plots.find((p) => p.namedId)?.namedId ?? '']?.name : null)
+  const chaseLine =
+    chaseName && (picked || underLine)
+      ? bedLock
+        ? `${chaseName} waits — the ${bedLock} chore holds the bed until the season turns.`
+        : `${chaseName} is in reach${underLine ? ` (best ${h.namedBest.toFixed(2)} of 0.85)` : ''}. The chore locks clever crosses this season; skipping it is a weak year.`
+      : null
 
   function pickTaster(taster: 'quality' | 'volume') {
     const check = taster === 'quality' ? quality : volume
@@ -69,18 +118,124 @@ export function CultivarPanel() {
     })
   }
 
+  const fileStandard = () => dispatch({ type: 'fileStandardCross', ...(bed ? { index: safeIndex } : {}) })
+  const doChore = () => dispatch({ type: 'doSeasonChore', chore: seasonChore })
+  const buyHouse = () => dispatch({ type: 'buyGreenhouse' })
+  const primaryKind: 'haul' | 'standard' | 'chore' | 'house' = haulPending
+    ? 'haul'
+    : standard.ok
+      ? 'standard'
+      : chore.ok
+        ? 'chore'
+        : house.ok
+          ? 'house'
+          : 'standard'
+  const primary: VerbTrayProps['primary'] =
+    primaryKind === 'haul'
+      ? {
+          label: `Haul yield · ${h.haulsDone ?? 0}/${HORIZON.yieldHaulNeed}`,
+          tone: 'free',
+          size: 'lg',
+          coachId: 'cultivars-haul',
+          disabled: !haulCheck.ok,
+          title: gateTitle(haulCheck, 'Bring in the armed yield haul.'),
+          onClick: () => dispatch({ type: 'haulYield' }),
+        }
+      : primaryKind === 'chore'
+        ? {
+            label: `Season chore · ${seasonChore}`,
+            tone: 'free',
+            size: 'lg',
+            disabled: !chore.ok,
+            title: gateTitle(chore, `${seasonChore} this season locks the bed until the turn (no clever cross) — or Season Hand on shift saves a miss.`),
+            onClick: doChore,
+          }
+        : primaryKind === 'house'
+          ? {
+              label: `Buy greenhouse · ${money(houseCost, numberFormat)}`,
+              tone: 'primary',
+              size: 'lg',
+              coachId: 'cultivars-greenhouse',
+              disabled: !house.ok,
+              title: gateTitle(house, 'One more bed'),
+              onClick: buyHouse,
+            }
+          : {
+              label: 'File the standard cross',
+              tone: 'primary',
+              size: 'lg',
+              coachId: 'cultivars-standard',
+              disabled: !standard.ok,
+              title: gateTitle(standard, 'Plant the two traits this season wants.'),
+              onClick: fileStandard,
+            }
+  const primaryCheck =
+    primaryKind === 'haul' ? haulCheck : primaryKind === 'chore' ? chore : primaryKind === 'house' ? house : standard
+  const tray: VerbTrayProps = {
+    primary,
+    failReason: primaryCheck.ok ? undefined : primaryCheck.reason,
+    secondaries: [
+      ...(primaryKind !== 'chore'
+        ? [
+            {
+              key: 'chore',
+              label: 'Season chore',
+              fact: seasonChore,
+              disabled: !chore.ok,
+              title: gateTitle(chore, `${seasonChore} this season locks the bed until the turn (no clever cross) — or Season Hand on shift saves a miss.`),
+              onClick: doChore,
+            },
+          ]
+        : []),
+      ...(primaryKind !== 'house'
+        ? [
+            {
+              key: 'house',
+              label: 'Buy greenhouse',
+              fact: money(houseCost, numberFormat),
+              coachId: 'cultivars-greenhouse',
+              disabled: !house.ok,
+              title: gateTitle(house, 'One more bed'),
+              onClick: buyHouse,
+            },
+          ]
+        : []),
+      ...(primaryKind !== 'standard'
+        ? [
+            {
+              key: 'standard',
+              label: 'File standard cross',
+              fact: '0.72',
+              coachId: 'cultivars-standard',
+              disabled: !standard.ok,
+              title: gateTitle(standard, 'Plant the two traits this season wants.'),
+              onClick: fileStandard,
+            },
+          ]
+        : []),
+      {
+        key: 'clever',
+        label: 'Clever cross',
+        fact: bedLock ? `locked · ${bedLock}` : undefined,
+        disabled: !!bedLock,
+        title: bedLock
+          ? `The ${bedLock} chore holds the bed until the season turns.`
+          : 'Scrolls to the cross board. Pick two parents, preview, then plant.',
+        onClick: () =>
+          document.querySelector('[data-coach-id="cultivars-commit"]')?.scrollIntoView({
+            block: 'center',
+            behavior: reducedMotion ? 'auto' : 'smooth',
+          }),
+      },
+    ],
+  }
+
   return (
     <section className="ge-panel">
-      <ScreenHeader
-        hub
-        title="Cultivars"
-        purpose={
-          <span title="A named cultivar is the fast year. The standard cross is a weak year. Eight beds is the cap.">
-            Plant the cross this season wants.
-          </span>
-        }
-      />
       <HubStage
+        purpose={MENUS.cultivars.purpose}
+        department={MENUS.cultivars.name}
+        tray={tray}
         scene={
           <GreenhouseScene
             season={h.season}
@@ -95,8 +250,7 @@ export function CultivarPanel() {
             }}
           />
         }
-        primary={
-          <>
+      >
             <HorizonGoalStrip
               title={`${SEASON_NAMES[h.season]} · ${wants[0]} + ${wants[1]}`}
               progress={1 - left / HORIZON.seasonSec}
@@ -105,39 +259,6 @@ export function CultivarPanel() {
               eta={left > 0 ? `season ends in ${clock(left)}` : null}
               ready={standard.ok || house.ok}
               coachId="cultivars-goal"
-              action={
-                haulPending ? (
-                  <Button
-                    tone={haulCheck.ok ? 'primary' : 'ghost'}
-                    coachId="cultivars-haul"
-                    disabled={!haulCheck.ok}
-                    title={gateTitle(haulCheck, 'Bring in the armed yield haul.')}
-                    onClick={() => dispatch({ type: 'haulYield' })}
-                  >
-                    Haul yield · {h.haulsDone ?? 0}/{HORIZON.yieldHaulNeed}
-                  </Button>
-                ) : standard.ok ? (
-                  <Button
-                    tone="primary"
-                    coachId="cultivars-standard"
-                    disabled={!standard.ok}
-                    title={gateTitle(standard, 'Plant the two traits this season wants.')}
-                    onClick={() => dispatch({ type: 'fileStandardCross', ...(bed ? { index: safeIndex } : {}) })}
-                  >
-                    File the standard cross
-                  </Button>
-                ) : (
-                  <Button
-                    tone={house.ok ? 'primary' : 'ghost'}
-                    coachId="cultivars-greenhouse"
-                    disabled={!house.ok}
-                    title={gateTitle(house, 'One more bed')}
-                    onClick={() => dispatch({ type: 'buyGreenhouse' })}
-                  >
-                    Buy greenhouse · {money(houseCost, numberFormat)}
-                  </Button>
-                )
-              }
             />
 
             <p
@@ -149,17 +270,14 @@ export function CultivarPanel() {
               <strong>{pocket(h.seed, numberFormat)}</strong>
               <span>{s.era >= 9 ? `+${seedRate.toFixed(2)}/s` : 'Opens in Era 9'}</span>
             </p>
-          </>
-        }
-      >
-            <Button
-              tone={chore.ok ? 'primary' : 'ghost'}
-              disabled={!chore.ok}
-              title={gateTitle(chore, `${seasonChore} this season — or Season Hand on shift saves a miss.`)}
-              onClick={() => dispatch({ type: 'doSeasonChore', chore: seasonChore })}
-            >
-              Season chore · {seasonChore}
-            </Button>
+            {bedLock || chaseLine ? (
+              <p className="hz-note" role="status">
+                {bedLock ? (
+                  <BedLockChip chore={bedLock} clockLabel={clock(left)} remaining={left / HORIZON.seasonSec} />
+                ) : null}{' '}
+                {chaseLine}
+              </p>
+            ) : null}
             <PuzzleFrame
               title="Cross"
               purpose="Two parents. Preview the child before you plant."
@@ -178,8 +296,8 @@ export function CultivarPanel() {
             >
               <Cross a={a} b={b} season={h.season} onA={setA} onB={setB} />
             </PuzzleFrame>
+        {h.plots.length === 0 ? <EmptyState title="Beds open with the season." /> : null}
         <ul className="hz-plots">
-          {h.plots.length === 0 ? <li className="hz-empty">Beds open with the season.</li> : null}
           {h.plots.map((row, i) => {
             const harvest = can(s, { type: 'harvestPlot', index: i })
             const child = row.child.length ? row.child.join(' + ') : 'Empty'
@@ -228,18 +346,6 @@ export function CultivarPanel() {
           </button>
         </div>
 
-        {standard.ok ? (
-          <div className="ge-chip-row">
-            <Button
-              tone="ghost"
-              disabled={!house.ok}
-              title={gateTitle(house, 'One more bed')}
-              onClick={() => dispatch({ type: 'buyGreenhouse' })}
-            >
-              Buy greenhouse · {money(houseCost, numberFormat)}
-            </Button>
-          </div>
-        ) : null}
       </HubStage>
 
       <ConfirmModal open={!!confirm} spec={confirm} reducedMotion={reducedMotion} onClose={() => setConfirm(null)} />

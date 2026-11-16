@@ -18,6 +18,7 @@ import {
   type RelicDef,
   type WingId,
 } from '../content/relics'
+import { effectiveLitWings, wingLightBlock } from '../content/relicPerks'
 import { HORIZON, PRICE } from './balance'
 import type { GameState } from './state'
 
@@ -42,6 +43,11 @@ export interface MuseumSave {
   relics: Record<string, RelicRecord>
   /** Socketed relic ids. Length is at most the socket cap. */
   sockets: string[]
+  /**
+   * SAVE 36: wings whose bonus is lit. At most the socket cap; lighting one at full means leaving
+   * another dark. Null (default) = the first `cap` finished wings.
+   */
+  litWings: WingId[] | null
   /** Dust new pulls at or below this rarity. Null is off. */
   autoDust: Rarity | null
   chests: Chest[]
@@ -65,6 +71,7 @@ export function emptyMuseum(): MuseumSave {
     unlocked: false,
     relics: {},
     sockets: [],
+    litWings: null,
     autoDust: null,
     chests: [],
     dust: 0,
@@ -114,6 +121,10 @@ export function normalizeMuseum(raw: unknown): MuseumSave {
   const sockets = Array.isArray((r as { sockets?: unknown }).sockets)
     ? (r as { sockets: unknown[] }).sockets.filter((id): id is string => typeof id === 'string' && !!relics[id])
     : []
+  const rawLit = (r as { litWings?: unknown }).litWings
+  const litWings = Array.isArray(rawLit)
+    ? rawLit.filter((w, i, a): w is WingId => WINGS.some((x) => x.id === w) && a.indexOf(w) === i)
+    : null
   const rawDust = (r as { autoDust?: unknown }).autoDust
   const autoDust = RARITIES.includes(rawDust as Rarity) ? (rawDust as Rarity) : null
   return {
@@ -121,6 +132,7 @@ export function normalizeMuseum(raw: unknown): MuseumSave {
     unlocked: !!r.unlocked,
     relics,
     sockets,
+    litWings,
     autoDust,
     chests,
     dust: Math.max(0, Math.floor(num(r.dust, 0))),
@@ -234,6 +246,11 @@ export const FEATS: Record<string, { text: string; vague: string; test: (s: Game
   doors: { vague: 'Every door you are allowed to open.', text: 'Own 12 stores.', test: (s) => s.stores.length >= 12 },
   attend: { vague: 'A big chain where nobody feels forgotten.', text: 'Have 8+ stores with no store above 5% drift.', test: (s) => s.stores.length >= 8 && s.stores.every((st) => (st.drift ?? 0) < 0.05) },
   neglect: { vague: 'Forget someone completely.', text: 'Let a store reach 100% drift.', test: (s) => s.stores.some((st) => (st.drift ?? 0) >= 1) },
+  facing: {
+    vague: 'Glass or counter — you chose the face of the store.',
+    text: 'Pick a build facing on any track.',
+    test: (s) => Object.keys(s.buildVariants ?? {}).length >= 1,
+  },
   brownout: { vague: 'The cold goes out, again and again.', text: 'Survive 3 cold brownouts in one run.', test: (s) => (s.cold?.brownouts ?? 0) >= 3 },
   plants: { vague: 'A lot of cold, all at once.', text: 'Run 20 cold plants at once.', test: (s) => (s.cold?.plants ?? 0) >= 20 },
   seas: { vague: 'A lane for every sea.', text: 'Charter 7 ocean lanes.', test: (s) => (s.fleet?.lanes ?? 0) >= 7 },
@@ -602,6 +619,38 @@ export function unsocketRelic(m: MuseumSave, id: string): boolean {
   return true
 }
 
+/** Wings whose bonus is on right now (finished AND holding a socket). */
+export function litWingsOf(m: MuseumSave, cap: number): WingId[] {
+  return effectiveLitWings(completedWings(m), m.litWings, cap) as WingId[]
+}
+
+/** Why `wing` cannot be lit (null when it can). Full sockets need another wing left dark first. */
+export function canLightWing(m: MuseumSave, wing: WingId, cap: number): string | null {
+  return wingLightBlock(completedWings(m), m.litWings, cap, wing)
+}
+
+/**
+ * Light `wing`. With every socket lit, name the wing to leave dark in `swapOut`; without it the
+ * call fails. Never lights two wings by darkening none.
+ */
+export function lightWing(m: MuseumSave, wing: WingId, cap: number, swapOut?: WingId): boolean {
+  let lit: WingId[] = litWingsOf(m, cap)
+  if (swapOut) {
+    if (swapOut === wing || !lit.includes(swapOut)) return false
+    lit = lit.filter((w) => w !== swapOut)
+  }
+  if (wingLightBlock(completedWings(m), lit, cap, wing)) return false
+  m.litWings = [...lit, wing]
+  return true
+}
+
+export function darkenWing(m: MuseumSave, wing: WingId, cap: number): boolean {
+  const lit = litWingsOf(m, cap)
+  if (!lit.includes(wing)) return false
+  m.litWings = lit.filter((w) => w !== wing)
+  return true
+}
+
 export function setAutoDust(m: MuseumSave, rarity: Rarity | null): void {
   m.autoDust = rarity && RARITIES.includes(rarity) ? rarity : null
 }
@@ -673,6 +722,7 @@ export function museumSync(m: MuseumSave): {
   owned: Record<string, number>
   levels: Record<string, number>
   sockets: string[]
+  litWings: string[] | null
   dust: number
 } {
   const owned: Record<string, number> = {}
@@ -688,6 +738,7 @@ export function museumSync(m: MuseumSave): {
     owned,
     levels,
     sockets: [...m.sockets],
+    litWings: m.litWings ? [...m.litWings] : null,
     dust: m.dust,
   }
 }

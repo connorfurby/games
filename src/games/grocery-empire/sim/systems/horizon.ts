@@ -7,14 +7,11 @@ import {
   CLAUSE_BY_ID,
   ENDLESS_NAMES,
   FAST_SCORE,
-  HEADLINES,
   HEADLINE_BY_ID,
-  NAMED_CULTIVARS,
   PLANETS,
   PLANET_BY_ID,
   PLANET_SKUS,
   SEASON_CHORES,
-  SEASON_NAMES,
   SEASON_WANTS,
   SKU_BY_ID,
   STANDARD_SCORE,
@@ -22,7 +19,6 @@ import {
   climateForIndex,
   climateMul,
   crossTraits,
-  emptyHorizon,
   fileStandardSymbols,
   generatePhrase,
   matchScore,
@@ -30,44 +26,82 @@ import {
   pickList,
   scorePhrase,
   scorePlanogram,
-  type BondedKind,
+  type AgentHabit,
   type CharterId,
+  type EndlessBan,
   type HeadlineDef,
   type HorizonState,
   type PlanetClimate,
   type PlanetDef,
   type SeasonChore,
-  type SeasonIndex,
   type StopPersonality,
   type TasterId,
   type TraitId,
 } from '../../content/horizon'
-import {
-  emptyHearing,
-  emptyPractice,
-  type PracticeLayer,
-} from '../../content/depth'
 import { DEPTH, NETWORK } from '../balance'
 import { cashLabel } from '@/shared/bn'
 import { upgradeEffect } from '../../content/upgrades'
-import { DEMAND, HORIZON, LATE, PRICE, SHELF, WHOLESALE } from '../balance'
-import { clamp, log, queueDialogue, setEra, sumQty, takeUnits } from '../helpers'
+import { HORIZON, LATE, PRICE } from '../balance'
+import { clamp, log, setEra } from '../helpers'
 import {
-  annexPaceMul,
-  deputyCooldownMul,
-  diplomatEmbassyMul,
   diplomatSealCut,
-  handlerWaitMul,
   tasterMatchBonus,
 } from '../staffAnnex'
 import { hasFork } from '../ventureForks'
 import type { GameState } from '../state'
 import { agentSeatBonus, empireBaySlots, phraseClueBonus } from './lateHubs'
 import { statCut, statMul } from './stats'
+import {
+  SEED_CAP,
+  creditPracticeFiling,
+  ensureHearing,
+  ensureHorizon,
+  ensurePractice,
+  expectedSeasonChore,
+  hearingDocketClear,
+  markDeptStaffed,
+  markStandardFile,
+  say,
+} from './horizonCore'
+import {
+  tickAgents,
+  tickDeputies,
+  tickHeadlines,
+  tickKeel,
+  tickPhrases,
+  tickSeasons,
+  tickTrickles,
+  tickWages,
+} from './horizonTick'
+import { postHabitWatch, postedAgentId, stopDelayMul, tickHorizonVerbs } from './horizonVerbs'
 
-const SEED_BASE_PER_SEC = HORIZON.seedPerSec
-const SEED_PER_GREENHOUSE = HORIZON.seedPerGreenhouse
-const SEED_CAP = HORIZON.seedCap
+// Public API stays importable from './systems/horizon'.
+export { creditPracticeFiling, ensureHearing, ensureHorizon, ensurePractice, expectedSeasonChore, hearingDocketClear }
+export {
+  activeFacingBan,
+  currentClimateGuest,
+  guestBanTarget,
+  pendingSettlement,
+  stopDelayMul,
+  stopTariffMul,
+  stopTaxLine,
+  canHaulYield,
+  canRehearseAccept,
+  canSeatClause,
+  canServeClimateNeighbor,
+  canSettleStop,
+  haulYield,
+  pendingSeatClause,
+  postedAgentId,
+  rehearsalMissChance,
+  rehearseAccept,
+  seatClause,
+  serveClimateNeighbor,
+  settleStop,
+  tickHorizonVerbs,
+} from './horizonVerbs'
+export { nextHearingClause } from './horizonCore'
+
 
 const TRAIT_IDS: readonly TraitId[] = TRAIT_ID_LIST
 const AGENT_NAMES = ['Ada', 'Bo', 'Chi', 'Dev', 'Eli', 'Faye'] as const
@@ -81,7 +115,6 @@ const PLANET_LINE: Record<string, string> = {
   snow: 'hz-planet-snow',
   bazaar: 'hz-planet-bazaar',
 }
-const SEASON_LINE = ['hz-season-thaw', 'hz-season-sun', 'hz-season-harvest', 'hz-season-dark'] as const
 const CLAUSE_LINE: Record<string, string> = {
   'open-hours': 'hz-clause-open',
   'cold-law': 'hz-clause-cold',
@@ -99,10 +132,6 @@ const IVO_ERA: Record<number, string> = {
   12: 'hz-ivo-corner',
 }
 
-function say(s: GameState, ...ids: string[]) {
-  for (const id of ids) if (id) queueDialogue(s, id)
-}
-
 const CONTINUE_BEATS = [
   'The ration is a door, not a closing time.',
   'The counter stays. The map grows a ring.',
@@ -112,64 +141,6 @@ const CONTINUE_BEATS = [
 
 type Policy = 'volume' | 'margin' | 'fresh'
 type Habit = 'price' | 'stock' | 'route' | 'taste'
-
-export function ensureHorizon(s: GameState): HorizonState {
-  if (!s.horizon) s.horizon = emptyHorizon()
-  const h = s.horizon
-  if (!Array.isArray(h.planets)) h.planets = []
-  if (!Array.isArray(h.circuits)) h.circuits = []
-  if (!Array.isArray(h.plots)) h.plots = []
-  if (!Array.isArray(h.agents)) h.agents = []
-  if (!Array.isArray(h.agentLog)) h.agentLog = []
-  if (!Array.isArray(h.clauses)) h.clauses = []
-  if (!Array.isArray(h.phraseScores)) h.phraseScores = []
-  if (!Array.isArray(h.seenHeadlines)) h.seenHeadlines = []
-  if (!Array.isArray(h.aids)) h.aids = []
-  if (!h.keel) h.keel = { convoys: 0, frozenUntil: 0, bought: false }
-  if (!h.deputy || typeof h.deputy !== 'object') h.deputy = {}
-  if (!h.deputyAt || typeof h.deputyAt !== 'object') h.deputyAt = {}
-  if (!h.agentAt || typeof h.agentAt !== 'object') h.agentAt = {}
-  if (typeof h.greenhouses !== 'number') h.greenhouses = 0
-  if (typeof h.relays !== 'number') h.relays = 0
-  if (typeof h.clauseToggles !== 'number') h.clauseToggles = 0
-  if (typeof h.buildQueue === 'undefined') h.buildQueue = null
-  if (typeof h.nextPhraseAt !== 'number') h.nextPhraseAt = 0
-  if (typeof h.nextHeadlineAt !== 'number') h.nextHeadlineAt = 0
-  if (typeof h.nextKeelAt !== 'number') h.nextKeelAt = 0
-  if (typeof h.weakYears !== 'number') h.weakYears = 0
-  if (typeof h.seasonHandSaves !== 'number') h.seasonHandSaves = 0
-  if (typeof h.namedBest !== 'number') h.namedBest = 0
-  if (typeof h.perfectPhrases !== 'number') h.perfectPhrases = 0
-  if (typeof h.phraseHabitMatch !== 'boolean') h.phraseHabitMatch = false
-  if (typeof h.listMutations !== 'number') h.listMutations = 0
-  if (typeof h.minutesAmends !== 'number') h.minutesAmends = 0
-  if (typeof h.hearingClause === 'undefined') h.hearingClause = null
-  if (typeof h.seasonChore === 'undefined') h.seasonChore = null
-  if (typeof h.climateServed !== 'number') h.climateServed = 0
-  if (typeof h.nextClimateAt !== 'number') h.nextClimateAt = 0
-  if (typeof h.climateGuest === 'undefined') h.climateGuest = null
-  if (typeof h.settlements !== 'number') h.settlements = 0
-  if (typeof h.settlementUntil !== 'number') h.settlementUntil = 0
-  if (typeof h.haulsDone !== 'number') h.haulsDone = 0
-  if (typeof h.haulUntil !== 'number') h.haulUntil = 0
-  if (typeof h.watchedPhrases !== 'number') h.watchedPhrases = 0
-  if (typeof h.watchUntil !== 'number') h.watchUntil = 0
-  if (typeof h.seatingsDone !== 'number') h.seatingsDone = 0
-  if (typeof h.seatingUntil !== 'number') h.seatingUntil = 0
-  if (typeof h.seatingGapUntil !== 'number') h.seatingGapUntil = 0
-  if (typeof h.acceptRehearsal !== 'boolean') h.acceptRehearsal = false
-  if (typeof h.acceptRehearsalUntil !== 'number') h.acceptRehearsalUntil = 0
-  h.survey = clamp(finite(h.survey), 0, HORIZON.surveyCap)
-  h.freight = clamp(finite(h.freight), 0, HORIZON.freightCap)
-  h.signal = clamp(finite(h.signal), 0, HORIZON.signalCap)
-  h.seal = clamp(finite(h.seal), 0, HORIZON.sealCap)
-  h.seed = clamp(finite(h.seed), 0, SEED_CAP)
-  return h
-}
-
-function finite(n: number, fallback = 0): number {
-  return typeof n === 'number' && Number.isFinite(n) ? n : fallback
-}
 
 function isTrait(id: string): id is TraitId {
   return (TRAIT_IDS as readonly string[]).includes(id)
@@ -181,71 +152,6 @@ function isHabit(id: string): id is Habit {
 
 function isPolicy(id: string): id is Policy {
   return id === 'volume' || id === 'margin' || id === 'fresh'
-}
-
-function markDeptStaffed(s: GameState, dept: string) {
-  if (!s.depth) return
-  if (!s.depth.deptEverStaffed) s.depth.deptEverStaffed = {}
-  s.depth.deptEverStaffed[dept] = true
-}
-
-export function ensurePractice(s: GameState) {
-  if (!s.depth) return emptyPractice()
-  if (!s.depth.practice) s.depth.practice = emptyPractice()
-  for (const layer of ['planogram', 'convoy', 'cross', 'phrase', 'list'] as const) {
-    const row = s.depth.practice[layer]
-    if (!row || typeof row.left !== 'number' || typeof row.credited !== 'number') {
-      s.depth.practice[layer] = { left: HORIZON.practicePerLayer, credited: 0 }
-    } else {
-      row.left = Math.max(0, Math.floor(row.left))
-      row.credited = Math.max(0, Math.floor(row.credited))
-    }
-  }
-  return s.depth.practice
-}
-
-export function ensureHearing(s: GameState) {
-  if (!s.depth) return emptyHearing(3)
-  if (!s.depth.hearing) {
-    const needed: 2 | 3 =
-      s.depth.hearingAnswered ? 2 : hearingNeededFor(s)
-    s.depth.hearing = emptyHearing(needed)
-    if (s.depth.hearingAnswered) {
-      s.depth.hearing.answered = s.depth.hearing.needed
-    }
-    if (s.horizon?.hearingClause) {
-      s.depth.hearing.pendingClause = s.horizon.hearingClause
-      s.depth.hearing.sessions = Math.max(1, s.depth.hearing.sessions)
-    }
-  }
-  const h = s.depth.hearing
-  h.sessions = Math.max(0, Math.floor(h.sessions))
-  h.answered = Math.max(0, Math.floor(h.answered))
-  h.needed = h.needed === 2 ? 2 : 3
-  if (h.pendingClause != null && typeof h.pendingClause !== 'string') h.pendingClause = null
-  s.depth.hearingAnswered = h.answered >= h.needed
-  return h
-}
-
-function hearingNeededFor(s: GameState): 2 | 3 {
-  const span = HORIZON.hearingNeededMax - HORIZON.hearingNeededMin
-  const pick = HORIZON.hearingNeededMin + (Math.abs(s.seed | 0) % (span + 1))
-  return pick <= 2 ? 2 : 3
-}
-
-/**
- * First practicePerLayer filings per layer do not credit era gates.
- * Returns true when this filing increments the credited counter.
- */
-export function creditPracticeFiling(s: GameState, layer: PracticeLayer): boolean {
-  const bucket = ensurePractice(s)[layer]
-  if (bucket.left > 0) {
-    bucket.left -= 1
-    log(s, `Practice ${layer} filed — ${bucket.left} practice left.`, 'info')
-    return false
-  }
-  bucket.credited += 1
-  return true
 }
 
 /** Planogram / convoy: practice first, then one credit per distinct planet / circuit. */
@@ -284,32 +190,6 @@ function standardFileGap(s: GameState): string | null {
   const left = HORIZON.standardFileGapSec - (s.time - last)
   if (left > 0) return `Standard desk cooling down (${Math.ceil(left)}s).`
   return null
-}
-
-function markStandardFile(s: GameState) {
-  if (s.depth) s.depth.lastStandardFileAt = s.time
-}
-
-function seasonHandOnBoard(s: GameState): boolean {
-  const sh = s.depth?.shifts
-  if (!sh) return false
-  const ids = [...sh.open, ...sh.mid, ...sh.close]
-  return ids.some((id) => s.staff.find((m) => m.id === id)?.role === 'seasonHand')
-}
-
-export function expectedSeasonChore(s: GameState): SeasonChore {
-  const season = ensureHorizon(s).season
-  return SEASON_CHORES[season % SEASON_CHORES.length] ?? 'water'
-}
-
-export function hearingDocketClear(s: GameState): boolean {
-  const h = ensureHearing(s)
-  // Buying out Concord folds the remaining docket.
-  if (s.rivals?.concord?.bought && h.answered < h.needed && !h.pendingClause) {
-    h.answered = h.needed
-    s.depth!.hearingAnswered = true
-  }
-  return h.answered >= h.needed && !h.pendingClause
 }
 
 function countAtLeast(scores: readonly number[], bar: number): number {
@@ -361,6 +241,12 @@ function cleverBlocked(s: GameState): string | null {
   if (s.horizon.charter === 'standard') return 'Standard files only the standard.'
   if (s.horizon.clauses.includes('fair-stamp')) return 'Fair Stamp refuses clever commits.'
   return null
+}
+
+/** Worlds between list mutations; Endless Edit Pad stretches it by one world a rank. */
+export function endlessMutateEvery(s: GameState): number {
+  const extra = Math.min(HORIZON.endlessEditMaxExtra, Math.floor(upgradeEffect(s, 'endless-edit-pad') + 1e-9))
+  return HORIZON.endlessMutateEvery + extra
 }
 
 function endlessDivisor(s: GameState): number {
@@ -703,6 +589,7 @@ export function routeNetworkMul(s: GameState): number {
   for (const circuit of h.circuits) {
     let score = circuit.score
     if (!staffed || score <= 0.8) score *= NETWORK.neglectFloor
+    if (circuit.settledKind === 'spoil') score *= 1 - HORIZON.stopSpoilCut
     weight += score
   }
   const mean = h.circuits.length ? weight / h.circuits.length : 0
@@ -849,6 +736,102 @@ function needHorizonMemo(s: GameState, id: string, unlock: string): string | nul
   return null
 }
 
+/** Venture ids whose level-10 fork is set — the forks an endless mutation may ban. */
+export function activeForkVentures(s: GameState): string[] {
+  return Object.keys(s.ventures ?? {})
+    .filter((id) => {
+      const v = s.ventures[id]
+      return !!v && v.level >= 10 && (v.policy === 'a' || v.policy === 'b')
+    })
+    .sort()
+}
+
+/** Release a kept clause without a seal toll or a toggle count (shared by toggle and the ban). */
+function releaseClause(h: HorizonState, id: string) {
+  h.clauses = h.clauses.filter((clause) => clause !== id)
+  if (h.seatingClause === id) {
+    // Released before it sat: the seal is torn up.
+    h.seatingClause = null
+    h.seatingUntil = 0
+  } else if (h.seatedClauses.includes(id)) {
+    // Releasing a seated clause vacates the seat.
+    h.seatedClauses = h.seatedClauses.filter((clause) => clause !== id)
+    h.seatingsDone = Math.max(0, (h.seatingsDone ?? 0) - 1)
+  }
+}
+
+/** Why this clause / fork cannot be set right now because the mutated list banned it. */
+export function endlessBanReason(s: GameState, kind: 'clause' | 'ventureFork', id: string): string | null {
+  const ban = s.horizon?.endlessBan
+  if (!ban || ban.kind !== kind || ban.id !== id) return null
+  return kind === 'clause'
+    ? 'The mutated list banned this clause. Toggle another clause to lift the ban.'
+    : 'The mutated list banned this fork. Set another venture’s fork to lift the ban.'
+}
+
+/** One sentence the UI shows while a ban stands, with how to clear it. Null when nothing is banned. */
+export function endlessBanLine(s: GameState): string | null {
+  const ban = s.horizon?.endlessBan
+  if (!ban) return null
+  if (ban.kind === 'clause') {
+    const name = CLAUSE_BY_ID[ban.id]?.name ?? ban.id
+    return `The mutated list banned ${name}. Toggle another clause to clear it.`
+  }
+  return `The mutated list banned the ${ban.id} fork. Set another venture’s fork to clear it.`
+}
+
+/** Pick (deterministically) a kept clause or a set venture fork to ban. Returns the ban, or null if there is nothing to ban. */
+export function pickEndlessBan(s: GameState): EndlessBan | null {
+  const h = ensureHorizon(s)
+  const pool: EndlessBan[] = [
+    ...h.clauses.map((id) => ({ kind: 'clause' as const, id })),
+    ...activeForkVentures(s).map((id) => ({ kind: 'ventureFork' as const, id })),
+  ]
+  if (pool.length === 0) return null
+  const hash =
+    (Math.imul(s.seed ^ 0x51ed270b, 0x9e3779b1) ^ Math.imul(h.listMutations + 1, 0x85ebca6b) ^
+      Math.imul(h.endlessPlanets + 1, 0xc2b2ae35)) >>>
+    0
+  return pool[hash % pool.length]!
+}
+
+/**
+ * Apply a standing-list mutation: one line scratches, the Ration Board leans on it, and one kept
+ * clause OR one set venture fork is banned until the player edits the loadout.
+ */
+export function mutateEndlessList(s: GameState): void {
+  const h = ensureHorizon(s)
+  if (!h.list || h.list.length === 0) return
+  const i = h.endlessPlanets % h.list.length
+  const line = h.list[i]
+  if (line) {
+    line.want = `${line.want}|mut${h.listMutations}`
+    line.score = Math.min(line.score, STANDARD_SCORE)
+    if (s.depth) s.depth.rationLine = i
+  }
+  const ban = pickEndlessBan(s)
+  h.listMutations += 1
+  h.endlessBan = ban
+  if (ban) enforceEndlessBan(s)
+  refreshListScore(s)
+  log(s, 'The standing order mutated a line. The Ration Board notices.', 'warn')
+  const why = endlessBanLine(s)
+  if (why) log(s, why, 'warn')
+}
+
+/** A banned clause cannot stay kept; a banned fork cannot stay set. Idempotent; runs on mutation and every tick. */
+export function enforceEndlessBan(s: GameState): void {
+  const h = s.horizon
+  const ban = h?.endlessBan
+  if (!ban) return
+  if (ban.kind === 'clause') {
+    if (h.clauses.includes(ban.id)) releaseClause(h, ban.id)
+  } else {
+    const v = s.ventures?.[ban.id]
+    if (v && v.policy) v.policy = null
+  }
+}
+
 export function canLaunchProbe(s: GameState): string | null {
   if (s.era < 7) return 'The probe yard opens in Era 7.'
   const gate = needHorizonMemo(s, 'probe-yard', 'Probe Yard')
@@ -884,17 +867,8 @@ export function launchProbe(s: GameState): string | null {
     if (h.endlessPlanets % 10 === 0) {
       log(s, `${h.endlessPlanets} worlds past the named eight. The layer thins. There is no era 13.`, 'story')
     }
-    if (h.list && h.endlessPlanets > 0 && h.endlessPlanets % HORIZON.endlessMutateEvery === 0) {
-      const i = h.endlessPlanets % h.list.length
-      const line = h.list[i]
-      if (line) {
-        line.want = `${line.want}|mut${h.listMutations}`
-        line.score = Math.min(line.score, STANDARD_SCORE)
-        h.listMutations += 1
-        if (s.depth) s.depth.rationLine = i
-        refreshListScore(s)
-        log(s, 'The standing order mutated a line. The Ration Board notices.', 'warn')
-      }
+    if (h.list && h.endlessPlanets > 0 && h.endlessPlanets % endlessMutateEvery(s) === 0) {
+      mutateEndlessList(s)
     }
     return null
   }
@@ -1131,6 +1105,7 @@ export function setConvoy(
     load: tokens,
     score,
     stopKind,
+    settledKind: (typeof index === 'number' ? h.circuits[index]?.settledKind : null) ?? null,
   }
   if (typeof index === 'number' && h.circuits[index]) {
     h.circuits[index] = row
@@ -1216,7 +1191,17 @@ export function fileStandardConvoy(s: GameState, spec: ConvoySpec = {}): string 
   const stopKind = stopPersonality(s.seed, stop, circuitIndex)
   const prior = blank >= 0 ? h.circuits[blank] : h.circuits[circuitIndex]
   const already = !!prior?.gateCredited
-  const row = { origin, stop, dest, good, load, score, stopKind, gateCredited: already }
+  const row = {
+    origin,
+    stop,
+    dest,
+    good,
+    load,
+    score,
+    stopKind,
+    gateCredited: already,
+    settledKind: prior?.settledKind ?? null,
+  }
   if (blank >= 0) h.circuits[blank] = row
   else if (refile) h.circuits[circuitIndex] = row
   else {
@@ -1231,8 +1216,13 @@ export function fileStandardConvoy(s: GameState, spec: ConvoySpec = {}): string 
   if (credited) {
     log(s, `Circuit filed the standard at ${score.toFixed(2)}.`, 'good')
     const eta =
-      HORIZON.settlementEtaSec * (1 - Math.min(0.35, upgradeEffect(s, 'settlement-pad')))
+      HORIZON.settlementEtaSec *
+      (1 - Math.min(0.35, upgradeEffect(s, 'settlement-pad'))) *
+      stopDelayMul(s)
     h.settlementUntil = Math.max(h.settlementUntil, s.time + eta)
+    if (!h.pendingStop && stored.stopKind) {
+      h.pendingStop = { index: h.circuits.indexOf(stored), kind: stored.stopKind }
+    }
   } else if (stored.gateCredited) {
     log(s, `Circuit refiled at ${score.toFixed(2)}.`, 'info')
   } else {
@@ -1280,6 +1270,10 @@ export function clearCircuit(s: GameState, index: number): string | null {
   const h = s.horizon
   const gone = h.circuits[index]!
   h.circuits.splice(index, 1)
+  if (h.pendingStop) {
+    if (h.pendingStop.index === index) h.pendingStop = null
+    else if (h.pendingStop.index > index) h.pendingStop = { ...h.pendingStop, index: h.pendingStop.index - 1 }
+  }
   if (
     h.standingRoute &&
     h.standingRoute.origin === gone.origin &&
@@ -1353,6 +1347,20 @@ export function ensurePlots(s: GameState): void {
   }
 }
 
+/** Share of the season's tail the bed lock lifts for (Bed Lock Pad + the Bed Glass project). */
+export function bedLockOpenFrac(s: GameState): number {
+  const glass = s.projects?.done?.['pj-bed-glass'] ? HORIZON.bedGlassOpen : 0
+  return Math.min(HORIZON.bedLockOpenCap, upgradeEffect(s, 'bed-lock-pad') + glass)
+}
+
+/** Seconds until the lock lifts this season (0 = open now, null = never lifts early). */
+export function bedLockOpensIn(s: GameState): number | null {
+  const frac = bedLockOpenFrac(s)
+  if (frac <= 0) return null
+  const h = ensureHorizon(s)
+  return Math.max(0, HORIZON.seasonSec * (1 - frac) - h.seasonT)
+}
+
 export function canPlantCross(s: GameState, index: number, a: string, b: string): string | null {
   if (s.era < 9) return 'Cultivars open in Era 9.'
   ensurePlots(s)
@@ -1360,6 +1368,14 @@ export function canPlantCross(s: GameState, index: number, a: string, b: string)
   if (blocked) return blocked
   if (!s.horizon.plots[index]) return 'That bed is not there.'
   if (!isTrait(a) || !isTrait(b)) return 'Both parents.'
+  const locked = s.horizon.bedLockedChore
+  if (locked) {
+    const opens = bedLockOpensIn(s)
+    if (opens === 0) return null
+    return opens != null
+      ? `The bed is locked to ${locked} for ${Math.ceil(opens)}s more. The standard cross still files.`
+      : `The bed is locked to ${locked} until the season turns. The standard cross still files.`
+  }
   return null
 }
 
@@ -1501,7 +1517,7 @@ function pushPhraseScore(h: HorizonState, score: number) {
   while (h.phraseScores.length > 8) h.phraseScores.shift()
 }
 
-function spawnPhrase(s: GameState) {
+export function spawnPhrase(s: GameState) {
   const h = s.horizon
   const revealed = h.planets.filter((p) => p.revealed)
   const planetId = revealed.length ? revealed[h.phrasesCleared % revealed.length]!.id : 'pantry'
@@ -1553,8 +1569,22 @@ export function commitPhrase(s: GameState, symbols: readonly string[]): string |
   clearPhrase(s, score, habitMatch)
   markDeptStaffed(s, 'signal')
   log(s, score > 0 ? `Phrase filed at ${score.toFixed(2)}.` : 'Phrase missed. The till does not notice.', 'info')
+  // A clever commit at the fast bar credits a watch too, but only when the desk is free.
+  if (phrase.habit && score + 1e-9 >= FAST_SCORE && h.watchUntil <= 0) {
+    startHabitWatch(s, phrase.habit)
+  }
   maybeOpenEras(s)
   return null
+}
+
+/** Start (or extend) the habit watch and post the phrase's habit until it resolves. */
+function startHabitWatch(s: GameState, habit: AgentHabit) {
+  const h = s.horizon
+  const watch = HORIZON.habitWatchSec * (1 - Math.min(0.35, upgradeEffect(s, 'habit-watch-pad')))
+  const live = h.watchUntil > s.time && !!h.postedHabit
+  h.watchUntil = Math.max(h.watchUntil, s.time + watch)
+  if (live && h.postedHabit) h.postedHabit.until = h.watchUntil
+  else postHabitWatch(s, habit, h.watchUntil)
 }
 
 export function canFileStandardPhrase(s: GameState): string | null {
@@ -1617,10 +1647,8 @@ export function fileStandardPhrase(s: GameState): string | null {
   markDeptStaffed(s, 'signal')
   if (credited) {
     log(s, `Phrase filed the standard at ${score.toFixed(2)}.`, 'good')
-    // Habit watch starts now; desk gap (markStandardFile) applies after watch finishes.
-    const watch =
-      HORIZON.habitWatchSec * (1 - Math.min(0.35, upgradeEffect(s, 'habit-watch-pad')))
-    h.watchUntil = Math.max(h.watchUntil, s.time + watch)
+    // Habit watch starts now and posts the phrase habit; desk gap applies after the watch.
+    startHabitWatch(s, phrase.habit ?? 'price')
     // Undo desk gap until watch completes — serial watch then gap.
     if (s.depth) s.depth.lastStandardFileAt = 0
   } else {
@@ -1677,6 +1705,11 @@ export function hireAgent(s: GameState, habit: string): string | null {
 export function canSetAgentHabit(s: GameState, id: number, habit: string): string | null {
   if (!ensureHorizon(s).agents.some((agent) => agent.id === id)) return 'No such agent.'
   if (!isHabit(habit)) return 'Pick a habit.'
+  if (postedAgentId(s) === id) {
+    return `Posted on ${s.horizon.postedHabit?.habit} until the watch resolves (${Math.ceil(
+      s.horizon.watchUntil - s.time,
+    )}s).`
+  }
   const phrase = s.horizon.phrase
   if (phrase?.habit && habit !== phrase.habit && s.horizon.agents.length >= 2) {
     // Agents refuse a mismatched habit while a phrase on the wire asks for another.
@@ -1693,11 +1726,18 @@ export function setAgentHabit(s: GameState, id: number, habit: string): string |
   const agent = s.horizon.agents.find((row) => row.id === id)
   if (!agent) return 'No such agent.'
   agent.habit = habit
+  // Matching an unclaimed post takes the job: locked until the watch resolves.
+  const post = s.horizon.postedHabit
+  if (post && post.agentId == null && s.horizon.watchUntil > 0 && post.habit === habit) {
+    post.agentId = agent.id
+    log(s, `${agent.name} posted on ${habit} until the watch resolves.`, 'info')
+  }
   return null
 }
 
 export function canFireAgent(s: GameState, id: number): string | null {
   if (!ensureHorizon(s).agents.some((agent) => agent.id === id)) return 'No such agent.'
+  if (postedAgentId(s) === id) return 'Posted on the habit watch. Wait for it to resolve.'
   return null
 }
 
@@ -1749,6 +1789,10 @@ const CLAUSE_DRAFT: Record<string, string> = {
 export function canToggleClause(s: GameState, id: string): string | null {
   if (s.era < 11) return 'The charter opens in Era 11.'
   if (!CLAUSE_BY_ID[id]) return 'Unknown clause.'
+  if (!s.horizon?.clauses?.includes(id)) {
+    const banned = endlessBanReason(s, 'clause', id)
+    if (banned) return banned
+  }
   const board = needHorizonMemo(s, 'clause-board', 'Clause Board')
   if (board) return board
   const draftId = CLAUSE_DRAFT[id]
@@ -1787,12 +1831,26 @@ export function toggleClause(s: GameState, id: string): string | null {
   const wasKept = h.clauses.includes(id)
   if (wasKept) h.clauses = h.clauses.filter((clause) => clause !== id)
   else h.clauses.push(id)
+  // Editing the loadout with any other clause lifts a standing endless ban.
+  if (h.endlessBan?.kind === 'clause' && h.endlessBan.id !== id) {
+    h.endlessBan = null
+    log(s, 'The mutated list’s ban lifts — the loadout changed.', 'info')
+  }
   log(s, h.clauses.includes(id) ? `Kept ${CLAUSE_BY_ID[id]?.name ?? id}.` : `Released ${id}.`, 'info')
   if (h.clauses.includes(id)) {
     say(s, CLAUSE_LINE[id] ?? '')
     const seat =
       HORIZON.clauseSeatingSec * (1 - Math.min(0.35, upgradeEffect(s, 'clause-seat-pad')))
     h.seatingUntil = Math.max(h.seatingUntil, s.time + seat)
+    h.seatingClause = id
+  } else if (h.seatingClause === id) {
+    // Released before it sat: the seal is torn up.
+    h.seatingClause = null
+    h.seatingUntil = 0
+  } else if (h.seatedClauses.includes(id)) {
+    // Releasing a seated clause vacates the seat.
+    h.seatedClauses = h.seatedClauses.filter((clause) => clause !== id)
+    h.seatingsDone = Math.max(0, (h.seatingsDone ?? 0) - 1)
   }
   maybeOpenEras(s)
   return null
@@ -1880,7 +1938,7 @@ function lineDeptHard(s: GameState, dept?: string): number {
   return 0.85
 }
 
-function refreshListScore(s: GameState) {
+export function refreshListScore(s: GameState) {
   const list = s.horizon.list
   if (!list?.length) {
     s.horizon.listScore = 0
@@ -1918,6 +1976,7 @@ export function fillLastLine(s: GameState, index: number, filled: string): strin
   const line = s.horizon.list?.[index]
   if (!line) return 'That line is not on the list.'
   line.filled = filled.trim().slice(0, 48)
+  if (s.horizon.rehearsalScratch === index) s.horizon.rehearsalScratch = -1
   if (line.kind === 'shelf') {
     const planetId = line.want.split('@')[0] ?? ''
     const planet = findPlanet(s, planetId)
@@ -1968,6 +2027,7 @@ export function fileStandardList(s: GameState): string | null {
   const h = s.horizon
   const list = h.list
   if (!list) return 'The list is blank.'
+  h.rehearsalScratch = -1
   for (const line of list) {
     if (line.kind === 'shelf') {
       const planetId = line.want.split('@')[0] ?? ''
@@ -2058,6 +2118,8 @@ export function canSetVenturePolicy(s: GameState, id: string, policy: string): s
   if (!venture || venture.level <= 0) return 'Open that till first.'
   if (venture.level < 10) return 'The fork opens at level 10.'
   if (policy !== 'a' && policy !== 'b') return 'Pick a side.'
+  const banned = endlessBanReason(s, 'ventureFork', id)
+  if (banned) return banned
   if (venture.policy && venture.policy !== policy) return 'That fork is locked.'
   return null
 }
@@ -2068,6 +2130,12 @@ export function setVenturePolicy(s: GameState, id: string, policy: string): stri
   const venture = s.ventures[id]
   if (!venture) return 'Open that till first.'
   venture.policy = policy === 'b' ? 'b' : 'a'
+  // Setting another venture's fork lifts a standing endless ban.
+  const h = ensureHorizon(s)
+  if (h.endlessBan?.kind === 'ventureFork' && h.endlessBan.id !== id) {
+    h.endlessBan = null
+    log(s, 'The mutated list’s ban lifts — a fork was set elsewhere.', 'info')
+  }
   return null
 }
 
@@ -2096,221 +2164,6 @@ export function queueBuild(s: GameState, id: string): string | null {
 export function cancelQueue(s: GameState): string | null {
   ensureHorizon(s).buildQueue = null
   return null
-}
-
-function roughBest(s: GameState): number {
-  const e = s.horizon.clauses.includes('one-price') ? 1.2 : DEMAND.elasticity
-  if (e <= 1.01) return DEMAND.refPrice
-  const tip = Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index
-  const cost = WHOLESALE.baseCanCost * (Number.isFinite(tip) ? tip : 1)
-  const raw = (cost * e) / (e - 1)
-  const snapped = Math.round(raw * 10) / 10
-  return Math.min(PRICE.max, Math.max(PRICE.min, snapped))
-}
-
-function shelfRoughCap(s: GameState): number {
-  const front = s.builds?.storefront ?? 1
-  let cap = SHELF.baseCap
-  if (front >= 2) cap += 20
-  if (front >= 3) cap += 60
-  if (front >= 4) cap += 200
-  return cap
-}
-
-function pushAgentLog(s: GameState, line: string) {
-  const h = ensureHorizon(s)
-  h.agentLog.push(line)
-  while (h.agentLog.length > 8) h.agentLog.shift()
-}
-
-function habitPrice(s: GameState, name: string): boolean {
-  const best = roughBest(s)
-  if (best <= 0 || Math.abs(s.price - best) / best <= 0.08) return false
-  s.price = Math.round(best * 100) / 100
-  s.stats.priceChanges += 1
-  const line = `${name} set the price to ${s.price.toFixed(2)}.`
-  pushAgentLog(s, line)
-  log(s, line, 'info')
-  return true
-}
-
-function habitStock(s: GameState, name: string): boolean {
-  if (sumQty(s.shelf) >= shelfRoughCap(s) * 0.3) return false
-  if (s.orders.length >= 3) return false
-  const cat = s.orderCat
-  if (!s.categories[cat]) return false
-  const crates = s.supplier === 'b' ? 2 : 1
-  const index = Number.isFinite(s.wholesale.index) ? s.wholesale.index : 1
-  const unit = WHOLESALE.baseCanCost * index
-  const cost = unit * WHOLESALE.spoolUnits * crates
-  if (!(s.cash > cost)) return false
-  s.cash -= cost
-  s.stats.wholesaleSpent += cost
-  s.stats.ordersPlaced += 1
-  s.orders.push({
-    id: s.nextOrderId++,
-    supplier: s.supplier,
-    cat,
-    qty: WHOLESALE.spoolUnits * crates,
-    eta: 8,
-    unitCost: unit,
-  })
-  const line = `${name} ordered ${crates === 1 ? 'a crate' : `${crates} crates`}.`
-  pushAgentLog(s, line)
-  log(s, line, 'info')
-  return true
-}
-
-function tickAgents(s: GameState) {
-  const h = s.horizon
-  for (const agent of h.agents) {
-    if (s.time < (h.agentAt[agent.id] ?? 0)) continue
-    let acted = false
-    if (agent.habit === 'price') acted = habitPrice(s, agent.name)
-    else if (agent.habit === 'stock') acted = habitStock(s, agent.name)
-    else if (agent.habit === 'route') {
-      if (h.standingRoute && !canFileStandardConvoy(s)) {
-        const err = fileStandardConvoy(s, {
-          origin: h.standingRoute.origin,
-          stop: h.standingRoute.stop,
-          dest: h.standingRoute.dest,
-          good: h.standingRoute.good,
-        })
-        acted = !err
-        if (acted) {
-          const line = `${agent.name} refiled the standing route.`
-          pushAgentLog(s, line)
-          log(s, line, 'info')
-        }
-      }
-    } else if (agent.habit === 'taste') {
-      const left = HORIZON.seasonSec - h.seasonT
-      if (left <= 60 && h.plots.some((p) => p.child.length === 0) && !canFileStandardCross(s)) {
-        acted = !fileStandardCross(s)
-        if (acted) {
-          const line = `${agent.name} planted the season’s cross.`
-          pushAgentLog(s, line)
-          log(s, line, 'info')
-        }
-      }
-    }
-    if (acted) {
-      agent.xp += 1
-      h.agentAt[agent.id] = s.time + (agent.habit === 'taste' ? 60 : 30) * agentWaitMul(s)
-    } else {
-      h.agentAt[agent.id] = s.time + 30 * agentWaitMul(s)
-    }
-  }
-}
-
-/** Handler staff levels and Brisk Desk ranks both shorten an agent's wait (never past the floor). */
-function agentWaitMul(s: GameState): number {
-  const desk = Math.max(HORIZON.briskDeskFloor, 1 - upgradeEffect(s, 'sg-brisk-desk'))
-  return handlerWaitMul(s) * desk
-}
-
-function tickDeputies(s: GameState) {
-  const h = s.horizon
-  const pinFile = Math.max(HORIZON.pinFileFloor, 1 - upgradeEffect(s, 'ex-pin-file'))
-  const baseCooldown =
-    (upgradeEffect(s, 'probe-clerk') > 0 ? HORIZON.deputyCooldownFast : HORIZON.deputyCooldown) * pinFile
-  for (const member of s.staff) {
-    if (!h.deputy[member.id] && !member.deputy) continue
-    if (s.time < (h.deputyAt[member.id] ?? 0)) continue
-    const role = member.role as string
-    // Annex staff level shortens their own deputy's wait. Own-route couriers refile the standing route sooner.
-    let cooldown = baseCooldown * deputyCooldownMul(member.level)
-    if (role === 'broker' && hasFork(s, 'courierOwn')) cooldown *= LATE.courierOwnPaceMul
-    let acted = false
-    if (role === 'surveyor') {
-      const cost = probeCost(s)
-      const floorOk = s.cash - cost >= s.cash * HORIZON.deputyCashFloor
-      if (s.cash >= cost * 2 && floorOk && !canLaunchProbe(s)) {
-        acted = !launchProbe(s)
-      }
-    } else if (role === 'broker') {
-      if (h.standingRoute && !canFileStandardConvoy(s)) acted = !fileStandardConvoy(s)
-    } else if (role === 'grower') {
-      const left = HORIZON.seasonSec - h.seasonT
-      if (left <= 30 && !canFileStandardCross(s)) acted = !fileStandardCross(s)
-    } else if (role === 'translator') {
-      if (h.phrase && !canFileStandardPhrase(s)) acted = !fileStandardPhrase(s)
-    }
-    if (acted) h.deputyAt[member.id] = s.time + cooldown
-  }
-}
-
-function tickSeasons(s: GameState, dt: number) {
-  if (s.era < 9) return
-  const h = s.horizon
-  say(s, SEASON_LINE[h.season] ?? '')
-  h.seasonT += dt
-  let guard = 0
-  while (h.seasonT >= HORIZON.seasonSec && guard < 80) {
-    // Missed chore → weak year unless Season Hand on the Shift Board saves one.
-    if (!h.seasonChore) {
-      if (seasonHandOnBoard(s) && h.seasonHandSaves > 0) {
-        h.seasonHandSaves -= 1
-        h.seasonChore = expectedSeasonChore(s)
-        log(s, 'Season Hand on shift covered a missed chore.', 'info')
-      } else {
-        h.weakYears += 1
-        log(s, 'A season chore was missed — weak year.', 'warn')
-      }
-    }
-    // Armed haul left undone → weak year (season still advances).
-    if (h.haulUntil > 0) {
-      h.weakYears += 1
-      h.haulUntil = 0
-      log(s, 'Yield haul missed — weak year.', 'warn')
-    }
-    h.seasonT -= HORIZON.seasonSec
-    h.season = ((h.season + 1) % 4) as SeasonIndex
-    h.seasonsSeen += 1
-    h.aids = []
-    h.seasonChore = null
-    if (h.season === 0) h.seasonHandSaves = HORIZON.seasonHandSaves
-    if (h.seasonsSeen <= 4) log(s, `${SEASON_NAMES[h.season]} arrives.`, 'info')
-    say(s, SEASON_LINE[h.season] ?? '')
-    maybeOpenEras(s)
-    guard++
-  }
-}
-
-function tickPhrases(s: GameState) {
-  if (s.era < 10) return
-  const h = s.horizon
-  if (h.phrase) return
-  if (h.relays <= 0) return
-  if (h.nextPhraseAt <= 0) h.nextPhraseAt = s.time
-  if (s.time < h.nextPhraseAt) return
-  spawnPhrase(s)
-}
-
-function tickKeel(s: GameState) {
-  if (s.era < 8) return
-  const keel = s.horizon.keel
-  if (keel.bought) return
-  const h = s.horizon
-  if (h.nextKeelAt <= 0) h.nextKeelAt = s.time + HORIZON.keelConvoyEvery
-  if (s.time < keel.frozenUntil || s.time < h.nextKeelAt) return
-  keel.convoys += 1
-  const faster = h.clauses.includes('open-hours') ? 0.9 : 1
-  h.nextKeelAt = s.time + HORIZON.keelConvoyEvery * faster
-  if (keel.convoys === 1) {
-    log(s, 'Keel & Sons put a convoy on your route.', 'warn')
-    say(s, 'hz-keel-convoy', 'hz-keel-convoy-clerk')
-  }
-}
-
-function forecastLead(s: GameState): number {
-  let lead: number =
-    upgradeEffect(s, 'season-bell') > 0 ? HORIZON.forecastLeadFastSec : HORIZON.forecastLeadSec
-  const early =
-    (s.empire.perks['hz-season'] ?? 0) > 0 ||
-    (s.ventures.almanac?.policy === 'a' && (s.ventures.almanac?.level ?? 0) >= 10)
-  if (lead >= 120 && early) lead = 180
-  return lead + upgradeEffect(s, 'cu-long-bell')
 }
 
 function headlineAidMul(h: HorizonState, planetId: string, slots: readonly string[]): number {
@@ -2431,156 +2284,13 @@ export function ignoreHeadline(s: GameState): string | null {
   return null
 }
 
-function tickHeadlines(s: GameState) {
-  if (s.era < 7) return
-  const h = s.horizon
-  if (h.aids.length) h.aids = h.aids.filter((aid) => s.time < aid.untilTime)
-  if (s.era >= 9) {
-    const left = HORIZON.seasonSec - h.seasonT
-    const lead = forecastLead(s)
-    const key = `hl-season-telegraph:${h.seasonsSeen}`
-    if (left > 0 && left <= lead && !h.seenHeadlines.includes(key)) {
-      h.seenHeadlines.push(key)
-      h.headlineId = 'hl-season-telegraph'
-      h.headlineUntil = s.time + left
-      log(s, 'Season telegraph.', 'info')
-      return
-    }
-  }
-  if (h.nextHeadlineAt <= 0) h.nextHeadlineAt = s.time + HORIZON.headlineEvery
-  if (h.headlineId && s.time >= h.headlineUntil) {
-    h.headlineId = null
-    h.headlineUntil = 0
-  }
-  if (h.headlineId || s.time < h.nextHeadlineAt) return
-  const seen = new Set(h.seenHeadlines)
-  const revealed = new Set(h.planets.filter((p) => p.revealed).map((p) => p.id))
-  const pool = HEADLINES.filter((row) => {
-    if (s.era < row.minEra) return false
-    if (row.once && seen.has(row.id)) return false
-    if (row.planetId && !revealed.has(row.planetId)) return false
-    return row.weight > 0
-  })
-  h.nextHeadlineAt = s.time + HORIZON.headlineEvery
-  let total = 0
-  for (const row of pool) total += row.weight
-  if (total <= 0) return
-  let cursor = ((s.seed * 17 + Math.floor(s.time)) % 100000) / 100000 * total
-  let pick = pool[pool.length - 1]
-  for (const row of pool) {
-    cursor -= row.weight
-    if (cursor <= 0) {
-      pick = row
-      break
-    }
-  }
-  if (!pick) return
-  h.headlineId = pick.id
-  h.headlineUntil = s.time + Math.max(30, HORIZON.seasonSec - h.seasonT)
-  if (pick.once) h.seenHeadlines.push(pick.id)
-  // Temporary ban/demand: filed shelves go stale until refiled.
-  const ban = pick.text.match(/\bbans?\s+([a-z]+)/i) || pick.helpEffect?.match(/ban\s+([a-z]+)/i)
-  const demand = pick.text.match(/\bdemands?\s+([a-z]+)/i)
-  if (pick.planetId) {
-    const run = h.planets.find((p) => p.id === pick.planetId)
-    if (run && ban?.[1]) {
-      run.banTag = ban[1].toLowerCase()
-      if (run.stocked) run.score = Math.min(run.score, STANDARD_SCORE * 0.9)
-    }
-    if (run && demand?.[1]) {
-      h.aids.push({
-        planetId: pick.planetId,
-        kind: 'demand',
-        tag: demand[1].toLowerCase(),
-        mul: 1.1,
-        untilTime: h.headlineUntil,
-      })
-    }
-  }
-  log(s, pick.text, 'info')
-  say(s, 'hz-headline-ignore')
-}
-
-function tickTrickles(s: GameState, dt: number) {
-  const h = s.horizon
-  if ((s.memos['survey-office'] ?? 0) > 0 || h.continued || upgradeEffect(s, 'survey-desk') > 0) {
-    const kiosk = hasFork(s, 'kioskAlways') ? LATE.endlessKioskSurveyMul : 1
-    h.survey = Math.min(
-      HORIZON.surveyCap,
-      h.survey +
-        HORIZON.surveyPerSec * annexPaceMul(s, 'surveyor') * kiosk * (1 + upgradeEffect(s, 'pan-wide-pin')) * dt,
-    )
-  }
-  // Probe Plaza: +1 survey trickle slot while the plaza stands.
-  if ((s.builds.storefront ?? 0) >= 8) {
-    h.survey = Math.min(HORIZON.surveyCap, h.survey + LATE.probePlazaSurveyPerSec * dt)
-  }
-  let freightEach =
-    HORIZON.freightPerPlanet *
-    statMul(s, 'freight') *
-    annexPaceMul(s, 'broker') *
-    (1 + upgradeEffect(s, 'ex-freight-clerk')) *
-    (h.clauses.includes('local-shelf') ? 0.9 : 1)
-  if (s.ventures.bonded?.policy === 'b' && (s.ventures.bonded.level ?? 0) >= 1) freightEach *= 1.1
-  h.freight = Math.min(HORIZON.freightCap, h.freight + stockedCount(s) * freightEach * dt)
-  if (s.era >= 9) {
-    let rate =
-      (SEED_BASE_PER_SEC + h.greenhouses * SEED_PER_GREENHOUSE) *
-      statMul(s, 'seed') *
-      annexPaceMul(s, 'grower') *
-      (1 + upgradeEffect(s, 'cu-bed-hand'))
-    if (h.clauses.includes('cold-law')) rate *= HORIZON.coldLawSeedMul
-    if ((s.ventures.wire?.level ?? 0) >= 1) {
-      if (s.ventures.wire?.policy === 'a') rate *= 1.1
-      if (s.ventures.wire?.policy === 'b') rate *= 0.9
-    }
-    h.seed = Math.min(SEED_CAP, h.seed + rate * dt)
-  }
-  if (h.relays > 0) {
-    h.signal = Math.min(
-      HORIZON.signalCap,
-      h.signal +
-        h.relays *
-          HORIZON.signalPerRelay *
-          statMul(s, 'signal') *
-          annexPaceMul(s, 'translator') *
-          (1 + upgradeEffect(s, 'sg-mast-tune')) *
-          dt,
-    )
-  }
-  if (h.embassies > 0) {
-    h.seal = Math.min(
-      HORIZON.sealCap,
-      h.seal +
-        h.embassies *
-          HORIZON.embassySealPerSec *
-          diplomatEmbassyMul(s) *
-          (hasFork(s, 'embassyCourtesy') ? LATE.embassyGiftSealMul : 1) *
-          statMul(s, 'seal') *
-          dt,
-    )
-  }
-}
-
-function tickWages(s: GameState, dt: number) {
-  const agents = s.horizon.agents.length
-  if (agents <= 0 || dt <= 0) return
-  const each = Math.max(HORIZON.agentMinWage, Math.max(0, s.rates.revenuePerSec) * HORIZON.agentWageFrac)
-  const agentPerk = s.empire.perks['hz-agent'] ?? 0
-  let bill = each * agents * dt * (agentPerk > 0 ? Math.pow(0.9, agentPerk) : 1)
-  if (s.ventures.frequency?.policy === 'a' && s.hours > 1) bill *= 0.9
-  if (hasFork(s, 'ivoCounter')) bill *= LATE.ivoDinerWageMul
-  if (!(bill > 0)) return
-  const paid = Math.min(s.cash, bill)
-  s.cash -= paid
-  s.stats.wagesPaid += paid
-}
-
 
 export function canDoSeasonChore(s: GameState, chore: string): string | null {
   if (s.era < 9) return 'Cultivars open in Era 9.'
   if (!(SEASON_CHORES as readonly string[]).includes(chore)) return 'Water, cover, harvest, or rest.'
-  if (ensureHorizon(s).seasonChore) return 'This season’s chore is done.'
+  const locked = ensureHorizon(s).bedLockedChore
+  if (locked && locked !== chore) return `The bed is locked to ${locked} until the season turns.`
+  if (s.horizon.seasonChore) return 'This season’s chore is done.'
   const want = expectedSeasonChore(s)
   if (chore !== want) return `This season wants ${want}.`
   return null
@@ -2590,166 +2300,12 @@ export function doSeasonChore(s: GameState, chore: string): string | null {
   const why = canDoSeasonChore(s, chore)
   if (why) return why
   s.horizon.seasonChore = chore as SeasonChore
+  s.horizon.bedLockedChore = chore as SeasonChore
   const haul =
     HORIZON.yieldHaulSec * (1 - Math.min(0.35, upgradeEffect(s, 'yield-haul-pad')))
   s.horizon.haulUntil = Math.max(s.horizon.haulUntil, s.time + haul)
   log(s, `Season chore: ${chore}. Yield haul armed.`, 'good')
   return null
-}
-
-function planetClimateOf(planetId: string): PlanetClimate | null {
-  return PLANET_BY_ID[planetId]?.climate ?? null
-}
-
-function stockedClimates(s: GameState): PlanetClimate[] {
-  const h = ensureHorizon(s)
-  const out: PlanetClimate[] = []
-  for (const p of h.planets) {
-    if (!p.stocked) continue
-    const c = planetClimateOf(p.id)
-    if (c && !out.includes(c)) out.push(c)
-  }
-  return out
-}
-
-export function canServeClimateNeighbor(s: GameState): string | null {
-  if (s.era < 7) return 'Climate neighbors open after Continue.'
-  const h = ensureHorizon(s)
-  if (h.nextClimateAt > s.time) return `Next climate neighbor in ${Math.ceil(h.nextClimateAt - s.time)}s.`
-  const climates = stockedClimates(s)
-  if (climates.length === 0) return 'Stock a world first.'
-  const want = h.climateGuest ?? climates[0]
-  if (!climates.includes(want)) return `Stock a ${want} world for the visiting climate.`
-  if (sumQty(s.shelf) < 1) return 'Put something on the shelf for the guest.'
-  return null
-}
-
-export function serveClimateNeighbor(s: GameState): string | null {
-  const why = canServeClimateNeighbor(s)
-  if (why) return why
-  const h = s.horizon
-  const climates = stockedClimates(s)
-  const want = h.climateGuest ?? climates[0]
-  // Pull a few units off the flagship shelf so the visit is visible.
-  takeUnits(s.shelf, Math.min(3, sumQty(s.shelf)), true)
-  h.climateServed = (h.climateServed ?? 0) + 1
-  const cd =
-    HORIZON.climateServeCooldownSec * (1 - Math.min(0.35, upgradeEffect(s, 'climate-serve-pad')))
-  h.nextClimateAt = s.time + cd
-  h.climateGuest = climates[(h.climateServed + 1) % Math.max(1, climates.length)] ?? want ?? null
-  log(s, `Climate neighbor served ${h.climateServed}/${HORIZON.climateServeNeed}.`, 'good')
-  maybeOpenEras(s)
-  return null
-}
-
-export function canSettleStop(s: GameState): string | null {
-  if (s.era < 8) return 'Stop settlements open in Era 8.'
-  const h = ensureHorizon(s)
-  if (h.settlementUntil <= 0) return 'No settlement pending.'
-  if (s.time < h.settlementUntil) return `Settlement ETA ${Math.ceil(h.settlementUntil - s.time)}s.`
-  return null
-}
-
-export function settleStop(s: GameState): string | null {
-  const why = canSettleStop(s)
-  if (why) return why
-  const h = s.horizon
-  h.settlements = (h.settlements ?? 0) + 1
-  h.settlementUntil = 0
-  log(s, `Stop settled ${h.settlements}/${HORIZON.settlementNeed}.`, 'good')
-  maybeOpenEras(s)
-  return null
-}
-
-export function canHaulYield(s: GameState): string | null {
-  if (s.era < 9) return 'Yield hauls open in Era 9.'
-  const h = ensureHorizon(s)
-  if (h.haulUntil <= 0) return 'No haul armed — finish a season chore first.'
-  if (s.time < h.haulUntil) return `Haul ETA ${Math.ceil(h.haulUntil - s.time)}s.`
-  return null
-}
-
-export function haulYield(s: GameState): string | null {
-  const why = canHaulYield(s)
-  if (why) return why
-  const h = s.horizon
-  h.haulsDone = (h.haulsDone ?? 0) + 1
-  h.haulUntil = 0
-  log(s, `Yield hauled ${h.haulsDone}/${HORIZON.yieldHaulNeed}.`, 'good')
-  maybeOpenEras(s)
-  return null
-}
-
-export function canSeatClause(s: GameState): string | null {
-  if (s.era < 11) return 'Clause seating opens in Era 11.'
-  const h = ensureHorizon(s)
-  if (h.seatingUntil <= 0) return 'No clause awaiting seating.'
-  if (s.time < h.seatingUntil) return `Seating seal ETA ${Math.ceil(h.seatingUntil - s.time)}s.`
-  if (h.seatingGapUntil > s.time) return `Seating gap ${Math.ceil(h.seatingGapUntil - s.time)}s.`
-  return null
-}
-
-export function seatClause(s: GameState): string | null {
-  const why = canSeatClause(s)
-  if (why) return why
-  const h = s.horizon
-  h.seatingsDone = (h.seatingsDone ?? 0) + 1
-  h.seatingUntil = 0
-  const gap =
-    HORIZON.clauseSeatingGapSec * (1 - Math.min(0.35, upgradeEffect(s, 'clause-seat-pad')))
-  h.seatingGapUntil = s.time + gap
-  log(s, `Clause seated ${h.seatingsDone}/${HORIZON.clauseSeatingNeed}.`, 'good')
-  maybeOpenEras(s)
-  return null
-}
-
-export function canRehearseAccept(s: GameState): string | null {
-  if (s.era < 12) return 'Accept rehearsal opens in Era 12.'
-  const h = ensureHorizon(s)
-  const practice = ensurePractice(s)
-  if (practice.list.left > 0) return 'Finish list practice first.'
-  if (h.listScore + 1e-9 < HORIZON.listAcceptScore) return 'List still short of 0.85.'
-  if (h.acceptRehearsal && h.acceptRehearsalUntil <= s.time) return 'Rehearsal already complete.'
-  if (h.acceptRehearsal && h.acceptRehearsalUntil > s.time) {
-    return `Rehearsal cooling (${Math.ceil(h.acceptRehearsalUntil - s.time)}s).`
-  }
-  return null
-}
-
-export function rehearseAccept(s: GameState): string | null {
-  const why = canRehearseAccept(s)
-  if (why) return why
-  const h = s.horizon
-  h.acceptRehearsal = true
-  const gap =
-    HORIZON.acceptRehearsalSec * (1 - Math.min(0.35, upgradeEffect(s, 'accept-rehearsal-pad')))
-  h.acceptRehearsalUntil = s.time + gap
-  log(s, 'Accept rehearsal filed — desk gap before Accept.', 'good')
-  return null
-}
-
-/** Finish habit watches when ETA elapses — only if an agent still matches the phrase habit. */
-export function tickHorizonVerbs(s: GameState) {
-  const h = ensureHorizon(s)
-  if (h.watchUntil > 0 && s.time >= h.watchUntil) {
-    h.watchUntil = 0
-    const phrase = h.phrase
-    const need = phrase?.habit
-    const matched = !need || h.agents.some((a) => a.habit === need)
-    if (matched) {
-      h.watchedPhrases = (h.watchedPhrases ?? 0) + 1
-      markStandardFile(s)
-      log(s, `Habit watch done ${h.watchedPhrases}/${HORIZON.habitWatchNeed}.`, 'good')
-      maybeOpenEras(s)
-    } else {
-      // Missed watch: nudge that world's local price and do not credit the gate.
-      const world = h.planets.find((p) => p.id === phrase?.planetId) ?? h.planets[0]
-      if (world) {
-        world.localPrice = Math.max(0.5, (world.localPrice ?? 1) * 0.94)
-      }
-      log(s, 'Habit watch failed — agent habit did not match the phrase.', 'warn')
-    }
-  }
 }
 
 export function canAnswerHearing(s: GameState): string | null {
@@ -2763,17 +2319,32 @@ export function canAnswerHearing(s: GameState): string | null {
   return null
 }
 
+/** Amends the Minutes Clerk may strike per docket: one, plus Clause Amend Pad ranks and the Embassy Chair. */
+export function amendsPerDocket(s: GameState): number {
+  const chair = s.projects?.done?.['pj-embassy-chair'] ? 1 : 0
+  return HORIZON.hearingAmendsPerDocket + Math.floor(upgradeEffect(s, 'clause-amend-pad') + 1e-9) + chair
+}
+
+/** A Minutes Clerk amends one hearing per docket: the heard clause keeps its seat, loses its grudge. */
+export function canAmendHearing(s: GameState): boolean {
+  const h = ensureHorizon(s)
+  const clause = ensureHearing(s).pendingClause || h.hearingClause
+  if (!clause || !s.staff.some((m) => m.role === 'minutesClerk')) return false
+  if (h.minutesAmends >= 1 || h.amendedClauses.length >= amendsPerDocket(s)) return false
+  return !!CLAUSE_BY_ID[clause]?.grudge && !h.amendedClauses.includes(clause)
+}
+
 export function answerHearing(s: GameState): string | null {
   const why = canAnswerHearing(s)
   if (why) return why
   if (!s.depth) return 'No depth.'
   const docket = ensureHearing(s)
   const clause = docket.pendingClause || s.horizon.hearingClause
-  const minutes = s.staff.some((m) => m.role === 'minutesClerk')
-  if (minutes && s.horizon.minutesAmends < 1 && clause) {
-    s.horizon.clauses = s.horizon.clauses.filter((c) => c !== clause)
+  if (clause && canAmendHearing(s)) {
+    // The clause stays seated; only its grudge is struck from the minutes.
+    s.horizon.amendedClauses.push(clause)
     s.horizon.minutesAmends += 1
-    log(s, 'Minutes Clerk struck Concord’s clause.', 'good')
+    log(s, `Minutes Clerk amended ${CLAUSE_BY_ID[clause]?.name ?? clause} — its grudge is struck.`, 'good')
   }
   docket.answered += 1
   docket.pendingClause = null
@@ -2818,8 +2389,17 @@ export function clearHorizonRival(s: GameState, kind: string): string | null {
     d.jammedSymbol = null
     log(s, 'Static jam cleared.', 'good')
   } else if (kind === 'ration') {
+    const line = s.horizon.list?.[d.rationLine]
     d.rationLine = -1
     log(s, 'Ration Board pressure eased.', 'good')
+    // Mutation Clear Pad: the scarred line comes back a little better.
+    const restore = Math.min(HORIZON.mutationClearCap, upgradeEffect(s, 'mutation-clear-pad'))
+    if (line && restore > 0 && line.want.includes('|mut')) {
+      line.want = line.want.replace(/\|mut\d+$/, '')
+      line.score = Math.min(1, line.score + restore)
+      refreshListScore(s)
+      log(s, 'The mutated line is restored.', 'good')
+    }
   }
   return null
 }
@@ -2923,6 +2503,7 @@ export function tickHorizon(s: GameState, dt: number) {
     s.horizon.socketsUnlocked = Math.max(5, s.horizon.socketsUnlocked)
   }
   if (s.era >= 9) ensurePlots(s)
+  enforceEndlessBan(s)
   tickTrickles(s, dt)
   tickSeasons(s, dt)
   tickHorizonVerbs(s)

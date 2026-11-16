@@ -1,4 +1,5 @@
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../../content/categories'
+import { REGULAR_BY_ID } from '../../../content/depth'
 import { backroomCap, manualUnpackAmount, salesBottleneck, shelfCap, shelfPrice } from '../../../sim/formulas'
 import { sumQty } from '../../../sim/helpers'
 import { useGame } from '../../GameContext'
@@ -36,10 +37,15 @@ export function FloorRoom() {
   const sold = s.rates.soldPerSec
   const cashiers = s.staff.filter((m) => m.role === 'cashier').length
 
+  const activeReg = s.depth?.regulars?.activeId ? REGULAR_BY_ID[s.depth.regulars.activeId] : null
+  const waitingReg = s.depth?.regulars?.waitingId ? REGULAR_BY_ID[s.depth.regulars.waitingId] : null
+
   const chips = [
     { label: 'Shelf', value: `${qty(shelf)}/${qty(cap)}` },
     { label: 'Back', value: qty(back) },
     { label: 'Price', value: money(s.price, numberFormat) },
+    ...(activeReg ? [{ label: 'Serve', value: activeReg.name }] : []),
+    ...(waitingReg ? [{ label: 'Waiting', value: waitingReg.name }] : []),
   ]
 
   const bnLabel =
@@ -65,6 +71,7 @@ export function FloorRoom() {
         w={150}
         h={160}
         label={`Unpack +${unpackAmt}`}
+        className="rm-hit--unpack"
         coachId="floor-unpack"
         onActivate={() => {
           if (back > 0) dispatch({ type: 'unpack' })
@@ -156,13 +163,25 @@ export function FloorRoom() {
         <Person x={700} y={ROOM_GROUND - 24} tint="#7fa3c9" delay={0.5} working={sold > 0.2} />
       </Hit>
 
-      {/* Door / traffic */}
+      {/* Door / traffic + regulars in the aisle */}
       <g transform="translate(860 80)">
         <rect width="70" height="120" fill="#141210" stroke="#3a322c" />
         <rect x="22" y="36" width="26" height="48" fill="#2c201c" />
         <Sign x={8} y={-6} text="Door" small />
         <Badge x={8} y={108} text={rate(sold)} w={54} />
       </g>
+      {activeReg ? (
+        <g>
+          <Person x={820} y={ROOM_GROUND - 24} tint="var(--sc-tomato, #ff5a43)" delay={0.1} working />
+          <Sign x={790} y={ROOM_GROUND - 48} text={activeReg.name} small />
+        </g>
+      ) : null}
+      {waitingReg ? (
+        <g key={waitingReg.id} className="rm-arrive">
+          <Person x={790} y={ROOM_GROUND - 24} tint="#c9a15a" delay={0.35} working={false} />
+          <Sign x={760} y={ROOM_GROUND - 36} text={waitingReg.name} small />
+        </g>
+      ) : null}
 
       {/* Bottleneck sits above the ground strip — never on the annex/ground seam */}
       {bnLabel && !(shelf <= 0 && back <= 0) ? (

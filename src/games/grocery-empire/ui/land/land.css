@@ -1,0 +1,28 @@
+@layer scenes {
+  /* Early Land: empty lots wear a lease board. Muted, never tomato or tag (nothing to buy yet). */
+  .ld-lot--lease {
+    cursor: default;
+    border-style: dashed;
+    background: var(--sc-night-wall, #121820);
+  }
+
+  .ld-lease__pad {
+    fill: color-mix(in srgb, var(--sc-night-trim, #3a4458) 35%, transparent);
+    stroke: var(--sc-night-trim, #3a4458);
+    stroke-dasharray: 3 3;
+  }
+
+  .ld-lease__sign {
+    fill: var(--sc-night-trim, #3a4458);
+  }
+
+  .ld-lease__text {
+    fill: var(--sc-chip-ink, #efe9dc);
+    font: 700 6px var(--g2-ui, var(--ge-font-ui, sans-serif));
+    letter-spacing: 0.08em;
+  }
+
+  .ld-street--early + .gk-empty {
+    padding-top: var(--s-1, 0.25rem);
+  }
+}

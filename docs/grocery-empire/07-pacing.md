@@ -18,7 +18,9 @@ The campaign bot is a steady, unhurried player. Real players who solve puzzles b
 | Era 6 | `> 22 h` and `≤ 27 h` (≤28 h sim) | `LONG=1` |
 | Era 12 | `> 40 h` and `≤ 50 h` | `LONG_HORIZON=1` (50 h budget) |
 
-## Measured bot (seed 1, SAVE_VERSION **26**)
+## Measured bot (seed 1 · SAVE **36** / 40.0 prove 2026-11-16)
+
+Landings held through Phases 5–7 decisions (bot still takes the slow legal branch: mid flyer, exam-ready then clean, standard charter, default clauses).
 
 | Era | Measured |
 | --- | --- |
@@ -32,10 +34,18 @@ The campaign bot is a steady, unhurried player. Real players who solve puzzles b
 | 8 | ~28.6 h |
 | 9 | ~32.1 h |
 | 10 | ~35.1 h |
-| 11 | ~39.3 h |
-| 12 | ~40.4 h |
+| 11 | ~39.1 h (SAVE 35) |
+| 12 | ~40.1 h (clause seating pad; still ≤50 h) |
 
 **Note (2026-11-14 Phase 3–5):** Raised LONG windows to plan targets after exam hold, berth turnaround, ration ledger, climate neighbor, stop settlement, yield haul, habit watch, clause seating, accept rehearsal. `SAVE_VERSION` **26**.
+
+**Note (2026-11-15 · 4.0 real):** Remeasured seed 1 Eras 1–6 after Fix0 + Waves A–D — landings **unchanged** vs SAVE-26 table (bot still picks safe facings; Read pads did not move doors). Default CI seeds 1/42 green. `LONG=1` Era 3–6 green. Era 12 first landed ~39.96 h (145s under floor) — padded `HORIZON.clauseSeatingSec` 720→800 and `clauseSeatingGapSec` 600→640 (accept rehearsal is post-door; never lowered the 40h floor).
+
+**Note (2026-11-15 · 40.0 Phase 5, SAVE 33):** Manifest stance split cleans and exams into separate credits (13 credits needed instead of 8), but each stance ticks its own 70-min clock and the bot files exam-ready then clean inside one cycle window — remeasured seed 1: Era 3 8.57 h · Era 4 13.21 h · Era 5 **17.89 h** · Era 6 **23.55 h** (vs 17.88 / 23.54 before). Default CI seeds 1/42 and `LONG=1` Era 3–6 green; no target moved.
+
+**Note (2026-11-15 · 40.0 Phase 6, SAVE 34):** Worlds trade-offs (climate facing ban, settled stop taxes, season bed lock) change what the 7–9 waits cost, not their ETAs. Delay-settled circuits can stretch later settlement ETAs (≤ +24%); tariff trims freight trickle (floor 0.76). Default CI seeds 1/42 green; `LONG_HORIZON=1` spot-check **passed** (seed 1 reaches Era 12 inside 40–50 h; ~7 min wall). No target moved.
+
+**Note (2026-11-15 · 40.0 Phase 7, SAVE 35):** posted habit, seated-clause hearings, charter forks and rehearsal misses add decisions to the 10–12 waits without moving their ETAs. Hearings now open on each seating (3 sessions ride seatings 1–3), so the door is still the fourth seating + Standard. Rehearsal misses are post-door only (the 900s desk gap and 120s retry were **not** used to pad Era 12). Measured seed 1 (`runPacing(1, 50h)`): Era 6 23.55 h · 7 24.70 h · 8 28.71 h · 9 32.24 h · 10 35.24 h · 11 **39.11 h** · 12 **40.10 h** (≈6 min over the floor, same landing as Phase 6). Bot path: 6 watches, four default clauses seated, three heard, Standard signed. `LONG_HORIZON=1` green; default CI green. No target or constant moved. The Era 12 margin is thin — if a later change pulls it under 40 h, lengthen the seating decision (`clauseSeatingSec` / `clauseSeatingGapSec`, or a hearing gap between sessions) with a reason, not the rehearsal.
 
 ## History (why we stretched)
 

@@ -116,31 +116,38 @@ export const DEFAULT_CLAUSES = ['open-hours', 'local-shelf', 'one-price', 'cold-
 
 export const CLAUSE_BY_ID: Record<string, ClauseDef> = Object.fromEntries(CLAUSES.map((clause) => [clause.id, clause]))
 
-export const CHARTERS: Record<CharterId, { id: CharterId; name: string; blurb: string }> = {
+export const CHARTERS: Record<CharterId, { id: CharterId; name: string; blurb: string; fork: string }> = {
   standard: {
     id: 'standard',
     name: 'Standard',
     blurb: 'Network ×1.25. File the standard is the only legal commit, and scores lock at 0.72.',
+    fork: 'Network ×1.25 · standard-only puzzles.',
   },
   boutique: {
     id: 'boutique',
     name: 'Boutique',
     blurb: 'No charter network multiplier. Puzzle scores may reach 1. Excess over 0.72 multiplies that layer only, capped at ×1.5.',
+    fork: 'Puzzles can score 1.',
   },
   coop: {
     id: 'coop',
     name: 'Co-op',
     blurb: 'Ventures lift ×1.12. Network multiplier cuts to ×0.92. Fair Stamp still blocks Boutique.',
+    fork: 'Ventures ×1.12 · network ×0.92.',
   },
 }
 
-/** Active grudges after cancel pairs resolve. */
-export function activeGrudges(kept: readonly string[]): ClauseDef[] {
+/** Charter ids in the order the fork offers them. */
+export const CHARTER_IDS: readonly CharterId[] = ['standard', 'boutique', 'coop']
+
+/** Active grudges after cancel pairs resolve and Minutes Clerk amendments strike theirs. */
+export function activeGrudges(kept: readonly string[], amended: readonly string[] = []): ClauseDef[] {
   const set = new Set(kept)
   const out: ClauseDef[] = []
   for (const id of kept) {
     const def = CLAUSE_BY_ID[id]
     if (!def) continue
+    if (amended.includes(id)) continue
     if (def.cancels?.some((other) => set.has(other))) continue
     out.push(def)
   }

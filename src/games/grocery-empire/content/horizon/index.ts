@@ -43,8 +43,11 @@ export {
 } from './signal'
 export type { Phrase, SymbolId } from './signal'
 
-export { CHARTERS, CLAUSES, CLAUSE_BY_ID, DEFAULT_CLAUSES, activeGrudges } from './charter'
+export { CHARTERS, CHARTER_IDS, CLAUSES, CLAUSE_BY_ID, DEFAULT_CLAUSES, activeGrudges } from './charter'
 export type { CharterId, ClauseDef } from './charter'
+
+export { CLIMATE_GUESTS, CLIMATE_GUEST_BY_ID, climateGuestFor } from './guests'
+export type { ClimateGuestDef } from './guests'
 
 export { LAST_LISTS, pickList } from './lists'
 export type { LastListTemplate, ListLine } from './lists'
@@ -65,9 +68,12 @@ export type {
   BondedKind,
   Circuit,
   Cluster,
+  EndlessBan,
+  EndlessBanKind,
   HeadlineAid,
   HorizonState,
   LastLine,
+  PostedHabit,
   LastLineKind,
   PhraseRun,
   PlanetRun,

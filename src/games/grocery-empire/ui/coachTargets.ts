@@ -68,6 +68,7 @@ export const COACH_TARGETS: Record<string, string | null> = {
   'cold-buy-plant': 'cold',
   'cold-buy-tank': 'cold',
   'cold-momentum': 'cold',
+  'cold-sign-log': 'cold',
   'politics-lobby': 'politics',
   'politics-leave': 'politics',
   'logistics-lane': 'logistics',

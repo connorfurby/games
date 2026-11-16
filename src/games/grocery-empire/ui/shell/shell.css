@@ -1,37 +1,260 @@
 /*
- * Feel-overhaul shell chrome. Lives above legacy so HUD / hubs can slim down.
+ * Shell layer: HUD, hubs, hub header, goal bar, menu drawer / inbox, command palette.
+ * Layer order lives in design/layers.css (shell beats legacy regardless of specificity).
+ * Tokens (--g2-*, --sc-*) still come from the legacy `.ge-root.g2-root` block in g2.css.
+ * Palette law: tomato = free verb, shelf-tag yellow = spend. No third accent.
  */
 @layer shell {
+  /* ── HUD ─────────────────────────────────────────────────────────────── */
   .g2-root {
     --g2-hud-h: 72px;
   }
 
   .g2-hud {
+    grid-area: hud;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas: 'brand money controls';
     align-items: center;
     gap: var(--s-2) var(--s-3);
-    min-height: var(--g2-hud-h);
     padding: var(--s-2) var(--s-3);
+    min-height: var(--g2-hud-h);
+    border-bottom: 1px solid var(--g2-line);
+    background: color-mix(in srgb, var(--ge-bg) 88%, #000);
+    position: relative;
+    z-index: 20;
   }
 
   .g2-hud__brand {
     grid-area: brand;
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: var(--s-2);
+    min-width: 9.5rem;
+  }
+
+  .g2-hud__home {
+    font-family: var(--g2-display);
+    font-size: 1.15rem;
+    font-weight: 650;
+    /* Fraunces default import is wght-only; don't set unused SOFT/WONK axes. */
+    color: var(--ge-ink);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .g2-hud__home:hover {
+    color: var(--g2-tag);
+  }
+
+  .g2-hud__era {
+    font-size: 0.78rem;
+    color: var(--ge-muted);
   }
 
   .g2-hud__money {
     grid-area: money;
     min-width: 0;
+    display: flex;
+    gap: 1.4rem;
+    align-items: flex-end;
   }
 
   .g2-hud .g2-goal {
     grid-column: 1 / -1;
   }
 
+  .g2-stat {
+    display: grid;
+    gap: 0.05rem;
+  }
+
+  .g2-stat__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.74rem;
+    color: var(--ge-muted);
+  }
+
+  .g2-stat__value {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--g2-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.015em;
+  }
+
+  .g2-stat__value--small {
+    font-size: 1.2rem;
+    min-width: 5ch;
+  }
+
+  .g2-stat__rate {
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ge-success);
+  }
+
+  .g2-stat__rate.is-neg {
+    color: var(--ge-danger);
+  }
+
+  /* ── Next goal: a shelf tag ─────────────────────────────────────────── */
+  .g2-goal {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 0.9rem;
+    row-gap: 0.4rem;
+    align-items: center;
+    padding: 0.5rem 0.55rem 0.5rem 0.9rem;
+    border-radius: var(--g2-r-md);
+    background: color-mix(in srgb, var(--ge-bg2) 90%, var(--g2-tag) 4%);
+    border: 1px solid color-mix(in srgb, var(--g2-tag) 22%, transparent);
+    min-width: 0;
+  }
+
+  .g2-goal.is-ready {
+    border-color: color-mix(in srgb, var(--g2-tag) 65%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--g2-tag) 14%, transparent);
+  }
+
+  .g2-goal.is-done {
+    display: flex;
+  }
+
+  .g2-goal__copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .g2-goal__title {
+    font-family: var(--g2-display);
+    font-weight: 600;
+    font-size: 1.02rem;
+    line-height: 1.2;
+    min-width: 0;
+    display: block;
+  }
+
+  .g2-goal__title-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  @media (max-width: 420px) {
+    .g2-goal__title {
+      font-size: 0.92rem;
+    }
+
+    .g2-goal__hint {
+      font-size: 0.72rem;
+    }
+  }
+
+  .g2-goal__hint {
+    font-size: 0.78rem;
+    color: var(--ge-muted);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .g2-goal__eta {
+    color: var(--ge-ink);
+  }
+
+  /* Eras 10–12: filing counts under the verb line. */
+  .g2-goal__counts {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--ge-muted);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A real fork on the goal bar (Era 11 charter): three equal choices, one line each. */
+  .g2-goal__forks {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.3rem;
+  }
+
+  .g2-goal__fork {
+    appearance: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    min-width: 0;
+    padding: 0.35rem 0.45rem;
+    font-family: var(--g2-ui);
+    text-align: left;
+    color: var(--ge-ink);
+    background: color-mix(in srgb, var(--ge-ink) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ge-ink) 18%, transparent);
+    border-radius: var(--g2-r-sm, 7px);
+  }
+
+  .g2-goal__fork strong {
+    font-size: 0.8rem;
+  }
+
+  .g2-goal__fork span {
+    font-size: 0.68rem;
+    line-height: 1.25;
+    color: var(--ge-muted);
+  }
+
+  .g2-goal__fork:hover:not(:disabled) {
+    border-color: var(--ge-free, #e85d4c);
+  }
+
+  .g2-goal__fork:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .g2-goal__meter {
+    grid-column: 1 / 2;
+    height: 5px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
+    overflow: hidden;
+  }
+
+  .g2-goal__meter span {
+    display: block;
+    height: 100%;
+    background: var(--g2-tag);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .g2-goal .g2-tag {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+
+  /* ── HUD controls ───────────────────────────────────────────────────── */
   .g2-hud__controls {
     grid-area: controls;
     display: flex;
@@ -39,38 +262,229 @@
     gap: var(--s-1);
   }
 
-  .g2-hubhead__title > p,
-  .g2-hubhead__title p {
-    display: block;
-    margin: 0.15rem 0 0;
-    font: 500 var(--t-sm) / var(--t-sm-lh) var(--ge-font-ui, system-ui, sans-serif);
-    color: var(--ge-ink-muted);
+  .g2-transport {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--g2-r-sm);
+    background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
   }
 
+  .g2-icon-btn {
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ge-ink);
+    min-width: 2.1rem;
+    height: 2.1rem;
+    padding: 0 0.45rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-family: var(--g2-ui);
+  }
+
+  .g2-icon-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
+  }
+
+  .g2-icon-btn.is-on {
+    background: var(--ge-ink);
+    color: var(--ge-bg);
+  }
+
+  .g2-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .g2-icon-btn__label {
+    margin-left: 0.2rem;
+  }
+
+  .g2-icon-btn--text,
+  .g2-icon-btn--speed,
+.g2-icon-btn--undo {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .g2-inbox-btn {
+    position: relative;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.3rem;
+    padding: 0 0.8rem;
+    border-radius: var(--g2-r-sm);
+    border: 1px solid var(--g2-line-strong);
+    background: transparent;
+    color: var(--ge-ink);
+    cursor: pointer;
+    font-family: var(--g2-ui);
+    font-size: 0.85rem;
+  }
+
+  .g2-inbox-btn:hover,
+  .g2-inbox-btn.is-on {
+    background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+  }
+
+  .g2-alert {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--g2-ui);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--g2-tag) 16%, transparent);
+    color: var(--g2-tag);
+    max-width: 15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .g2-alert.is-danger {
+    background: color-mix(in srgb, var(--ge-danger) 18%, transparent);
+    color: color-mix(in srgb, var(--ge-danger) 85%, #fff);
+  }
+
+  /* ── Hubs ───────────────────────────────────────────────────────────── */
+  .g2-hubs {
+    grid-area: hubs;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.8rem 0.5rem;
+    border-right: 1px solid var(--g2-line);
+    background: color-mix(in srgb, var(--ge-bg) 94%, #000);
+  }
+
+  .g2-hub {
+    position: relative;
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--ge-muted);
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
+    padding: 0.75rem 0.25rem 0.65rem;
+    border-radius: var(--g2-r-md);
+    cursor: pointer;
+    font-family: var(--g2-ui);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .g2-hub:hover {
+    color: var(--ge-ink);
+    background: color-mix(in srgb, var(--ge-ink) 5%, transparent);
+  }
+
+  .g2-hub.is-active {
+    color: var(--ge-ink);
+  }
+
+  .g2-hub__indicator {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--g2-r-md);
+    background: color-mix(in srgb, var(--ge-ink) 9%, transparent);
+    box-shadow: inset 3px 0 0 var(--g2-tag);
+    z-index: -1;
+  }
+
+  .g2-hub > * {
+    position: relative;
+  }
+
+  .g2-hub__dot {
+    position: absolute;
+    top: 0.55rem;
+    right: 1.2rem;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--g2-tag);
+  }
+
+  /* ── Inbox drawer ───────────────────────────────────────────────────── */
+  .ge-root.g2-root .g2-inbox {
+    position: fixed;
+    top: var(--g2-hud-h);
+    right: 0;
+    bottom: 0;
+    width: min(520px, 92vw);
+    max-height: none;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--ge-bg) 96%, #000);
+    border-left: 1px solid var(--g2-line-strong);
+    box-shadow: -18px 0 40px rgba(0, 0, 0, 0.35);
+    padding: 0;
+  }
+
+  .g2-root--dev .g2-inbox {
+    top: calc(var(--g2-hud-h) + 2rem);
+  }
+
+  .g2-inbox__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 0.8rem 0.5rem;
+    border-bottom: 1px solid var(--g2-line);
+  }
+
+  .g2-inbox__tabs {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .g2-inbox__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.6rem 0.8rem 2rem;
+  }
+
+  /* ── Main column + hub-head copy ───────────────────────────────────── */
   .g2-main .gk-screen-head__purpose,
   .g2-main .gk-screen-head__title {
     display: block;
-  }
-
-  /* Kill the fixed unpack dock — verbs live in PlayFrame tray. */
-  .g2-root .fl-dock {
-    display: none;
   }
 
   .g2-root .g2-main {
     padding-bottom: calc(var(--g2-hubs-h, 64px) + var(--s-3));
   }
 
-  @media (max-width: 720px) {
-    .g2-root {
-      --g2-hud-h: 72px;
+  /* ── HUD layout by width ────────────────────────────────────────────── */
+  @media (min-width: 720px) {
+    .g2-hud {
+      grid-template-columns: auto minmax(0, 1.2fr) minmax(0, 1fr) auto;
+      grid-template-areas: 'brand money goal controls';
     }
 
+    .g2-hud .g2-goal {
+      grid-area: goal;
+      grid-column: auto;
+    }
+  }
+
+  /* ── Phones ─────────────────────────────────────────────────────────── */
+  @media (max-width: 720px) {
     .g2-hud {
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-areas:
         'money controls'
-        'goal goal';
+        'goal goal'
+        'alert alert';
       gap: var(--s-1) var(--s-2);
       padding: var(--s-2);
     }
@@ -83,6 +497,20 @@
       grid-area: goal;
     }
 
+    .g2-hud__money {
+      min-width: 0;
+      gap: 0.55rem;
+    }
+
+    .g2-hud__controls {
+      gap: 0.25rem;
+    }
+
+    .g2-hud__controls .g2-alert {
+      display: none;
+    }
+
+    /* Inbox label is for screen readers only on phones; the badge stays visible. */
     .g2-inbox-btn span:not(.g2-badge) {
       position: absolute;
       width: 1px;
@@ -90,17 +518,518 @@
       overflow: hidden;
       clip-path: inset(50%);
     }
-  }
 
-  @media (min-width: 720px) {
-    .g2-hud {
-      grid-template-columns: auto minmax(0, 1.2fr) minmax(0, 1fr) auto;
-      grid-template-areas: 'brand money goal controls';
+    /* Keep speed / Undo reachable: icon stays, wide label hides. */
+    .g2-hud__controls .g2-icon-btn--speed .g2-icon-btn__label,
+    .g2-hud__controls .g2-icon-btn--undo .g2-icon-btn__label {
+      display: none;
     }
 
-    .g2-hud .g2-goal {
-      grid-area: goal;
-      grid-column: auto;
+    .g2-hud__controls .g2-icon-btn--speed,
+    .g2-hud__controls .g2-icon-btn--undo {
+      min-width: 2.1rem;
+      padding-inline: 0.35rem;
+    }
+
+    .g2-stat__value {
+      font-size: 1.2rem;
+      min-width: 0;
+    }
+
+    .g2-stat--baskets {
+      display: flex;
+    }
+
+    .g2-stat--baskets .g2-stat__label {
+      font-size: 0.62rem;
+    }
+
+    .g2-hubs {
+      flex-direction: row;
+      justify-content: space-around;
+      padding: 0.25rem 0.25rem calc(0.25rem + env(safe-area-inset-bottom));
+      border-right: none;
+      border-top: 1px solid var(--g2-line);
+    }
+
+    .g2-hub {
+      flex: 1;
+      padding: 0.45rem 0.1rem 0.35rem;
+      font-size: 0.72rem;
+    }
+
+    .g2-hub__indicator {
+      box-shadow: inset 0 3px 0 var(--g2-tag);
+    }
+
+    .ge-root.g2-root .g2-inbox {
+      top: 0;
+      width: 100vw;
+    }
+  }
+
+  /* ── Menu drawer (tools) ────────────────────────────────────────────── */
+  .g2-tools__tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    min-width: 0;
+  }
+
+  .g2-tools .g2-inbox__head {
+    gap: 0.5rem;
+  }
+
+  .g2-tools .g2-subtab {
+    flex-shrink: 0;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .g2-menu-btn.is-on {
+    background: var(--g2-raised);
+    color: var(--g2-tag);
+  }
+
+  .g2-tools .ge-more {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .g2-tools .ge-more-block {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .g2-tools .ge-more-block__head h3 {
+    font-family: var(--g2-display);
+    font-size: 1.05rem;
+    margin: 0 0 0.15rem;
+  }
+
+  .g2-tools .ge-more-block__head p {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    color: var(--ge-muted);
+  }
+
+  .g2-tools .ge-more-actions,
+  .g2-tools .ge-more-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Settings: calm column — one field per row, no wrap-pill soup. */
+  .g2-tools .ge-more-fields {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+
+  .g2-tools .ge-more-fields .ge-more-field select {
+    width: 100%;
+    min-height: 2.25rem;
+  }
+
+  .g2-tools .ge-more-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .g2-tools .ge-more-slot {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* The Menu drawer covers the full height, over a dim scrim (click to close). */
+  .ge-root.g2-root .g2-inbox.g2-tools {
+    top: 0;
+    z-index: 60;
+    width: min(460px, 100vw);
+  }
+
+  .g2-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    background: rgba(5, 7, 10, 0.45);
+  }
+
+  /* ── Hub header: name on top, section tabs in their own bar ─────────── */
+  .g2-hubhead {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+    padding: 0.15rem 0.1rem 0;
+    flex-shrink: 0;
+  }
+
+  .g2-hubhead__title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    min-width: 0;
+    padding-bottom: 0.5rem;
+  }
+
+  .g2-hubhead__title h1 {
+    margin: 0;
+    font-family: var(--g2-display);
+    font-size: 1.35rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  /* Active-department hint: the name only. PlayFrame owns the purpose sentence. */
+  .g2-hubhead__title .g2-hubhead__dept {
+    display: block;
+    margin: 0.15rem 0 0;
+    font: 500 var(--t-sm) / var(--t-sm-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .g2-hubhead__title .g2-hubhead__dept::before {
+    content: '/';
+    margin-right: 0.45rem;
+    opacity: 0.5;
+  }
+
+  .g2-hubhead .g2-subtabs {
+    width: 100%;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0.28rem;
+    background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+    border: 1px solid var(--g2-line);
+    border-radius: 12px;
+  }
+
+  .g2-root .g2-hubhead .g2-subtab {
+    flex: 1 1 7rem;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ge-muted);
+    padding: 0.5rem 0.75rem;
+    min-height: 2.45rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .g2-root .g2-hubhead .g2-subtab:hover {
+    color: var(--ge-ink);
+    background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
+  }
+
+  .g2-root .g2-hubhead .g2-subtab.is-active {
+    color: var(--ge-bg);
+    background: var(--ge-ink);
+    border-color: var(--ge-ink);
+    font-weight: 700;
+  }
+
+  .g2-root .g2-hubhead .g2-subtab.is-suggest:not(.is-active)::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-left: 0.3rem;
+    border-radius: 50%;
+    background: var(--g2-tag);
+  }
+
+  @media (max-width: 720px) {
+    .g2-hubhead {
+      gap: 0.45rem;
+    }
+
+    .g2-hubhead__title {
+      padding-bottom: 0.1rem;
+    }
+
+    .g2-hubhead .g2-subtabs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-right: 1.6rem;
+      /* Fade the right edge so a horizontal scroll is discoverable. */
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+      mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+    }
+
+    .g2-root .g2-hubhead .g2-subtab {
+      flex: 0 0 auto;
+    }
+  }
+
+  /* Ledger as its own drawer tab: flat list, no floating tab chrome. */
+  .g2-inbox .ge-ledger.is-open {
+    position: static;
+    width: auto;
+    max-height: none;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .g2-inbox .ge-ledger__drawer {
+    position: static;
+    max-height: none;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .g2-inbox .ge-ledger__list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .g2-root .g2-hubhead .g2-subtab {
+    position: relative;
+  }
+
+  .g2-root .g2-hubhead .g2-subtab__ink {
+    display: none;
+  }
+
+  .g2-hub.is-active svg {
+    animation: g2-hub-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .g2-hub.is-active svg {
+      animation: none;
+    }
+  }
+
+  html.ge-reduced-motion .g2-hub.is-active svg {
+    animation: none;
+  }
+
+  @keyframes g2-hub-pop {
+    0% {
+      transform: scale(0.8);
+    }
+    60% {
+      transform: scale(1.15);
+    }
+  }
+
+  /* ── Shell phase 5 ──────────────────────────────────────────────────── */
+
+  /* Next goal: one CTA column — Go is ghost text; free is tomato; paid is shelf tag. */
+  .g2-goal__acts {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.25rem;
+    min-width: 0;
+    max-width: 7.2rem;
+  }
+
+  .g2-goal__acts .g2-tag {
+    grid-column: auto;
+    grid-row: auto;
+    min-width: 0;
+    width: 100%;
+    padding-left: 1.35rem;
+  }
+
+  .g2-goal__go {
+    appearance: none;
+    cursor: pointer;
+    font-family: var(--g2-ui);
+    font-size: 0.72rem;
+    font-weight: 650;
+    min-height: 0;
+    padding: 0.1rem 0.2rem;
+    border: none;
+    border-radius: 0;
+    color: var(--ge-muted);
+    background: transparent;
+    text-align: center;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .g2-goal__go:hover {
+    color: var(--ge-ink);
+    background: transparent;
+  }
+
+  .g2-goal__do {
+    appearance: none;
+    cursor: pointer;
+    font-family: var(--g2-ui);
+    font-weight: 700;
+    font-size: 0.85rem;
+    min-height: 2.35rem;
+    padding: 0 0.85rem;
+    border-radius: var(--g2-r-sm, 7px);
+    border: 1px solid transparent;
+  }
+
+  .g2-goal__do--free {
+    background: var(--ge-free, #e85d4c);
+    color: #fff8f5;
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
+  }
+
+  .g2-goal__do--free:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+
+  .g2-goal__do--free:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: none;
+  }
+
+  /* Alert chip: the in-controls one is desktop; a compact full-width one shows on phones. */
+  .g2-alert--compact {
+    display: none;
+  }
+
+  /* Hubs "More" sheet */
+  .g2-hub__indicator--static {
+    z-index: -1;
+  }
+
+  /* Command palette */
+  .g2-palette {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: grid;
+    align-items: start;
+    justify-items: center;
+    padding: 14vh 1rem 1rem;
+    background: rgba(5, 7, 10, 0.55);
+  }
+
+  .g2-palette__box {
+    width: min(520px, 100%);
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--g2-r-lg);
+    background: color-mix(in srgb, var(--ge-bg) 96%, #000);
+    border: 1px solid var(--g2-line-strong);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+  }
+
+  .g2-palette__input {
+    appearance: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ge-ink);
+    font: inherit;
+    font-size: 1rem;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--g2-line);
+  }
+
+  .g2-palette__list {
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem;
+    overflow-y: auto;
+  }
+
+  .g2-palette__empty {
+    padding: 0.8rem;
+    color: var(--ge-muted);
+    font-size: 0.85rem;
+  }
+
+  .g2-palette__row {
+    appearance: none;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 0.7rem;
+    border: none;
+    border-radius: var(--g2-r-md);
+    background: transparent;
+    color: var(--ge-ink);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .g2-palette__row.is-active {
+    background: color-mix(in srgb, var(--g2-tag) 16%, transparent);
+  }
+
+  .g2-palette__row kbd {
+    font-size: 0.7rem;
+    color: var(--ge-muted);
+  }
+
+  @media (max-width: 720px) {
+    /* Compact alert on its own HUD row — never beside goal acts. */
+    .g2-hud .g2-alert--compact {
+      display: block;
+      grid-area: alert;
+      max-width: none;
+      width: 100%;
+      text-align: left;
+      font-size: 0.74rem;
+      padding: 0.3rem 0.65rem;
+    }
+
+    .g2-goal__acts {
+      gap: 0.15rem;
+      max-width: 5.5rem;
+    }
+
+    .g2-goal__acts .g2-tag {
+      min-width: 0;
+      padding-left: 1.1rem;
+      padding-right: 0.45rem;
+    }
+
+    .g2-goal__do {
+      min-height: 2.1rem;
+      font-size: 0.8rem;
+      padding: 0 0.55rem;
+    }
+
+    .g2-goal__go {
+      padding: 0;
+      font-size: 0.68rem;
+    }
+
+    .g2-hub--more {
+      flex: 1;
+    }
+
+    .g2-palette {
+      padding-top: 6vh;
     }
   }
 }

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { MenuId } from '../../content/menus'
 import { Card, type CardProps } from '../kit'
-import { PlayFrame } from '../play'
+import { PlayFrame, type VerbTrayProps } from '../play'
 import './screenPanel.css'
 
 /**
@@ -12,6 +12,7 @@ export function ScreenPanel({
   purpose,
   icon: _icon,
   scene,
+  tray,
   primary,
   stats,
   actions,
@@ -23,9 +24,13 @@ export function ScreenPanel({
   /** Department glyph — kept for call-site compat; PlayFrame shows the name. */
   icon?: MenuId
   scene?: ReactNode
-  /** Sits in the verb tray region. Prefer migrating to PlayFrame tray props. */
+  /** The verb tray (one primary verb, optional secondaries, fail reason). */
+  tray?: VerbTrayProps
+  /** @deprecated Use `tray`. Ignored when `tray` is set. */
   primary?: ReactNode
+  /** @deprecated Rendered in the primary slot only when `tray` is absent. */
   stats?: ReactNode
+  /** @deprecated Rendered in the primary slot only when `tray` is absent. */
   actions?: ReactNode
   children: ReactNode
   className?: string
@@ -36,8 +41,9 @@ export function ScreenPanel({
         purpose={purpose}
         department={title}
         room={scene}
+        tray={tray}
         primarySlot={
-          primary || stats || actions ? (
+          !tray && (primary || stats || actions) ? (
             <div className="p6-primary-slot">
               {stats}
               {primary}

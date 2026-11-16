@@ -83,6 +83,12 @@ export interface DepthRegulars {
   seen: Record<string, number>
   /** Active visit skips auto-serve — player must serveRegular. */
   layaway: boolean
+  /** SAVE 31: second shopper in the shop (never auto-serves; promotes when active clears). */
+  waitingId: string | null
+  /** Absolute sim time the waiting shopper gives up. */
+  waitingPatienceUntil: number
+  /** Waiting visit is a layaway slip (carries over on promote / focus swap). */
+  waitingLayaway: boolean
 }
 
 export interface DepthShifts {
@@ -159,9 +165,29 @@ export interface DepthCooler {
   lastSignedAt: number
 }
 
+/**
+ * SAVE 33: one manifest filing is ONE stance — they never stack on the same lane filing.
+ * - clean: credits a clean manifest now (barge gate); no exam window.
+ * - exam: opens the exam hold; swearExam credits an exam (NOT a clean).
+ * - fast: spends the lane quickly (cash burst, no credit, no hold); the lane is left open to MegaMart.
+ */
+export type ManifestStance = 'clean' | 'fast' | 'exam'
+export const MANIFEST_STANCES: readonly ManifestStance[] = ['clean', 'exam', 'fast']
+
+export function isManifestStance(v: unknown): v is ManifestStance {
+  return v === 'clean' || v === 'fast' || v === 'exam'
+}
+
 export interface DepthDispatch {
   cleanManifests: number
+  /** Last swearExam credit (exam cycle clock). */
   lastCycleAt: number
+  /** SAVE 33: last clean-stance credit (clean cycle clock — separate from exams). */
+  lastCleanAt: number
+  /** SAVE 33: stance of each lane's current filing (exclusive per filing). */
+  laneStances: Record<string, ManifestStance>
+  /** SAVE 33: lifetime fast filings (flavor / stats). */
+  fastFiled: number
   /** Lane waiting on swearExam (null = none). */
   examLaneId: string | null
   examMix: string | null
@@ -314,6 +340,10 @@ export interface DepthState {
   rationLine: number
   /** Last horizon rival pressure time. */
   hzRivalAt: number
+  /** SAVE 32: powered blast cancels the tunnel spoil cut until the next signed Cooler log. */
+  blastSuppressesTunnelUntilLog: boolean
+  /** SAVE 34: a served climate guest bans one facing (tag = facing id) until the next shift day. */
+  climateFacingBan: { tag: string; cat: CategoryId; until: number } | null
 }
 
 export function emptyFlagship(): DepthFlagship {
@@ -333,7 +363,17 @@ export function emptyCooler(): DepthCooler {
 }
 
 export function emptyDispatch(): DepthDispatch {
-  return { cleanManifests: 0, lastCycleAt: 0, examLaneId: null, examMix: null, examUntil: 0, examsHeld: 0 }
+  return {
+    cleanManifests: 0,
+    lastCycleAt: 0,
+    lastCleanAt: 0,
+    laneStances: {},
+    fastFiled: 0,
+    examLaneId: null,
+    examMix: null,
+    examUntil: 0,
+    examsHeld: 0,
+  }
 }
 
 export function emptyLeadsOnBoard(): DepthLeadsOnBoard {
@@ -369,6 +409,9 @@ export function emptyRegulars(): DepthRegulars {
     patienceUntil: 0,
     seen: {},
     layaway: false,
+    waitingId: null,
+    waitingPatienceUntil: 0,
+    waitingLayaway: false,
   }
 }
 
@@ -448,6 +491,8 @@ export function emptyDepth(): DepthState {
     hearing: emptyHearing(3),
     rationLine: -1,
     hzRivalAt: 0,
+    blastSuppressesTunnelUntilLog: false,
+    climateFacingBan: null,
   }
 }
 

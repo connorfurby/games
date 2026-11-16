@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { GAMES } from '@/games/registry'
 import { GE_COVER } from '@/games/grocery-empire/art/cast'
 import { latestNews } from '@/games/grocery-empire/content/news'
+import { qty } from '@/games/grocery-empire/ui/format'
 import { engine } from '@/games/grocery-empire/sim/engine'
 import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
 import { loadGame } from '@/shared/save'
@@ -26,6 +27,7 @@ interface SaveGlance {
   time?: number
   lifetimeRevenue?: number
   stats?: { sold?: number; playSec?: number }
+  rates?: { soldPerSec?: number }
 }
 
 function formatAge(ms: number): string {
@@ -102,6 +104,12 @@ export function Shelf() {
       ? formatAge(now - save.lastSavedAt)
       : null
   const baskets = typeof save?.baskets === 'number' ? Math.floor(save.baskets) : null
+  const soldRate = save?.rates?.soldPerSec
+  const rateText =
+    typeof soldRate === 'number' && Number.isFinite(soldRate)
+      ? `${soldRate < 100 ? soldRate.toFixed(1) : qty(soldRate, 'named')}/s`
+      : '—'
+  const eraText = typeof save?.era === 'number' ? `Era ${save.era}` : null
 
   const newGame = () => {
     if (save && !window.confirm('Start a new Grocery Empire? This wipes the current local save.')) return
@@ -183,8 +191,12 @@ export function Shelf() {
                 aria-selected={selected === g.id}
                 className={`game-card ${selected === g.id ? 'selected' : ''} ${g.status}`}
                 style={{ ['--card-accent' as string]: g.accent }}
-                whileHover={reduce ? undefined : { y: -8, rotate: selected === g.id ? -1.5 : -0.5 }}
-                whileTap={reduce ? undefined : { scale: 0.98 }}
+                whileHover={
+                  reduce || g.status !== 'playable'
+                    ? undefined
+                    : { y: -8, rotate: selected === g.id ? -1.5 : -0.5 }
+                }
+                whileTap={reduce || g.status !== 'playable' ? undefined : { scale: 0.98 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 28 }}
                 onClick={() => setSelected(g.id)}
                 layoutId={`card-${g.id}`}
@@ -225,14 +237,22 @@ export function Shelf() {
             <>
               <div className={`detail-actions ${burst ? 'detail-actions--burst' : ''}`.trim()}>
                 <button type="button" className="primary shelf-continue" onClick={continuePlay}>
-                  {save ? 'Continue' : 'New game'}
+                  {save ? 'Continue' : 'Start'}
                 </button>
                 {save ? (
                   <button type="button" onClick={newGame}>
                     New game
                   </button>
                 ) : null}
-                <button type="button" onClick={startDaily} title={`Seed ${dailyToday.seed}`}>
+                <button
+                  type="button"
+                  onClick={startDaily}
+                  title={
+                    save
+                      ? `Seed ${dailyToday.seed} · parks this run in slot 3`
+                      : `Seed ${dailyToday.seed}`
+                  }
+                >
                   Today&apos;s corner
                 </button>
                 {burst ? (
@@ -244,6 +264,16 @@ export function Shelf() {
                 ) : null}
               </div>
 
+              {save ? (
+                <p className="shelf-glance" aria-label="Continue glance">
+                  {[eraText, rateText !== '—' ? rateText : null, age].filter(Boolean).join(' · ')}
+                </p>
+              ) : null}
+              <p className="muted shelf-corner-note">
+                Today&apos;s corner · a seeded Era-0 run.{' '}
+                {save ? 'It parks your current run in slot 3.' : 'Nothing to park yet.'}
+              </p>
+
               <Link to={`/news/${bulletin.id}`} className="shelf-receipt" title={bulletin.dek}>
                 <span className="shelf-receipt__label">What&apos;s new</span>
                 <span className="shelf-receipt__headline">{bulletin.headline}</span>
@@ -251,16 +281,10 @@ export function Shelf() {
 
               <div className="shelf-stats shelf-stats--quiet" aria-label="Save glance">
                 <div>
-                  <span>Save</span>
-                  <strong>{save ? age ?? 'Ready' : 'None yet'}</strong>
-                </div>
-                <div>
                   <span>Baskets</span>
-                  <strong>{baskets != null ? baskets.toLocaleString() : '—'}</strong>
-                </div>
-                <div>
-                  <span>Era</span>
-                  <strong>{typeof save?.era === 'number' ? save.era : '—'}</strong>
+                  <strong title={baskets != null ? String(Math.floor(baskets)) : undefined}>
+                    {baskets != null ? qty(baskets, 'named') : '—'}
+                  </strong>
                 </div>
                 <div>
                   <span>Play</span>
@@ -274,16 +298,13 @@ export function Shelf() {
                 </div>
               </div>
 
-              <div className="shelf-links shelf-links--quiet">
-                <Link to="/guide/grocery-empire">Guide</Link>
-                <Link to="/achievements">Awards</Link>
-                <Link to="/shop">Shop</Link>
-                {import.meta.env.DEV ? (
+              {import.meta.env.DEV ? (
+                <div className="shelf-links shelf-links--quiet">
                   <Link to="/play/grocery-empire/dev" className="shelf-dev-link">
                     DevMode
                   </Link>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
 
               {dailyStampLine || (meta.dailyStreak ?? 0) > 0 ? (
                 <p className="muted shelf-daily-stamp">
@@ -293,11 +314,11 @@ export function Shelf() {
               {dailyActive ? (
                 <p className="muted shelf-daily-stamp">
                   Today&apos;s corner · seed {dailyBlob?.seed ?? dailyToday.seed}
-                  {bestToday ? ` · best ${bestToday.baskets.toLocaleString()} baskets` : ''}
+                  {bestToday ? ` · best ${qty(bestToday.baskets, 'named')} baskets` : ''}
                 </p>
               ) : bestToday ? (
                 <p className="muted shelf-daily-stamp">
-                  Today&apos;s corner best · {bestToday.baskets.toLocaleString()} baskets · seed{' '}
+                  Today&apos;s corner best · {qty(bestToday.baskets, 'named')} baskets · seed{' '}
                   {bestToday.seed}
                 </p>
               ) : null}

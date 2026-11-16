@@ -6,7 +6,9 @@ import { log } from '../helpers'
 import { lateCashFloor } from '../lateCost'
 import { chance, pick } from '../rng'
 import type { GameState, RivalState } from '../state'
-import { ensureHearing } from './horizon'
+import { pennyLockChanceMul, pennyLockGapMul } from './flyerStance'
+import { hearingSessionOpen, nextHearingClause, openHearingSession } from './horizonCore'
+import { upgradeEffect } from '../../content/upgrades'
 import { statCut, statMul } from './stats'
 
 export function clearRivalLock(s: GameState, why?: string) {
@@ -54,12 +56,49 @@ export function activeRivals(s: GameState): { def: RivalDef; st: RivalState }[] 
   return out
 }
 
+/** Seconds in one ration-ledger day (a shift day, shortened by Ledger Stamp Pad). */
+export function ledgerDayLength(s: GameState): number {
+  return DEPTH.shiftDaySec * (1 - Math.min(0.35, upgradeEffect(s, 'ledger-stamp-pad')))
+}
+
+/**
+ * Phase 9 — the Ration Board in ration week (Era 6). The Board's named chain opens in Era 12, but its
+ * clipboard is already on the door: once the first slice of a ledger day has passed with no
+ * `stampLedger`, it feeds on the gap until you stamp. Stateless — read from `lastLedgerDay` and the clock.
+ */
+export function rationBoardBehind(s: GameState): boolean {
+  if (!s.depth || s.era < 6) return false
+  const until = s.depth.rationWeekUntil ?? 0
+  if (until <= 0 || s.time >= until) return false
+  if ((s.depth.ledgerStamps ?? 0) >= DEPTH.rationLedgerNeed) return false
+  if (s.rivals?.ration?.bought) return false
+  const len = ledgerDayLength(s)
+  const day = Math.floor(s.time / len)
+  if ((s.depth.lastLedgerDay ?? -1) >= day) return false
+  return (s.time % len) / len >= DEPTH.rationBoardGraceFrac
+}
+
+/** Demand the Board skims while the ledger is a day behind (1 when it is caught up). */
+export function rationBoardDemandMul(s: GameState): number {
+  return rationBoardBehind(s) ? DEPTH.rationBoardDemandMul : 1
+}
+
 /** Demand multiplier from independent rivals (≤ 1). */
 export function rivalDemandMul(s: GameState): number {
   let stores = 0
   for (const { st } of activeRivals(s)) stores += st.stores
-  if (stores <= 0) return 1
-  return 1 / (1 + stores * RIVAL_CHAINS.perStore * statCut(s, 'rivalCut'))
+  const board = rationBoardDemandMul(s)
+  if (stores <= 0) return board
+  return board / (1 + stores * RIVAL_CHAINS.perStore * statCut(s, 'rivalCut'))
+}
+
+function tickRationBoardWeek(s: GameState) {
+  if (!rationBoardBehind(s)) return
+  const len = ledgerDayLength(s)
+  const dayStart = Math.floor(s.time / len) * len
+  const text = 'The Ration Board counts an unstamped ledger — demand slips until you stamp.'
+  if (s.ledger.some((e) => e.t >= dayStart && e.text === text)) return
+  log(s, text, 'warn')
 }
 
 /** Store-equivalents added to the network by bought rivals. */
@@ -182,8 +221,10 @@ function tickPennyAisleLock(s: GameState) {
   const penny = s.rivals?.penny
   if (!penny || penny.bought || s.era < 2) return
   if (s.depth.rivalLockCat) return
-  if (s.depth.rivalLockAt > 0 && s.time - s.depth.rivalLockAt < DEPTH.rivalLockGapSec) return
-  if (!chance(s, DEPTH.rivalLockChancePerSec)) return
+  // SAVE 32: a live deep flyer shortens the gap and raises the chance.
+  const gap = DEPTH.rivalLockGapSec * pennyLockGapMul(s)
+  if (s.depth.rivalLockAt > 0 && s.time - s.depth.rivalLockAt < gap) return
+  if (!chance(s, DEPTH.rivalLockChancePerSec * pennyLockChanceMul(s))) return
   const unlocked = CATEGORY_IDS.filter((c) => s.categories[c] && c !== 'privateLabel')
   if (unlocked.length === 0) return
   const cat = pick(s, unlocked) as CategoryId
@@ -227,6 +268,7 @@ export function tickRivals(s: GameState) {
   }
   tickPennyAisleLock(s)
   tickPennyCounterFlyer(s)
+  tickRationBoardWeek(s)
   tickHorizonRivalPressure(s)
 }
 
@@ -278,22 +320,12 @@ function tickHorizonRivalPressure(s: GameState) {
     return
   }
 
-  if (s.era >= 11 && s.rivals?.concord && !s.rivals.concord.bought) {
-    const docket = ensureHearing(s)
-    if (docket.answered < docket.needed && !docket.pendingClause && !h.hearingClause) {
-      const pool = ['fair-stamp', 'green-aisle', 'dock-tithe', 'venture-share', 'quiet-floor']
-      const clause = pick(s, pool)
-      docket.sessions += 1
-      docket.pendingClause = clause
-      h.hearingClause = clause
-      h.minutesAmends = 0
-      s.depth.hearingAnswered = false
+  // SAVE 35: Concord only hears clauses you have seated; seatClause usually opens the session itself.
+  if (s.era >= 11 && s.rivals?.concord && !s.rivals.concord.bought && hearingSessionOpen(s)) {
+    const clause = nextHearingClause(s)
+    if (clause) {
+      openHearingSession(s, clause)
       s.depth.hzRivalAt = s.time
-      log(
-        s,
-        `Concord filed ${clause} at hearing ${docket.sessions}/${docket.needed}. Answer before you sign.`,
-        'warn',
-      )
       return
     }
   }

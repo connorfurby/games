@@ -1,3 +1,4 @@
+import { normalizeBuildVariants } from '../content/builds'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import {
   emptyBlockEvent,
@@ -10,7 +11,9 @@ import {
   emptyPractice,
   emptyRegulars,
   emptyShifts,
+  isManifestStance,
   PRACTICE_LAYERS,
+  type ManifestStance,
   type BlockEventKind,
   type DepthInvoice,
   type DepthState,
@@ -19,7 +22,16 @@ import {
   type FlyerPromise,
 } from '../content/depth'
 import { MENU_IDS } from '../content/menus'
-import { CLAUSE_BY_ID, emptyHorizon, PLANET_BY_ID, SKU_BY_ID, type HorizonState, type LastLine } from '../content/horizon'
+import {
+  CLAUSE_BY_ID,
+  emptyHorizon,
+  PLANET_BY_ID,
+  SEASON_CHORES,
+  SKU_BY_ID,
+  type HorizonState,
+  type LastLine,
+  type StopPersonality,
+} from '../content/horizon'
 import { COMPUTE, DEPTH, FLEET, HISTORY, HORIZON, SAVE_VERSION } from './balance'
 import { log, skipOpeningDialogue } from './helpers'
 import { repair } from './invariants'
@@ -48,6 +60,24 @@ const MUTATOR_IDS: readonly PrestigeMutatorId[] = [
 
 function str(v: unknown, fallback = ''): string {
   return typeof v === 'string' ? v : fallback
+}
+
+function isStopKind(v: unknown): v is StopPersonality {
+  return v === 'spoil' || v === 'tariff' || v === 'delay'
+}
+
+function isHabit(v: unknown): v is 'price' | 'stock' | 'route' | 'taste' {
+  return v === 'price' || v === 'stock' || v === 'route' || v === 'taste'
+}
+
+/** Unique known clause ids, order kept. */
+function clauseIds(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  for (const v of raw) {
+    if (typeof v === 'string' && CLAUSE_BY_ID[v] && !out.includes(v)) out.push(v)
+  }
+  return out
 }
 
 function slotSix(raw: unknown): string[] {
@@ -111,6 +141,16 @@ function mergeHorizon(raw: unknown): HorizonState {
     typeof h.climateGuest === 'string' ? (h.climateGuest as HorizonState['climateGuest']) : null
   base.settlements = Math.max(0, Math.floor(num(h.settlements, 0)))
   base.settlementUntil = Math.max(0, num(h.settlementUntil, 0))
+  // SAVE 34: pending stop personality + season bed lock. Pre-34 saves start clear.
+  const pend = h.pendingStop
+  base.pendingStop =
+    isObject(pend) && isStopKind(pend.kind)
+      ? { index: Math.max(0, Math.floor(num(pend.index, 0))), kind: pend.kind }
+      : null
+  base.bedLockedChore =
+    typeof h.bedLockedChore === 'string' && (SEASON_CHORES as readonly string[]).includes(h.bedLockedChore)
+      ? (h.bedLockedChore as HorizonState['bedLockedChore'])
+      : null
   base.haulsDone = Math.max(0, Math.floor(num(h.haulsDone, 0)))
   base.haulUntil = Math.max(0, num(h.haulUntil, 0))
   base.watchedPhrases = Math.max(0, Math.floor(num(h.watchedPhrases, 0)))
@@ -118,6 +158,29 @@ function mergeHorizon(raw: unknown): HorizonState {
   base.seatingsDone = Math.max(0, Math.floor(num(h.seatingsDone, 0)))
   base.seatingUntil = Math.max(0, num(h.seatingUntil, 0))
   base.seatingGapUntil = Math.max(0, num(h.seatingGapUntil, 0))
+  // SAVE 35: posted habit, seated / heard / amended clauses, rehearsal scratch. Pre-35 saves start clear.
+  const posted = h.postedHabit
+  base.postedHabit =
+    isObject(posted) && isHabit(posted.habit)
+      ? {
+          habit: posted.habit,
+          until: Math.max(0, num(posted.until, 0)),
+          agentId: Number.isInteger(posted.agentId) ? (posted.agentId as number) : null,
+        }
+      : null
+  base.seatingClause = typeof h.seatingClause === 'string' && CLAUSE_BY_ID[h.seatingClause] ? h.seatingClause : null
+  base.seatedClauses = clauseIds(h.seatedClauses)
+  base.heardClauses = clauseIds(h.heardClauses)
+  base.amendedClauses = clauseIds(h.amendedClauses)
+  base.rehearsalScratch = Number.isInteger(h.rehearsalScratch) ? Math.max(-1, h.rehearsalScratch as number) : -1
+  // SAVE 36: the endless mutation's ban. Pre-36 saves start clear; junk or an unknown id is dropped.
+  const ban = h.endlessBan
+  base.endlessBan =
+    isObject(ban) &&
+    ((ban.kind === 'clause' && typeof ban.id === 'string' && !!CLAUSE_BY_ID[ban.id]) ||
+      (ban.kind === 'ventureFork' && typeof ban.id === 'string' && ban.id.length > 0))
+      ? { kind: ban.kind as 'clause' | 'ventureFork', id: ban.id as string }
+      : null
   base.acceptRehearsal = bool(h.acceptRehearsal, false)
   base.acceptRehearsalUntil = Math.max(0, num(h.acceptRehearsalUntil, 0))
   base.signal = Math.max(0, num(h.signal, 0))
@@ -218,10 +281,8 @@ function mergeHorizon(raw: unknown): HorizonState {
         })
       : [],
     score: Math.max(0, Math.min(1, num(row.score, 0))),
-    stopKind:
-      row.stopKind === 'spoil' || row.stopKind === 'tariff' || row.stopKind === 'delay'
-        ? (row.stopKind as 'spoil' | 'tariff' | 'delay')
-        : null,
+    stopKind: isStopKind(row.stopKind) ? row.stopKind : null,
+    settledKind: isStopKind(row.settledKind) ? row.settledKind : null,
   })
   if (Array.isArray(h.circuits)) {
     for (const row of h.circuits) {
@@ -372,6 +433,18 @@ function mergeDepth(raw: unknown): DepthState {
       patienceUntil: Math.max(0, num(raw.regulars.patienceUntil, 0)),
       seen,
       layaway: bool(raw.regulars.layaway, false),
+      waitingId: typeof raw.regulars.waitingId === 'string' ? raw.regulars.waitingId : null,
+      waitingPatienceUntil: Math.max(0, num(raw.regulars.waitingPatienceUntil, 0)),
+      waitingLayaway: bool(raw.regulars.waitingLayaway, false),
+    }
+    // A waiting shopper needs a primary and must be a different person.
+    if (
+      base.regulars.waitingId &&
+      (!base.regulars.activeId || base.regulars.waitingId === base.regulars.activeId)
+    ) {
+      base.regulars.waitingId = null
+      base.regulars.waitingPatienceUntil = 0
+      base.regulars.waitingLayaway = false
     }
   } else {
     base.regulars = emptyRegulars()
@@ -500,6 +573,11 @@ function mergeDepth(raw: unknown): DepthState {
     base.dispatch = {
       cleanManifests: Math.max(0, Math.floor(num(raw.dispatch.cleanManifests, 0))),
       lastCycleAt: Math.max(0, num(raw.dispatch.lastCycleAt, 0)),
+      // SAVE 33: separate clean clock. Pre-33 saves credited clean + exam on one swear, so seed it
+      // from the exam clock instead of handing out a free early clean.
+      lastCleanAt: Math.max(0, num(raw.dispatch.lastCleanAt, num(raw.dispatch.lastCycleAt, 0))),
+      laneStances: sanitizeLaneStances(raw.dispatch.laneStances),
+      fastFiled: Math.max(0, Math.floor(num(raw.dispatch.fastFiled, 0))),
       examLaneId: typeof raw.dispatch.examLaneId === 'string' ? raw.dispatch.examLaneId : null,
       examMix: typeof raw.dispatch.examMix === 'string' ? raw.dispatch.examMix : null,
       examUntil: Math.max(0, num(raw.dispatch.examUntil, 0)),
@@ -566,6 +644,16 @@ function mergeDepth(raw: unknown): DepthState {
   base.hearingAnswered = base.hearing.answered >= base.hearing.needed
   base.rationLine = Math.floor(num(raw.rationLine, -1))
   base.hzRivalAt = Math.max(0, num(raw.hzRivalAt, 0))
+  base.blastSuppressesTunnelUntilLog = bool(raw.blastSuppressesTunnelUntilLog, false)
+  // SAVE 34: climate guest facing ban. Pre-34 saves start clear.
+  const ban = raw.climateFacingBan
+  base.climateFacingBan =
+    isObject(ban) &&
+    typeof ban.tag === 'string' &&
+    typeof ban.cat === 'string' &&
+    CATEGORY_IDS.includes(ban.cat as CategoryId)
+      ? { tag: ban.tag, cat: ban.cat as CategoryId, until: Math.max(0, num(ban.until, 0)) }
+      : null
   if (isObject(raw.deptEverStaffed)) {
     for (const [id, on] of Object.entries(raw.deptEverStaffed)) {
       if (typeof on === 'boolean') base.deptEverStaffed[id] = on
@@ -599,12 +687,32 @@ function mergeDepth(raw: unknown): DepthState {
   return base
 }
 
+/** SAVE 33: keep only well-formed lane → stance rows. */
+function sanitizeLaneStances(raw: unknown): Record<string, ManifestStance> {
+  const out: Record<string, ManifestStance> = {}
+  if (!isObject(raw)) return out
+  for (const [laneId, stance] of Object.entries(raw)) {
+    if (isManifestStance(stance)) out[laneId] = stance
+  }
+  return out
+}
+
 function isObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v)
 }
 
 function num(v: unknown, fallback: number) {
   return typeof v === 'number' && Number.isFinite(v) ? v : fallback
+}
+
+/** Copy an optional object slice; missing/invalid raw uses `fallback` (never wipe with undefined). */
+export function migrateSlice<T extends object>(
+  raw: unknown,
+  fallback: T,
+  copy: (rawObj: Record<string, unknown>, fb: T) => T,
+): T {
+  if (!isObject(raw)) return fallback
+  return copy(raw, fallback)
 }
 
 function bool(v: unknown, fallback: boolean) {
@@ -797,6 +905,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           ideasOn: bool(c.ideasOn, true),
           autoTourney: bool(c.autoTourney, true),
           nextAutoTourneyAt: Math.max(0, num(c.nextAutoTourneyAt, 0)),
+          nextTournamentAt: Math.max(0, num(c.nextTournamentAt, 0)),
           ideas: Math.max(0, num(c.ideas, 0)),
           reputation: Math.max(0, Math.floor(num(c.reputation, 2))),
           repEarned: Math.max(0, Math.floor(num(c.repEarned, 2))),
@@ -828,6 +937,17 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       if (isObject(raw.upgrades)) base.upgrades = raw.upgrades as Record<string, number>
       base.upgradeSpend = Math.max(0, num(raw.upgradeSpend, 0))
       if (isObject(raw.builds)) base.builds = { ...base.builds, ...(raw.builds as Record<string, number>) }
+      if (isObject(raw.buildVariants)) {
+        // Normalize legacy track-only keys (storefront → storefront:2).
+        base.buildVariants = normalizeBuildVariants(raw.buildVariants as Record<string, string>)
+      } else {
+        base.buildVariants = {}
+      }
+      if (isObject(raw.buildHibernated)) {
+        base.buildHibernated = { ...(raw.buildHibernated as Record<string, boolean>) }
+      } else {
+        base.buildHibernated = {}
+      }
       base.endcaps = Math.max(0, Math.floor(num(raw.endcaps, 0)))
       if (isObject(raw.ventures)) {
         base.ventures = raw.ventures as GameState['ventures']
@@ -1190,23 +1310,22 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
         }
       }
       base.pendingAccept = bool(raw.pendingAccept, false)
-      if (isObject(raw.prestigeCarry)) {
+      // 40.0+ optional slices: use migrateSlice (never wipe with undefined).
+      base.prestigeCarry = migrateSlice(raw.prestigeCarry, base.prestigeCarry, (rc) => {
         const d = emptyPrestigeCarry()
-        const rawMuts = Array.isArray(raw.prestigeCarry.mutators)
-          ? (raw.prestigeCarry.mutators as unknown[])
-          : []
+        const rawMuts = Array.isArray(rc.mutators) ? (rc.mutators as unknown[]) : []
         const mutators = rawMuts
           .filter((id): id is PrestigeMutatorId =>
             typeof id === 'string' && (MUTATOR_IDS as readonly string[]).includes(id),
           )
           .slice(0, 2)
-        base.prestigeCarry = {
-          appetite: Math.max(0, num(raw.prestigeCarry.appetite, d.appetite)),
-          tipSharpness: Math.max(0, num(raw.prestigeCarry.tipSharpness, d.tipSharpness)),
-          universeIndex: Math.max(0, Math.floor(num(raw.prestigeCarry.universeIndex, d.universeIndex))),
+        return {
+          appetite: Math.max(0, num(rc.appetite, d.appetite)),
+          tipSharpness: Math.max(0, num(rc.tipSharpness, d.tipSharpness)),
+          universeIndex: Math.max(0, Math.floor(num(rc.universeIndex, d.universeIndex))),
           mutators,
         }
-      }
+      })
 
       if (isObject(raw.rebrand)) {
         base.rebrand = {
@@ -1236,6 +1355,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           owned?: unknown
           levels?: unknown
           sockets?: unknown
+          litWings?: unknown
           dust?: unknown
           autoDust?: unknown
         }
@@ -1249,6 +1369,10 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           owned,
           levels,
           sockets: Array.isArray(rl.sockets) ? rl.sockets.filter((id): id is string => typeof id === 'string') : [],
+          // SAVE 36: lit wings. Pre-36 saves are null (the first `cap` finished wings stay lit).
+          litWings: Array.isArray(rl.litWings)
+            ? rl.litWings.filter((w, i, a): w is string => typeof w === 'string' && a.indexOf(w) === i)
+            : null,
           dust: Math.max(0, Math.floor(num(rl.dust, 0))),
           autoDust: typeof rl.autoDust === 'string' ? rl.autoDust : null,
           wings: Array.isArray(rl.wings) ? rl.wings.filter((w): w is string => typeof w === 'string') : [],

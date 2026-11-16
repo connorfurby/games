@@ -1,11 +1,13 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useId } from 'react'
+import { useEffect, useId, type ReactNode } from 'react'
 import { Btn } from './Btn'
 
 export type ConfirmSpec = {
   title: string
   body: string
   detail?: string
+  /** Extra body (the shared "what you keep" sheet). Rendered between the detail and the buttons. */
+  sheet?: ReactNode
   confirmLabel?: string
   cancelLabel?: string
   tone?: 'primary' | 'danger'
@@ -68,6 +70,7 @@ export function ConfirmModal({
             <h3 id={titleId}>{spec.title}</h3>
             <p className="ge-confirm__body">{spec.body}</p>
             {spec.detail ? <p className="ge-confirm__detail">{spec.detail}</p> : null}
+            {spec.sheet}
             <div className="ge-confirm__actions">
               <Btn tone="ghost" onClick={onClose}>
                 {spec.cancelLabel ?? 'Cancel'}

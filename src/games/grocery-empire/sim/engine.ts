@@ -5,7 +5,7 @@ import { migrate } from './migrate'
 import { getActiveSaveId } from './saveKey'
 import { createInitialState, type GameState } from './state'
 import { applyOffline, applyTick } from './tick'
-import { canRebrand, rebrand as rebrandState } from './systems/prestige'
+import { canCarry, canRebrand, rebrand as rebrandState, type RebrandCarry } from './systems/prestige'
 import { applyUndo, canUndo as undoAvailable, clearUndo, pushUndo } from './undo'
 
 type Listener = () => void
@@ -145,10 +145,13 @@ export class GroceryEngine {
       'buyAd',
       'buyBuild',
       'sellBuild',
+      'setBuildVariant',
+      'hibernateBuild',
       'buyUpgrade',
       'buyUpgradeSweep',
       'levelVentureSweep',
       'buyMemo',
+      'buyMemoSweep',
       'hire',
       'buyEndcap',
       'openVenture',
@@ -178,6 +181,8 @@ export class GroceryEngine {
       pushUndo(this.state, cmd.type)
     }
     const check = runCmd(this.state, cmd)
+    // Accept rebuilds the whole run like Rebrand — an older spend snapshot must not resurrect it.
+    if (check.ok && cmd.type === 'acceptEnding') clearUndo()
     if (check.ok) this.bump()
     return check
   }
@@ -224,12 +229,12 @@ export class GroceryEngine {
     this.reset(seed)
   }
 
-  /** Rebrand prestige: fresh store, keep Empire + Goodwill. Returns a reason if blocked. */
-  rebrand(): string | null {
-    const blocked = canRebrand(this.state)
+  /** Rebrand prestige: fresh store, keep Empire + Goodwill (+ one carried doctrine OR facing). Returns a reason if blocked. */
+  rebrand(carry: RebrandCarry = null): string | null {
+    const blocked = canRebrand(this.state) ?? canCarry(this.state, carry)
     if (blocked) return blocked
     clearUndo()
-    this.replaceState(rebrandState(this.state))
+    this.replaceState(rebrandState(this.state, Date.now(), carry))
     return null
   }
 

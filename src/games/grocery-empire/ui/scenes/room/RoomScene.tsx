@@ -58,8 +58,8 @@ export function RoomScene({
           <>
             <defs>
               <linearGradient id={skyId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={skyTop} />
-                <stop offset="1" stopColor={skyBottom} />
+                <stop offset="0" style={{ stopColor: skyTop }} />
+                <stop offset="1" style={{ stopColor: skyBottom }} />
               </linearGradient>
             </defs>
             <rect width={ROOM_W} height={height} fill={`url(#${skyId})`} />

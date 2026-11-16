@@ -1,11 +1,41 @@
 import { LayoutGroup, motion } from 'motion/react'
 import { useState, type ReactNode } from 'react'
+import { doctrinesAtEra } from '../../content/era2'
 import { MENUS, type MenuId } from '../../content/menus'
 import { HORIZON } from '../../sim/balance'
+import { can } from '../../sim/commands'
 import type { GameState } from '../../sim/state'
 import { Icon } from '../icons/Icon'
 import { Sheet, usePhone } from '../kit'
 import { HUBS, HUB_BY_ID, MENU_COACH, overflowHubs, phoneBarHubs, type HubDef, type HubId } from './hubs'
+
+/** Empire: a doctrine (or the tournament) is affordable right now. A handful of cheap `can()` calls. */
+function empireReady(s: GameState): boolean {
+  if (!s.menus.strategy) return false
+  if (can(s, { type: 'runTournament' }).ok) return true
+  return doctrinesAtEra(s.era).some((d) => can(s, { type: 'buyDoctrine', id: d.id }).ok)
+}
+
+/** Worlds: some filing / service is ready to commit (Eras 7+). */
+function worldsReady(s: GameState): boolean {
+  if (s.era < 7 || !s.horizon) return false
+  const h = s.horizon
+  if (s.menus.exchange) {
+    if (can(s, { type: 'settleStop' }).ok) return true
+  }
+  if (s.menus.planets) {
+    if (can(s, { type: 'serveClimateNeighbor' }).ok) return true
+    if (h.planets.some((p) => p.revealed && !p.stocked && can(s, { type: 'fileStandardPlanogram', planetId: p.id }).ok)) {
+      return true
+    }
+  }
+  if (s.era >= 9 && s.menus.cultivars) {
+    const chore = (['water', 'cover', 'harvest', 'rest'] as const)[h.season % 4]!
+    if (can(s, { type: 'doSeasonChore', chore }).ok) return true
+  }
+  if (s.menus.charter && can(s, { type: 'seatClause' }).ok) return true
+  return false
+}
 
 /**
  * The hub rail (desktop) / bottom bar (phone). On phones Store, Supply, Team and
@@ -36,6 +66,11 @@ export function HubNav({
   const unlocked = (h: HubDef): MenuId[] => h.menus.filter((id) => !!state.menus[id])
   const seasonMin = Math.max(0, Math.ceil((HORIZON.seasonSec - (state.horizon?.seasonT ?? 0)) / 60))
 
+  // Cheap readiness checks, once per render, only for hubs the player has open.
+  const readyHubs = new Set<HubId>()
+  if (HUB_BY_ID.empire.menus.some((m) => state.menus[m]) && empireReady(state)) readyHubs.add('empire')
+  if (HUB_BY_ID.worlds.menus.some((m) => state.menus[m]) && worldsReady(state)) readyHubs.add('worlds')
+
   const badgeFor = (h: HubDef, hit: boolean): ReactNode => {
     if (h.id === 'museum' && chests > 0) {
       return (
@@ -46,9 +81,21 @@ export function HubNav({
     }
     if (h.id === 'worlds' && state.era >= 9) {
       return (
-        <span className="g2-hub__badge" aria-label={`Season ends in ${seasonMin} min`} title={`Season · ${seasonMin}m`}>
-          {seasonMin}m
-        </span>
+        <>
+          <span className="g2-hub__badge" aria-label={`Season ends in ${seasonMin} min`} title={`Season · ${seasonMin}m`}>
+            {seasonMin}m
+          </span>
+          {readyHubs.has('worlds') ? <span className="g2-hub__dot" aria-label="A filing is ready" /> : null}
+        </>
+      )
+    }
+    if (readyHubs.has(h.id)) {
+      return (
+        <span
+          className="g2-hub__dot"
+          aria-label={h.id === 'empire' ? 'A doctrine is affordable' : 'A filing is ready'}
+          title={h.id === 'empire' ? 'A doctrine is affordable' : 'A filing is ready'}
+        />
       )
     }
     return hit ? <span className="g2-hub__dot" aria-label="Suggested" /> : null
@@ -66,7 +113,9 @@ export function HubNav({
   const primary = collapse ? rows.filter((r) => barSet.has(r.h.id)) : rows
   const overflow = collapse ? rows.filter((r) => overflowIds.has(r.h.id) || !barSet.has(r.h.id)) : []
   const overflowActive = overflow.some((r) => r.h.id === hub)
-  const overflowHit = overflow.some((r) => r.hit || (r.h.id === 'museum' && chests > 0))
+  const overflowHit = overflow.some(
+    (r) => r.hit || (r.h.id === 'museum' && chests > 0) || readyHubs.has(r.h.id),
+  )
 
   return (
     <nav className="g2-hubs" aria-label="Departments">
@@ -134,7 +183,13 @@ export function HubNav({
                     {HUB_BY_ID[h.id].name} <kbd>{i + 1}</kbd>
                   </strong>
                   <span>{h.purpose}</span>
-                  <span className="g2-more__menus">{ms.map((m) => MENUS[m].name).join(' · ')}</span>
+                  <span className="g2-more__menus">
+                    {ms.map((m) => (
+                      <span key={m} className="g2-more__menu" title={MENUS[m].purpose}>
+                        <b>{MENUS[m].name}</b> — {MENUS[m].purpose}
+                      </span>
+                    ))}
+                  </span>
                 </span>
                 {badgeFor(h, hit)}
               </button>

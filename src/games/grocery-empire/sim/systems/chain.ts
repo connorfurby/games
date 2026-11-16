@@ -92,6 +92,35 @@ export function tickBlockEvents(s: GameState, _dt: number) {
   log(s, `${label}: ${STORE_TRAIT_BY_ID[trait].name} doors pull hardest.`, 'warn')
 }
 
+export interface HotTraitInfo {
+  kind: 'parade' | 'payday' | 'rain'
+  trait: string
+  traitName: string
+  /** Store policies that match the hot trait. */
+  policies: string[]
+  /** Doors whose current policy already matches. */
+  matchedDoors: number
+  secondsLeft: number
+}
+
+/** SAVE 32 UI: live block event traitBias and which store policies match it. */
+export function hotTraitInfo(s: GameState): HotTraitInfo | null {
+  const ev = s.depth?.blockEvent
+  if (!ev?.kind || !ev.traitBias || ev.until <= s.time) return null
+  if (!isPlaceTraitId(ev.traitBias)) return null
+  const def = STORE_TRAIT_BY_ID[ev.traitBias]
+  let matchedDoors = 0
+  for (const st of s.stores) if (policyMatchesTrait(st.policy, ev.traitBias)) matchedDoors += 1
+  return {
+    kind: ev.kind,
+    trait: ev.traitBias,
+    traitName: def.name,
+    policies: [...def.matchPolicies],
+    matchedDoors,
+    secondsLeft: Math.max(0, ev.until - s.time),
+  }
+}
+
 /** Credit a hot-trait walk when any store policy matches the live bias. */
 export function maybeCreditHotTraitWalk(s: GameState) {
   if (!s.depth) return

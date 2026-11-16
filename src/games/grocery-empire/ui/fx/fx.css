@@ -279,6 +279,54 @@
       opacity: 0;
     }
   }
+  /* Beats: one short garnish per new loop. Always optional; reduced motion drops them. */
+  .fx-beat {
+    display: inline-block;
+    transform-origin: center;
+  }
+  .fx-beat--pop.is-on {
+    animation: fx-beat-pop 260ms var(--ease-out, ease-out) both;
+  }
+  .fx-beat--lock.is-on {
+    animation: fx-beat-lock 320ms var(--ease-out, ease-out) both;
+  }
+  @keyframes fx-beat-pop {
+    0% {
+      transform: scale(0.6);
+      opacity: 0.4;
+    }
+    60% {
+      transform: scale(1.22);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes fx-beat-lock {
+    0% {
+      transform: translateY(-4px);
+      opacity: 0.5;
+    }
+    55% {
+      transform: translateY(1px);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  .fx-meter {
+    height: 4px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--ge-ink, #efe9dc) 10%, transparent);
+  }
+  .fx-meter .fx-shelf-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fx-meter-ink, var(--ge-tag, #f2c14e));
+  }
   .fx-press--motion:active:not(:disabled) {
     transform: scale(0.97);
     transition: transform 80ms var(--ease-out, ease-out);
@@ -290,7 +338,8 @@
     .gk-card--shimmer::after,
     .gk-btn.is-bought,
     [data-fx-flash],
-    .fx-crate-hop.is-hop {
+    .fx-crate-hop.is-hop,
+    .fx-beat.is-on {
       animation: none !important;
     }
   }
@@ -299,7 +348,8 @@
   html.ge-reduced-motion .gk-card--shimmer::after,
   html.ge-reduced-motion .gk-btn.is-bought,
   html.ge-reduced-motion [data-fx-flash],
-  html.ge-reduced-motion .fx-crate-hop.is-hop {
+  html.ge-reduced-motion .fx-crate-hop.is-hop,
+  html.ge-reduced-motion .fx-beat.is-on {
     animation: none !important;
   }
 }

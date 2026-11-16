@@ -3,7 +3,7 @@ import { memo, useState } from 'react'
 import { useMeta } from '@/shell/MetaContext'
 import { playUnpackFx } from '@/shared/audio'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
-import { facingsFor, REGULAR_BY_ID } from '../../content/depth'
+import { FACING_BY_ID, facingsFor, REGULAR_BY_ID, type RegularDef } from '../../content/depth'
 import { DEPTH, HORIZON, INSPECTION, PRICE } from '../../sim/balance'
 import { can, type Command } from '../../sim/commands'
 import {
@@ -13,22 +13,34 @@ import {
   effectiveLife,
   featuredCategories,
   manualUnpackAmount,
+  salesBottleneck,
   shelfPrice,
   unitCost,
   up,
   varietyMul,
+  climateBanPullMul,
 } from '../../sim/formulas'
 import { sumQty } from '../../sim/helpers'
 import { useGame } from '../GameContext'
 import { clock, money, qty, rate } from '../format'
 import { Icon } from '../icons/Icon'
 import { Button, Chip, Meter, Sheet, Stepper, Toggle } from '../kit'
-import { PlayFrame } from '../play'
+import { MENUS } from '../../content/menus'
+import { FailReason, PlayFrame, StatusChip } from '../play'
+import { activeFacingBan } from '../../sim/systems/horizonVerbs'
+import { useStable } from '../useStable'
 import { FloorRoom } from '../scenes/room'
 import './floor.css'
 
 /** Late-era command not in the Command union yet; unknown types fail `can()` cleanly. */
 const lateCmd = (cmd: { type: string; [k: string]: unknown }) => cmd as unknown as Command
+
+/** "Maya wants tomatoes on cans" — the person behind the facing. */
+function regularWant(def: RegularDef): string {
+  const cats = def.wants.map((c) => CATEGORIES[c]?.name.toLowerCase() ?? c).join(' + ')
+  const facing = def.facingId ? FACING_BY_ID[def.facingId] : null
+  return facing ? `${def.name} wants ${facing.name.toLowerCase()} on ${cats}` : `${def.name} wants ${cats}`
+}
 
 /** Memoized: re-renders from its own context reads, not from unrelated parent renders. */
 export const FloorPanel = memo(FloorPanelInner)
@@ -61,6 +73,9 @@ function FloorPanelInner() {
     dispatch({ type: 'setPrice', price: Math.max(PRICE.min, Math.min(PRICE.max, next)) })
   }
 
+  const checkoutLimitRaw = s.era >= 1 && s.stats.sold > 0 && salesBottleneck(s).kind === 'checkout'
+  // The bottleneck flips with every crate; only change the callout once it settles.
+  const checkoutLimit = useStable(checkoutLimitRaw, String, 2000, 5000)
   const tight = shelf + back <= 0 || s.cash < 2
   const suppliersOpen = !!s.menus.suppliers
   const featured = featuredCategories(s)
@@ -82,9 +97,14 @@ function FloorPanelInner() {
   const serveCheck = can(s, { type: 'serveRegular' })
   const serveOk = serveCheck.ok
   const layaway = !!s.depth?.regulars?.layaway
+  const waitingId = s.depth?.regulars?.waitingId
+  const waitingDef = waitingId ? REGULAR_BY_ID[waitingId] : null
+  const waitingLeft = Math.max(0, Math.ceil((s.depth?.regulars?.waitingPatienceUntil ?? 0) - s.time))
+  const focusCheck = can(s, { type: 'focusRegular', which: 'waiting' })
   const marginPct = sell > 0 ? margin / sell : 0
   const marginTone = marginPct >= 0.3 ? 'success' : marginPct >= 0.1 ? 'warn' : 'danger'
   const unpackDisabled = back <= 0
+  const facingBan = activeFacingBan(s)
 
   const sheets = (
     <>
@@ -124,6 +144,35 @@ function FloorPanelInner() {
                 </div>
               )
             })}
+          {facingBan ? (
+            <div className="fp-row" role="status">
+              <StatusChip tone="warn" title="A climate guest banned this facing. Swap it to dodge the cut, or wait for the shift to turn.">
+                Guest ban · {FACING_BY_ID[facingBan.tag]?.name ?? facingBan.tag} −
+                {Math.round((1 - climateBanPullMul(s)) * 100)}% pull · {clock(facingBan.until - s.time)}
+              </StatusChip>
+            </div>
+          ) : null}
+          {regularDef ? (
+            <p className="fp-note" data-coach-id="floor-regular-want">
+              {regularWant(regularDef)}
+            </p>
+          ) : null}
+          {waitingDef ? (
+            <div className="fp-row" role="status">
+              <Chip>
+                Also waiting: {waitingDef.name} · {waitingLeft}s
+              </Chip>
+              <Button
+                size="sm"
+                tone="ghost"
+                disabled={!focusCheck.ok}
+                title={focusCheck.ok ? regularWant(waitingDef) : focusCheck.reason}
+                onClick={() => dispatch({ type: 'focusRegular', which: 'waiting' })}
+              >
+                Switch to {waitingDef.name}
+              </Button>
+            </div>
+          ) : null}
           {regularDef ? (
             <div className="fp-row" role="status">
               <Chip selected>
@@ -332,7 +381,7 @@ function FloorPanelInner() {
   return (
     <section className="ge-panel fl fp">
       <PlayFrame
-        purpose="Run the flagship: shelves, stock and the building itself."
+        purpose={MENUS.floor.purpose}
         department="Floor"
         room={<FloorRoom />}
         tray={{
@@ -373,7 +422,22 @@ function FloorPanelInner() {
             : unpackDisabled
               ? 'Nothing in the backroom'
               : undefined,
+          failAction:
+            !regularDef && unpackDisabled && suppliersOpen
+              ? { label: 'Order at Suppliers', onClick: () => setActiveMenu('suppliers') }
+              : undefined,
           secondaries: [
+            // Tray holds 4 secondaries; past Era 7 the Bay wins, so Switch lives on the Facing sheet only.
+            ...(waitingDef && s.era < 7
+              ? [
+                  {
+                    key: 'switch',
+                    label: `Switch to ${waitingDef.name}`,
+                    coachId: 'floor-switch-regular',
+                    onClick: () => dispatch({ type: 'focusRegular', which: 'waiting' }),
+                  },
+                ]
+              : []),
             { key: 'facing', label: 'Facing', onClick: () => setDesk('facing') },
             { key: 'price', label: 'Price', coachId: 'floor-price', onClick: () => setDesk('price') },
             { key: 'restock', label: 'Restock', coachId: 'floor-wholesale', onClick: () => setDesk('restock') },
@@ -383,6 +447,11 @@ function FloorPanelInner() {
           ],
         }}
       >
+        {checkoutLimit && s.menus.staff ? (
+          <FailReason action={{ label: 'Open Staff', onClick: () => setActiveMenu('staff') }}>
+            The checkout line is the limit — more cashiers would sell more.
+          </FailReason>
+        ) : null}
         {heatHot ? (
           <div className="fp-callout is-hot" data-coach-id="floor-inspection">
             <p>

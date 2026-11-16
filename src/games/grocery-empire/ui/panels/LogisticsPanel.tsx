@@ -1,13 +1,57 @@
 import { useState } from 'react'
 import { LANE_ROUTES } from '../../content/depth'
+import type { ManifestStance } from '../../content/depth'
 import { DEPTH } from '../../sim/balance'
 import { can } from '../../sim/commands'
+import { laneLeftOpen, lanePreferMix, laneStance } from '../../sim/systems/fleet'
 import { fuelCap as fuelCapOf } from '../../sim/systems/late'
+import type { GameState } from '../../sim/state'
 import { useGame } from '../GameContext'
-import { ActionRow, PlayFrame } from '../play'
+import { MENUS } from '../../content/menus'
+import { ActionRow, FailReason, PlayFrame } from '../play'
 import { Icon } from '../icons/Icon'
 import { Button, Sheet } from '../kit'
 import { LaneScene } from '../scenes/live'
+import { Beat, useBeat } from '../fx'
+
+/** One manifest stance. The tick pops once when this stance becomes the lane's filing. */
+function StanceRow({
+  on,
+  label,
+  fact,
+  disabled,
+  title,
+  coachId,
+  onFile,
+}: {
+  on: boolean
+  label: string
+  fact: string
+  disabled: boolean
+  title?: string
+  coachId: string
+  onFile: () => void
+}) {
+  const beat = useBeat(on)
+  return (
+    <ActionRow
+      label={label}
+      fact={fact}
+      trail={
+        on ? (
+          <Beat on={beat} kind="pop">
+            ✓
+          </Beat>
+        ) : undefined
+      }
+      data-coach-id={coachId}
+      disabled={disabled}
+      className={disabled ? undefined : 'is-ready'}
+      title={title}
+      onClick={onFile}
+    />
+  )
+}
 
 export function LogisticsPanel() {
   const { state: s, dispatch, reducedMotion } = useGame()
@@ -28,45 +72,68 @@ export function LogisticsPanel() {
   const exam = can(s, { type: 'swearExam' })
   const examFocus = exam.ok || (s.depth?.dispatch?.examsHeld ?? 0) < DEPTH.examHoldNeed
 
-  const manifestButtons = (
-    <div className="p6-row">
+  const STANCES: { id: ManifestStance; label: string; fact: (s: GameState) => string }[] = [
+    {
+      id: 'clean',
+      label: 'Clean',
+      fact: () => `Credits a clean now · ${clean}/${DEPTH.cleanManifestsNeed} · barge gate`,
+    },
+    {
+      id: 'exam',
+      label: 'Exam-ready',
+      fact: () =>
+        `Opens the exam hold · swear it · ${s.depth?.dispatch?.examsHeld ?? 0}/${DEPTH.examHoldNeed} · not a clean`,
+    },
+    {
+      id: 'fast',
+      label: 'Fast',
+      fact: () => 'Cash now, no credit — MegaMart snipes the lane you leave open',
+    },
+  ]
+
+  const manifestBoard = (
+    <div className="p6-stack">
       {(s.fleet.laneList ?? []).map((lane) => {
-        const prefer =
-          lane.route === 'spice-route'
-            ? 'import'
-            : lane.route === 'cold-line'
-              ? 'frozen'
-              : lane.route === 'dry-haul'
-                ? 'household'
-                : 'bakery'
-        const matched = s.depth?.manifests?.[lane.id] === prefer
-        const check = can(s, { type: 'setManifest', laneId: lane.id, mix: prefer })
+        const prefer = lanePreferMix(lane) ?? 'cargo'
+        const current = laneStance(s, lane.id)
+        const open = laneLeftOpen(s, lane)
         return (
-          <Button
-            key={lane.id}
-            tone={matched ? 'ghost' : 'primary'}
-            disabled={!check.ok}
-            title={
-              check.ok
-                ? matched
-                  ? `Rematch ${prefer} when the cycle is ready`
-                  : `Match ${prefer}`
-                : check.reason
-            }
-            onClick={() => dispatch({ type: 'setManifest', laneId: lane.id, mix: prefer })}
-          >
-            {lane.route} → {prefer}
-            {matched ? ' ✓' : ''}
-          </Button>
+          <section key={lane.id} className="p6-stack" aria-label={`${lane.route} manifest`}>
+            <p className="p6-copy">
+              <strong>{lane.route}</strong> → {prefer}
+              {current ? ` · filed ${current}` : ' · not filed'}
+              {open && current ? ' · open to MegaMart' : ''}
+            </p>
+            {STANCES.map((st) => {
+              const check = can(s, { type: 'setManifestStance', laneId: lane.id, stance: st.id })
+              return (
+                <div key={st.id} className="p6-stack" style={{ gap: '0.25rem' }}>
+                  <StanceRow
+                    on={current === st.id}
+                    label={st.label}
+                    fact={st.fact(s)}
+                    coachId={`logistics-stance-${st.id}`}
+                    disabled={!check.ok}
+                    title={check.ok ? `File ${prefer} ${st.label.toLowerCase()}` : check.reason}
+                    onFile={() => dispatch({ type: 'setManifestStance', laneId: lane.id, stance: st.id })}
+                  />
+                  {!check.ok && check.reason ? <FailReason>{check.reason}</FailReason> : null}
+                </div>
+              )
+            })}
+          </section>
         )
       })}
+      {(s.fleet.laneList ?? []).length === 0 ? (
+        <p className="ge-muted">Charter a lane first.</p>
+      ) : null}
     </div>
   )
 
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose="Buy stock and move it — trucks, cold chain, ocean lanes."
+        purpose={MENUS.logistics.purpose}
         department="Logistics"
         room={<LaneScene />}
         tray={{
@@ -179,9 +246,10 @@ export function LogisticsPanel() {
         <div className="p6-stack">
           <p className="p6-copy">
             {clean} / {DEPTH.cleanManifestsNeed} clean · {s.depth?.dispatch?.examsHeld ?? 0}/
-            {DEPTH.examHoldNeed} exams · {s.depth?.manifestsRun ?? 0} filed.
+            {DEPTH.examHoldNeed} exams · {s.depth?.manifestsRun ?? 0} filed. One filing is one stance —
+            clean, exam-ready, or fast; they never stack.
           </p>
-          {manifestButtons}
+          {manifestBoard}
         </div>
       </Sheet>
 

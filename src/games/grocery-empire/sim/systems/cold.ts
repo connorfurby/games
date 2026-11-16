@@ -3,6 +3,7 @@ import { COLD, DEPTH, HUNGRY_LAWS, NETWORK } from '../balance'
 import { log, round2, unlockMenu } from '../helpers'
 import type { GameState, PlantEntry, PlantKind } from '../state'
 import type { RoleId } from '../../content/staff'
+import { freshWaySoftFlyerMul } from './flyerStance'
 import { currentShiftSlot, shiftStaffIds } from './regulars'
 
 function roleCount(s: GameState, role: RoleId) {
@@ -68,6 +69,9 @@ export function setPlantPower(s: GameState, kinds: PlantKind[]) {
   const uniq = [...new Set(kinds)].slice(0, DEPTH.plantPowerSlots) as PlantKind[]
   s.cold.poweredKinds = uniq
   syncPlantCount(s)
+  if (s.depth && uniq.includes('blast') && plantCountOf(s, 'blast') > 0) {
+    s.depth.blastSuppressesTunnelUntilLog = true
+  }
   const dark = (['compressor', 'tunnel', 'blast'] as PlantKind[]).filter(
     (k) => plantCountOf(s, k) > 0 && !uniq.includes(k),
   )
@@ -133,6 +137,9 @@ export function buyPlant(s: GameState, kind: PlantKind = 'compressor') {
     s.cold.poweredKinds.push(kind)
   }
   syncPlantCount(s)
+  if (s.depth && kind === 'blast' && s.cold.poweredKinds.includes('blast')) {
+    s.depth.blastSuppressesTunnelUntilLog = true
+  }
   s.stats.buildsBought += 1
   unlockMenu(s, 'cold')
   const label = kind === 'blast' ? 'Blast freezer' : kind === 'tunnel' ? 'Tunnel cold' : 'Compressor'
@@ -215,9 +222,11 @@ export function coolerLogRecent(s: GameState): boolean {
 export function freshWaySpoilMul(s: GameState): number {
   const fw = s.rivals?.freshway
   if (!fw || fw.bought) return 1
-  if (hasTunnelCoverage(s) && coolerLogRecent(s)) return 1
+  // SAVE 32: a live soft flyer feeds FreshWay even when tunnel + log would otherwise hold it off.
+  const soft = freshWaySoftFlyerMul(s)
+  if (hasTunnelCoverage(s) && coolerLogRecent(s)) return soft
   const missed = s.depth?.cooler?.missed ?? 0
-  return DEPTH.freshWaySpoilMul * (1 + missed * DEPTH.coolerMissedFreshWayMul)
+  return DEPTH.freshWaySpoilMul * (1 + missed * DEPTH.coolerMissedFreshWayMul) * soft
 }
 
 function ensureCooler(s: GameState) {
@@ -244,6 +253,7 @@ export function signCoolerLog(s: GameState) {
   c.logsSigned += 1
   c.lastSignedAt = s.time
   c.nextDueAt = s.time + DEPTH.coolerLogGapSec
+  if (s.depth) s.depth.blastSuppressesTunnelUntilLog = false
   log(s, `Cooler log signed (${c.logsSigned}/${DEPTH.coolerLogNeed}).`, 'good')
 }
 
@@ -281,9 +291,19 @@ export function tickCoolerLog(s: GameState, _dt: number) {
   log(s, `Cooler log missed (${c.missed}). Brownout risk and FreshWay spoil rise.`, 'warn')
 }
 
+/**
+ * SAVE 32: powered blast drains yield and suppresses the tunnel spoil cut until the next
+ * signed Cooler log. Effective only while blast is still powered.
+ */
+export function blastSuppressesTunnel(s: GameState): boolean {
+  if (!s.depth?.blastSuppressesTunnelUntilLog) return false
+  return (s.cold.poweredKinds ?? []).includes('blast') && plantCountOf(s, 'blast') > 0
+}
+
 /** Fresh aisle age cut from tunnel + cold driver / staffed Fresh. */
 export function tunnelFreshAgeMul(s: GameState): number {
   if (!hasTunnelCoverage(s)) return 1
+  if (blastSuppressesTunnel(s)) return 1
   const freshStaffed = (s.depth?.departments?.fresh?.leadId ?? null) != null || roleCount(s, 'produceLead') > 0
   const driver = roleCount(s, 'coldDriver') > 0
   if (!freshStaffed && !driver) return 1
