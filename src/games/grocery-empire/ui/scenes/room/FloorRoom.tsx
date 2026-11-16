@@ -24,7 +24,7 @@ const CAT_TINT: Record<CategoryId, string> = {
 }
 
 const PORTRAIT_W = 360
-const PORTRAIT_H = 336
+const PORTRAIT_H = 346
 
 /** Illustrated aisle for the Floor panel — live numbers + tappable stations. */
 export function FloorRoom() {
@@ -200,8 +200,8 @@ export function FloorRoom() {
       >
         <g transform="translate(-170 -62)">{shelfBays}</g>
         <g transform="translate(-16 50)">{unload}</g>
-        <g transform="translate(-350 46)">{priceTag}</g>
-        <g transform="translate(-486 124)">{registers}</g>
+        <g transform="translate(-350 38)">{priceTag}</g>
+        <g transform="translate(-486 120)">{registers}</g>
         {bnLabel && !(shelf <= 0 && back <= 0) ? (
           <g>
             <rect x="8" y={PORTRAIT_H - 34} width={PORTRAIT_W - 16} height="26" rx="6" fill="#2a1814" stroke="#d9665b" />

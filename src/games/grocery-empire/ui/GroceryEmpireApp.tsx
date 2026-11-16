@@ -26,7 +26,6 @@ import { MENUS, MENU_IDS, type MenuId } from '../content/menus'
 import { MEMOS } from '../content/memos'
 import { DIALOGUE_BY_ID } from '../content/dialogue'
 import { can } from '../sim/commands'
-import { pendingTip } from '../content/tips'
 import { PRICE } from '../sim/balance'
 import type { Command } from '../sim/commands'
 import { enterDevSandbox, ensurePrimarySandbox, leaveDevSandbox } from '../sim/devMode'
@@ -53,7 +52,8 @@ import { SceneStrip, useScenePref } from './shell/SceneStrip'
 import { HubNav } from './shell/HubNav'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
-import { onInboxRequest } from './shell/uiBus'
+import { onInboxRequest, onWikiRequest } from './shell/uiBus'
+import { setWikiLanding } from './wiki/wikiLanding'
 import { computeHudAlert } from './shell/hudAlert'
 import { onToastRequest, performUndo } from './shell/undoAction'
 import { Button, ConfirmProvider, ToastProvider } from './kit'
@@ -201,6 +201,20 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     setMenu('floor')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu])
+  // A department's `?` opens the Menu drawer on its wiki page.
+  const [wikiNonce, setWikiNonce] = useState(0)
+  useEffect(
+    () =>
+      onWikiRequest((id) => {
+        setWikiLanding({ view: 'article', id })
+        toolsTabPicked.current = true
+        setToolsTab('wiki')
+        setWikiNonce((n) => n + 1)
+        setToolsOpen(true)
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
   const [focusNonce, setFocusNonce] = useState(0)
   const [focusTarget, setFocusTarget] = useState<string | null>(null)
   const reducedMotion = meta.settings.reducedMotion
@@ -635,15 +649,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     return () => window.clearTimeout(t)
   }, [lineId, state.introSeen, state.tutorials.active, state.chapterQueue])
   const Active = PANEL[menu]!
-  const tip = pendingTip(state)
-  const tipShown =
-    !!tip && state.introSeen && !state.offlineReceipt && !state.pendingAccept && state.chapterQueue[0] == null
-  // Tips file themselves after a while; nobody should have to click "Got it" to see the next one.
-  useEffect(() => {
-    if (!tip || !tipShown) return
-    const t = window.setTimeout(() => engine.dispatch({ type: 'dismissTip', id: tip.id }), 20_000)
-    return () => window.clearTimeout(t)
-  }, [tip?.id, tipShown])
 
   const suggestOn = !!meta.settings.suggestNext
   const suggestionsRaw = useMemo(
@@ -926,6 +931,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           <AnimatePresence>
             {toolsOpen ? (
               <ToolsDrawer
+                key={`tools-${wikiNonce}`}
                 tab={toolsTab}
                 onTab={(t) => {
                   toolsTabPicked.current = true

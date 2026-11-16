@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { PanelHelp, PanelHelpButton } from './PanelHelp'
 import { VerbTray, type VerbTrayProps } from './VerbTray'
 import './play.css'
 
@@ -28,7 +29,13 @@ export function PlayFrame({
 }) {
   return (
     <div className={`pf${className ? ` ${className}` : ''}`.trim()}>
-      {purpose ? <p className="pf__purpose">{purpose}</p> : null}
+      {purpose ? (
+        <div className="pf__head">
+          <p className="pf__purpose">{purpose}</p>
+          <PanelHelpButton />
+        </div>
+      ) : null}
+      <PanelHelp />
       {room ? <div className="pf__room">{room}</div> : null}
       {tray ? <VerbTray {...tray} /> : null}
       {!tray && primarySlot ? <div className="pf__tray">{primarySlot}</div> : null}

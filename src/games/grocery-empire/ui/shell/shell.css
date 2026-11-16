@@ -1107,10 +1107,6 @@
     z-index: 70;
   }
 
-  .g2-root:has(.g2-whisper) .g2-toasts {
-    bottom: 7rem;
-  }
-
   .g2-root .g2-toasts .ge-toast {
     color: var(--ge-ink);
     font-size: var(--t-sm);
@@ -1120,80 +1116,16 @@
     display: none;
   }
 
-  .g2-root .g2-whisper {
-    font-size: var(--t-sm);
-    gap: 0.75rem;
-  }
-
-  .g2-root .g2-whisper .gk-btn {
-    min-height: 32px;
-  }
-
-  /* The tip card floats, so the page leaves room for it at the bottom. */
-  .g2-root:has(.g2-whisper) .g2-main {
-    padding-bottom: 7rem;
-  }
-
-  .ge-suggest-tip--line .ge-suggest-tip__card--line {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .ge-suggest-tip--line .ge-suggest-tip__line {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .ge-suggest-tip__eyebrow,
-  .ge-suggest-tip__where {
-    font-size: var(--t-2xs);
-  }
-
-  .ge-suggest-tip--line .ge-suggest-tip__actions {
-    display: flex;
-    flex: none;
-    gap: 0.35rem;
-  }
-
   @media (max-width: 720px) {
     .g2-root .g2-toasts {
       left: 0.75rem;
       right: 0.75rem;
-      bottom: calc(var(--g2-hubs-h, 64px) + env(safe-area-inset-bottom) + 0.5rem);
-    }
-
-    .g2-root:has(.g2-whisper) .g2-toasts {
+      /* Above the tab bar and above the sticky primary verb. */
       bottom: calc(var(--g2-hubs-h, 64px) + env(safe-area-inset-bottom) + 6.5rem);
     }
 
     .g2-root .g2-toasts .ge-toast:nth-last-child(n + 2) {
       display: none;
-    }
-
-    .g2-root:has(.g2-whisper) .g2-main {
-      padding-bottom: calc(var(--g2-hubs-h, 64px) + 7rem);
-    }
-
-    /* One floating thing at a time on phones: the tip wins, toasts wait (they are also in the ledger). */
-    .g2-root:has(.g2-whisper) .g2-toasts {
-      display: none;
-    }
-
-    .g2-root .g2-whisper {
-      padding: 0.5rem 0.5rem 0.5rem 0.75rem;
-    }
-
-    .g2-root .g2-whisper .ge-tip-whisper__text {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      font-size: var(--t-sm);
-    }
-
-    .g2-root:has(.g2-whisper) .g2-main {
-      padding-bottom: calc(var(--g2-hubs-h, 64px) + 4.5rem);
     }
 
     /* Coach lives in the palette and Menu → Wiki on phones; the HUD keeps room for the money. */
@@ -1280,8 +1212,10 @@
       min-height: 0;
       padding-block: 0.2rem;
     }
-    .g2-main {
+    /* The tab bar has its own grid row; the page needs no extra tail under it. */
+    .g2-root .g2-main {
       padding-top: 0.6rem;
+      padding-bottom: 0.75rem;
     }
   }
 }

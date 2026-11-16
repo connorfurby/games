@@ -13,3 +13,16 @@ export function onInboxRequest(fn: (tab: 'memos' | 'ledger') => void): () => voi
   window.addEventListener(OPEN_INBOX, h)
   return () => window.removeEventListener(OPEN_INBOX, h)
 }
+
+const OPEN_WIKI = 'ge:open-wiki'
+
+/** Ask the shell to open the Menu drawer on the Wiki tab at one article. */
+export function requestWiki(articleId: string) {
+  window.dispatchEvent(new CustomEvent(OPEN_WIKI, { detail: { id: articleId } }))
+}
+
+export function onWikiRequest(fn: (articleId: string) => void): () => void {
+  const h = (e: Event) => fn((e as CustomEvent<{ id?: string }>).detail?.id ?? 'start-controls')
+  window.addEventListener(OPEN_WIKI, h)
+  return () => window.removeEventListener(OPEN_WIKI, h)
+}

@@ -12,6 +12,84 @@
     color: var(--ge-ink-muted);
   }
 
+  .pf__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s-3);
+  }
+  .pf__help {
+    appearance: none;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin: -4px 0;
+    border-radius: 50%;
+    border: 1px solid var(--ge-line-strong);
+    background: transparent;
+    color: var(--ge-ink-muted);
+    font: 700 var(--t-sm) / 1 var(--ge-font-ui, system-ui, sans-serif);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .pf__help:hover,
+  .pf__help:focus-visible {
+    color: var(--ge-ink);
+    border-color: var(--ge-ink-muted);
+  }
+  .pf__help:focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 2px;
+  }
+  /* 44 px touch area without a 44 px circle. */
+  .pf__help::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+  .pf__help {
+    position: relative;
+  }
+
+  .pf-help {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md);
+    border: 1px solid color-mix(in srgb, var(--ge-info, #7fb2d9) 35%, transparent);
+    background: color-mix(in srgb, var(--ge-info, #7fb2d9) 8%, transparent);
+  }
+  .pf-help__mark {
+    padding: 2px var(--s-2);
+    border-radius: var(--r-pill);
+    background: color-mix(in srgb, var(--ge-info, #7fb2d9) 22%, transparent);
+    color: var(--ge-ink);
+    font: 700 var(--t-2xs) / 1.3 var(--ge-font-ui, system-ui, sans-serif);
+    letter-spacing: 0.04em;
+  }
+  .pf-help__text {
+    margin: 0;
+    font: 500 var(--t-sm) / var(--t-sm-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink);
+  }
+  .pf-help__acts {
+    display: inline-flex;
+    gap: var(--s-1);
+  }
+  @media (max-width: 719.98px) {
+    .pf-help {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .pf-help__acts {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+    }
+  }
+
   .pf__dept {
     margin: 0;
     font: 700 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
@@ -78,6 +156,26 @@
     }
   }
   @media (max-width: 719.98px) {
+    /*
+     * Phones: the primary verb rides the bottom edge of the page, in thumb reach, until
+     * you scroll to where it lives. The room above can be as tall as it needs.
+     */
+    .pf__tray {
+      display: contents;
+    }
+    .pf__primary {
+      position: sticky;
+      bottom: 0;
+      z-index: var(--z-sticky, 10);
+      margin: 0 calc(var(--s-3) * -1);
+      padding: var(--s-2) var(--s-3);
+      background: linear-gradient(
+        to top,
+        var(--ge-bg2, #101a18) 0,
+        var(--ge-bg2, #101a18) 72%,
+        transparent
+      );
+    }
     .pf__secondaries .gk-btn {
       min-height: 48px;
     }
