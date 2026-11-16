@@ -19,7 +19,7 @@ test('library shelf and shell routes', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/Block/)
   await expect(page.locator('.nw-lead h2')).toBeVisible()
   await page.locator('.nw-sections button', { hasText: 'Meta' }).click()
-  await expect(page.locator('.nw-editions li')).toHaveCount(2)
+  await expect(page.locator('.nw-editions li')).toHaveCount(1)
 
   await page.goto('/guide/grocery-empire')
   await expect(page.getByRole('heading', { name: /night supervisor/i })).toBeVisible()

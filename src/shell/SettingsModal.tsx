@@ -258,7 +258,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 checked={!!meta.settings.suggestNext}
                 onChange={(e) => updateSettings({ suggestNext: e.target.checked })}
               />
-              Suggested next buy (Grocery Empire)
+              Mark the suggested next buy on tabs (Grocery Empire)
             </label>
             <div className="settings-profile-card">
               <p className="settings-profile-card__title">Profile</p>

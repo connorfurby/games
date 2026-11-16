@@ -41,9 +41,7 @@ import { FxLayer, useMilestones } from './fx'
 import { DevModeBar } from './components/DevModeBar'
 import { Ledger } from './components/Ledger'
 import { useSalePops } from './components/Pop'
-import { nextGoal } from '../content/goals'
-import { channelToMenu, SuggestTip, tipAlignsWithGoal } from './components/SuggestTip'
-import { goalDest } from './shell/goalTarget'
+import { channelToMenu } from './components/SuggestTip'
 import { Hud } from './shell/Hud'
 import { useStable } from './useStable'
 import { isDevSave } from '../sim/saveKey'
@@ -850,28 +848,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 ) : null}
               </div>
             ) : null}
-            {suggestOn &&
-            !photoMode &&
-            !state.offlineReceipt &&
-            state.introSeen &&
-            !state.tutorials.active
-              ? (() => {
-                  const goal = nextGoal(state)
-                  const goalAct = goal?.action?.(state) ?? null
-                  // One guidance channel: hide tips that restate Next Goal.
-                  if (tipAlignsWithGoal(topSuggest, goalAct, goalDest(goalAct))) return null
-                  return (
-                    <SuggestTip
-                      tip={topSuggest}
-                      reducedMotion={reducedMotion}
-                      onGo={(sg) => focusSuggestion(sg)}
-                      onDo={(cmd) => {
-                        dispatch(cmd)
-                      }}
-                    />
-                  )
-                })()
-              : null}
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={menu}
@@ -954,7 +930,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
           <OverlayManager
             state={state}
-            tip={tip}
             toasts={toasts}
             reducedMotion={reducedMotion}
             dispatch={dispatch}

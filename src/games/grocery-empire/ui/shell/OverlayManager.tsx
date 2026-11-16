@@ -1,12 +1,10 @@
 import { AnimatePresence, motion } from 'motion/react'
 import type { ComponentProps } from 'react'
 import type { MenuId } from '../../content/menus'
-import type { pendingTip } from '../../content/tips'
 import type { Command } from '../../sim/commands'
 import { sumQty } from '../../sim/helpers'
 import type { Suggestion } from '../../sim/suggestions'
 import type { GameState } from '../../sim/state'
-import { Btn } from '../components/Btn'
 import { ChapterCard } from '../components/ChapterCard'
 import { CoachOverlay } from '../components/Coach'
 import { DialogueStrip } from '../components/DialogueStrip'
@@ -23,13 +21,12 @@ export interface GameToast {
 /**
  * Everything that sits above the game, in one place. Stacking order (first = lowest):
  * story line → offline receipt → intro → Hungry laws → chapter card → headline →
- * coach tour → tip whisper → toasts. Gates match the old inline chain exactly:
+ * coach tour → toasts. Gates match the old inline chain exactly:
  * the receipt blocks intro / laws / chapter / headline / coach / tips, and
  * an open chapter card blocks laws-after-it, headlines, coach and tips.
  */
 export function OverlayManager({
   state,
-  tip,
   toasts,
   reducedMotion,
   dispatch,
@@ -39,7 +36,6 @@ export function OverlayManager({
   onHungryConfirm,
 }: {
   state: GameState
-  tip: ReturnType<typeof pendingTip>
   toasts: GameToast[]
   reducedMotion: boolean
   dispatch: (cmd: Command) => void
@@ -122,15 +118,6 @@ export function OverlayManager({
       {clear && chapterEra == null && state.horizon.headlineId ? <HeadlineCard reducedMotion={reducedMotion} /> : null}
 
       {clear && !chapterEra && state.tutorials.active ? <CoachOverlay active={state.tutorials.active} /> : null}
-
-      {tip && clear && !chapterEra && !showDialogue ? (
-        <div className="ge-tip-whisper g2-whisper" role="status" aria-live="polite">
-          <p className="ge-tip-whisper__text">{tip.text}</p>
-          <Btn tone="ghost" onClick={() => dispatch({ type: 'dismissTip', id: tip.id })}>
-            Got it
-          </Btn>
-        </div>
-      ) : null}
 
       <div className="ge-toasts g2-toasts" aria-live="polite">
         <AnimatePresence>

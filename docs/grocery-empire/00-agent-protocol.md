@@ -28,7 +28,7 @@ Update the relevant markdown in **this folder**. Treat the pack as part of the d
 | UI panels / hubs | [09-ui.md](09-ui.md) |
 | Finished work vs leftover | [10-changelog-chat.md](10-changelog-chat.md), [11-backlog.md](11-backlog.md) |
 | `SAVE_VERSION` | README snapshot, [03-sim-rules.md](03-sim-rules.md), [07-pacing.md](07-pacing.md) |
-| **Player-visible change** | Prepend an article in [`content/news.ts`](../../src/games/grocery-empire/content/news.ts), bump `GAME_VERSION` (not `SAVE_VERSION`) when the ship warrants it |
+| **Player-visible change** | Prepend an article in [`content/news.ts`](../../src/games/grocery-empire/content/news.ts), bump `GAME_VERSION` (not `SAVE_VERSION`) when the ship warrants it. Versions count from **1.0** (launch); pre-1.0 bulletins were deliberately erased |
 
 Also bump the **Last pack review** date on [README.md](README.md).
 

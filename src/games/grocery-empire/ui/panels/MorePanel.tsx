@@ -322,7 +322,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
                 checked={!!meta.settings.suggestNext}
                 onChange={(e) => updateSettings({ suggestNext: e.target.checked })}
               />
-              Suggested next buy
+              Mark the suggested next buy on tabs
             </label>
           </div>
           <p className="ge-muted">

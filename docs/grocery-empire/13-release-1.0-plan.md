@@ -10,7 +10,7 @@
 
 | Date | Done | Notes |
 | --- | --- | --- |
-| 2026-11-16 | Plan + audit · **P0-01** phone HUD (no overlap at 360/390/430; speed is one cycling button on phones, Coach icon moves to palette/Menu) · **P0-02** suggestion strip uses kit buttons · **P0-03** Land deed cards (owned deeds no longer bare text; readable prices) · **P0-04** Strategy invalid DOM (0 console errors) · **P0-05/06** toasts sit bottom-right (desktop) / above the tab bar (phone), never over the HUD; tip card 13 px, 2-line clamp on phones, page pads for it · **P0-07** active hub tab scrolls into view · **P0-08** not a bug (hover) · **P0-12** Books spoiler sign | Remaining P0: **09** Museum height, **10/11** stale e2e, plus the crawler rerun. |
+| 2026-11-16 | Plan + audit · **P0-01** phone HUD (no overlap at 360/390/430; speed is one cycling button on phones, Coach icon moves to palette/Menu) · **P0-02** suggestion strip uses kit buttons · **P0-03** Land deed cards (owned deeds no longer bare text; readable prices) · **P0-04** Strategy invalid DOM (0 console errors) · **P0-05/06** toasts sit bottom-right (desktop) / above the tab bar (phone), never over the HUD; tip card 13 px, 2-line clamp on phones, page pads for it · **P0-07** active hub tab scrolls into view · **P0-08** not a bug (hover) · **P0-12** Books spoiler sign | Decisions 1, 3, 4 applied (1.0 + fresh news, tip card and Suggested strip removed). Remaining P0: **09** Museum height, **10/11** stale e2e, plus the crawler rerun. |
 
 ---
 
@@ -346,14 +346,14 @@ Total ≈ 36 agent-days of focused work. Each phase lands as its own PR into `re
 
 ---
 
-## 6. Decisions for Connor
+## 6. Decisions (answered by Connor, 2026-11-16)
 
-1. **Version number.** Display version is `40.1` today (News history v2 → v40). Options: (a) ship as **1.0** and keep old bulletins as "pre-release" editions; (b) keep counting (41.0) and call it "the 1.0 release" in copy only. Recommendation: **(a)** — players read "1.0" as "finished".
-2. **Rooms on phone.** Portrait re-layouts per room (best, ~L each for complex rooms) vs. chips + illustration band (fast, consistent). Recommendation: band for most, portrait for Floor, Staff and Fleet.
-3. **Tips.** Remove the floating tip card entirely (help moves to panel cards + wiki). Recommendation: yes.
-4. **Suggested strip.** Remove and fold into Next Goal + Memos Ready badge. Recommendation: yes.
-5. **Feature picks for P7.** Which of P7-01…10 matter most to you? Default order: 01, 02, 08, 06, 04, 03.
-6. **Stashed ventures/land/fleet work** (git stash "ventures-land-fleet wip", SAVE 8 era) — revive the Land block map and Ventures expansion tiers as P4/P7 items, rewritten against SAVE 36? Recommendation: revive the visuals only.
+1. **Version number: 1.0, history erased.** `GAME_VERSION = '1.0'`; `content/news.ts` holds one launch article and grows from there. Do not restore v2–v40 bulletins. *(Done.)*
+2. **Rooms on phone: simplified.** Illustration band + chips for most departments; full portrait layouts only for Floor, Staff and Fleet. *(P2.)*
+3. **Tips: floating tip card removed.** Help moves to in-panel cards + wiki (P3). Tips still file themselves in the sim so saves stay clean. *(Card removed; panel help is P3.)*
+4. **Suggested strip: removed.** Next Goal is the one guidance voice. The setting stays, but now only marks the suggested tab. *(Done.)*
+5. **P7 order:** growing storefront → era celebration → name your store → sound → better daily challenge → regulars with profiles.
+6. **Stash: revive visuals only.** Land block map and Ventures tier visuals from `git stash` "ventures-land-fleet wip", rewritten against the current save format; none of its sim/balance changes. *(P4.)*
 
 ---
 
