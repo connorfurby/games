@@ -376,8 +376,42 @@ export function MuseumPanel() {
         />
       </div>
 
-      <div className="mu-wall">
-        {wings.map((w) => {
+      {wing === 'all' ? (
+        <div className="mu-wall mu-overview" aria-label="Wings">
+          {WINGS.map((w) => {
+            const list = relicsInWing(w.id)
+            const have = list.filter((r) => m.relics[r.id]).length
+            const complete = have === list.length
+            const open = wingOpen(m, w.id)
+            return (
+              <button
+                key={w.id}
+                type="button"
+                className={`mu-wingcard${complete ? ' is-complete' : ''}${!open && !complete ? ' is-sealed' : ''}`}
+                style={{ '--wh': w.hue } as React.CSSProperties}
+                onClick={() => setWing(w.id)}
+              >
+                <span className="mu-wingcard__top">
+                  <strong>{w.name}</strong>
+                  <span className="mu-wingcard__n">
+                    {have}/{list.length}
+                  </span>
+                </span>
+                <span className="mu-wingcard__blurb">{w.blurb}</span>
+                <span className="mu-wingcard__bar" aria-hidden>
+                  <i style={{ width: `${(have / list.length) * 100}%` }} />
+                </span>
+                <span className="mu-wingcard__bonus">
+                  {complete ? '✓ ' : ''}Complete: +{Math.round(w.bonus.per * 100)}% {STAT_INFO[w.bonus.stat].label}
+                  {!open && !complete ? ' · sealed until you reach its era' : ''}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
+      <div className="mu-wall" hidden={wing === 'all'}>
+        {(wing === 'all' ? [] : wings).map((w) => {
           const list = relicsInWing(w.id)
           const have = list.filter((r) => m.relics[r.id]).length
           const complete = have === list.length

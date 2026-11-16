@@ -70,6 +70,7 @@ export const NEWS: NewsArticle[] = [
       { label: 'Lessons', text: 'Every Coach lesson in one place. Play this lesson opens the game and points at the button.', band: 'e01', wiki: 'start-first-hour' },
       { label: 'Fits your phone', text: 'The top bar fits small screens: cash, baskets, pause and one speed button that cycles.', band: 'meta' },
       { label: 'One button system', text: 'Tomato is the free verb, tag yellow spends, quiet is navigation.', band: 'meta', wiki: 'start-controls' },
+      { label: 'Museum by wing', text: 'The Museum opens on a card per wing. Tap one to walk its wall.', band: 'meta' },
     ],
     body: [
       'Grocery Empire starts with one counter and one free verb: ring up a basket. Everything after that is a way to sell more baskets without pressing the button yourself.',

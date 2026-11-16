@@ -41,6 +41,6 @@ test.describe('visual baselines', () => {
     await page.locator('.g2-hub', { hasText: 'Empire' }).click()
     await page.locator('.g2-subtab, .g2-hub-sub', { hasText: 'Map' }).first().click()
     await expect(page.locator('.mp-svg')).toBeVisible()
-    await expect(page.locator('.mp-pin--store').first()).toBeVisible()
+    await expect(page.locator('.mp-pin--flagship').first()).toBeVisible()
   })
 })

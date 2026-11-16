@@ -2,6 +2,17 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## W. 1.0 Phase 0 — stop-ship fixes and owner decisions (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **1.0**
+
+UI and tests only. No sim, balance or save changes; pacing untouched. Plan and progress log: [13-release-1.0-plan.md](13-release-1.0-plan.md).
+
+- **Version:** display version is **1.0**. `content/news.ts` holds one launch article; pre-1.0 bulletins were erased on the owner's call. (`40.0`/`40.1` section names below are historical.)
+- **Guidance:** floating tip card and the Suggested strip are gone. Next Goal is the single voice; `suggestNext` now only marks tabs. Tips still file themselves in the sim after 20 s.
+- **Phone HUD:** fits 360–430 px; one cycling speed button; Coach icon lives in the palette/Menu on phones. Toasts sit bottom-right (desktop) or above the tab bar (phone).
+- **Museum:** opens on wing cards (`.mu-wingcard`); a wing's wall renders only when chosen. Escape in `ChestOpener` is capture-phase and stops, so it no longer leaves the Museum. Bulk open guards against Strict Mode's double mount.
+- **Land / Strategy / Books:** deed cards, valid DOM for fail reasons, spoiler sign reworded.
+- **Tests:** all 14 e2e green; phone visual baseline refreshed. `npm test` 374 passed.
+
 ## V. 40.1 — front door, Ops Wiki, Bulletin, one button system (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **40.1**
 
 Presentation and shell only. No sim, balance or save changes; pacing untouched.
