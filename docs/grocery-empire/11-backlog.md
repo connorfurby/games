@@ -14,6 +14,11 @@ Use this as the “what’s left” list for the next agent. Check items off her
 - [ ] Flagship planogram UI polish vs Worlds puzzle chrome parity.
 - [ ] Regulars: three-at-once only if two-at-once feels thin in playtest.
 
+- [ ] Seven e2e specs fail on `main` independent of 40.1: `live.spec` (till reload), `shell-2.spec` (next goal boot, phone sub-tabs, museum chest) and `visual.spec` (floor baselines, map pins). Update selectors / baselines to the 40.0 shell.
+- [ ] Wiki: link panel `HelpCard`s to their wiki article (`requestWiki(id)` on the ui bus → Menu drawer Wiki tab).
+- [ ] Wiki: more hand-written rich articles (walkthroughs for eras 2–12 still come from the plain-text parser).
+- [ ] Awards cards: tier colour and art pass to match Shop cards.
+
 ## Done in 40.0 (do not re-open without cause)
 
 - [x] Bots/horizon module split, tipSharpness, migrateSlice, LATE_MEMOS cleanup (Phase 0).

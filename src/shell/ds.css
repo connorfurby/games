@@ -307,3 +307,22 @@
     }
   }
 }
+
+/* Awards header (shares the shell page frame). */
+@layer kit {
+  .ach-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    gap: 24px;
+    align-items: end;
+    padding: 16px 0 22px;
+  }
+  @media (max-width: 760px) {
+    .ach-hero {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ach-tabs {
+    margin-bottom: 14px;
+  }
+}

@@ -20,6 +20,6 @@
 | [11-backlog.md](11-backlog.md) | Known gaps, leftover polish, do-not-do list |
 | [12-expansion-megaplan.md](12-expansion-megaplan.md) | **Shipped (2026-11-14):** lengthen to ~40–50h. Live generation work is **40.0** (Phases 0–12 below). |
 
-**Current snapshot (update when wrong):** `SAVE_VERSION` **36** · display `GAME_VERSION` **40.0** · default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
+**Current snapshot (update when wrong):** `SAVE_VERSION` **36** · display `GAME_VERSION` **40.1** · default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
 
-Last pack review: 2026-11-16 (**Grocery Empire 40.0 prove**). Phases 0–12 shipped: foundation → one frame + phone → QoL → era decisions 0–12 → postgame/museum → content + News 40.0 → visual `@layer shell` → app shell → prove. Measured seed-1 landings still inside plan windows (Era 12 ~40.10 h). See [10-changelog-chat.md](10-changelog-chat.md).
+Last pack review: 2026-11-16 (**40.1 shell + Ops Wiki**; earlier the same day: 40.0 prove). Phases 0–12 shipped: foundation → one frame + phone → QoL → era decisions 0–12 → postgame/museum → content + News 40.0 → visual `@layer shell` → app shell → prove. Measured seed-1 landings still inside plan windows (Era 12 ~40.10 h). See [10-changelog-chat.md](10-changelog-chat.md).

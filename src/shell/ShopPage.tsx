@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   LEDGER_SKINS,
@@ -212,16 +212,13 @@ export function ShopPage() {
   const equippedOrnaments = meta.equippedOrnaments ?? []
   const tokens = meta.shelfTokens
 
-  const counts = useMemo(
-    () => ({
+  const counts = {
       packs: [meta.unlockedPacks.length, TEXTURE_PACKS.length],
       ledger: [meta.unlockedLedgerSkins.length, LEDGER_SKINS.length],
       unpack: [meta.unlockedUnpackFx.length, UNPACK_FX.length],
       ornaments: [unlockedOrnaments.length, ORNAMENTS.length],
       bundles: [SHOP_BUNDLES.filter((b) => b.packIds.every((id) => meta.unlockedPacks.includes(id))).length, SHOP_BUNDLES.length],
-    }),
-    [meta.unlockedPacks, meta.unlockedLedgerSkins, meta.unlockedUnpackFx, unlockedOrnaments, unlockedOrnaments.length],
-  )
+  }
 
   const TABS: { id: Tab; label: string; where: string }[] = [
     { id: 'packs', label: 'Packs', where: 'The whole game: paper, ink, light and type.' },

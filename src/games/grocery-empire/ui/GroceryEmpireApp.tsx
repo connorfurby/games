@@ -142,28 +142,15 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   })
   const setSearchParamsRef = useRef(setSearchParams)
   setSearchParamsRef.current = setSearchParams
-  // ?tour=<lesson> (from the Ops Wiki) starts that Coach lesson once, then leaves the URL clean.
-  useEffect(() => {
-    const tour = searchParams.get('tour')
-    if (!tour) return
-    if (TUTORIAL_BY_ID[tour]) engine.dispatch({ type: 'startTutorial', id: tour })
-    setSearchParamsRef.current(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.delete('tour')
-        return next
-      },
-      { replace: true },
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   useEffect(() => {
     if (menu === 'more') return
     setSearchParamsRef.current(
       (prev) => {
-        if (prev.get('m') === menu) return prev
+        if (prev.get('m') === menu && !prev.has('tour')) return prev
         const next = new URLSearchParams(prev)
         next.set('m', menu)
+        // ?tour= is consumed on mount (below); never write it back.
+        next.delete('tour')
         return next
       },
       { replace: true },
@@ -254,6 +241,23 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       document.documentElement.classList.remove('ge-playing')
     }
   }, [devMode])
+
+  // ?tour=<lesson> (from the Ops Wiki) starts that Coach lesson once, then leaves the URL clean.
+  // Declared after the boot effect: that one reloads the run from disk, which would drop the lesson.
+  useEffect(() => {
+    const tour = searchParams.get('tour')
+    if (!tour) return
+    if (TUTORIAL_BY_ID[tour]) engine.dispatch({ type: 'startTutorial', id: tour })
+    setSearchParamsRef.current(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('tour')
+        return next
+      },
+      { replace: true },
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Shelf "Today's corner" — never apply to DevMode sandbox.
   useEffect(() => {

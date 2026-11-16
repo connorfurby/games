@@ -96,8 +96,12 @@ Root of the game: `src/games/grocery-empire/`.
 | --- | --- |
 | `ShellFrame.tsx` | Shared chrome: brand + Play/News/Guide/Shop + version + waffle |
 | `Shelf.tsx` | Home — wood stage + game cards; overlay ShellFrame |
-| `NewsPage.tsx` | Receipt bulletin (`/news`, `/news/:id`) |
-| `GuidePage.tsx` / `ShopPage.tsx` / `AchievementsPage.tsx` | Subpages in ShellFrame |
+| `NewsPage.tsx` + `news.css` | The Block Bulletin front page (`/news`, `/news/:id`) |
+| `Shelf.tsx` + `home.css` | Home: game marquee, run card, desk cards |
+| `ShopPage.tsx` + `shop.css` | Shop: wallet, pack preview, tag prices |
+| `ds.css` | Site design-system bridge (`html.shell-ds` tokens, `sd-*` primitives) |
+| `GuidePage.tsx` | Hosts `WikiBrowser` on `/guide/:gameId/*` |
+| `AchievementsPage.tsx` | Awards wall |
 | `AppMenu.tsx` | Waffle secondary (Awards / Settings / Keys / Dev) |
 
 ## Docs
@@ -107,3 +111,18 @@ Root of the game: `src/games/grocery-empire/`.
 | `docs/2.0-plan.md` | 2.0 thesis + pacing table + decision log |
 | `docs/grocery-empire/` | **This pack** — living agent briefing |
 | `CLAUDE.md` | Short working rules at repo root |
+
+## Ops Wiki
+
+| Path | Role |
+| --- | --- |
+| `content/wiki/blocks.ts` | Block model, `parseGuideBody` (plain guide text → blocks) |
+| `content/wiki/articles.ts` | `WIKI_ARTICLES`, topics, rich rewrites, inserts, search |
+| `content/wiki/atlas.ts` | Era atlas data (door out, departments, pressure) |
+| `content/wiki/glossary.ts` | Glossary terms |
+| `content/wiki/lessons.ts` | Coach lessons by era, `nextLesson`, `lessonMenu` |
+| `ui/wiki/WikiBrowser.tsx` | Every wiki view; shared by `/guide` and Menu → Wiki |
+| `ui/wiki/WikiBlocks.tsx` / `figures.tsx` | Block renderer and diagrams |
+| `ui/wiki/InGameWiki.tsx` | Drawer wrapper inside play |
+| `ui/wiki/nav.ts` | View ⇄ URL, `playHref` deep links |
+| `ui/kit/LinkButton.tsx` | Router link styled as a kit Button |

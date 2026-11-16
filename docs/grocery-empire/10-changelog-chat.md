@@ -2,6 +2,20 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## V. 40.1 — front door, Ops Wiki, Bulletin, one button system (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **40.1**
+
+Presentation and shell only. No sim, balance or save changes; pacing untouched.
+
+- **Ops Wiki** (`/guide/grocery-empire/*`): `content/wiki/` — `blocks.ts` (block model + `parseGuideBody`, which turns the plain-text `guide.ts` bodies into headings / steps / checklists / term rows / flows / see-also), `articles.ts` (`WIKI_ARTICLES`, rich rewrites of start-what + start-controls, figure inserts, menus + lesson per article, search), `atlas.ts` (13 eras: focus, door out, departments, pressure), `glossary.ts` (~30 terms), `lessons.ts` (Coach tours grouped by era). UI in `ui/wiki/`: `WikiBrowser` (home, article, topic, search, lessons, atlas, glossary, hubs), `WikiBlocks` (glossary words auto-link on first mention; checklists persist per device), `figures.tsx` (core loop, bottleneck, hub map, era ribbon, Worlds filing), `nav.ts` (URL ⇄ view, `playHref`), `wiki.css` (`@layer panels`). Spoilers still follow `settings.showSpoilers` and the save era.
+- **Wiki in play:** Menu drawer tab **Wiki** (`InGameWiki`) renders the same browser; Open buttons call `setActiveMenu`, Play this lesson dispatches `startTutorial`.
+- **Deep links:** `/play/grocery-empire?tour=<id>&m=<menu>` starts a Coach lesson once (effect declared *after* the boot reload, or the reload drops it) and the `m` sync strips `tour` from the URL.
+- **News:** `NewsPage` is "The Block Bulletin" (`src/shell/news.css`): masthead, band sections, lead story with plate art + byline portrait, *In this edition* highlight cards, bold lead-ins, wiki links, older/newer pager, editions rail + version history. `NewsArticle` gained optional `kicker`, `highlights`, `wiki`, `art`, `by`; `newsArt()` picks a default.
+- **Home** (`Shelf.tsx` + `home.css`): storefront stage with the selected game's marquee, Continue/Start (tomato), Today's corner, New game, a run card (era, baskets, rate, played), spines on a board, and a desk of four cards (Bulletin, next lesson, Awards, Shop). Ornament + pack-chrome selectors in `index.css` now also target the new hosts (`.hm-shelf`, `.hm-marquee`, `.hm-shelf__row`, `.hm-title`, `.hm-stage`).
+- **Shop** (`ShopPage.tsx` + `shop.css`): wallet, tabs with owned counts, live pack preview (HUD, room, tray in the pack's colours), cards with shelf-tag prices, plain-word moods instead of unlock codes, "N short" buy state.
+- **Awards / Settings / Saves:** kit buttons, shared header and tabs.
+- **One button system:** `html.shell-ds` carries the same tokens as `.ge-root` (`design/tokens.css` + `src/shell/ds.css`), `main.tsx` imports `layers.css` first, so the kit `Button` and new `LinkButton` render identically on every site page. Legacy `Btn` now renders kit `Button` (`primary` → tomato free verb, `spend` → tag yellow, `paper` → secondary). The global `a { color }` moved into `@layer reset`.
+- **Tests:** e2e `guide.spec.ts` (wiki views + lesson deep link), `shelf.spec.ts`, `shop-tabs.spec.ts` updated. `npm test` 374 passed. Seven e2e specs in `live` / `shell-2` / `visual` were already failing on `main` before this work (see 11-backlog).
+
 ## U. Grocery Empire 40.0 Phase 12 — prove (2026-11-16) · SAVE **36** · GAME_VERSION **40.0**
 
 - `npm test` 374 passed / 4 skipped; `npm run build` + `npm run lint` green (warnings only).

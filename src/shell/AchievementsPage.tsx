@@ -4,6 +4,7 @@ import { createInitialState, type GameState } from '@/games/grocery-empire/sim/s
 import { qty } from '@/games/grocery-empire/ui/format'
 import { loadGame } from '@/shared/save'
 import { downloadAchievementGallery, downloadAchievementShareCard } from './achievementShareCard'
+import { Button } from '@/games/grocery-empire/ui/kit'
 import { useMeta } from './MetaContext'
 import { ShellFrame } from './ShellFrame'
 
@@ -48,37 +49,61 @@ export function AchievementsPage() {
 
   return (
     <ShellFrame title="Awards">
-    <div className="ach-page shell-subpage">
-      <h1 className="brand brand--page">Achievements</h1>
-      <p className="tokens">
-        {unlocked} / {ACHIEVEMENTS.length} unlocked · {tokenEarned} tokens earned · {meta.shelfTokens}{' '}
-        held · {tokenPossible} possible
-      </p>
+    <div className="sd-page ach-page">
+      <header className="ach-hero">
+        <div>
+          <p className="sd-eyebrow sd-eyebrow--tag">Awards · each one pays shelf tokens</p>
+          <h1 className="sd-title">The wall.</h1>
+          <p className="sd-lede">Every award earned in any run stays on the wall and pays tokens for the Shop.</p>
+        </div>
+        <div className="sd-stats ach-stats">
+          <div className="sd-stat">
+            <span>Earned</span>
+            <strong>
+              {unlocked}/{ACHIEVEMENTS.length}
+            </strong>
+          </div>
+          <div className="sd-stat">
+            <span>Tokens won</span>
+            <strong>
+              {tokenEarned}/{tokenPossible}
+            </strong>
+          </div>
+          <div className="sd-stat">
+            <span>Held</span>
+            <strong>{meta.shelfTokens}</strong>
+          </div>
+        </div>
+      </header>
 
-      <div className="ach-filters" role="tablist" aria-label="Tier filter">
+      <nav className="sd-tabs ach-tabs" role="tablist" aria-label="Tier filter">
         {TIERS.map((t) => (
           <button
             key={t}
             type="button"
             role="tab"
             aria-selected={tier === t}
-            className={tier === t ? 'active' : ''}
+            className={`sd-tab${tier === t ? ' is-on' : ''}`}
             onClick={() => setTier(t)}
           >
-            {t === 'all' ? 'All' : t}
+            {t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
+            <span className="sd-tab__n">
+              {ACHIEVEMENTS.filter((a) => (t === 'all' || a.tier === t) && meta.achievements[a.id]).length}/
+              {ACHIEVEMENTS.filter((a) => t === 'all' || a.tier === t).length}
+            </span>
           </button>
         ))}
-      </div>
+      </nav>
 
       <div className="ach-gallery-bar">
-        <button type="button" className="ach-share" disabled={selected.length === 0} onClick={shareSelected}>
+        <Button size="sm" tone="secondary" disabled={selected.length === 0} onClick={shareSelected}>
           Share selected{selected.length ? ` (${selected.length})` : ''}
-        </button>
-        <span className="muted">Select up to 4 unlocked · collage PNG</span>
+        </Button>
+        <span className="muted">Pick up to four earned awards for a collage PNG.</span>
         {selected.length > 0 ? (
-          <button type="button" className="ach-share" onClick={() => setSelected([])}>
+          <Button size="sm" tone="ghost" onClick={() => setSelected([])}>
             Clear
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -127,17 +152,13 @@ export function AchievementsPage() {
                 </div>
               ) : null}
               <em>
-                {mystery ? 'hidden' : a.tier} · {a.tokens} tokens
+                {mystery ? 'hidden' : a.tier} · {a.tokens} token{a.tokens === 1 ? '' : 's'}
                 {got ? ' · unlocked' : ''}
               </em>
               {got && entry ? (
-                <button
-                  type="button"
-                  className="ach-share"
-                  onClick={() => downloadAchievementShareCard(a, entry.unlockedAt)}
-                >
+                <Button size="sm" tone="ghost" onClick={() => downloadAchievementShareCard(a, entry.unlockedAt)}>
                   Share card
-                </button>
+                </Button>
               ) : null}
             </article>
           )

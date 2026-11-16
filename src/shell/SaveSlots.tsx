@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from 'react'
+import { Button } from '@/games/grocery-empire/ui/kit'
 import { cashLabel } from '@/shared/bn'
 import { loadGame } from '@/shared/save'
 import { ERA_STORY } from '@/games/grocery-empire/content/lore'
@@ -114,9 +115,9 @@ export function SaveSlots({
         {label}
       </Btn>
     ) : (
-      <button type="button" disabled={disabled} onClick={onClick}>
+      <Button size="sm" tone={label === 'Save' ? 'secondary' : 'ghost'} disabled={disabled} onClick={onClick}>
         {label}
-      </button>
+      </Button>
     )
 
   return (
@@ -181,32 +182,30 @@ export function ShellConfirm({
         </h3>
         <p>{spec.body}</p>
         <div className="settings-io-row">
-          <button type="button" className="settings-btn" onClick={onClose}>
+          <Button tone="ghost" onClick={onClose}>
             {spec.cancelLabel ?? 'Cancel'}
-          </button>
+          </Button>
           {alt ? (
-            <button
-              type="button"
-              className="settings-btn"
+            <Button
+              tone="secondary"
               onClick={() => {
                 onClose()
                 alt.onClick()
               }}
             >
               {alt.label}
-            </button>
+            </Button>
           ) : null}
-          <button
-            type="button"
+          <Button
             autoFocus
-            className={`settings-btn${spec.tone === 'danger' ? ' settings-btn--danger' : ' settings-btn--accent'}`}
+            tone={spec.tone === 'danger' ? 'danger' : 'free'}
             onClick={() => {
               onClose()
               spec.onConfirm()
             }}
           >
             {spec.confirmLabel ?? 'Confirm'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

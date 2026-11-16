@@ -5,7 +5,7 @@
  * Protocol: bump GAME_VERSION (patch/minor), prepend a NEWS article, keep newest first.
  */
 
-export const GAME_VERSION = '40.0'
+export const GAME_VERSION = '40.1'
 
 /** Era bands the News filter offers. `meta` is shell/site news that isn't about an era. */
 export type NewsBand = 'e01' | 'e23' | 'e46' | 'e712' | 'meta'
@@ -53,6 +53,32 @@ export function newsArt(a: NewsArticle): NewsArt {
 
 /** Newest first. Agents: prepend — never bury the latest bulletin. */
 export const NEWS: NewsArticle[] = [
+  {
+    id: '2026-11-16-front-door-401',
+    bands: ['meta', 'e01'],
+    date: '2026-11-16',
+    version: '40.1',
+    kicker: 'Desk',
+    art: 'corner',
+    headline: 'A new front door, a real wiki, and one kind of button',
+    dek: 'The Ops Wiki grew lessons, an era atlas and a glossary. The bulletin became a newspaper. Every button now speaks the same colours.',
+    wiki: ['start-what', 'start-controls', 'start-first-hour'],
+    highlights: [
+      { label: 'Ops Wiki', text: 'Every guide page is laid out properly now: numbered steps, checklists you can tick, diagrams and linked words.', band: 'meta', wiki: 'start-what' },
+      { label: 'Lessons', text: 'All Coach lessons in one place. Play this lesson opens the game and spotlights the button.', band: 'e01', wiki: 'start-first-hour' },
+      { label: 'Era atlas', text: 'Thirteen eras with the door out of each — sealed until your save reaches them.', band: 'meta' },
+      { label: 'Wiki in the Menu', text: 'Menu → Wiki opens the same pages without leaving your run.', band: 'e01', wiki: 'start-controls' },
+      { label: 'The Block Bulletin', text: 'News is a front page now: highlights, editions down the side, links into the wiki.', band: 'meta' },
+      { label: 'One button system', text: 'Tomato is the free verb, tag yellow spends, quiet is navigation — on the shelf, in the shop and in play.', band: 'meta', wiki: 'start-controls' },
+    ],
+    body: [
+      'The front door changed first. Home leads with the game on the shelf, your run card (era, baskets, how fast you are selling, how long you have played) and four cards on the desk below it: the newest bulletin, your next lesson, the awards wall and the shop.',
+      'The Ops Wiki is the big one. The old plain-text pages now have headings, numbered steps, checklists that remember your ticks, and dotted words that jump to a glossary. Start here has three short reads with diagrams of the core loop and the four bottlenecks.',
+      'Lessons gathers every Coach tour by era. Each one lists its steps; Play this lesson opens the game and the Coach takes it from there. The era atlas lays out all thirteen eras with the door out of each, and keeps the ones you have not reached sealed unless you turn on spoilers.',
+      'You do not have to leave a run to read it. Menu → Wiki opens the same pages in the drawer, and its Open buttons jump straight to the department.',
+      'Buttons finally agree with each other. The shelf, News, the wiki, the shop, Awards and Settings now use the same buttons as the game: tomato for the one free verb, tag yellow when something spends, quiet for everything else. Token prices wear the same shelf-tag shape everywhere.',
+    ],
+  },
   {
     id: '2026-11-15-ship-40',
     bands: ['e01', 'e23', 'e46', 'e712'],

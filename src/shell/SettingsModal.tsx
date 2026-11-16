@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Button } from '@/games/grocery-empire/ui/kit'
 import { Link } from 'react-router-dom'
 import type { NumberFormat } from '@/shared/bn'
 import { deserializeState, exportSave, importSave, loadGame, loadMeta } from '@/shared/save'
@@ -299,15 +300,15 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               }}
             />
             <div className="settings-io-row">
-              <button type="button" className="settings-btn settings-btn--accent" onClick={exportGrocery}>
+              <Button tone="secondary" onClick={exportGrocery}>
                 Download save…
-              </button>
-              <button type="button" className="settings-btn" onClick={() => fileRef.current?.click()}>
+              </Button>
+              <Button tone="ghost" onClick={() => fileRef.current?.click()}>
                 Load save…
-              </button>
-              <button type="button" className="settings-btn" onClick={exportMetaSave}>
+              </Button>
+              <Button tone="ghost" onClick={exportMetaSave}>
                 Download meta…
-              </button>
+              </Button>
             </div>
             <input
               ref={fileRef}
@@ -356,14 +357,9 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 spellCheck={false}
               />
             </label>
-            <button
-              type="button"
-              className="settings-btn settings-btn--danger"
-              disabled={resetDraft.trim() !== 'RESET'}
-              onClick={hardReset}
-            >
+            <Button tone="danger" disabled={resetDraft.trim() !== 'RESET'} onClick={hardReset}>
               Wipe grocery save
-            </button>
+            </Button>
           </section>
         </div>
       </div>
