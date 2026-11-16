@@ -38,8 +38,25 @@
     min-width: 0;
   }
 
+  /* The primary verb: one row (icon, label, amount), same height on every screen. */
   .pf__primary .gk-btn {
     width: 100%;
+    min-height: 52px;
+    flex-direction: row;
+    gap: var(--s-2);
+    font: 700 var(--t-md) / 1 var(--ge-font-ui, system-ui, sans-serif);
+    letter-spacing: 0.01em;
+    border-radius: var(--r-md);
+  }
+  .pf__primary .gk-btn .gk-btn__label {
+    gap: var(--s-2);
+  }
+  .pf__primary .ge-unpack__amt {
+    padding: 2px var(--s-2);
+    border-radius: var(--r-pill);
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    font: 700 var(--t-xs) / 1.2 var(--ge-font-mono, monospace);
+    opacity: 1;
   }
 
   .pf__fail {
@@ -55,14 +72,50 @@
   }
 
   @media (min-width: 720px) {
+    /* Fill the row: three verbs share it in thirds, four in quarters. */
     .pf__secondaries {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    }
+  }
+  @media (max-width: 719.98px) {
+    .pf__secondaries .gk-btn {
+      min-height: 48px;
+    }
+    .pf__secondaries .pf-row__main {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+    }
+    .pf__secondaries .pf-row__fact {
+      max-width: 100%;
     }
   }
 
+  /* Secondary verbs read as buttons: raised, bordered, one row height everywhere. */
   .pf__secondaries .gk-btn {
     width: 100%;
+    min-height: 44px;
     justify-content: flex-start;
+    font-size: var(--t-sm);
+    border-radius: var(--r-md);
+  }
+  .pf__secondaries .gk-btn__label {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .pf__secondaries .pf-row__main {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-2);
+  }
+  .pf__secondaries .pf-row__fact {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
   .pf__body {

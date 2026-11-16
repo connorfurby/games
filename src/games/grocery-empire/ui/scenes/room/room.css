@@ -18,13 +18,96 @@
     display: block;
     width: 100%;
     height: auto;
-    max-height: clamp(168px, 36vh, 280px);
   }
 
-  @media (min-width: 720px) {
-    .rm-svg {
-      max-height: min(20rem, 320px);
-    }
+  /*
+   * Desktop: the scene keeps its shape and the stage paints the same wall, floor line
+   * and ground behind it, so a wide panel shows more room, not black bands.
+   */
+  .rm--wide .rm-stage {
+    background: linear-gradient(
+      to bottom,
+      var(--rm-sky-top) 0,
+      var(--rm-sky-bottom) var(--rm-floor-at),
+      var(--rm-floor) var(--rm-floor-at),
+      var(--rm-floor) var(--rm-ground-at),
+      var(--rm-ground) var(--rm-ground-at)
+    );
+  }
+  .rm--wide .rm-svg {
+    max-height: min(22rem, 44vh);
+  }
+
+  /* Phones: numbers as real text, then the room. */
+  .rm-chips {
+    display: flex;
+    gap: var(--s-2, 8px);
+    margin: 0;
+    padding: var(--s-2, 8px);
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--sc-chip-fill, #0f1317);
+    border-bottom: 1px solid var(--g2-line, rgba(243, 234, 215, 0.14));
+  }
+  .rm-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .rm-chips__chip {
+    flex: 1 0 auto;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: var(--s-2, 8px);
+    align-items: baseline;
+    min-width: 3.6rem;
+    padding: 0.25rem 0.45rem;
+    border-radius: var(--r-sm, 6px);
+    border: 1px solid var(--sc-chip-stroke, #3a444e);
+  }
+  .rm-chips__label {
+    grid-column: 1 / -1;
+    font: 650 var(--t-2xs) / 1.2 var(--g2-ui, var(--ge-font-ui, sans-serif));
+    letter-spacing: 0.04em;
+    color: var(--sc-chip-muted, #b4bfc9);
+  }
+  .rm-chips__value {
+    font: 700 var(--t-sm) / 1.3 var(--g2-mono, var(--ge-font-mono, monospace));
+    color: var(--sc-chip-ink, #efe9dc);
+    white-space: nowrap;
+  }
+  .rm-chips__rate {
+    justify-self: end;
+    font: 650 var(--t-2xs) / 1.3 var(--g2-mono, var(--ge-font-mono, monospace));
+    color: var(--sc-chip-good, #7cc47f);
+  }
+  .rm-chips__rate.is-neg {
+    color: var(--sc-chip-bad, #d9665b);
+  }
+
+  /*
+   * Simplified room: an illustration band you can pan. Scene lettering would be 5 px
+   * here, so it is hidden; the chips above carry every number.
+   */
+  .rm--band .rm-stage {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .rm--band .rm-stage::-webkit-scrollbar {
+    display: none;
+  }
+  .rm--band .rm-svg {
+    width: auto;
+    height: 8.5rem;
+    max-width: none;
+  }
+  .rm--band .rm-svg text,
+  .rm--band .rm-svg .rm-badge {
+    display: none;
+  }
+
+  .rm--portrait .rm-svg {
+    max-height: none;
   }
 
   .rm-hud__chip {

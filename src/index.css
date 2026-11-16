@@ -18,7 +18,7 @@
   --gap: 0.65rem;
   --control-h: 2.25rem;
   --label-size: 0.75rem;
-  --body-size: 0.9rem;
+  --body-size: 0.9375rem;
   --label-track: 0.04em;
   --border: color-mix(in srgb, var(--ink) 14%, transparent);
   --plate: color-mix(in srgb, var(--bg2) 92%, transparent);

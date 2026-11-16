@@ -32,24 +32,11 @@ function readPref(): boolean | null {
 }
 
 /**
- * The storefront banner with a collapse toggle. Your choice is kept for the browser
- * session; until you choose, it opens on the Floor and tucks away on panels that
- * show their own live scene.
+ * Whether the storefront banner is open. Your choice is kept for the browser session;
+ * until you choose, it opens only on panels that do not paint their own room.
  */
-export function SceneStrip({
-  state,
-  menu,
-  museumOpen,
-  reducedMotion,
-}: {
-  state: GameState
-  menu: MenuId
-  museumOpen: boolean
-  reducedMotion: boolean
-}) {
+export function useScenePref(menu: MenuId): [boolean, (v: boolean) => void] {
   const [pref, setPref] = useState<boolean | null>(readPref)
-  const expanded = pref ?? !OWN_SCENE.has(menu)
-
   const set = (v: boolean) => {
     setPref(v)
     try {
@@ -58,31 +45,31 @@ export function SceneStrip({
       /* private mode: the choice just won't outlive this render */
     }
   }
+  return [pref ?? !OWN_SCENE.has(menu), set]
+}
 
-  if (!expanded) {
-    return (
-      <div className="g2-scenebar">
-        <span className="g2-scenebar__label">Storefront</span>
-        <button
-          type="button"
-          className="g2-scenebar__btn"
-          onClick={() => set(true)}
-          aria-expanded={false}
-          title="Show the storefront"
-        >
-          Show
-        </button>
-      </div>
-    )
-  }
-
+/** The storefront banner. Collapsed, it renders nothing: the hub head carries the toggle. */
+export function SceneStrip({
+  state,
+  museumOpen,
+  reducedMotion,
+  expanded,
+  onToggle,
+}: {
+  state: GameState
+  museumOpen: boolean
+  reducedMotion: boolean
+  expanded: boolean
+  onToggle: (v: boolean) => void
+}) {
+  if (!expanded) return null
   return (
     <div className="g2-scenewrap">
       <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} />
       <button
         type="button"
         className="g2-scenebar__btn g2-scenewrap__hide"
-        onClick={() => set(false)}
+        onClick={() => onToggle(false)}
         aria-expanded
         title="Collapse the storefront"
       >

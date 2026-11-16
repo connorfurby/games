@@ -49,14 +49,14 @@ import { ToolsDrawer, type ToolsTab } from './shell/ToolsDrawer'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { HUBS, HUB_BY_ID, MENU_COACH, hubOf, type HubId } from './shell/hubs'
 import { StoreScene } from './scene/StoreScene'
-import { SceneStrip } from './shell/SceneStrip'
+import { SceneStrip, useScenePref } from './shell/SceneStrip'
 import { HubNav } from './shell/HubNav'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
 import { onInboxRequest } from './shell/uiBus'
 import { computeHudAlert } from './shell/hudAlert'
 import { onToastRequest, performUndo } from './shell/undoAction'
-import { ConfirmProvider, ToastProvider } from './kit'
+import { Button, ConfirmProvider, ToastProvider } from './kit'
 import { useFxDeltas } from './hooks/useFxDeltas'
 import { Icon } from './icons/Icon'
 import { BackroomPanel } from './panels/BackroomPanel'
@@ -164,6 +164,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   }, [menu])
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([])
   const [photoMode, setPhotoMode] = useState(false)
+  const [sceneOpen, setSceneOpen] = useScenePref(menu)
   const [inboxOpen, setInboxOpenRaw] = useState(false)
   const setInboxOpen = (v: boolean | ((p: boolean) => boolean)) =>
     setInboxOpenRaw((prev) => {
@@ -802,7 +803,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
           <main className="g2-main" ref={mainRef}>
             {hub === 'store' && !photoMode ? (
-              <SceneStrip state={state} menu={menu} museumOpen={museum.unlocked} reducedMotion={reducedMotion} />
+              <SceneStrip
+                state={state}
+                museumOpen={museum.unlocked}
+                reducedMotion={reducedMotion}
+                expanded={sceneOpen}
+                onToggle={setSceneOpen}
+              />
             ) : null}
             {photoMode ? <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} /> : null}
             {hub ? (
@@ -813,6 +820,17 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                     <p className="g2-hubhead__dept" aria-hidden="true">
                       {MENUS[menu].name}
                     </p>
+                  ) : null}
+                  {hub === 'store' && !sceneOpen && !photoMode ? (
+                    <Button
+                      size="sm"
+                      className="g2-hubhead__scene"
+                      aria-expanded={false}
+                      title="Show the storefront above this room"
+                      onClick={() => setSceneOpen(true)}
+                    >
+                      Show storefront
+                    </Button>
                   ) : null}
                 </div>
                 {hubMenus(hub).length > 1 ? (

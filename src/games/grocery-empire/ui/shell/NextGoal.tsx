@@ -137,6 +137,7 @@ export function NextGoal({
     if (dest === 'memos') requestInbox('memos')
     else if (dest && onMenu) onMenu(dest)
   }
+  const whereTitle = dest === 'memos' ? 'opens Memos' : dest ? `opens ${MENUS[dest].name}` : ''
   const isFree = needs.cash <= 0 && also.length === 0
   const price = needs.cash > 0 ? money(needs.cash, numberFormat) : also.length ? also[0]! : 'Free'
   let choices: GoalChoice[] | null = null
@@ -205,36 +206,26 @@ export function NextGoal({
         </div>
       ) : act ? (
         <div className="g2-goal__acts">
-          {showGo ? (
-            <button
-              type="button"
-              className="g2-goal__go"
-              onClick={(e) => go(e.currentTarget)}
-              title={dest === 'memos' ? 'Open Memos' : `Go to ${MENUS[dest].name}`}
-            >
-              Go
-            </button>
-          ) : null}
           {isFree ? (
             <button
               type="button"
               className="g2-goal__do g2-goal__do--free"
-              disabled={!ready}
-              onClick={() => dispatch(act)}
-              title={ready ? 'Do it now' : (can(s, act).reason ?? 'Not yet')}
+              disabled={!ready && !showGo}
+              onClick={(e) => (ready ? dispatch(act) : go(e.currentTarget))}
+              title={ready ? 'Do it now' : showGo ? `${can(s, act).reason ?? 'Not yet'} · ${whereTitle}` : (can(s, act).reason ?? 'Not yet')}
             >
-              Do it
+              {ready ? 'Do it' : showGo ? 'Show me' : 'Do it'}
             </button>
           ) : (
             <button
               type="button"
-              className="g2-tag"
-              disabled={!ready}
-              onClick={() => dispatch(act)}
-              title={ready ? 'Do it now' : (can(s, act).reason ?? 'Not yet')}
+              className={`g2-tag${!ready && showGo ? ' is-saving' : ''}`}
+              disabled={!ready && !showGo}
+              onClick={(e) => (ready ? dispatch(act) : go(e.currentTarget))}
+              title={ready ? 'Do it now' : showGo ? `${can(s, act).reason ?? 'Not yet'} · ${whereTitle}` : (can(s, act).reason ?? 'Not yet')}
             >
               <span className="g2-tag__price">{price}</span>
-              <span className="g2-tag__label">{ready ? 'Do it' : 'Saving'}</span>
+              <span className="g2-tag__label">{ready ? 'Do it' : showGo ? 'Show me' : 'Saving'}</span>
             </button>
           )}
         </div>

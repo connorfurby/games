@@ -66,9 +66,23 @@
     transform: translateY(1px) scale(0.98);
     box-shadow: var(--shadow-inset);
   }
-  .gk-btn:disabled {
+  /*
+   * Blocked buttons keep their shape and colour family: a tinted fill, a dashed edge
+   * and readable ink (>= 3:1). Never a flat grey or a muddy mix that reads as broken.
+   */
+  .gk-btn:disabled,
+  .gk-btn.is-short {
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 1;
+    box-shadow: none;
+    border-style: dashed;
+    --_ink: color-mix(in srgb, var(--ge-ink) 72%, transparent);
+    --_line: color-mix(in srgb, var(--ge-ink) 26%, transparent);
+  }
+  .gk-btn--ghost:disabled {
+    border-style: solid;
+    --_line: transparent;
+    --_ink: color-mix(in srgb, var(--ge-ink) 60%, transparent);
   }
 
   .gk-btn--primary {
@@ -80,12 +94,23 @@
   .gk-btn--primary:hover:not(:disabled) {
     --_bg: color-mix(in srgb, var(--ge-tag) 88%, white 12%);
   }
+  .gk-btn--primary:disabled,
   .gk-btn--primary.is-short {
-    --_bg: color-mix(in srgb, var(--ge-tag) 28%, var(--ge-surface));
-    --_ink: var(--ge-ink-muted);
-    --_line: var(--ge-line-strong);
-    box-shadow: none;
-    opacity: 1;
+    --_bg: color-mix(in srgb, var(--ge-tag) 14%, transparent);
+    --_ink: color-mix(in srgb, var(--ge-tag) 62%, var(--ge-ink));
+    --_line: color-mix(in srgb, var(--ge-tag) 55%, transparent);
+  }
+  .gk-btn--primary:disabled .gk-btn__cost,
+  .gk-btn--primary.is-short .gk-btn__cost {
+    background: color-mix(in srgb, var(--ge-tag) 20%, transparent);
+  }
+  .gk-btn--free:disabled {
+    --_bg: color-mix(in srgb, var(--ge-tomato, #ff5a43) 14%, transparent);
+    --_ink: color-mix(in srgb, var(--ge-tomato, #ff5a43) 55%, var(--ge-ink));
+    --_line: color-mix(in srgb, var(--ge-tomato, #ff5a43) 55%, transparent);
+  }
+  .gk-btn--danger:disabled {
+    --_ink: color-mix(in srgb, var(--ge-danger) 60%, var(--ge-ink));
   }
   /* Free verbs — tomato. Yellow (primary) is for spends only. */
   .gk-btn--free {
@@ -98,6 +123,9 @@
   }
   .gk-btn--secondary {
     --_bg: var(--ge-raised);
+  }
+  .gk-btn--secondary:disabled {
+    --_bg: transparent;
   }
   .gk-btn--secondary:hover:not(:disabled) {
     --_bg: color-mix(in srgb, var(--ge-raised) 85%, var(--ge-ink) 10%);

@@ -47,7 +47,7 @@ export function VerbTray({ primary, secondaries = [], failReason, failAction, hi
           {secs.map((s) => (
             <Button
               key={s.key}
-              tone="ghost"
+              tone="secondary"
               size="sm"
               icon={s.icon}
               disabled={s.disabled}

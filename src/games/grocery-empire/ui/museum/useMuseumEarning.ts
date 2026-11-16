@@ -24,15 +24,14 @@ export function useMuseumEarning(toast: (text: string) => void) {
       museumStore.update((m) => {
         const before = JSON.stringify([m.chests.length, Object.keys(m.relics).length, m.unlocked, m.maxEra])
         const res = earn(m, s, delta)
-        // Never more than two toasts per check: a mid-game save can back-pay dozens.
+        // One toast per check at most: rewards only. Counts live on the Museum badge.
         const chestNote =
           res.chests.length === 1
             ? `${RARITY_INFO[res.chests[0]!.rarity].label} chest! ${res.chests[0]!.source}${
                 res.chests[0]!.wing ? ` · ${WING_BY_ID[res.chests[0]!.wing].name}` : ''
               }`
-            : res.chests.length > 1
-              ? `${res.chests.length} chests are waiting in the Museum`
-              : null
+            : // A stack (back-pay) is a count, and the Museum badge already shows the count.
+              null
         const featNote =
           res.feats.length === 1
             ? `Relic found: ${res.feats[0]!.name}`
@@ -43,7 +42,7 @@ export function useMuseumEarning(toast: (text: string) => void) {
           ...(res.unlockedNow ? ['The Relic Museum is open: see the Museum hub.'] : []),
           ...(chestNote ? [chestNote] : []),
           ...(featNote ? [featNote] : []),
-        ].slice(0, 2)
+        ].slice(0, 1)
         const after = JSON.stringify([m.chests.length, Object.keys(m.relics).length, m.unlocked, m.maxEra])
         // Save when play time banked toward the next drip, or anything new happened.
         return delta > 0 || before !== after || notes.length > 0

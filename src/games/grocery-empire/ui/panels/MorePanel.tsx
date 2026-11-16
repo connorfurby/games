@@ -483,7 +483,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
             <Link to="/news">News</Link> · <Link to="/guide/grocery-empire">Guide</Link> ·{' '}
             <Link to="/achievements">Awards</Link> · <Link to="/shop">Shop</Link>
           </p>
-          <p className="ge-muted" style={{ marginTop: '0.4rem', fontSize: '0.75rem' }}>
+          <p className="ge-muted" style={{ marginTop: '0.4rem', fontSize: 'var(--t-xs)' }}>
             Grocery Empire v{GAME_VERSION}
           </p>
         </section>

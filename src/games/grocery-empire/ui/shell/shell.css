@@ -36,7 +36,7 @@
 
   .g2-hud__home {
     font-family: var(--g2-display);
-    font-size: 1.15rem;
+    font-size: var(--t-lg);
     font-weight: 650;
     /* Fraunces default import is wght-only; don't set unused SOFT/WONK axes. */
     color: var(--ge-ink);
@@ -49,7 +49,7 @@
   }
 
   .g2-hud__era {
-    font-size: 0.78rem;
+    font-size: var(--t-xs);
     color: var(--ge-muted);
   }
 
@@ -74,7 +74,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.74rem;
+    font-size: var(--t-xs);
     color: var(--ge-muted);
   }
 
@@ -86,7 +86,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--g2-display);
-    font-size: 1.75rem;
+    font-size: var(--t-2xl);
     font-weight: 600;
     line-height: 1.05;
     font-variant-numeric: tabular-nums lining-nums;
@@ -94,12 +94,12 @@
   }
 
   .g2-stat__value--small {
-    font-size: 1.2rem;
+    font-size: var(--t-lg);
     min-width: 5ch;
   }
 
   .g2-stat__rate {
-    font-size: 0.8rem;
+    font-size: var(--t-sm);
     font-variant-numeric: tabular-nums;
     color: var(--ge-success);
   }
@@ -141,7 +141,7 @@
   .g2-goal__title {
     font-family: var(--g2-display);
     font-weight: 600;
-    font-size: 1.02rem;
+    font-size: var(--t-md);
     line-height: 1.2;
     min-width: 0;
     display: block;
@@ -157,16 +157,16 @@
 
   @media (max-width: 420px) {
     .g2-goal__title {
-      font-size: 0.92rem;
+      font-size: var(--t-md);
     }
 
     .g2-goal__hint {
-      font-size: 0.72rem;
+      font-size: var(--t-xs);
     }
   }
 
   .g2-goal__hint {
-    font-size: 0.78rem;
+    font-size: var(--t-xs);
     color: var(--ge-muted);
     line-height: 1.3;
     overflow: hidden;
@@ -181,7 +181,7 @@
   /* Eras 10–12: filing counts under the verb line. */
   .g2-goal__counts {
     display: block;
-    font-size: 0.7rem;
+    font-size: var(--t-2xs);
     color: var(--ge-muted);
     font-variant-numeric: tabular-nums;
     overflow: hidden;
@@ -215,11 +215,11 @@
   }
 
   .g2-goal__fork strong {
-    font-size: 0.8rem;
+    font-size: var(--t-sm);
   }
 
   .g2-goal__fork span {
-    font-size: 0.68rem;
+    font-size: var(--t-2xs);
     line-height: 1.25;
     color: var(--ge-muted);
   }
@@ -257,7 +257,7 @@
   /* ── HUD controls ───────────────────────────────────────────────────── */
   .g2-hud__controls .g2-icon-btn--cycle {
     display: none;
-    font: 700 0.8rem / 1 var(--ge-font-mono, monospace);
+    font: 700 var(--t-sm) / 1 var(--ge-font-mono, monospace);
   }
 
   .g2-hud__controls {
@@ -288,7 +288,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.78rem;
+    font-size: var(--t-xs);
     font-family: var(--g2-ui);
   }
 
@@ -330,7 +330,7 @@
     color: var(--ge-ink);
     cursor: pointer;
     font-family: var(--g2-ui);
-    font-size: 0.85rem;
+    font-size: var(--t-sm);
   }
 
   .g2-inbox-btn:hover,
@@ -343,7 +343,7 @@
     border: none;
     cursor: pointer;
     font-family: var(--g2-ui);
-    font-size: 0.78rem;
+    font-size: var(--t-xs);
     padding: 0.35rem 0.7rem;
     border-radius: 99px;
     background: color-mix(in srgb, var(--g2-tag) 16%, transparent);
@@ -383,7 +383,7 @@
     border-radius: var(--g2-r-md);
     cursor: pointer;
     font-family: var(--g2-ui);
-    font-size: 0.8rem;
+    font-size: var(--t-sm);
     font-weight: 500;
   }
 
@@ -562,20 +562,20 @@
 
     .g2-stat__label,
     .g2-stat--baskets .g2-stat__label {
-      font-size: 0.6875rem;
+      font-size: var(--t-2xs);
       line-height: 1;
     }
 
     .g2-stat__value,
     .g2-stat__value--small {
-      font-size: 1.05rem;
+      font-size: var(--t-lg);
       line-height: 1.15;
       min-width: 0;
       white-space: nowrap;
     }
 
     .g2-stat__rate {
-      font-size: 0.6875rem;
+      font-size: var(--t-2xs);
       white-space: nowrap;
     }
 
@@ -594,7 +594,7 @@
     .g2-hub {
       flex: 1;
       padding: 0.45rem 0.1rem 0.35rem;
-      font-size: 0.72rem;
+      font-size: var(--t-xs);
     }
 
     .g2-hub__indicator {
@@ -615,7 +615,7 @@
 
     .g2-stat__value,
     .g2-stat__value--small {
-      font-size: 0.95rem;
+      font-size: var(--t-md);
     }
 
     .g2-stat--baskets .g2-stat__rate {
@@ -648,7 +648,7 @@
   .g2-tools .g2-subtab {
     flex-shrink: 0;
     padding: 0.3rem 0.65rem;
-    font-size: 0.8rem;
+    font-size: var(--t-sm);
   }
 
   .g2-menu-btn.is-on {
@@ -670,13 +670,13 @@
 
   .g2-tools .ge-more-block__head h3 {
     font-family: var(--g2-display);
-    font-size: 1.05rem;
+    font-size: var(--t-lg);
     margin: 0 0 0.15rem;
   }
 
   .g2-tools .ge-more-block__head p {
     margin: 0 0 0.5rem;
-    font-size: 0.8rem;
+    font-size: var(--t-sm);
     color: var(--ge-muted);
   }
 
@@ -750,7 +750,7 @@
   .g2-hubhead__title h1 {
     margin: 0;
     font-family: var(--g2-display);
-    font-size: 1.35rem;
+    font-size: var(--t-xl);
     font-weight: 650;
     letter-spacing: -0.01em;
   }
@@ -791,7 +791,7 @@
     color: var(--ge-muted);
     padding: 0.5rem 0.75rem;
     min-height: 2.45rem;
-    font-size: 0.92rem;
+    font-size: var(--t-md);
     font-weight: 600;
   }
 
@@ -923,7 +923,7 @@
     appearance: none;
     cursor: pointer;
     font-family: var(--g2-ui);
-    font-size: 0.72rem;
+    font-size: var(--t-xs);
     font-weight: 650;
     min-height: 0;
     padding: 0.1rem 0.2rem;
@@ -946,7 +946,7 @@
     cursor: pointer;
     font-family: var(--g2-ui);
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: var(--t-sm);
     min-height: 2.35rem;
     padding: 0 0.85rem;
     border-radius: var(--g2-r-sm, 7px);
@@ -1010,7 +1010,7 @@
     background: transparent;
     color: var(--ge-ink);
     font: inherit;
-    font-size: 1rem;
+    font-size: var(--t-md);
     padding: 0.9rem 1rem;
     border-bottom: 1px solid var(--g2-line);
   }
@@ -1025,7 +1025,7 @@
   .g2-palette__empty {
     padding: 0.8rem;
     color: var(--ge-muted);
-    font-size: 0.85rem;
+    font-size: var(--t-sm);
   }
 
   .g2-palette__row {
@@ -1041,7 +1041,7 @@
     background: transparent;
     color: var(--ge-ink);
     font: inherit;
-    font-size: 0.9rem;
+    font-size: var(--t-md);
     text-align: left;
     cursor: pointer;
   }
@@ -1051,7 +1051,7 @@
   }
 
   .g2-palette__row kbd {
-    font-size: 0.7rem;
+    font-size: var(--t-2xs);
     color: var(--ge-muted);
   }
 
@@ -1063,7 +1063,7 @@
       max-width: none;
       width: 100%;
       text-align: left;
-      font-size: 0.74rem;
+      font-size: var(--t-xs);
       padding: 0.3rem 0.65rem;
     }
 
@@ -1080,13 +1080,13 @@
 
     .g2-goal__do {
       min-height: 2.1rem;
-      font-size: 0.8rem;
+      font-size: var(--t-sm);
       padding: 0 0.55rem;
     }
 
     .g2-goal__go {
       padding: 0;
-      font-size: 0.68rem;
+      font-size: var(--t-2xs);
     }
 
     .g2-hub--more {
@@ -1113,7 +1113,7 @@
 
   .g2-root .g2-toasts .ge-toast {
     color: var(--ge-ink);
-    font-size: 0.8125rem;
+    font-size: var(--t-sm);
   }
 
   .g2-root .g2-toasts .ge-toast:nth-last-child(n + 3) {
@@ -1121,7 +1121,7 @@
   }
 
   .g2-root .g2-whisper {
-    font-size: 0.8125rem;
+    font-size: var(--t-sm);
     gap: 0.75rem;
   }
 
@@ -1147,7 +1147,7 @@
 
   .ge-suggest-tip__eyebrow,
   .ge-suggest-tip__where {
-    font-size: 0.6875rem;
+    font-size: var(--t-2xs);
   }
 
   .ge-suggest-tip--line .ge-suggest-tip__actions {
@@ -1189,7 +1189,7 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      font-size: 0.8125rem;
+      font-size: var(--t-sm);
     }
 
     .g2-root:has(.g2-whisper) .g2-main {
@@ -1222,5 +1222,66 @@
 
   .g2-main .ge-card--owned .ld-deed__value {
     color: var(--ge-success);
+  }
+
+  /* ── 1.0 chrome pass ─────────────────────────────────────────────────── */
+
+  /* HUD figures: full on desktop, three significant digits on phones. */
+  .g2-stat__short {
+    display: none;
+  }
+
+  /* Storefront toggle lives in the hub head, not in a full-width bar. */
+  .g2-hubhead__title {
+    flex-wrap: nowrap;
+  }
+  .g2-hubhead__scene {
+    margin-left: auto;
+    color: var(--ge-ink-muted);
+  }
+
+  /* Next Goal has one button. While you save, it shows the room instead of sitting dead. */
+  .g2-goal .g2-tag.is-saving,
+  .g2-goal .g2-goal__do:not(:disabled) {
+    cursor: pointer;
+  }
+  .g2-goal .g2-tag.is-saving {
+    background: color-mix(in srgb, var(--g2-tag) 14%, transparent);
+    color: color-mix(in srgb, var(--g2-tag) 62%, var(--ge-ink));
+    border: 1px dashed color-mix(in srgb, var(--g2-tag) 55%, transparent);
+    box-shadow: none;
+  }
+
+  @media (max-width: 720px) {
+    .g2-stat__full {
+      display: none;
+    }
+    .g2-stat__short {
+      display: inline;
+    }
+    /* The tab bar names the hub and the tabs name the department: no third title. */
+    .g2-hubhead:has(.g2-subtabs) .g2-hubhead__title {
+      display: none;
+    }
+    .g2-hubhead__scene {
+      display: none;
+    }
+    /* Next Goal: two tight lines. */
+    .g2-hud .g2-goal {
+      padding-block: 0.45rem;
+    }
+    .g2-hud .g2-goal__hint {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .g2-hud .g2-alert--compact {
+      min-height: 0;
+      padding-block: 0.2rem;
+    }
+    .g2-main {
+      padding-top: 0.6rem;
+    }
   }
 }

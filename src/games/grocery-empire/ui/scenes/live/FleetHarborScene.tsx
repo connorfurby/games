@@ -99,7 +99,7 @@ export function FleetHarborScene() {
             <circle r="11" fill="#0f1317" stroke={done ? '#7cc47f' : '#a58be0'} strokeWidth="2" />
             {done ? null : <circle r={3 + frac * 6} fill="#a58be0" opacity="0.85" />}
             <text className="rm-badge__text" y={done ? 4 : 24} textAnchor="middle" fill={done ? '#7cc47f' : '#b4bfc9'}>
-              {done ? '✓' : p.ration.slice(0, 4)}
+              {done ? '✓' : p.ration}
             </text>
           </g>
         )

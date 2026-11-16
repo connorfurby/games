@@ -372,7 +372,7 @@ export function VenturesPanel() {
                       {vs?.policy ? def.policies[vs.policy].name : 'Choose at level 10'}
                     </strong>
                   </div>
-                  <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>
+                  <p className="ge-muted" style={{ margin: 0, fontSize: 'var(--t-2xs)' }}>
                     {vs?.policy ? def.policies[vs.policy].blurb : 'Locks after the first choice.'}
                   </p>
                   {!vs?.policy ? (
@@ -396,13 +396,13 @@ export function VenturesPanel() {
                     </div>
                   ) : null}
                   {s.horizon?.endlessBan?.kind === 'ventureFork' && s.horizon.endlessBan.id === def.id ? (
-                    <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>
+                    <p className="ge-muted" style={{ margin: 0, fontSize: 'var(--t-2xs)' }}>
                       Banned by the mutated list. Set another venture’s fork to clear it.
                     </p>
                   ) : null}
                 </div>
               ) : null}
-              {def.loop ? <p className="ge-muted" style={{ margin: 0, fontSize: '0.7rem' }}>{def.loop}</p> : null}
+              {def.loop ? <p className="ge-muted" style={{ margin: 0, fontSize: 'var(--t-2xs)' }}>{def.loop}</p> : null}
               {opened ? (
                 <>
                   <div className="ge-card__meta">
@@ -441,13 +441,13 @@ export function VenturesPanel() {
                     <p
                       className="ge-muted"
                       role="status"
-                      style={{ margin: 0, fontSize: '0.72rem', color: 'var(--ge-warn, #e09f3e)' }}
+                      style={{ margin: 0, fontSize: 'var(--t-xs)', color: 'var(--ge-warn, #e09f3e)' }}
                     >
                       ⚠ Starved — no produce in the backroom, so the kits pay only 25%. Order produce.
                     </p>
                   ) : null}
                   {def.id === 'coffee' && s.hours > 1 ? (
-                    <p className="ge-muted" style={{ margin: 0, fontSize: '0.72rem' }}>
+                    <p className="ge-muted" style={{ margin: 0, fontSize: 'var(--t-xs)' }}>
                       Rush hint: {s.hours.toFixed(1)}× hours pull more shoppers past the door, but the
                       cart’s till fills at a flat rate — collect before it caps.
                     </p>
@@ -455,7 +455,7 @@ export function VenturesPanel() {
                   <Meter value={stored} max={Math.max(1, storeCap)} label={money(stored, numberFormat)} />
                 </>
               ) : (
-                <p className="ge-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.7rem' }}>
+                <p className="ge-muted" style={{ margin: '0.35rem 0 0', fontSize: 'var(--t-2xs)' }}>
                   After it opens, Upgrade on this card raises the till.
                 </p>
               )}

@@ -10,7 +10,7 @@ import { computeHudAlert } from './hudAlert'
 import { performUndo } from './undoAction'
 import { PopLayer, type PopItem } from '../components/Pop'
 import { useFlash, useTween } from '../fx'
-import { money, qty } from '../format'
+import { money, qty, shortFigure } from '../format'
 import { Icon } from '../icons/Icon'
 import { NextGoal } from './NextGoal'
 
@@ -78,8 +78,11 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="cash" size={13} /> Cash
           </span>
-          <span className="g2-stat__value" data-fx-flash={cashFlash ?? undefined}>
-            {money(cashShown, 'named')}
+          <span className="g2-stat__value" data-fx-flash={cashFlash ?? undefined} title={money(cashShown, 'named')}>
+            <span className="g2-stat__full">{money(cashShown, 'named')}</span>
+            <span className="g2-stat__short" aria-hidden="true">
+              {shortFigure(money(cashShown, 'named'))}
+            </span>
           </span>
           <span className={`g2-stat__rate${net < 0 ? ' is-neg' : ''}`} title="Net income, smoothed over 45 s">
             {perSec(net, 'named')}
@@ -90,7 +93,10 @@ export function Hud({
             <Icon name="baskets" size={13} /> Baskets
           </span>
           <span className="g2-stat__value g2-stat__value--small" data-fx-flash={basketsFlash ?? undefined}>
-            {qty(basketsShown, 'named')}
+            <span className="g2-stat__full">{qty(basketsShown, 'named')}</span>
+            <span className="g2-stat__short" aria-hidden="true">
+              {shortFigure(qty(basketsShown, 'named'))}
+            </span>
             <PopLayer pops={pops} />
           </span>
           <span className="g2-stat__rate">
