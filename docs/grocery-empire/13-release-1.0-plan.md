@@ -11,7 +11,8 @@
 | Date | Done | Notes |
 | --- | --- | --- |
 | 2026-11-16 | Plan + audit · **P0-01** phone HUD (no overlap at 360/390/430; speed is one cycling button on phones, Coach icon moves to palette/Menu) · **P0-02** suggestion strip uses kit buttons · **P0-03** Land deed cards (owned deeds no longer bare text; readable prices) · **P0-04** Strategy invalid DOM (0 console errors) · **P0-05/06** toasts sit bottom-right (desktop) / above the tab bar (phone), never over the HUD; tip card 13 px, 2-line clamp on phones, page pads for it · **P0-07** active hub tab scrolls into view · **P0-08** not a bug (hover) · **P0-12** Books spoiler sign | Decisions 1, 3, 4 applied (1.0 + fresh news, tip card and Suggested strip removed). Remaining P0 then: 09, 10/11, crawler rerun. |
-| 2026-11-16 | **P0-09** Museum opens on wing cards, one wing's wall at a time (phone 23k → 2.5k px, desktop 10k → 1.5k) · **P0-10/11** all 14 e2e green (selectors updated to the room scenes, intro skipped in the live spec, phone baseline refreshed) · found and fixed on the way: Escape in the chest reveal also left the Museum; bulk reward sheet came up blank in dev (Strict Mode double mount) | Remaining P0: crawler rerun. Next: P1 design system. |
+| 2026-11-16 | **P0-09** Museum opens on wing cards, one wing's wall at a time (phone 23k → 2.5k px, desktop 10k → 1.5k) · **P0-10/11** all 14 e2e green (selectors updated to the room scenes, intro skipped in the live spec, phone baseline refreshed) · found and fixed on the way: Escape in the chest reveal also left the Museum; bulk reward sheet came up blank in dev (Strict Mode double mount) | — |
+| 2026-11-16 | **P0 closed.** Crawler rerun, 244 screens (Eras 0–7, 1440 and 390): 0 console errors (was 4 on Strategy), 0 horizontal overflow, tallest page 3.2k px (Land, phone; was 23.5k Museum). | Next: P1 design system (type scale, raw button classes, disabled-primary colour), then P2 phone rooms. |
 
 ---
 
