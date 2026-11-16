@@ -2,6 +2,20 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## X. 1.0 Phases 1–3 + first hour — one look, every size, one voice (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **1.0**
+
+UI only. No sim, balance or save changes; pacing untouched.
+
+- **Type:** game UI CSS uses only `--t-2xs … --t-3xl` (11–48 px). `design/typeScale.test.ts` fails on a raw rem size anywhere, and on raw px outside the five files that style SVG scene text (px there are viewBox units).
+- **Buttons:** blocked = same colour family, 6–7% fill, dashed edge, readable ink (`.gk-btn:disabled`, `.is-short`). `VerbTray` secondaries are `tone="secondary"`, 44 px (48 on phones, odd last one spans the row). Primary verb is one row (icon · label · amount), 52 px. Navigation primaries are not yellow (`EmpireBoard` "Open Upgrades →").
+- **Rooms:** `RoomScene` has three modes. `wide` (desktop): stage background repeats the sky/floor/ground so wide panels show no bands. `band` (phone default): `RoomChips` (HTML) + a pannable 8.5 rem illustration with scene lettering hidden. `portrait` (phone, opt-in via the `portrait` prop; caller branches on `usePhone()`): Floor is re-laid at 360×346. `StaffFloor` uses the band. **Fleet and Staff portrait layouts are still to do.**
+- **Phone chrome:** `shortFigure` (three significant digits, cut not rounded) for HUD cash and baskets; hub title row hidden when tabs exist; storefront toggle is a ghost button in the hub head (`useScenePref`), no full-width bar; `.pf__primary` is `position: sticky; bottom: 0` (the tray is `display: contents` on phones) so the verb is always in thumb reach; toasts and the story line stack above it.
+- **Guidance:** Next Goal has one button: `Do it` when ready, `Show me` (opens the room) while saving; the Go link is gone. `PanelHelpButton` (`?`) → `requestWiki(wikiForMenu(menu))` → Menu drawer on that article. `PanelHelp` shows `panelTip(s, menu)` in the panel flow (More / Got it, auto-files after 60 s); `TIP_MENU` in `content/tips.ts` maps tips to rooms. `PlayFrame` no longer renders `department`.
+- **Coach:** the card takes the side of the highlight with more room (`.ge-coach--top`).
+- **Fixes on the way:** Fleet pocket labels cut to four letters; Museum back-pay toasts; status chips stretched into full-width bars; forced Title Case (`text-transform: capitalize`) on callouts and wrapped segments; tree tier label at 9 px.
+- **Crawler** (`audit-2026-11-16/audit.cjs`): parses `color(srgb …)` and inherited opacity, so blocked-button contrast is measured for real.
+- **Tests:** `npm test` 378 passed (type scale, `shortFigure`); e2e 16/16 (`help.spec.ts` new; visual baselines refreshed).
+
 ## W. 1.0 Phase 0 — stop-ship fixes and owner decisions (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **1.0**
 
 UI and tests only. No sim, balance or save changes; pacing untouched. Plan and progress log: [13-release-1.0-plan.md](13-release-1.0-plan.md).

@@ -75,6 +75,7 @@
 
 .st-tier small {
   color: var(--ge-muted);
+  font-size: var(--t-2xs);
 }
 
 .st-link {

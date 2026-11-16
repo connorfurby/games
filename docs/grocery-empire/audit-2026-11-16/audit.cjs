@@ -50,7 +50,7 @@ const STAGES = process.env.ONE ? ['Era 2 · Chain'] : ['Era 0 · Mid counter','E
         for (const el of document.querySelectorAll('.ge-root *')) { if (!vis(el)) continue; const r = el.getBoundingClientRect(); if (r.right > vw + 2 && !inScroller(el)) overflow.push(name(el)) }
         const small = []
         for (const el of document.querySelectorAll('.ge-root button, .ge-root a, .ge-root [role=button], .ge-root input, .ge-root select')) { if (!vis(el)) continue; const r = el.getBoundingClientRect(); if (r.height < 28 || r.width < 24) small.push(name(el) + ` ${Math.round(r.width)}x${Math.round(r.height)}`) }
-        const lum = (c) => { const m = c.match(/[\d.]+/g); if (!m) return null; const [r, g, bb, a = 1] = m.map(Number); const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }; return { L: 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(bb), a } }
+        const lum = (c) => { const m = c.match(/[\d.]+(?:e-?\d+)?/g); if (!m) return null; let [r, g, bb, a = 1] = m.map(Number); if (/^color\(srgb/.test(c)) { r *= 255; g *= 255; bb *= 255 } const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }; return { L: 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(bb), a } }
         const bgOf = (el) => { for (let n = el; n; n = n.parentElement) { const cs = getComputedStyle(n); if (cs.backgroundImage && cs.backgroundImage !== 'none') return null; const c = lum(cs.backgroundColor); if (c && c.a > 0.85) return c } return lum('rgb(0,0,0)') }
         const lowc = []; let tiny = 0; const tinyEx = []
         const leaves = [...document.querySelectorAll('.ge-root *')].filter((el) => el.childElementCount === 0 && el.textContent.trim().length > 1 && vis(el) && !(el.closest('svg')))
@@ -58,7 +58,7 @@ const STAGES = process.env.ONE ? ['Era 2 · Chain'] : ['Era 0 · Mid counter','E
           const cs = getComputedStyle(el)
           const fs = parseFloat(cs.fontSize); if (fs < 11) { tiny++; if (tinyEx.length < 6) tinyEx.push(name(el) + ' ' + fs + 'px "' + el.textContent.trim().slice(0, 30) + '"') }
           const fg = lum(cs.color); const bg = bgOf(el); if (!fg || !bg) continue
-          const op = parseFloat(cs.opacity) * fg.a
+          let op = fg.a; for (let n = el; n && n !== document.body; n = n.parentElement) op *= parseFloat(getComputedStyle(n).opacity)
           const L1 = Math.max(fg.L, bg.L), L2 = Math.min(fg.L, bg.L); let ratio = (L1 + 0.05) / (L2 + 0.05)
           if (op < 1) ratio = 1 + (ratio - 1) * op
           if (ratio < 3) lowc.push(name(el) + ` ${ratio.toFixed(2)} "${el.textContent.trim().slice(0, 30)}"`)
