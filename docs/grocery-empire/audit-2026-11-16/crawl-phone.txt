@@ -1,0 +1,11 @@
+phone screens 121
+doc overflow: []
+overflow els: []
+small targets: [('button.ge-devbar__link.ge-devbar__tools', 121), ('a.ge-devbar__link', 121), ('button.ge-suggest-tip__btn.ge-suggest-tip__btn--ghost', 118), ('button.ge-suggest-tip__btn.ge-suggest-tip__btn--solid', 118), ('button.g2-goal__go', 113), ('g', 98), ('button.g2-alert.g2-alert--compact.is-warn', 91), ('input.ge-range.ge-mix-box__slider', 39), ('input.ge-range', 16), ('button.pf-chip__link', 8)]
+low contrast: [('strong $5.00K', 6), ('strong $6.00K', 6), ('span.ge-pop +3', 1), ('div.ge-toast 82 chests are waitin', 1), ('div.ge-toast 3 Oddities found: Tw', 1), ('div.ge-toast Relic found: The Bar', 1), ('div.ge-toast 37 chests are waitin', 1)]
+tiny text: [('strong 10.4px', 121), ('span 10.4px', 121), ('code 10.4px', 121), ('button.ge-devbar__link.ge-devbar__tools 10.4px', 121), ('a.ge-devbar__link 10.4px', 121), ('button.g2-goal__go 10.88px', 113), ('span.ge-suggest-tip__eyebrow 9.92px', 3), ('span.ge-pop 10.88px', 2)]
+clipped: [('span "Memos"', 121)]
+errors: [('CONSOLE In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <p> p \n\n  ...\n    <Pr', 1), ('CONSOLE <%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. p <p>', 1), ('CONSOLE In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <div> p \n\n  ...\n    <', 1), ('CONSOLE <%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. p <div>', 1)]
+font sizes per screen: min 12 max 21 avg 16.520661157024794
+tallest pages: [(23549, 'Era 1', 'relics'), (23410, 'Era 2', 'relics'), (23367, 'Era 6', 'relics'), (23367, 'Era 5', 'relics'), (23320, 'Era 3', 'relics'), (23314, 'Era 7', 'relics'), (23300, 'Era 4', 'relics'), (3264, 'Era 5', 'land')]
+raw button classes (screens): [('ge-devbar__link', 121), ('g2-goal__do', 121), ('g2-icon-btn', 121), ('g2-inbox-btn', 121), ('g2-hub', 121), ('ge-suggest-tip__btn', 118), ('g2-goal__go', 113), ('g2-subtab', 107), ('g2-alert', 91), ('gk-seg__item', 39), ('pf-row', 33), ('gk-disclosure__toggle', 29), ('g2-scenebar__btn', 22), ('(none)', 13), ('gk-chip__main', 12), ('p6-choice', 8), ('gk-toggle', 8), ('pf-chip__link', 8), ('st-node', 7), ('mu-gallery__alcove', 7), ('mu-chest', 7), ('mu-tile', 7), ('bd-facing__card', 6), ('is-on', 6), ('ld-lot', 5)]
