@@ -131,6 +131,13 @@
     letter-spacing: 0.01em;
     border-radius: var(--r-md);
   }
+  /* A blocked primary is a tint; give it a solid base so a room never shows through it. */
+  .pf__primary .gk-btn:disabled,
+  .pf__primary .gk-btn.is-short {
+    background:
+      linear-gradient(var(--_bg), var(--_bg)),
+      var(--ge-bg2, #101a18);
+  }
   .pf__primary .gk-btn .gk-btn__label {
     gap: var(--s-2);
   }
