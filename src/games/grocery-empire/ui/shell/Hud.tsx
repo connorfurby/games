@@ -147,6 +147,16 @@ export function Hud({
               <span className="ge-sr-only">{sp}×</span>
             </button>
           ))}
+          {/* Phones: one button cycles the speeds so the HUD fits on one row. */}
+          <button
+            type="button"
+            className="g2-icon-btn g2-icon-btn--cycle"
+            aria-label={`Speed ${s.speed}×, tap for ${speeds[(speeds.indexOf(s.speed) + 1) % speeds.length]}×`}
+            title="Change speed"
+            onClick={() => dispatch({ type: 'setSpeed', speed: speeds[(speeds.indexOf(s.speed) + 1) % speeds.length]! })}
+          >
+            {s.speed}×
+          </button>
           <button
             type="button"
             className="g2-icon-btn g2-icon-btn--undo"
@@ -171,7 +181,7 @@ export function Hud({
           {inboxCount > 0 ? <span className="g2-badge">{inboxCount}</span> : null}
         </button>
         {s.menus.coach ? (
-          <button type="button" className="g2-icon-btn" onClick={() => onMenu('coach')} title="Coach lessons">
+          <button type="button" className="g2-icon-btn g2-icon-btn--coach" onClick={() => onMenu('coach')} title="Coach lessons">
             <Icon name="coach" size={16} />
           </button>
         ) : null}

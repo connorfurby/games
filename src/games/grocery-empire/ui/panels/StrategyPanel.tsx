@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { DOCTRINES, doctrinesAtEra } from '../../content/era2'
 import { CAPITAL } from '../../sim/balance'
 import { can } from '../../sim/commands'
@@ -6,32 +6,10 @@ import { doctrineCost, tournamentReadPayout } from '../../sim/systems/capital'
 import { useGame } from '../GameContext'
 import { qty } from '../format'
 import { Icon } from '../icons/Icon'
-import { ActionRow, FailReason, PlayFrame } from '../play'
+import { ActionRow, PlayFrame } from '../play'
 import { StrategyHallScene } from '../scenes/live'
 import { Button, Sheet } from '../kit'
 import { requestInbox } from '../shell/uiBus'
-
-function NavFail({
-  reason,
-  onJump,
-  jumpLabel,
-}: {
-  reason?: string
-  onJump?: () => void
-  jumpLabel?: string
-}) {
-  if (!reason) return null
-  return (
-    <div className="p6-stack" style={{ gap: '0.25rem' }}>
-      <FailReason>{reason}</FailReason>
-      {onJump && jumpLabel ? (
-        <Button tone="ghost" size="sm" onClick={onJump}>
-          {jumpLabel}
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 export function StrategyPanel() {
   const { state: s, dispatch, reducedMotion } = useGame()
@@ -58,16 +36,6 @@ export function StrategyPanel() {
     })
   }
 
-  let failSlot: ReactNode
-  if (!tournyCheck.ok) {
-    failSlot = (
-      <NavFail
-        reason={tournyCheck.reason}
-        onJump={shortAtt ? jumpMemos : undefined}
-        jumpLabel={shortAtt ? 'Open Memos (Att)' : undefined}
-      />
-    )
-  }
 
   return (
     <section className="ge-panel">
@@ -88,12 +56,14 @@ export function StrategyPanel() {
             title: !tournyCheck.ok ? tournyCheck.reason : undefined,
             onClick: () => dispatch({ type: 'runTournament' }),
           },
-          failReason: failSlot ?? undefined,
+          // Plain reason + link: VerbTray renders the line (a block here nests <p> in <p>).
+          failReason: tournyCheck.ok ? undefined : tournyCheck.reason,
+          failAction: !tournyCheck.ok && shortAtt ? { label: 'Get Attention in Memos', onClick: jumpMemos } : undefined,
           secondaries: [
             {
               key: 'memos',
-              label: 'Jump to Memos',
-              fact: 'Att',
+              label: 'Memos',
+              fact: 'spend Attention',
               onClick: jumpMemos,
             },
             {

@@ -20,7 +20,6 @@ import type { StorePolicy } from '../../sim/state'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
 import { HubStage } from '../components/HubStage'
-import { Line } from '../components/Line'
 import { Button, EmptyState } from '../kit'
 import { StatusChip, type VerbSecondary, type VerbTrayProps } from '../play'
 import { OutpostStreetScene } from '../scenes/live/OutpostStreetScene'
@@ -86,9 +85,6 @@ function LandExpansionCard({
   const sid = id === 'side-yard' ? 'land-side-yard' : `expand-${id}`
   const suggested = useIsSuggested(sid)
   const canBuy = !have && s.cash >= cost
-  if (have) {
-    return <Line left={name} right="Filed" muted className="" />
-  }
   return (
     <article
       data-suggest-id={sid}
@@ -104,18 +100,15 @@ function LandExpansionCard({
       </div>
       <div className="ge-card__meta">
         <div className="ge-card__meta-row">
-          <span>Status</span>
-          <strong>{have ? 'Owned' : money(cost, numberFormat)}</strong>
+          <span>{have ? 'Status' : 'Price'}</span>
+          <strong className="ld-deed__value">{have ? '✓ Deed filed' : money(cost, numberFormat)}</strong>
         </div>
       </div>
-      <Button
-        tone={canBuy ? 'primary' : 'ghost'}
-        coachId={sid}
-        disabled={have || s.cash < cost}
-        onClick={onBuy}
-      >
-        {have ? 'Deed filed' : 'Buy'}
-      </Button>
+      {have ? null : (
+        <Button tone="primary" affordable={canBuy} coachId={sid} disabled={!canBuy} onClick={onBuy} cost={money(cost, numberFormat)}>
+          Buy deed
+        </Button>
+      )}
     </article>
   )
 }
@@ -557,7 +550,20 @@ export function LandPanel() {
                 return (
                   <>
                     {ownedEra2.map((e) => (
-                      <Line key={e.id} left={e.name} right="Filed" muted />
+                      <article key={e.id} className="ge-card ge-card--owned">
+                        <div className="ge-card__head">
+                          <div>
+                            <strong>{e.name}</strong>
+                            <p className="ge-muted">{ERA2_BLURB[e.id] ?? e.blurb}</p>
+                          </div>
+                        </div>
+                        <div className="ge-card__meta">
+                          <div className="ge-card__meta-row">
+                            <span>Status</span>
+                            <strong className="ld-deed__value">✓ Deed filed</strong>
+                          </div>
+                        </div>
+                      </article>
                     ))}
                     {nextEra2
                       ? (() => {
@@ -577,17 +583,19 @@ export function LandPanel() {
                               </div>
                               <div className="ge-card__meta">
                                 <div className="ge-card__meta-row">
-                                  <span>Status</span>
-                                  <strong>{money(nextEra2.cost, numberFormat)}</strong>
+                                  <span>Price</span>
+                                  <strong className="ld-deed__value">{money(nextEra2.cost, numberFormat)}</strong>
                                 </div>
                               </div>
                               <Button
-                                tone={canBuy ? 'primary' : 'ghost'}
+                                tone="primary"
+                                affordable={canBuy}
                                 disabled={!canBuy}
+                                cost={money(nextEra2.cost, numberFormat)}
                                 title={!canBuy ? `Need ${money(nextEra2.cost, numberFormat)}` : undefined}
                                 onClick={() => dispatch({ type: 'expandLot', id: nextEra2.id })}
                               >
-                                Buy
+                                Buy deed
                               </Button>
                             </article>
                           )

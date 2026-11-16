@@ -156,6 +156,14 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       { replace: true },
     )
   }, [menu])
+  // Phones scroll the hub's tab row: keep the active department in view (1.0 P0-07).
+  useEffect(() => {
+    const row = document.querySelector<HTMLElement>('.g2-hubhead .g2-subtabs')
+    const tab = row?.querySelector<HTMLElement>('.g2-subtab.is-active')
+    if (!row || !tab || row.scrollWidth <= row.clientWidth) return
+    const left = tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2
+    row.scrollTo({ left: Math.max(0, left), behavior: 'auto' })
+  }, [menu])
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([])
   const [photoMode, setPhotoMode] = useState(false)
   const [inboxOpen, setInboxOpenRaw] = useState(false)

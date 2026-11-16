@@ -1,3 +1,4 @@
+import { Button } from '../kit'
 import { motion, AnimatePresence } from 'motion/react'
 import { MENUS, type MenuId } from '../../content/menus'
 import type { Command } from '../../sim/commands'
@@ -58,23 +59,13 @@ export function SuggestTip({
             <span className="ge-suggest-tip__where">{where}</span>
           </p>
           <div className="ge-suggest-tip__actions">
-            <button
-              type="button"
-              className="ge-suggest-tip__btn ge-suggest-tip__btn--ghost"
-              onClick={() => onGo(tip)}
-              title={tip.channel === 'memos' ? 'Jump to memos' : `Open ${where}`}
-            >
+            <Button size="sm" tone="ghost" onClick={() => onGo(tip)} title={tip.channel === 'memos' ? 'Jump to memos' : `Open ${where}`}>
               {goLabel(tip)}
-            </button>
+            </Button>
             {tip.action && onDo ? (
-              <button
-                type="button"
-                className="ge-suggest-tip__btn ge-suggest-tip__btn--solid"
-                onClick={() => onDo(tip.action!)}
-                title={`${doLabel} now`}
-              >
+              <Button size="sm" tone="primary" onClick={() => onDo(tip.action!)} title={`${doLabel} now`}>
                 {doLabel}
-              </button>
+              </Button>
             ) : null}
           </div>
         </motion.div>

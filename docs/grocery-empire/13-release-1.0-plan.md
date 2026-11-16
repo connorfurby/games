@@ -6,6 +6,12 @@
 
 **Read first:** [00-agent-protocol.md](00-agent-protocol.md), [09-ui.md](09-ui.md), [07-pacing.md](07-pacing.md). Every sim rule in `CLAUDE.md` still applies; nothing in this plan may lower a pacing floor.
 
+### Progress log
+
+| Date | Done | Notes |
+| --- | --- | --- |
+| 2026-11-16 | Plan + audit · **P0-01** phone HUD (no overlap at 360/390/430; speed is one cycling button on phones, Coach icon moves to palette/Menu) · **P0-02** suggestion strip uses kit buttons · **P0-03** Land deed cards (owned deeds no longer bare text; readable prices) · **P0-04** Strategy invalid DOM (0 console errors) · **P0-05/06** toasts sit bottom-right (desktop) / above the tab bar (phone), never over the HUD; tip card 13 px, 2-line clamp on phones, page pads for it · **P0-07** active hub tab scrolls into view · **P0-08** not a bug (hover) · **P0-12** Books spoiler sign | Remaining P0: **09** Museum height, **10/11** stale e2e, plus the crawler rerun. |
+
 ---
 
 ## 0. What "1.0" means — the release gates
