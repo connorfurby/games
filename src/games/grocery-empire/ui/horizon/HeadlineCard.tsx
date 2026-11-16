@@ -57,7 +57,7 @@ export function HeadlineCard({ reducedMotion }: { reducedMotion: boolean }) {
         <p>{helpBlurb(def, s.horizon.season)}</p>
         <div className="ge-chip-row">
           {hideHelp ? null : (
-            <Btn tone="primary" disabled={!help.ok} title={help.ok ? costLabel(def) : help.reason} onClick={() => dispatch({ type: 'helpHeadline' })}>
+            <Btn tone="spend" disabled={!help.ok} title={help.ok ? costLabel(def) : help.reason} onClick={() => dispatch({ type: 'helpHeadline' })}>
               {costLabel(def)}
             </Btn>
           )}

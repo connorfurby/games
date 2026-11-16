@@ -1,6 +1,7 @@
 import './kit.css'
 
 export { Button } from './Button'
+export { LinkButton } from './LinkButton'
 export type { ButtonProps, ButtonSize, ButtonTone } from './Button'
 export { IconButton } from './IconButton'
 export type { IconButtonProps } from './IconButton'

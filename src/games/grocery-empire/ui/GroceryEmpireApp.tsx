@@ -48,6 +48,7 @@ import { Hud } from './shell/Hud'
 import { useStable } from './useStable'
 import { isDevSave } from '../sim/saveKey'
 import { ToolsDrawer, type ToolsTab } from './shell/ToolsDrawer'
+import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { HUBS, HUB_BY_ID, MENU_COACH, hubOf, type HubId } from './shell/hubs'
 import { StoreScene } from './scene/StoreScene'
 import { SceneStrip } from './shell/SceneStrip'
@@ -141,6 +142,21 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   })
   const setSearchParamsRef = useRef(setSearchParams)
   setSearchParamsRef.current = setSearchParams
+  // ?tour=<lesson> (from the Ops Wiki) starts that Coach lesson once, then leaves the URL clean.
+  useEffect(() => {
+    const tour = searchParams.get('tour')
+    if (!tour) return
+    if (TUTORIAL_BY_ID[tour]) engine.dispatch({ type: 'startTutorial', id: tour })
+    setSearchParamsRef.current(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('tour')
+        return next
+      },
+      { replace: true },
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   useEffect(() => {
     if (menu === 'more') return
     setSearchParamsRef.current(
@@ -911,6 +927,15 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 }}
                 onClose={() => setToolsOpen(false)}
                 reducedMotion={reducedMotion}
+                onOpenMenu={(m) => {
+                  setActiveMenu(m)
+                  setToolsOpen(false)
+                }}
+                onPlayLesson={(id, m) => {
+                  if (m) setActiveMenu(m)
+                  dispatch({ type: 'startTutorial', id })
+                  setToolsOpen(false)
+                }}
               />
             ) : null}
           </AnimatePresence>

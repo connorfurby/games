@@ -204,13 +204,13 @@ export function MoreSections({ only }: { only?: MoreSection }) {
           </header>
           <div className="ge-more-actions">
             <Btn
-              tone={s.paused ? 'primary' : 'ghost'}
+              tone={s.paused ? 'secondary' : 'ghost'}
               onClick={() => dispatch({ type: 'setPaused', paused: !s.paused })}
             >
               {s.paused ? 'Resume' : 'Pause'}
             </Btn>
             <Btn
-              tone={photoMode ? 'primary' : 'ghost'}
+              tone={photoMode ? 'secondary' : 'ghost'}
               title="Hide chrome for screenshots (P)"
               onClick={() => setPhotoMode(!photoMode)}
             >

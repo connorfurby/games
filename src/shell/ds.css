@@ -1,0 +1,298 @@
+/*
+ * Site shell design system (Home, News, Guide, Shop, Awards, Settings).
+ *
+ * `html.shell-ds` carries the same tokens as `.ge-root` (design/tokens.css), so the game's
+ * kit components — Button, Chip, Badge, Meter — render identically here. This file bridges
+ * the site palette into those tokens and adds a few page primitives (`sd-*`).
+ *
+ * Button law (same as in play): tag yellow = spend tokens, tomato = the one free verb on
+ * the page (Start / Continue / Play this lesson), ghost = navigation, danger = destructive.
+ */
+
+@layer tokens {
+  html.shell-ds {
+    --ge-paper: var(--paper, #f3ead7);
+    --ge-ink: var(--ink, #f3ead7);
+    --ge-muted: var(--muted, #a89880);
+    --ge-accent: var(--accent, #ff5a43);
+    --ge-danger: var(--danger, #e0453c);
+    --ge-success: var(--success, #6a9a6a);
+    --ge-bg: var(--bg, #1a1612);
+    --ge-bg2: var(--bg2, #241f19);
+    --ge-font-display: var(--font-display, 'Libre Baskerville', serif);
+    --ge-font-mono: var(--font-mono, 'IBM Plex Mono', monospace);
+    --ge-font-ui: var(--font-ui, 'Space Grotesk', sans-serif);
+    --tomato: #ff5a43;
+    --tag: #f2c14e;
+
+    /* Shell-only roles */
+    --sd-wood: #2a1f16;
+    --sd-wood-2: #3a2a1c;
+    --sd-paper: #f4ead6;
+    --sd-paper-2: #e9dcc1;
+    --sd-paper-ink: #2a2118;
+    --sd-paper-muted: #6f604c;
+    --sd-paper-line: rgb(42 33 24 / 0.16);
+    --sd-night: #111a1a;
+    --sd-night-2: #172322;
+    --sd-masthead: 'Fraunces Variable', 'Libre Baskerville', serif;
+    --sd-max: 1180px;
+  }
+}
+
+@layer kit {
+  /* ── Page frame ──────────────────────────────────────────────────── */
+  .sd-page {
+    width: min(var(--sd-max), 100% - 2rem);
+    margin: 0 auto;
+    padding: var(--s-6) 0 var(--s-8);
+    color: var(--ge-ink);
+    font-family: var(--ge-font-ui);
+  }
+  @media (max-width: 720px) {
+    .sd-page {
+      width: calc(100% - 1.5rem);
+      padding-top: var(--s-4);
+    }
+  }
+
+  .sd-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    margin: 0;
+    font: 600 var(--t-2xs) / 1 var(--ge-font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ge-muted);
+  }
+  .sd-eyebrow--tag {
+    color: var(--ge-tag);
+  }
+  .sd-eyebrow--tomato {
+    color: var(--ge-tomato);
+  }
+
+  .sd-title {
+    margin: var(--s-2) 0 0;
+    font: 700 clamp(2rem, 4.2vw, 3.2rem) / 1.04 var(--sd-masthead);
+    letter-spacing: -0.015em;
+    font-variation-settings: 'opsz' 144, 'SOFT' 40;
+  }
+  .sd-lede {
+    margin: var(--s-3) 0 0;
+    max-width: 62ch;
+    font-size: var(--t-md);
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--ge-ink) 78%, transparent);
+  }
+
+  .sd-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin: var(--s-7) 0 var(--s-3);
+  }
+  .sd-section-head h2 {
+    margin: 0;
+    font: 700 var(--t-xl) / 1.15 var(--sd-masthead);
+  }
+  .sd-section-head p {
+    margin: 0;
+    font-size: var(--t-sm);
+    color: var(--ge-muted);
+  }
+
+  /* ── Cards ───────────────────────────────────────────────────────── */
+  .sd-card {
+    position: relative;
+    border-radius: var(--r-lg);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ge-bg2) 92%, white 3%), var(--ge-bg2));
+    border: 1px solid var(--ge-line);
+    box-shadow: var(--shadow-2);
+  }
+  .sd-card--link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .sd-card--link:hover {
+    transform: translateY(-2px);
+    border-color: var(--ge-line-strong);
+    box-shadow: var(--shadow-3);
+  }
+  .sd-card--link:focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 2px;
+  }
+
+  /* Receipt paper — News, glossary, lesson cards. */
+  .sd-paper {
+    color: var(--sd-paper-ink);
+    background:
+      repeating-linear-gradient(0deg, transparent 0 27px, rgb(42 33 24 / 0.035) 27px 28px),
+      linear-gradient(180deg, var(--sd-paper), var(--sd-paper-2));
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-3);
+  }
+
+  /* ── Chips & tabs ────────────────────────────────────────────────── */
+  .sd-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--ge-line-strong);
+    font: 600 var(--t-2xs) / 1 var(--ge-font-ui);
+    letter-spacing: 0.02em;
+    color: color-mix(in srgb, var(--ge-ink) 85%, transparent);
+    white-space: nowrap;
+  }
+  .sd-chip--tag {
+    border-color: transparent;
+    background: var(--ge-tag);
+    color: var(--ge-tag-ink);
+  }
+  .sd-chip--tomato {
+    border-color: transparent;
+    background: var(--ge-tomato);
+    color: var(--ge-tomato-ink);
+  }
+  .sd-chip--quiet {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+  }
+  .sd-chip--ok {
+    border-color: color-mix(in srgb, var(--ge-success) 50%, transparent);
+    color: color-mix(in srgb, var(--ge-success) 75%, white 25%);
+  }
+
+  .sd-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, black 25%, transparent);
+    border: 1px solid var(--ge-line);
+  }
+  .sd-tab {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: color-mix(in srgb, var(--ge-ink) 70%, transparent);
+    font: 600 var(--t-sm) / 1 var(--ge-font-ui);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out);
+  }
+  .sd-tab:hover {
+    color: var(--ge-ink);
+    background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
+  }
+  .sd-tab.is-on {
+    background: var(--ge-raised);
+    color: var(--ge-ink);
+    box-shadow: var(--shadow-1), inset 0 -2px 0 var(--ge-tomato);
+  }
+  .sd-tab:focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 1px;
+  }
+  .sd-tab__n {
+    font: 600 var(--t-2xs) / 1 var(--ge-font-mono);
+    opacity: 0.6;
+  }
+
+  /* ── Stat strip ──────────────────────────────────────────────────── */
+  .sd-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border-radius: var(--r-md);
+    background: var(--ge-line);
+    border: 1px solid var(--ge-line);
+  }
+  .sd-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--ge-bg2) 94%, black 6%);
+    min-width: 0;
+  }
+  .sd-stat span {
+    font: 600 var(--t-2xs) / 1 var(--ge-font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ge-muted);
+  }
+  .sd-stat strong {
+    font: 700 var(--t-lg) / 1.1 var(--ge-font-ui);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Price tag (token costs everywhere) ──────────────────────────── */
+  .sd-tagprice {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 10px 0 16px;
+    clip-path: polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%);
+    background: var(--ge-tag);
+    color: var(--ge-tag-ink);
+    font: 700 var(--t-xs) / 1 var(--ge-font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .sd-tagprice::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    margin-top: -2.5px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ge-tag-ink) 70%, transparent);
+  }
+
+  /* Token coin used in prices and the wallet. */
+  .sd-coin {
+    display: inline-grid;
+    place-items: center;
+    width: 1.15em;
+    height: 1.15em;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe08a, #d9a227 60%, #9b6d12);
+    box-shadow: inset 0 0 0 1.5px rgb(90 60 10 / 0.5);
+    color: #5a3d07;
+    font: 800 0.62em / 1 var(--ge-font-ui);
+    flex: none;
+  }
+
+  /* Kit buttons that are router links. */
+  a.gk-btn {
+    color: var(--_ink);
+    text-decoration: none;
+  }
+}

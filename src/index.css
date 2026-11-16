@@ -77,8 +77,11 @@ body {
   letter-spacing: 0.01em;
 }
 
-a {
-  color: var(--accent);
+/* Layered so component classes (kit buttons, wiki links) can set their own colour. */
+@layer reset {
+  a {
+    color: var(--accent);
+  }
 }
 
 .brand {

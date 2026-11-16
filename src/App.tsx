@@ -19,7 +19,7 @@ export default function App() {
           <Route path="/play/:gameId" element={<PlayPage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/achievements" element={<AchievementsPage />} />
-          <Route path="/guide/:gameId" element={<GuidePage />} />
+          <Route path="/guide/:gameId/*" element={<GuidePage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/news/:id" element={<NewsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

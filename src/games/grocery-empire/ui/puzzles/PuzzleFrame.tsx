@@ -94,7 +94,7 @@ export function PuzzleFrame({
           )}
           {hideCommit ? null : (
             <Btn
-              tone={hideStandard ? 'primary' : 'ghost'}
+              tone={hideStandard ? 'secondary' : 'ghost'}
               coachId={commitCoach}
               disabled={commitDisabled}
               title={commitTitle}

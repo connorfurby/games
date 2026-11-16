@@ -260,25 +260,25 @@ function ChainRoster({
                 ))}
               </div>
               <div className="ld-row__act">
-                <button
-                  type="button"
-                  className={`ge-btn ${drift >= CHAIN.driftWarn ? 'ge-btn--primary' : 'ge-btn--ghost'}`}
+                <Button
+                  size="sm"
+                  tone={drift >= CHAIN.driftWarn ? 'primary' : 'secondary'}
                   data-suggest-id={`walk-${st.id}`}
                   disabled={!!walkBlock}
                   title={walkBlock ?? 'Spend 40 Attention to clear drift.'}
                   onClick={() => dispatch({ type: 'walkStore', storeId: st.id })}
                 >
                   Walk
-                </button>
-                <button
-                  type="button"
-                  className="ge-btn ge-btn--ghost"
+                </Button>
+                <Button
+                  size="sm"
+                  tone="ghost"
                   disabled={!!trainBlock}
                   title={trainBlock ?? `Spend ${trainStoreCost(st)} Attention for store XP.`}
                   onClick={() => dispatch({ type: 'trainStore', storeId: st.id })}
                 >
                   Train
-                </button>
+                </Button>
               </div>
             </li>
           )

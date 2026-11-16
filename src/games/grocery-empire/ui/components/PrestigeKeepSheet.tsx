@@ -60,7 +60,7 @@ export function PrestigeKeepSheet({
             {doctrines.map((o) => (
               <Btn
                 key={`d-${(o.carry as { id: string }).id}`}
-                tone={same(carry, o.carry) ? 'primary' : 'ghost'}
+                tone={same(carry, o.carry) ? 'secondary' : 'ghost'}
                 aria-pressed={same(carry, o.carry)}
                 title={o.blurb}
                 onClick={() => pick(o.carry)}
@@ -73,7 +73,7 @@ export function PrestigeKeepSheet({
             {facings.map((o) => (
               <Btn
                 key={`f-${(o.carry as { variantId: string }).variantId}`}
-                tone={same(carry, o.carry) ? 'primary' : 'ghost'}
+                tone={same(carry, o.carry) ? 'secondary' : 'ghost'}
                 aria-pressed={same(carry, o.carry)}
                 title={o.blurb}
                 onClick={() => pick(o.carry)}

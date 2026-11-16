@@ -12,7 +12,9 @@
  *   wide    : 1180px `@media (min-width: 1180px)` = three-column / side-by-side panels.
  */
 @layer tokens {
-  .ge-root {
+  /* .shell-ds is the site shell (Home, News, Guide, Shop, Awards): same tokens, so kit components look identical outside play. */
+  .ge-root,
+  .shell-ds {
     /* ── Color roles ─────────────────────────────────────────────── */
     --ge-surface: var(--ge-bg2);
     --ge-raised: color-mix(in srgb, var(--ge-bg2) 82%, var(--ge-ink) 6%);
@@ -100,7 +102,8 @@
   }
 
   /* In-game toggle (MetaContext sets html.ge-reduced-motion) and the OS setting. */
-  html.ge-reduced-motion .ge-root {
+  html.ge-reduced-motion .ge-root,
+  html.ge-reduced-motion.shell-ds {
     --dur-instant: 0ms;
     --dur-fast: 0ms;
     --dur-base: 0ms;
@@ -108,7 +111,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ge-root {
+    .ge-root,
+    .shell-ds {
       --dur-instant: 0ms;
       --dur-fast: 0ms;
       --dur-base: 0ms;

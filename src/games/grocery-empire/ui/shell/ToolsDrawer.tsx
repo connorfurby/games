@@ -2,11 +2,14 @@ import { motion } from 'motion/react'
 import { isDevSave } from '../../sim/saveKey'
 import { DevModePanel } from '../components/DevModePanel'
 import { MoreSections, type MoreSection } from '../panels/MorePanel'
+import { InGameWiki } from '../wiki/InGameWiki'
+import type { MenuId } from '../../content/menus'
 
-export type ToolsTab = 'dev' | MoreSection
+export type ToolsTab = 'dev' | 'wiki' | MoreSection
 
 const TABS: { id: ToolsTab; label: string }[] = [
   { id: 'dev', label: 'Dev' },
+  { id: 'wiki', label: 'Wiki' },
   { id: 'run', label: 'Run' },
   { id: 'settings', label: 'Settings' },
   { id: 'saves', label: 'Saves' },
@@ -20,11 +23,17 @@ export function ToolsDrawer({
   onTab,
   onClose,
   reducedMotion,
+  onOpenMenu,
+  onPlayLesson,
 }: {
   tab: ToolsTab
   onTab: (t: ToolsTab) => void
   onClose: () => void
   reducedMotion: boolean
+  /** Wiki "Open <department>" buttons. */
+  onOpenMenu: (m: MenuId) => void
+  /** Wiki "Play this lesson" buttons. */
+  onPlayLesson: (id: string, menu?: MenuId) => void
 }) {
   const inDev = isDevSave()
   const tabs = TABS.filter((t) => t.id !== 'dev' || inDev)
@@ -69,7 +78,15 @@ export function ToolsDrawer({
           ✕
         </button>
       </div>
-      <div className="g2-inbox__body">{active === 'dev' ? <DevModePanel /> : <MoreSections only={active} />}</div>
+      <div className={`g2-inbox__body${active === 'wiki' ? ' g2-tools__wiki' : ''}`}>
+        {active === 'dev' ? (
+          <DevModePanel />
+        ) : active === 'wiki' ? (
+          <InGameWiki onOpenMenu={onOpenMenu} onPlayLesson={onPlayLesson} />
+        ) : (
+          <MoreSections only={active as MoreSection} />
+        )}
+      </div>
     </motion.aside>
     </>
   )
