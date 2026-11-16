@@ -1912,16 +1912,19 @@ html[class*='pack-chrome--'] body {
 }
 
 html.pack-chrome--bodega .shelf-page,
+html.pack-chrome--bodega .hm-stage,
 html.pack-chrome--bodega .ge-root {
   box-shadow: inset 0 0 80px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 html.pack-chrome--night .shelf-page,
+html.pack-chrome--night .hm-stage,
 html.pack-chrome--night .ge-root {
   box-shadow: inset 0 -120px 160px color-mix(in srgb, var(--chrome-shine, rgba(255, 179, 71, 0.12)) 50%, transparent);
 }
 
 html.pack-chrome--cold .shelf-page,
+html.pack-chrome--cold .hm-stage,
 html.pack-chrome--cold .ge-root {
   box-shadow: inset 0 0 100px color-mix(in srgb, var(--accent) 10%, transparent);
 }
@@ -1930,12 +1933,14 @@ html.pack-chrome--ticker body {
   text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
-html.pack-chrome--neon .shelf-page {
+html.pack-chrome--neon .shelf-page,
+html.pack-chrome--neon .hm-stage {
   outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   outline-offset: -4px;
 }
 
 html.pack-chrome--hungry .shelf-page,
+html.pack-chrome--hungry .hm-stage,
 html.pack-chrome--hungry .ge-root {
   box-shadow: inset 0 0 90px color-mix(in srgb, var(--accent) 12%, transparent);
 }
@@ -2045,16 +2050,23 @@ html.a11y-colorblind {
 /* Shelf ornaments — presentation only (html.ornament--* from packs.ts).
    Scoped to .shelf-page. Each host differs so equipped ornaments can stack. */
 html.ornament--price-tag .shelf-page .shelf-wood,
+html.ornament--price-tag .hm .hm-shelf,
 html.ornament--sold-stamp .shelf-page .shelf-hero,
+html.ornament--sold-stamp .hm .hm-marquee,
 html.ornament--aisle-star .shelf-page .shelf-row,
+html.ornament--aisle-star .hm .hm-shelf__row,
 html.ornament--bodega-tape .shelf-page .shelf-wood,
+html.ornament--bodega-tape .hm .hm-shelf,
 html.ornament--receipt-corner .shelf-page .brand,
-html.ornament--open-sign .shelf-page .shelf-hero {
+html.ornament--receipt-corner .hm .hm-title,
+html.ornament--open-sign .shelf-page .shelf-hero,
+html.ornament--open-sign .hm .hm-marquee {
   position: relative;
 }
 
 /* Price tag — small red corner tag on shelf wood */
-html.ornament--price-tag .shelf-page .shelf-wood::before {
+html.ornament--price-tag .shelf-page .shelf-wood::before,
+html.ornament--price-tag .hm .hm-shelf::before {
   content: '$';
   position: absolute;
   top: 0.35rem;
@@ -2075,7 +2087,8 @@ html.ornament--price-tag .shelf-page .shelf-wood::before {
 }
 
 /* Sold stamp — muted ink mark on shelf hero */
-html.ornament--sold-stamp .shelf-page .shelf-hero::after {
+html.ornament--sold-stamp .shelf-page .shelf-hero::after,
+html.ornament--sold-stamp .hm .hm-marquee::after {
   content: 'SOLD';
   position: absolute;
   top: 1.1rem;
@@ -2093,7 +2106,8 @@ html.ornament--sold-stamp .shelf-page .shelf-hero::after {
 }
 
 /* Aisle star — gold foil star near game cards */
-html.ornament--aisle-star .shelf-page .shelf-row::before {
+html.ornament--aisle-star .shelf-page .shelf-row::before,
+html.ornament--aisle-star .hm .hm-shelf__row::before {
   content: '★';
   position: absolute;
   top: 0.35rem;
@@ -2106,7 +2120,8 @@ html.ornament--aisle-star .shelf-page .shelf-row::before {
 }
 
 /* Bodega tape — torn packing tape stripe across shelf wood */
-html.ornament--bodega-tape .shelf-page .shelf-wood::after {
+html.ornament--bodega-tape .shelf-page .shelf-wood::after,
+html.ornament--bodega-tape .hm .hm-shelf::after {
   content: '';
   position: absolute;
   left: 8%;
@@ -2127,7 +2142,8 @@ html.ornament--bodega-tape .shelf-page .shelf-wood::after {
 }
 
 /* Receipt corner — perforated scrap under brand */
-html.ornament--receipt-corner .shelf-page .brand::after {
+html.ornament--receipt-corner .shelf-page .brand::after,
+html.ornament--receipt-corner .hm .hm-title::after {
   content: '';
   position: absolute;
   right: -0.35rem;
@@ -2212,7 +2228,8 @@ html.ornament--receipt-corner .shelf-page .brand::after {
 }
 
 /* Open sign — soft neon along shelf hero */
-html.ornament--open-sign .shelf-page .shelf-hero::before {
+html.ornament--open-sign .shelf-page .shelf-hero::before,
+html.ornament--open-sign .hm .hm-marquee::before {
   content: 'OPEN';
   position: absolute;
   top: 0.85rem;
@@ -2243,8 +2260,11 @@ html.ornament--open-sign .shelf-page .shelf-hero::before {
 
 @media (prefers-reduced-motion: reduce) {
   html.ornament--sold-stamp .shelf-page .shelf-hero::after,
+html.ornament--sold-stamp .hm .hm-marquee::after,
   html.ornament--bodega-tape .shelf-page .shelf-wood::after,
+html.ornament--bodega-tape .hm .hm-shelf::after,
   html.ornament--receipt-corner .shelf-page .brand::after,
+html.ornament--receipt-corner .hm .hm-title::after,
   .shop-ornament-demo.ornament--sold-stamp::after,
   .shop-ornament-demo.ornament--bodega-tape::after,
   .shop-ornament-demo.ornament--receipt-corner::after {

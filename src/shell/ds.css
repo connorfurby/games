@@ -295,4 +295,15 @@
     color: var(--_ink);
     text-decoration: none;
   }
+
+  @media (max-width: 720px) {
+    .sd-tabs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .sd-tab {
+      flex: none;
+    }
+  }
 }
