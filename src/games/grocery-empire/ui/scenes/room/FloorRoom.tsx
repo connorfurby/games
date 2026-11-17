@@ -9,6 +9,8 @@ import { Hit } from './Hit'
 import { Badge, Person, Register, ShelfBay, Sign } from './primitivesV2'
 import { ROOM_GROUND, RoomScene } from './RoomScene'
 
+const WALKER_TINTS = ['#8fb6e0', '#c9a0d4', '#a8c090', '#e0a060']
+
 const CAT_TINT: Record<CategoryId, string> = {
   cans: '#c9a15a',
   household: '#a89880',
@@ -28,7 +30,7 @@ const PORTRAIT_H = 346
 
 /** Illustrated aisle for the Floor panel — live numbers + tappable stations. */
 export function FloorRoom() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
   const phone = usePhone()
   const shelf = sumQty(s.shelf)
   const back = sumQty(s.backroom)
@@ -225,6 +227,14 @@ export function FloorRoom() {
       {priceTag}
       {registers}
 
+      {/* Shoppers: in at the door, browse the shelf, pay, and out again. More when the store is busy. */}
+      {!reducedMotion && sold > 0
+        ? Array.from({ length: Math.min(4, Math.max(1, Math.ceil(sold * 3))) }, (_, i) => (
+            <g key={`walker-${i}`} className="rm-walker" style={{ animationDelay: `${-i * 3.6}s` }}>
+              <Person x={900} y={ROOM_GROUND - 24} tint={WALKER_TINTS[i % WALKER_TINTS.length]!} working={false} delay={i * 0.3} />
+            </g>
+          ))
+        : null}
       {/* Door / traffic + regulars in the aisle */}
       <g transform="translate(860 80)">
         <rect width="70" height="120" fill="#141210" stroke="#3a322c" />

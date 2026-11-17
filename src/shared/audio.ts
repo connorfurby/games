@@ -133,6 +133,8 @@ export function startPackAmbience(opts: { muted: boolean; packId?: string }) {
   try {
     stopPackAmbience()
     if (opts.muted !== false || !mix.ambience) return
+    // A game that plays its own era bed wins over the generic pack hum.
+    if (eraBed) return
     const ac = context()
     if (!ac) return
     if (ac.state === 'suspended') void ac.resume()
@@ -664,6 +666,208 @@ export function startMusic(mood: MusicMood) {
               /* */
             }
           }, 1500)
+        } catch {
+          /* */
+        }
+      },
+    }
+  } catch {
+    /* never throw from audio */
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Era ambience: a quiet bed under the music that tells you where you are.
+// Street and birds at the counter, shop murmur in the chain, cooler hum in the cold
+// years, waves and gulls at the harbour, a deep drone among the worlds.
+// Runs only with sound on and Room tone ticked.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type AmbienceKind = 'street' | 'shop' | 'cold' | 'harbor' | 'space'
+
+export function ambienceForEra(era: number): AmbienceKind {
+  if (era >= 7) return 'space'
+  if (era >= 5) return 'harbor'
+  if (era >= 3) return 'cold'
+  if (era >= 2) return 'shop'
+  return 'street'
+}
+
+let eraBed: { kind: AmbienceKind; stop: () => void } | null = null
+
+export function stopEraAmbience() {
+  try {
+    eraBed?.stop()
+  } catch {
+    /* */
+  }
+  eraBed = null
+}
+
+export function eraAmbiencePlaying(): AmbienceKind | null {
+  return eraBed?.kind ?? null
+}
+
+export function startEraAmbience(kind: AmbienceKind) {
+  try {
+    if (mix.muted || !mix.ambience) {
+      stopEraAmbience()
+      return
+    }
+    if (eraBed?.kind === kind) return
+    stopEraAmbience()
+    // The era bed replaces the generic pack hum.
+    stopPackAmbience()
+    const ac = context()
+    if (!ac) return
+    if (ac.state === 'suspended') void ac.resume()
+    const out = ac.createGain()
+    out.gain.value = 0.0001
+    out.gain.exponentialRampToValueAtTime(Math.max(0.0002, level(0.05)), ac.currentTime + 3)
+    out.connect(ac.destination)
+    const nodes: AudioScheduledSourceNode[] = []
+    const timers: number[] = []
+    if (!noiseBuf || noiseBuf.sampleRate !== ac.sampleRate) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate)
+      const d = noiseBuf.getChannelData(0)
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+    }
+    /** Looping filtered noise with a slow swell. */
+    const wash = (type: BiquadFilterType, freq: number, q: number, gain: number, lfoHz = 0, lfoDepth = 0) => {
+      const src = ac.createBufferSource()
+      src.buffer = noiseBuf
+      src.loop = true
+      const f = ac.createBiquadFilter()
+      f.type = type
+      f.frequency.value = freq
+      f.Q.value = q
+      const g = ac.createGain()
+      g.gain.value = gain
+      src.connect(f)
+      f.connect(g)
+      g.connect(out)
+      src.start()
+      nodes.push(src)
+      if (lfoHz > 0) {
+        const lfo = ac.createOscillator()
+        const lg = ac.createGain()
+        lfo.frequency.value = lfoHz
+        lg.gain.value = lfoDepth
+        lfo.connect(lg)
+        lg.connect(g.gain)
+        lfo.start()
+        nodes.push(lfo)
+      }
+    }
+    const hum = (freq: number, gain: number) => {
+      const o = ac.createOscillator()
+      o.type = 'sine'
+      o.frequency.value = freq
+      const g = ac.createGain()
+      g.gain.value = gain
+      o.connect(g)
+      g.connect(out)
+      o.start()
+      nodes.push(o)
+    }
+    /** An occasional sound, at a random gap. */
+    const now = (fn: (t: number) => void, minS: number, maxS: number) => {
+      const go = () => {
+        try {
+          if (!mix.muted && mix.ambience) fn(ac.currentTime)
+        } catch {
+          /* */
+        }
+        timers.push(window.setTimeout(go, (minS + Math.random() * (maxS - minS)) * 1000))
+      }
+      timers.push(window.setTimeout(go, minS * 1000))
+    }
+    const chirp = (t: number, f0: number, f1: number, dur: number, gain: number) => {
+      const o = ac.createOscillator()
+      const g = ac.createGain()
+      o.type = 'sine'
+      o.frequency.setValueAtTime(f0, t)
+      o.frequency.exponentialRampToValueAtTime(f1, t + dur)
+      g.gain.setValueAtTime(0.0001, t)
+      g.gain.exponentialRampToValueAtTime(gain, t + 0.01)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+      o.connect(g)
+      g.connect(out)
+      o.start(t)
+      o.stop(t + dur + 0.02)
+    }
+
+    if (kind === 'street') {
+      wash('lowpass', 380, 0.5, 0.5, 0.05, 0.15)
+      now((t) => {
+        const n = 2 + Math.floor(Math.random() * 3)
+        for (let i = 0; i < n; i++) chirp(t + i * 0.12, 3200 + Math.random() * 900, 4200 + Math.random() * 600, 0.07, 0.05)
+      }, 6, 16)
+    } else if (kind === 'shop') {
+      wash('bandpass', 520, 0.9, 0.6, 0.11, 0.25)
+      wash('bandpass', 1100, 1.4, 0.18, 0.07, 0.08)
+      now((t) => {
+        ;[1319, 988].forEach((f, i) => chirp(t + i * 0.18, f, f, 0.5, 0.035))
+      }, 18, 40)
+    } else if (kind === 'cold') {
+      hum(58, 0.18)
+      hum(116, 0.05)
+      wash('lowpass', 240, 0.6, 0.35, 0.03, 0.12)
+      now((t) => {
+        // Compressor kicks in, then settles.
+        const o = ac.createOscillator()
+        const g = ac.createGain()
+        o.type = 'sawtooth'
+        o.frequency.value = 47
+        g.gain.setValueAtTime(0.0001, t)
+        g.gain.exponentialRampToValueAtTime(0.02, t + 0.6)
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 6)
+        const lp = ac.createBiquadFilter()
+        lp.type = 'lowpass'
+        lp.frequency.value = 160
+        o.connect(lp)
+        lp.connect(g)
+        g.connect(out)
+        o.start(t)
+        o.stop(t + 6.1)
+      }, 20, 45)
+    } else if (kind === 'harbor') {
+      wash('lowpass', 700, 0.4, 0.55, 0.09, 0.45)
+      wash('highpass', 3000, 0.4, 0.06, 0.13, 0.05)
+      now((t) => {
+        chirp(t, 1500, 1050, 0.28, 0.03)
+        chirp(t + 0.34, 1450, 980, 0.3, 0.025)
+      }, 12, 30)
+    } else {
+      hum(49, 0.12)
+      hum(73.5, 0.05)
+      wash('bandpass', 5200, 3, 0.05, 0.04, 0.04)
+      now((t) => {
+        ;[2093, 2637, 3136].forEach((f, i) => chirp(t + i * 0.22, f, f * 1.002, 1.4, 0.01))
+      }, 15, 35)
+    }
+
+    eraBed = {
+      kind,
+      stop: () => {
+        for (const id of timers) window.clearTimeout(id)
+        try {
+          out.gain.cancelScheduledValues(ac.currentTime)
+          out.gain.setTargetAtTime(0.0001, ac.currentTime, 0.4)
+          window.setTimeout(() => {
+            for (const n of nodes) {
+              try {
+                n.stop()
+              } catch {
+                /* */
+              }
+            }
+            try {
+              out.disconnect()
+            } catch {
+              /* */
+            }
+          }, 1800)
         } catch {
           /* */
         }

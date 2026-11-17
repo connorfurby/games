@@ -16,7 +16,7 @@ import {
 } from 'react'
 import { applyAchievements } from '@/achievements/registry'
 import { onAchievementToast } from '@/achievements/toastBus'
-import { moodForEra, playAchievementFanfare, sfx, startMusic, stopMusic } from '@/shared/audio'
+import { ambienceForEra, moodForEra, playAchievementFanfare, sfx, startEraAmbience, startMusic, stopEraAmbience, stopMusic } from '@/shared/audio'
 import { useSoundDirector } from './fx/useSoundDirector'
 import {
   consumeDailyPending,
@@ -225,10 +225,22 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   }, [openRooms])
   useEffect(() => {
     // Restart so a new level or a new era takes effect; the score fades in again.
-    stopMusic()
-    startMusic(moodForEra(state.era))
-  }, [state.era, meta.settings.muted, meta.settings.music, meta.settings.musicVolume, meta.settings.volume])
-  useEffect(() => () => stopMusic(), [])
+    // Wait a tick: the site settings update the mixer after this effect runs.
+    const id = window.setTimeout(() => {
+      stopMusic()
+      startMusic(moodForEra(state.era))
+      stopEraAmbience()
+      startEraAmbience(ambienceForEra(state.era))
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [state.era, meta.settings.muted, meta.settings.music, meta.settings.musicVolume, meta.settings.volume, meta.settings.ambience])
+  useEffect(
+    () => () => {
+      stopMusic()
+      stopEraAmbience()
+    },
+    [],
+  )
   // The score follows the clock too: after dark it settles into the night piece.
   useEffect(() => {
     const id = window.setInterval(() => startMusic(moodForEra(state.era)), 5 * 60 * 1000)
