@@ -178,7 +178,7 @@ function ChainRoster({
             </dd>
           </div>
           <div className={drifting > 0 ? 'is-bad' : ''}>
-            <dt>Drifting</dt>
+            <dt>Need a visit</dt>
             <dd>{drifting}</dd>
           </div>
         </dl>
@@ -366,7 +366,7 @@ export function LandPanel() {
   const primary: VerbTrayProps['primary'] & { reason?: string } =
     chain && drifting > 0 && walkAll.ok
       ? {
-          label: `Walk all drifting (${drifting})`,
+          label: `Visit stores that need you (${drifting})`,
           tone: 'primary',
           size: 'lg',
           onClick: () => dispatch({ type: 'walkDrifting' }),
@@ -421,10 +421,10 @@ export function LandPanel() {
           : [
               {
                 key: 'walk',
-                label: 'Walk all drifting',
+                label: 'Visit stores that need you',
                 fact: drifting > 0 ? String(drifting) : undefined,
                 disabled: !walkAll.ok,
-                title: walkAll.ok ? 'Walk every drifting store, worst first, while Attention lasts.' : walkAll.reason,
+                title: walkAll.ok ? 'Visit every store that is losing shoppers, worst first, while your Attention lasts.' : walkAll.reason,
                 onClick: () => dispatch({ type: 'walkDrifting' }),
               },
             ]),

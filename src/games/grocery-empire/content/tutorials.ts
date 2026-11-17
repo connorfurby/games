@@ -823,7 +823,7 @@ export const TUTORIALS: TutorialDef[] = [
         id: 'e2-store-spot',
         coachId: 'land-open-store',
         title: 'Open a second storefront',
-        body: 'Era 2 is a chain. The flagship is automatic. Open Store 2 from Land when cash allows. Each store wants Attention or it drifts — spoil and shrink creep up.',
+        body: 'Now you run a chain. Your first store runs itself. Open a second store from Land when you have the cash. A store you never visit slowly loses shoppers; Land shows which ones need you.',
         recovery: 'Waiting only delays footprint. Bailouts still catch empty shelves.',
         action: { type: 'openMenu', params: { menu: 'land' } },
         doneWhen: { kind: 'flag', key: 'stores.1' },

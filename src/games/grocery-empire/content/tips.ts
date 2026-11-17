@@ -46,7 +46,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'attention',
-    text: 'The back office builds up Attention over time. Early on, Archives are a better use of Reputation than Analysts.',
+    text: 'Attention builds up on its own over time. You spend it to open new stores and to visit ones that need you.',
     when: (s) => s.compute.unlocked,
   },
   {

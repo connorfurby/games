@@ -51,7 +51,7 @@ export function LandStreet({
             <span className="ld-lot__name">{st.name}</span>
             <span className="ld-lot__meta">
               Lv {st.level}
-              {drifting ? ' · drifting' : ''}
+              {drifting ? ' · needs a visit' : ''}
             </span>
           </button>
         )

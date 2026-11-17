@@ -24,9 +24,9 @@ import { DockScene } from '../scenes/live'
 const MAX_CRATES = 200
 
 function indexMood(index: number): { label: string; hint: string } {
-  if (index < 0.88) return { label: 'Cheap', hint: 'Wholesale is soft — good time to buy.' }
-  if (index > 1.08) return { label: 'Dear', hint: 'Prices are high. Buy lean or wait for a dip.' }
-  return { label: 'Fair', hint: 'Normal market. Order what the shelf needs.' }
+  if (index < 0.88) return { label: 'Low', hint: 'Crates are cheap right now: a good time to buy.' }
+  if (index > 1.08) return { label: 'High', hint: 'Crates cost more right now. Buy only what you need, or wait.' }
+  return { label: 'Normal', hint: 'Normal prices. Order what the shelf needs.' }
 }
 
 export function SuppliersPanel() {
@@ -277,9 +277,9 @@ export function SuppliersPanel() {
               : undefined,        }}
       >
         <div className="p6-row">
-          <Badge tone={mood.label === 'Cheap' ? 'success' : mood.label === 'Dear' ? 'warn' : 'muted'}>
+          <Badge tone={mood.label === 'Low' ? 'success' : mood.label === 'High' ? 'warn' : 'muted'}>
             <span data-coach-id="wholesale-index">
-              Index {mood.label}
+              Prices {mood.label.toLowerCase()}
               {lockLeft > 0 ? ` · locked ${lockLeft}s` : ''}
             </span>
           </Badge>

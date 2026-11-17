@@ -28,12 +28,12 @@ export function LedgerScene() {
   return (
     <RoomScene
       phoneChipsOnly
-      label={`Books ledger, net ${rate(net)}, sales ${rate(store)}, burn ${rate(burn)}, ${pips.length} horizon currencies`}
+      label={`Books ledger, net ${rate(net)}, sales ${rate(store)}, costs ${rate(burn)}, ${pips.length} horizon currencies`}
       chips={[
         { label: 'Net', value: rate(net), neg: !rising },
         { label: 'Sales', value: rate(store) },
-        { label: 'Burn', value: rate(burn), neg: burn > store },
-        { label: 'Side', value: rate(side) },
+        { label: 'Costs', value: rate(burn), neg: burn > store },
+        { label: 'Other', value: rate(side) },
       ]}
       className={`ls-skin ls-skin--${skin.id}`}
       skyTop="#171c22"
@@ -48,8 +48,8 @@ export function LedgerScene() {
           h={120}
           items={[
             { label: 'Sales', value: store, display: money(store, numberFormat), color: '#7cc47f' },
-            { label: 'Side', value: side, display: money(side, numberFormat), color: '#8fb6e0' },
-            { label: 'Burn', value: burn, display: money(burn, numberFormat), color: '#d9665b' },
+            { label: 'Other', value: side, display: money(side, numberFormat), color: '#8fb6e0' },
+            { label: 'Costs', value: burn, display: money(burn, numberFormat), color: '#d9665b' },
           ]}
         />
       </Hit>

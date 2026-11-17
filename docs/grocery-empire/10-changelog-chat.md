@@ -2,6 +2,17 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AE. New-player playtest, Era 0→2 (2026-11-17, on `main`) · SAVE **38** (unchanged)
+
+- Walked a fresh save at 390 px and 1440 px with "Do it for me" on every tour step.
+- Guidance copy (tour, Next goal hints, checklist, atlas, lore) no longer points at old openers like "Open Price" or "Shift Board"; it names the desk to use.
+- "Ring the Market Bell thrice" → **Buy on three price dips**. Restock on the Floor now says whether the crate price is low, normal or high and counts dip progress (`wholesaleIsDip` in formulas; the command uses it too).
+- Wholesale index numbers are gone from player view: Suppliers and the Dock room say Low / Normal / High.
+- Phone: room chips wrap two to a row instead of scrolling off the edge; award toasts drop below the money row while a tour card is up; the Dock room shows chips only.
+- Memo desk hides search, Ready-only, Jump, and empty Standing/Filed tabs until there is enough to sort.
+- Plain words: Unload → Unpack everywhere, "drifting" stores → "need a visit", Books chips Burn/Side → Costs/Other, Attention tip rewritten.
+- Starter crate button only appears when usable (law 15).
+
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**
 
 - **Daily twist (SAVE 38).** `GameState.dailyRule: DailyRuleId | null` (default null; migrate keeps only known ids). `balance.ts` `DAILY_RULES` / `DAILY_RULE_ORDER`: eight rules, each one upside and one downside on demand, crate cost, truck time or wages. `formulas.dailyMod(s, key)` multiplies `demandPerSec`, `crateCost`, `deliveryTime`, `wagesPerSec`; 1 in every normal run, so pacing is untouched. Command `setDailyRule` only before the first sale and only once. Starting Today's corner sets the rule from the seed (`content/dailyRules.dailyRuleForSeed`, same pick as the theme name). Floor shows "Today: …" with one plain line; the Menu daily section and confirm say which twist. Tests `sim/dailyRule.test.ts`.

@@ -20,7 +20,7 @@ export function DockScene() {
     <RoomScene
       label={`Dock, ${orders.length} trucks inbound, ${back} units in the backroom, wholesale ${index.toFixed(2)}`}
       chips={[
-        { label: 'Wholesale', value: index.toFixed(2), rate: mood },
+        { label: 'Crate price', value: mood === 'CHEAP' ? 'Low' : mood === 'DEAR' ? 'High' : 'Normal' },
         { label: 'Trucks', value: String(orders.length) },
         { label: 'Backroom', value: qty(back) },
         {
@@ -30,8 +30,9 @@ export function DockScene() {
       ]}
       skyTop="#070b12"
       skyBottom="#141c22"
+      phoneChipsOnly
     >
-      <TickerTape x={24} y={56} text={`WHOLESALE ${index.toFixed(2)} · ${mood}`} />
+      <TickerTape x={24} y={56} text={`CRATE PRICES · ${mood === 'CHEAP' ? 'LOW' : mood === 'DEAR' ? 'HIGH' : 'NORMAL'}`} />
 
       <g aria-label="Delivery bay">
         <Sign x={36} y={108} text="Bay" />
