@@ -995,7 +995,7 @@ export function tickLogistics(s: GameState, dt: number) {
         log(
           s,
           unassignedLanes > 0
-            ? `MegaMart snipes open lanes — circling ${target.name}. Set manifests or win them back.`
+            ? `MegaMart is going after ${target.name}, a route you left open. File a manifest on it or win it back.`
             : `MegaMart is circling ${target.name}. Price war or buyout defends.`,
           'warn',
         )

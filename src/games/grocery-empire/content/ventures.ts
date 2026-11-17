@@ -175,7 +175,7 @@ export const VENTURES: VentureDef[] = [
     id: 'museum',
     name: 'Museum Shop',
     blurb: 'Postcards of baskets.',
-    loop: 'Prestige-adjacent cash; never required. Does not stamp memos.',
+    loop: 'Extra cash on the side. Never required, and it does not count toward memos.',
     opensAt: 'Legacy',
     openCost: 1e13,
     levelBase: 5e12,

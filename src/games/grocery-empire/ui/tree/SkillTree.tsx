@@ -372,7 +372,7 @@ export function SkillTree({
             ⤢
           </button>
         </div>
-        <p className="st-help">Drag to pan · Ctrl/⌘ + wheel to zoom · tap a node</p>
+        <p className="st-help">Drag to pan · Ctrl/⌘ + wheel to zoom · tap an upgrade</p>
       </div>
       {showAside ? <aside className="st-detail">{detail}</aside> : null}
       {phone ? (

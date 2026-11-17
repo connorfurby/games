@@ -70,7 +70,7 @@ export function LogisticsPanel() {
     {
       id: 'clean',
       label: 'Clean',
-      fact: () => `Credits a clean now · ${clean}/${DEPTH.cleanManifestsNeed} · barge gate`,
+      fact: () => `Counts as a clean run now · ${clean}/${DEPTH.cleanManifestsNeed} toward the barge berth`,
     },
     {
       id: 'exam',
@@ -81,7 +81,7 @@ export function LogisticsPanel() {
     {
       id: 'fast',
       label: 'Fast',
-      fact: () => 'Cash now, no credit — MegaMart snipes the lane you leave open',
+      fact: () => 'Quick cash, counts as neither, and MegaMart can take the route',
     },
   ]
 

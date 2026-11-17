@@ -208,11 +208,11 @@ export const GLOSSARY: GlossEntry[] = [
   },
   {
     id: 'spoil',
-    term: 'Spoil & shrink',
+    term: 'Spoilage and theft',
     kind: 'meter',
     era: 1,
     icon: 'backroom',
-    short: 'Spoil is produce rotting; shrink is stock walking out. Both are lost sales.',
+    short: 'Spoilage is food going off; theft is stock walking out. Both are lost sales.',
     see: 'faq-spoil',
   },
   {
@@ -221,7 +221,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'meter',
     era: 2,
     icon: 'land',
-    short: 'A neglected store slipping: more spoil, shrink and inspection heat.',
+    short: 'A neglected store slipping: more spoilage, theft and inspections.',
     more: 'Give it Attention share or walk it.',
     see: 'era2-detail',
   },

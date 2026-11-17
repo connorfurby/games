@@ -113,7 +113,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   cashier: {
     id: 'cashier',
     name: 'Cashier',
-    blurb: 'Opens another register. More checkout capacity, slightly less shrink.',
+    blurb: 'Opens another register. More checkout room and a little less theft.',
     hireBase: 35,
     hireGrowth: 1.15,
     wagePerMin: 0.55,
@@ -122,11 +122,11 @@ export const ROLES: Record<RoleId, RoleDef> = {
   security: {
     id: 'security',
     name: 'Security',
-    blurb: 'Cuts shrink hard. More than two per store makes everyone nervous.',
+    blurb: 'Cuts theft hard. More than two per store makes everyone nervous.',
     hireBase: 50,
     hireGrowth: 1.25,
     wagePerMin: 0.7,
-    perkPerLevel: '+5% shrink cut',
+    perkPerLevel: '−5% theft',
   },
   night: {
     id: 'night',
@@ -199,7 +199,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   plantOperator: {
     id: 'plantOperator',
     name: 'Plant Operator',
-    blurb: 'Keeps compressors honest. Clears brownout drills while on duty.',
+    blurb: 'Keeps the compressors running and handles power-dip drills while on shift.',
     hireBase: 1800,
     hireGrowth: 1.4,
     wagePerMin: 4,

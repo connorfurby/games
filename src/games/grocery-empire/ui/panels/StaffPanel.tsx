@@ -386,7 +386,7 @@ export function StaffPanel() {
                 ? 'Someone has to open the door, or fresh stock spoils faster.'
                 : slot === 'mid'
                   ? 'Helps the tills through the midday rush.'
-                  : 'Cuts overnight shrink.'
+                  : 'Cuts overnight theft.'
             return (
               <div key={slot} className="p6-stack" title={tip}>
                 <strong className="p6-shift__name">{slot === 'open' ? 'Opening' : slot === 'mid' ? 'Midday' : 'Closing'}</strong>

@@ -565,15 +565,15 @@ export const TUTORIALS: TutorialDef[] = [
   },
   {
     id: 'shrink',
-    name: 'Shrink / Security',
+    name: 'Theft and security',
     era: 1,
     steps: [
       {
         id: 'shrink-spot',
         coachId: 'staff-security',
-        title: 'Shrink happens',
+        title: 'Theft happens',
         body: 'A little stock gets stolen. Security staff and cashiers cut it down; mirrors help. It is a small cost, not a crisis: hire security when it starts to bite.',
-        recovery: 'Heavy shrink only slows profit; stock and sales continue.',
+        recovery: 'Heavy theft only slows profit; stock and sales continue.',
         doneWhen: { kind: 'always' },
       },
     ],

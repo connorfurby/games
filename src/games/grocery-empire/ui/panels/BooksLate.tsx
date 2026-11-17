@@ -90,7 +90,7 @@ export function IncomeWaterfall({ s }: { s: GameState }) {
         </div>
         <DataTable columns={cols} rows={[...rows, null]} rowKey={(r) => r?.id ?? 'total'} caption="Income waterfall" />
         <p className="lh-note">
-          Bar width is each layer’s share of the log of the network, so a ×2 layer beside a ×1.1 layer reads fairly.
+          Longer bars boost your sales more. Each world’s bonus multiplies the others.
         </p>
       </div>
     </Card>
@@ -153,7 +153,7 @@ export function CurrencyFlowTable({ s }: { s: GameState }) {
       <div className="lh-stack" data-coach-id="books-currency-flow">
         <DataTable columns={cols} rows={rows} rowKey={(r) => r.id} caption="Currency flow" />
         <p className="lh-note">
-          Puzzle currencies gate verbs; cash buys buildings. Instruments on Invest add to these rates.
+          Puzzle points pay for actions; cash pays for buildings. Investments add to these rates.
         </p>
       </div>
     </Card>

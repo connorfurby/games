@@ -245,6 +245,6 @@ export function tickShrink(s: GameState, dt: number) {
   s.stats.shrunk += n
   if (s.time - s.acc.lastShrinkLogAt > 60) {
     s.acc.lastShrinkLogAt = s.time
-    log(s, `Shrink: ${n} unit${n === 1 ? '' : 's'} walked out unpaid. Security and cashiers cut this.`, 'warn')
+    log(s, `Theft: ${n} unit${n === 1 ? '' : 's'} walked out unpaid. Security and cashiers cut this.`, 'warn')
   }
 }

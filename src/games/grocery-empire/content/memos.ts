@@ -187,7 +187,7 @@ export const STANDING_ORDER_MEMOS: MemoDef[] = [
   {
     id: 'crate-recount',
     name: 'Crate Recount',
-    voice: 'Count twice. Shrink argues less.',
+    voice: 'Count twice. Less walks out the door.',
     effect: 'Cuts theft a little (less each time).',
     era: 1,
     standing: true,
@@ -1185,7 +1185,7 @@ export const MEMOS: MemoDef[] = [
   {
     id: 'tight-ship',
     name: 'Tight Ship',
-    voice: 'Count everything. Shrink becomes a story you refuse to tell.',
+    voice: 'Count everything. Theft becomes a story you refuse to tell.',
     effect: 'Shows anti-theft upgrades early · cuts theft a little.',
     era: 1,
     cost: c(50, 500),

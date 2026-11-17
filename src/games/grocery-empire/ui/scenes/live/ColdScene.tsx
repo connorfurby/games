@@ -102,7 +102,7 @@ export function ColdScene() {
       {/* Surplus + freshness — right rail, no overlap with tanks */}
       <g transform="translate(800 64)">
         <rect width="144" height="88" rx="8" fill="#0f1317" stroke={c.surplus < 0 ? '#d9665b' : '#3a444e'} strokeWidth="2" />
-        <Sign x={72} y={24} text="Surplus" small anchor="middle" />
+        <Sign x={72} y={24} text="Spare cold" small anchor="middle" />
         <text
           x="72"
           y="58"
@@ -114,7 +114,7 @@ export function ColdScene() {
         >
           {surplusLabel}
         </text>
-        <Sign x={72} y={78} text={`buffer ${COLD.tankBuffer}/tank`} small anchor="middle" />
+        <Sign x={72} y={78} text={`each tank adds ${COLD.tankBuffer}`} small anchor="middle" />
       </g>
 
       <Gauge
@@ -154,7 +154,7 @@ export function ColdScene() {
       {plants <= 0 && tanks <= 0 ? (
         <g>
           <Sign x={48} y={200} text="Cold line dark — buy a plant, then tanks" />
-          <Sign x={48} y={220} text="Buy a cooling plant below to start the buffer" small />
+          <Sign x={48} y={220} text="Buy a cooling plant below to start" small />
         </g>
       ) : null}
     </RoomScene>

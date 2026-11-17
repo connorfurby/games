@@ -136,7 +136,7 @@ export const DEPARTMENTS: DepartmentDef[] = [
       {
         id: 'sprint',
         name: 'Sprint',
-        blurb: 'Burn for pockets — faster clears, hotter war.',
+        blurb: 'Push hard for pockets: faster clears, but Off-Brand hits back harder.',
         pullMul: 1.05,
         ageMul: 1,
       },

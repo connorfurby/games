@@ -292,7 +292,7 @@ function FloorPanelInner() {
           ) : null}
           {premium >= 2 ? (
             <p className="fp-note">
-              Stock tier ×{qty(premium, numberFormat)} · can rings {money(shelfPrice(s, 'cans'), numberFormat)}
+              Better stock sells for ×{qty(premium, numberFormat)} · a can rings up at {money(shelfPrice(s, 'cans'), numberFormat)}
             </p>
           ) : null}
         </div>

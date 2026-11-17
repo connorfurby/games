@@ -85,7 +85,7 @@ export const FLAVOR_MEMOS: MemoDef[] = [
     id: 'corner-watch',
     name: 'Corner Watch',
     voice: 'Two neighbors with a window view and a grudge. Free, mostly.',
-    effect: 'Shrink ×0.95.',
+    effect: 'Theft −5%.',
     era: 1,
     cost: c(30),
     visible: (s) => s.stats.shrunk >= 2,

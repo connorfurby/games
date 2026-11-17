@@ -447,7 +447,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'first-shrink',
     speaker: 'clerk',
-    text: 'Shrink on the tape. Something walked out without a receipt.',
+    text: 'Theft on the tape. Something walked out without a receipt.',
     when: (s) => s.stats.shrunk >= 1,
   },
   {
@@ -489,7 +489,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'hire-security',
     speaker: 'operations',
-    text: 'First security hire. Shrink drops; keep it to two a store.',
+    text: 'First security hire. Theft drops; keep it to two a store.',
     when: (s) => s.staff.some((m) => m.role === 'security'),
   },
   {

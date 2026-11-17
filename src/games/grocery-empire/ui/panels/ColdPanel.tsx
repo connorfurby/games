@@ -227,7 +227,7 @@ export function ColdPanel() {
           <Badge tone={c.browned ? 'danger' : 'muted'}>
             {c.plants} plant{c.plants === 1 ? '' : 's'} · {c.tanks} tank{c.tanks === 1 ? '' : 's'}
           </Badge>
-          {c.momentumOn ? <Badge tone="success">Momentum ×{c.momentum.toFixed(2)}</Badge> : null}
+          {c.momentumOn ? <Badge tone="success">Cold bonus ×{c.momentum.toFixed(2)}</Badge> : null}
           {c.browned ? <Badge tone="danger">Brownout</Badge> : null}
         </div>
       </PlayFrame>

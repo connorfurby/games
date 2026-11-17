@@ -262,7 +262,7 @@ export function InvestPanel() {
             header={
               <div className="lh-card-title">
                 <strong>Risk book</strong>
-                <span>Yield only inside the cap. Engine raises the cap and a little of the mean.</span>
+                <span>Only cash up to the cap earns. The Engine raises the cap and the average return a little.</span>
               </div>
             }
           >

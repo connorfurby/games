@@ -60,7 +60,7 @@ export function TickerScene() {
             <Badge x={x + 90} y={122} text={rate(yld)} w={80} />
             <CrateStack x={x + 24} y={190} count={lots * 2} cap={8} tint="#8fb6e0" />
             <Blink x={x + 170} y={108} on={lots > 0} color={lots > 0 ? '#7cc47f' : '#5a6570'} />
-            <Sign x={x + 95} y={198} text="yield / s" small anchor="middle" />
+            <Sign x={x + 95} y={198} text="per second" small anchor="middle" />
           </Hit>
         )
       })}

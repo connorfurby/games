@@ -13,7 +13,7 @@ export const LANE_ROUTES: LaneRouteDef[] = [
   {
     id: 'spice-route',
     name: 'Spice Route',
-    blurb: 'Wet import lanes. Quiet tickets from far harbors.',
+    blurb: 'Fuelled import routes. Quiet orders from far harbours.',
     prefer: 'import',
   },
   {
