@@ -112,7 +112,7 @@ export const DEPARTMENTS: DepartmentDef[] = [
       {
         id: 'push-freight',
         name: 'Push Freight',
-        blurb: 'Volume first — more Control, more burn.',
+        blurb: 'Volume first: more Control, more fuel used.',
         pullMul: 1.06,
         ageMul: 1,
       },

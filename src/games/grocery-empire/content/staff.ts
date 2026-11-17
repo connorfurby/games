@@ -193,7 +193,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
     hireBase: 220,
     hireGrowth: 1.35,
     wagePerMin: 1.4,
-    perkPerLevel: '+5% matched-store pull',
+    perkPerLevel: '+5% shoppers at stores with a matching policy',
     era: 2,
   },
   plantOperator: {

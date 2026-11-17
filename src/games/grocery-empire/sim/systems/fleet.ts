@@ -448,7 +448,7 @@ export function canSetManifest(
     return `Clean credit cooling — ${waitLabel(cleanCycleLeft(s))} to the next clean filing.`
   }
   if (stance === 'fast' && s.fuel < DEPTH.fastManifestFuel) {
-    return `Fast run burns ${DEPTH.fastManifestFuel} fuel — top up first.`
+    return `A fast run needs ${DEPTH.fastManifestFuel} fuel. Top up first.`
   }
   return null
 }

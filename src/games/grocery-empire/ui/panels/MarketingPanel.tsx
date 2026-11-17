@@ -260,14 +260,14 @@ export function MarketingPanel() {
             <div data-coach-id="marketing-loyalty">
               {s.loyalty.liability >= 0.5 && s.cash >= 0.5 ? (
                 <ActionRow
-                  label={`Loyalty cards · tier ${s.loyalty.tier}`}
+                  label={`Loyalty cards · level ${s.loyalty.tier}`}
                   fact={`Cards owe ${money(s.loyalty.liability, numberFormat)}`}
                   trail="Pay it down"
                   title="Pay down what the punch cards owe."
                   onClick={() => dispatch({ type: 'redeemLoyalty' })}
                 />
               ) : (
-                <p className="p6-muted">Loyalty cards · tier {s.loyalty.tier} · nothing owed</p>
+                <p className="p6-muted">Loyalty cards · level {s.loyalty.tier} · nothing owed</p>
               )}
             </div>
           ) : null}
