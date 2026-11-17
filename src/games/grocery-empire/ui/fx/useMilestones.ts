@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useGameSelector } from '../useGameSelector'
 import { celebrate } from './celebrate'
+import { nextGoal } from '../../content/goals'
 
 /** Empire ranks that earn a medium celebration (every 5th, so it stays rare). */
 const RANK_STEP = 5
@@ -20,14 +21,26 @@ export function useMilestones(opts: { muted: boolean; enabled?: boolean }): void
   // Basket milestones: 1, 10, 100, 1,000 … (the order of magnitude of lifetime sales).
   const soldTier = useGameSelector((s) => (s.stats.sold >= 1 ? Math.floor(Math.log10(Math.max(1, s.stats.sold))) + 1 : 0))
   const hired = useGameSelector((s) => s.staff.length > 0)
-  const last = useRef({ era, rank, soldTier, hired })
+  const goalId = useGameSelector((s) => {
+    try {
+      return nextGoal(s)?.id ?? null
+    } catch {
+      return null
+    }
+  })
+  const last = useRef({ era, rank, soldTier, hired, goalId })
   const mutedRef = useRef(muted)
   mutedRef.current = muted
 
   useEffect(() => {
     const prev = last.current
-    last.current = { era, rank, soldTier, hired }
+    last.current = { era, rank, soldTier, hired, goalId }
     if (!enabled) return
+
+    // The Next goal moved on: give the bar a ring and a small burst so the win registers.
+    if (prev.goalId && goalId !== prev.goalId && era === prev.era) {
+      celebrate('medium', document.querySelector('.g2-goal'), { text: 'Goal done', muted: mutedRef.current })
+    }
 
     // The first loop deserves a beat: first basket, then 10, 100, 1,000 … and the first hire.
     if (soldTier > prev.soldTier && soldTier - prev.soldTier === 1 && soldTier <= 7) {
@@ -59,5 +72,5 @@ export function useMilestones(opts: { muted: boolean; enabled?: boolean }): void
         celebrate('medium', undefined, { text: `Rank ${rank}`, muted: mutedRef.current })
       }
     }
-  }, [era, rank, soldTier, hired, chapterPending, enabled])
+  }, [era, rank, soldTier, hired, goalId, chapterPending, enabled])
 }
