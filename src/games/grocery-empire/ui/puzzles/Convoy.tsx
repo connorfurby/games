@@ -10,6 +10,7 @@ import {
   type ConvoyCrate,
 } from '../../sim/systems/horizon'
 import type { GameState } from '../../sim/state'
+import { pct } from '../format'
 
 export function tokensFromOffers(offers: readonly ConvoyCrate[], selectedIds: readonly string[]): string[] {
   const byId = new Map(offers.map((c) => [c.id, c]))
@@ -90,7 +91,7 @@ export function Convoy({
           </em>
         ))}
         <strong>
-          {used}/{capacity} · {score.toFixed(2)}
+          {used}/{capacity} · {pct(score)}
         </strong>
       </p>
       <div className="hz-bays" aria-hidden>

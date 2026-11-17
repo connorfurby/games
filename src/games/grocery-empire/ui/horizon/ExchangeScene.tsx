@@ -24,10 +24,10 @@ export function ExchangeScene({
 
   return (
     <RoomScene
-      label={`${hulls} Keel hull${hulls === 1 ? '' : 's'} on the circuit.`}
+      label={`${hulls} convoy${hulls === 1 ? '' : 's'} on the route.`}
       chips={[
         { label: 'Route', value: origin && dest ? `${origin.slice(0, 6)}→${dest.slice(0, 6)}` : 'Open' },
-        { label: 'Keel', value: String(hulls) },
+        { label: 'Convoys', value: String(hulls) },
         ...(freight != null
           ? [{ label: 'Freight', value: freight < 10 ? freight.toFixed(1) : String(Math.floor(freight)) }]
           : []),

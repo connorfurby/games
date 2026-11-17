@@ -25,6 +25,7 @@ import { Planogram } from '../puzzles/Planogram'
 import { PlanetShelf } from '../puzzles/PlanetShelf'
 import { PuzzleFrame, gateTitle, pocket } from '../puzzles/PuzzleFrame'
 import './waveC.css'
+import { pct } from '../format'
 
 function six(slots: readonly string[]): string[] {
   return [0, 1, 2, 3, 4, 5].map((i) => slots[i] ?? '')
@@ -194,10 +195,10 @@ export function PlanetsPanel() {
   const standardVerb: Verb | null =
     run && def
       ? {
-          label: `Stock the standard shelf · scores ${standardScore.toFixed(2)}`,
+          label: `Stock the standard shelf · scores ${pct(standardScore)}`,
           ready: standard.ok,
           disabled: !standard.ok,
-          title: gateTitle(standard, 'File the authored shelf and follow the flagship price. Fast is 0.85; slow is 0.72.'),
+          title: gateTitle(standard, 'Stock the ready-made shelf at the flagship price. Quick way needs 85%; slow way 72%.'),
           coachId: 'planets-standard',
           fail: standard.reason,
           onClick: () => dispatch({ type: 'fileStandardPlanogram', planetId: run.id }),
@@ -206,7 +207,7 @@ export function PlanetsPanel() {
   const commitVerb: Verb | null =
     run && def
       ? {
-          label: `Commit shelf · ${live.toFixed(2)}`,
+          label: `Commit shelf · ${pct(live)}`,
           ready: commit.ok,
           disabled: !commit.ok,
           title: gateTitle(commit, 'Stock this shelf.'),
@@ -223,7 +224,7 @@ export function PlanetsPanel() {
   let goalTitle = 'Launch a probe'
   let goalProgress: number | null = stocked / 8
   let goalLabel = `${stocked}/8 stocked`
-  let goalPayoff = `Planet layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${qty(layer)}`} on flagship sales`
+  let goalPayoff = `Stocked worlds lift flagship sales (now ${layer < 10 ? `×${layer.toFixed(2)}` : `×${qty(layer)}`})`
   let goalEta: string | null = probeEta
   let primary: Verb = launchVerb
   const secondaries: VerbSecondary[] = []
@@ -235,9 +236,9 @@ export function PlanetsPanel() {
   if (showPuzzle && run && def && standardVerb && commitVerb) {
     goalTitle = filing ? `Stock ${def.name}` : `Restock ${def.name}`
     goalProgress = live
-    goalLabel = `${Math.round(live * 6)}/6 tags · standard ${standardScore.toFixed(2)}`
+    goalLabel = `${Math.round(live * 6)}/6 tags · standard ${pct(standardScore)}`
     goalPayoff = filing
-      ? `Filing adds this world to the planet layer (${goalPayoff})`
+      ? `Filing adds this world to your bonus. ${goalPayoff}.`
       : 'Commit a new shelf to replace the filed one.'
     goalEta = null
     // Commit when the player built a shelf; otherwise the standard is the easy way out.
@@ -246,7 +247,7 @@ export function PlanetsPanel() {
     secondaries.push({
       key: commit.ok ? 'standard' : 'commit',
       label: commit.ok ? 'Stock the standard shelf' : 'Stock this shelf',
-      fact: commit.ok ? standardScore.toFixed(2) : `${placed}/6 placed`,
+      fact: commit.ok ? pct(standardScore) : `${placed}/6 placed`,
       disabled: other.disabled,
       coachId: commit.ok ? undefined : commitVerb.coachId,
       title: other.title,
@@ -274,7 +275,7 @@ export function PlanetsPanel() {
     secondaries.push({ key: 'probe', label: 'Launch probe', fact: money(cost, numberFormat), disabled: !probe.ok, coachId: 'planets-launch', title: launchVerb.title, onClick: launchVerb.onClick })
   } else if (stocked > 0) {
     goalTitle = 'Stock the system'
-    goalLabel = `${stocked}/8 stocked · mean ${mean > 0 ? mean.toFixed(2) : '—'}`
+    goalLabel = `${stocked}/8 stocked · average ${mean > 0 ? pct(mean) : '—'}`
     primary = launchVerb
   }
 
@@ -282,8 +283,8 @@ export function PlanetsPanel() {
     secondaries.push({
       key: 'edit',
       label: 'Clever shelf',
-      fact: run.score.toFixed(2),
-      title: `Reopen the shelf. Stock your own, or use the standard (scores ${standardScore.toFixed(2)}).`,
+      fact: pct(run.score),
+      title: `Reopen the shelf. Stock your own, or use the standard (scores ${pct(standardScore)}).`,
       onClick: () => setEditing(true),
     })
   }
@@ -365,7 +366,7 @@ export function PlanetsPanel() {
         className={showPuzzle ? 'wc-planets wc-planets--puzzle' : 'wc-planets'}
         department="Planets"
         purpose={
-          <span title="Fast path is four shelves at 0.85. Slow path is six at 0.72. Standard is mediocre on purpose.">
+          <span title="Quick way: four shelves at 85%. Slow way: six at 72%. The ready-made shelf is just okay on purpose.">
             Stock the shelf a world is asking for.
           </span>
         }
@@ -420,7 +421,7 @@ export function PlanetsPanel() {
                     >
                       <strong>{d.name}</strong>
                       <span>{d.climate}</span>
-                      <em>{row.stocked ? row.score.toFixed(2) : 'empty'}</em>
+                      <em>{row.stocked ? pct(row.score) : 'empty'}</em>
                     </button>
                   </li>
                 )
@@ -438,7 +439,7 @@ export function PlanetsPanel() {
               </em>
             ))}
             <strong className="wc-wants__score">
-              {showPuzzle ? `${matchedSlots} of 6 tags · ${live.toFixed(2)}` : run.stocked ? `score ${run.score.toFixed(2)}` : 'empty'}
+              {showPuzzle ? `${matchedSlots} of 6 tags · ${pct(live)}` : run.stocked ? `score ${pct(run.score)}` : 'empty'}
             </strong>
           </p>
         ) : null}

@@ -26,6 +26,7 @@ import { ExchangeScene } from '../horizon/ExchangeScene'
 import { HorizonGoalStrip } from '../horizon/HorizonGoalStrip'
 import { Convoy, liveConvoyScore, tokensFromOffers } from '../puzzles/Convoy'
 import { PuzzleFrame, gateTitle, pocket } from '../puzzles/PuzzleFrame'
+import { pct } from '../format'
 
 function worldChoices(planets: PlanetRun[], extra: string[]): PlanetRun[] {
   const stocked = planets.filter((p) => p.stocked)
@@ -118,11 +119,11 @@ export function ExchangePanel() {
     setSelectedIds([])
   }
 
-  const named = (id: string) => planetDef(id)?.name ?? (id || '—')
+  const named = (id: string) => planetDef(id)?.name ?? (id || '')
   const keelLive = h.keel.convoys > 0 && !h.keel.bought
 
   let goalTitle = 'File a trade route'
-  let goalLabel = `${h.circuits.length} of ${HORIZON.maxCircuits} routes${mean > 0 ? ` · average score ${mean.toFixed(2)}` : ''}`
+  let goalLabel = `${h.circuits.length} of ${HORIZON.maxCircuits} routes${mean > 0 ? ` · average score ${pct(mean)}` : ''}`
   let goalPayoff = `Every route you file lifts flagship sales (now ×${layer < 10 ? layer.toFixed(2) : qty(layer)}). The middle stop can spoil, tax or delay the load.`
   const fileStandard = () =>
     dispatch({
@@ -216,7 +217,7 @@ export function ExchangePanel() {
               key: 'standard',
               label: 'Send the standard convoy',
               disabled: !standard.ok,
-              title: gateTitle(standard, 'File a standard packed circuit at 0.72.'),
+              title: gateTitle(standard, 'File the standard route. It scores 72%.'),
               onClick: fileStandard,
             },
           ]
@@ -384,7 +385,7 @@ export function ExchangePanel() {
                     {SKU_BY_ID[row.good]?.name ?? row.good}
                     {row.settledKind ? ` · ${row.settledKind} tax` : row.stopKind ? ` · ${row.stopKind} stop` : ''}
                   </span>
-                  <em>{row.score.toFixed(2)}</em>
+                  <em>{pct(row.score)}</em>
                 </button>
               </li>
             ))}

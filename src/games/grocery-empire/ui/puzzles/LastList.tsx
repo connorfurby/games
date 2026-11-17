@@ -4,6 +4,7 @@ import { can } from '../../sim/commands'
 import { planetDef } from '../../sim/systems/horizon'
 import { Btn } from '../components/Btn'
 import { gateTitle } from './PuzzleFrame'
+import { pct } from '../format'
 
 const KIND: Record<LastLineKind, string> = {
   shelf: 'Shelf',
@@ -82,7 +83,7 @@ export function LastList({
           <li key={`${line.kind}-${i}`} className={`hz-status${done ? ' is-on' : ''}`}>
             <span className="hz-status__kind">{KIND[line.kind]}</span>
             <span className="hz-status__want">{wantLabel(line.kind, line.want)}</span>
-            <em className="hz-badge">{line.score.toFixed(2)}</em>
+            <em className="hz-badge">{pct(line.score)}</em>
             <Btn
               tone={done ? 'ghost' : ready ? 'primary' : 'ghost'}
               disabled={!ready && !done}

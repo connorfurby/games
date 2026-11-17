@@ -3,6 +3,7 @@ import type { PlanetClimate } from '../../content/horizon'
 import type { GameState } from '../../sim/state'
 import { planetDef } from '../../sim/systems/horizon'
 import { CLIMATE_TINT } from '../puzzles/PlanetShelf'
+import { pct } from '../format'
 
 export interface PlanetPin {
   id: string
@@ -161,7 +162,7 @@ export function PlanetPins({
             transform={`translate(${x} ${y})`}
             role="button"
             tabIndex={0}
-            aria-label={`${pin.name}, ${pin.climate}${pin.stocked ? `, stocked ${pin.score.toFixed(2)}` : ', revealed'}`}
+            aria-label={`${pin.name}, ${pin.climate}${pin.stocked ? `, stocked ${pct(pin.score)}` : ', revealed'}`}
             aria-pressed={on}
             onClick={() => onSelect(pin.id)}
             onKeyDown={(e) => onKey(e, () => onSelect(pin.id))}

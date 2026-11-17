@@ -1,4 +1,5 @@
 import { Hit, Person, RoomScene, Sign } from '../scenes/room'
+import { pct } from '../format'
 
 /** Aisle bay + clipboard — live list score; Hit to file standard. */
 export function LastAisleScene({
@@ -19,7 +20,7 @@ export function LastAisleScene({
       label={`Ivo’s list. ${n} of 5 lines filled.`}
       chips={[
         { label: 'Lines', value: `${n}/5` },
-        ...(score != null ? [{ label: 'Mean', value: score.toFixed(2) }] : []),
+        ...(score != null ? [{ label: 'Average', value: pct(score) }] : []),
         { label: 'List', value: n >= 5 ? 'Ready' : 'Fill' },
       ]}
       skyTop="#1c1916"

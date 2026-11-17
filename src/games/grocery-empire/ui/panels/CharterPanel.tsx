@@ -353,7 +353,7 @@ export function CharterPanel() {
                   title={gateTitle(
                     check,
                     id === 'boutique'
-                      ? `${CHARTERS[id].blurb} Careful shelves can score above 0.72.`
+                      ? `${CHARTERS[id].blurb} Careful shelves can score above 72%.`
                       : CHARTERS[id].blurb,
                   )}
                   onClick={() => sign(id)}

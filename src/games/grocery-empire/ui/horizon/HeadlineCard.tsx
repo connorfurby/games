@@ -21,7 +21,7 @@ function helpBlurb(def: HeadlineDef, season: number): string {
   }
   if (/freeze keel/i.test(def.helpEffect)) return 'Keel holds still for ten minutes.'
   if (/\+1 legacy/i.test(def.helpEffect)) return 'Grants 1 Legacy if a fleet is still out.'
-  if (/layer ×1\.1/i.test(def.helpEffect)) return 'That world’s layer runs ×1.1 until the season turns.'
+  if (/layer ×1\.1/i.test(def.helpEffect)) return 'That world’s sales bonus runs ×1.1 until the season turns.'
   if (/day tag ×0\.95/i.test(def.helpEffect)) return 'Night tags ×1.1 and day tags ×0.95 until the season turns.'
   const tagged = def.helpEffect.match(/([A-Za-z]+)-tagged/)
   const goods = def.helpEffect.match(/([A-Za-z]+) goods match/)

@@ -161,11 +161,11 @@ function WorldsFiling() {
       </span>
       <div className="wk-file__doors">
         <div className="wk-file__door">
-          <b>0.72</b>
+          <b>72%</b>
           <span>Standard — the slow door</span>
         </div>
         <div className="wk-file__door is-fast">
-          <b>0.85</b>
+          <b>85%</b>
           <span>Clever — the fast door</span>
         </div>
       </div>

@@ -42,12 +42,12 @@ export const ERA_STORY: Record<
   },
   7: {
     title: 'Pantry of Worlds',
-    line: 'Era 7 — practice two planograms, put Survey on a shift, then file for credit (~0.72 / 0.85).',
+    line: 'Era 7 — practise two shelf layouts, put a surveyor on a shift, then file one for credit (72% or 85%).',
     epigraph: 'A planet is a shelf that learned a climate.',
   },
   8: {
     title: 'The Exchange',
-    line: 'Era 8 — pack a convoy. Leave the awkward crate for 0.72; nail 0.85 with a stevedore.',
+    line: 'Era 8 — pack a convoy. Leaving the awkward crate out gets 72%; a stevedore helps you reach 85%.',
     epigraph: 'A route is a promise with a middle.',
   },
   9: {
@@ -57,7 +57,7 @@ export const ERA_STORY: Record<
   },
   10: {
     title: 'The Signal',
-    line: 'Era 10 — grammar on the wire. File 3/4 for 0.72; a perfect phrase is the fast door.',
+    line: 'Era 10 — phrases on the wire. 3 of 4 right gets 72%; a perfect phrase is the quick way.',
     epigraph: 'Someone was hired to hear the orders.',
   },
   11: {
@@ -67,7 +67,7 @@ export const ERA_STORY: Record<
   },
   12: {
     title: 'The Last Aisle',
-    line: 'Era 12 — Ivo’s list. Staffed departments make lines kinder. Accept wants 0.85.',
+    line: 'Era 12 — Ivo’s list. Staffed departments make lines kinder. Accepting needs 85%.',
     epigraph: 'One can, and then the plaque or the standing order.',
   },
 }

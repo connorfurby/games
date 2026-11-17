@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { NumberFormat } from '@/shared/bn'
 import { qty } from '../format'
 import { Btn } from '../components/Btn'
+import { pct } from '../format'
 
 export function pocket(n: number, fmt: NumberFormat): string {
   if (!Number.isFinite(n)) return '0'
@@ -56,7 +57,7 @@ export function PuzzleFrame({
   hideStandard?: boolean
   children: ReactNode
 }) {
-  const shown = score == null || !Number.isFinite(score) ? '—' : score.toFixed(2)
+  const shown = score == null || !Number.isFinite(score) ? '—' : pct(score)
   const note =
     !hideCommit && commitDisabled && commitTitle
       ? commitTitle

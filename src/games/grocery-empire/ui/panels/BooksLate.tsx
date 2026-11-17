@@ -74,7 +74,7 @@ export function IncomeWaterfall({ s }: { s: GameState }) {
         <div
           className="lh-stackbar"
           role="img"
-          aria-label={`Worlds layers multiply the network to ×${total.toFixed(2)}`}
+          aria-label={`Your worlds bonuses multiply sales across the network to ×${total.toFixed(2)}`}
         >
           {rows.map((r, i) => (
             <span

@@ -34,6 +34,7 @@ import { activeFacingBan } from '../../sim/systems/horizonVerbs'
 import { useStable } from '../useStable'
 import { FloorRoom } from '../scenes/room'
 import './floor.css'
+import { pct } from '../format'
 
 /** Late-era command not in the Command union yet; unknown types fail `can()` cleanly. */
 const lateCmd = (cmd: { type: string; [k: string]: unknown }) => cmd as unknown as Command
@@ -213,7 +214,7 @@ function FloorPanelInner() {
           ) : null}
           {s.era >= 1 ? (
             s.depth?.flagship?.credited ? (
-              <p className="fp-note">Planogram filed · scored {s.depth.flagship.score.toFixed(2)}</p>
+              <p className="fp-note">Planogram filed · scored {pct(s.depth.flagship.score)}</p>
             ) : can(s, { type: 'fileStandardFlagship' }).ok ? (
               <Button tone="secondary" onClick={() => dispatch({ type: 'fileStandardFlagship' })}>
                 {(s.depth?.flagship?.practiceLeft ?? 0) > 0

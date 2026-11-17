@@ -12,6 +12,7 @@ import { HorizonGoalStrip } from '../horizon/HorizonGoalStrip'
 import { LastAisleScene } from '../horizon/LastAisleScene'
 import { LastList } from '../puzzles/LastList'
 import { PuzzleFrame, gateTitle } from '../puzzles/PuzzleFrame'
+import { pct } from '../format'
 
 export function LastAislePanel() {
   const { state: s, dispatch, reducedMotion } = useGame()
@@ -83,7 +84,7 @@ export function LastAislePanel() {
             size: 'lg',
             coachId: 'lastaisle-standard',
             disabled: !fileCheck.ok,
-            title: gateTitle(fileCheck, 'File every line the standard way. Standard mean is about 0.75; Accept wants 0.85.'),
+            title: gateTitle(fileCheck, 'Fill every line the safe way. That averages about 75%; accepting needs 85%.'),
             onClick: () => dispatch({ type: 'fileStandardList' }),
           }
   const primaryCheck = primaryKind === 'rehearse' ? rehearse : primaryKind === 'accept' ? accept : fileCheck
@@ -134,21 +135,21 @@ export function LastAislePanel() {
       <HorizonGoalStrip
         title={ready ? 'Accept or reject the list' : 'Fill five lines'}
         progress={h.listScore}
-        progressLabel={`${filled}/5 lines · mean ${h.listScore.toFixed(2)}`}
+        progressLabel={`${filled}/5 lines · average ${pct(h.listScore)}`}
         payoff={ready ? 'Accept opens endless worlds. Reject pauses the run.' : 'Use the standard to fill every line.'}
         ready={fileCheck.ok || ready}
         coachId="lastaisle-goal"
       />
-      <p className="hz-pocket" data-coach-id="lastaisle-score" title="Accept and Reject open at a mean of 0.85.">
+      <p className="hz-pocket" data-coach-id="lastaisle-score" title="Accept and Reject open once your average reaches 85%.">
         <span>{template.name}</span>
-        <strong>{h.listScore.toFixed(2)}</strong>
+        <strong>{pct(h.listScore)}</strong>
         {h.endless ? <span>{h.endlessPlanets} endless</span> : null}
       </p>
       {!rehearsalDone && !h.ending ? (
         <p
           className={`hz-pocket${scratchPct >= 100 ? ' hz-pocket--warn' : ''}`}
           data-coach-id="lastaisle-scratch"
-          title="Rehearsing below a 0.85 mean always misses. At 0.85 it can still miss. A miss scratches the weakest filled line."
+          title="Practising below an 85% average always misses. At 85% it can still miss. A miss crosses out your weakest line."
         >
           <span>Scratch risk</span>
           <strong>{scratchPct}%</strong>
@@ -175,7 +176,7 @@ export function LastAislePanel() {
       </PuzzleFrame>
 
       <div data-coach-id="lastaisle-ending">
-        <p className="hz-note" title="Accept and Reject open at a mean of 0.85.">
+        <p className="hz-note" title="Accept and Reject open once your average reaches 85%.">
           Stakes preview · Accept opens endless worlds; Reject pauses the run.
         </p>
         {ready ? null : <p className="hz-note">Keep filing until the list is ready.</p>}

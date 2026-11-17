@@ -1,6 +1,7 @@
 import type { PlanetClimate } from '../../content/horizon'
 import { SKU_BY_ID } from '../../content/horizon'
 import { Hit, Person, RoomScene, Sign } from '../scenes/room'
+import { pct } from '../format'
 
 export const CLIMATE_TINT: Record<
   PlanetClimate,
@@ -51,7 +52,7 @@ export function PlanetShelf({
 }) {
   const tint = CLIMATE_TINT[climate]
   const filled = slots.filter((id) => SKU_BY_ID[id]).length
-  const scoreText = score != null && Number.isFinite(score) ? score.toFixed(2) : `${filled}/6`
+  const scoreText = score != null && Number.isFinite(score) ? pct(score) : `${filled}/6`
 
   return (
     <RoomScene

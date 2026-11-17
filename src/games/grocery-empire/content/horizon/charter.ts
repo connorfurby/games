@@ -120,7 +120,7 @@ export const CHARTERS: Record<CharterId, { id: CharterId; name: string; blurb: s
   standard: {
     id: 'standard',
     name: 'Standard',
-    blurb: 'Network ×1.25. File the standard is the only legal commit, and scores lock at 0.72.',
+    blurb: 'Network ×1.25. Only the ready-made answer is allowed, and scores stay at 72%.',
     fork: 'Network ×1.25 · standard-only puzzles.',
   },
   boutique: {

@@ -101,7 +101,7 @@ export function CultivarPanel() {
     chaseName && (picked || underLine)
       ? bedLock
         ? `${chaseName} waits — the ${bedLock} chore holds the bed until the season turns.`
-        : `${chaseName} is in reach${underLine ? ` (best ${h.namedBest.toFixed(2)} of 0.85)` : ''}. The chore locks clever crosses this season; skipping it is a weak year.`
+        : `${chaseName} is in reach${underLine ? ` (best ${Math.round(h.namedBest * 100)}% of 85%)` : ''}. Locking a bed rules out crossing it this season; skipping it gives a weak year.`
       : null
 
   function pickTaster(taster: 'quality' | 'volume') {

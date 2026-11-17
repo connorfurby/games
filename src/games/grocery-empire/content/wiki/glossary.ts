@@ -184,8 +184,8 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'verb',
     era: 1,
     icon: 'shelf',
-    short: 'A layout puzzle. Practice twice, then file at 0.72 or better for credit.',
-    more: '0.85 is the fast door in the Worlds eras.',
+    short: 'A shelf layout puzzle. Practise twice, then file at 72% or better for credit.',
+    more: '85% is the quick way through the Worlds chapters.',
     see: 'late-worlds',
   },
   {

@@ -531,7 +531,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e7-puzzle-gate',
     era: 7,
-    label: 'Pass the planogram (practise, then score 0.72 or better)',
+    label: 'Pass the shelf layout (practise, then score 72% or better)',
     test: (s) => s.era >= 8,
   },
 

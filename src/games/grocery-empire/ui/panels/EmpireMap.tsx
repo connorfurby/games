@@ -9,6 +9,7 @@ import { Sheet, usePhone } from '../kit'
 import { PlayFrame, type VerbTrayProps } from '../play'
 import { BlockMap, type MapPin } from '../map/BlockMap'
 import { planetDef } from '../../sim/systems/horizon'
+import { pct } from '../format'
 
 /**
  * Empire Map: everything you own, drawn as rings around the flagship.
@@ -235,7 +236,7 @@ export function EmpireMap() {
           title: systemDef.name,
           lines: [
             `${systemDef.climate} climate.`,
-            systemRun.stocked ? `Stocked at ${systemRun.score.toFixed(2)}.` : 'Revealed. The shelf is still empty.',
+            systemRun.stocked ? `Stocked at ${pct(systemRun.score)}.` : 'Revealed. The shelf is still empty.',
             view.id === 'cluster'
               ? `${s.horizon.circuits.filter((c) => c.origin === systemRun.id || c.dest === systemRun.id).length} circuit link(s).`
               : view.id === 'galaxy'
