@@ -628,7 +628,7 @@ IDLE
 
 SHIFT BOARD (Staff)
   Open / Mid / Close. Unstaffed Open hurts spoil. Side yard wants Open days;
-  cold wants Open+Close; barges want Orbit on Mid.
+  cold wants opening and closing shifts; barges want the middle shift.
 
 FLAGSHIP PLANOGRAM (Floor)
   Practice twice, then credit ≥0.72. Chain/globe refiles after new aisles.

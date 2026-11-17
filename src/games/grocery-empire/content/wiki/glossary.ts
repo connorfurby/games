@@ -175,7 +175,7 @@ export const GLOSSARY: GlossEntry[] = [
     era: 1,
     icon: 'staff',
     short: 'Open, Mid and Close shifts. Unstaffed Open hurts spoil.',
-    more: 'Later doors ask for specific seats: Open days, Open + Close, Orbit on Mid.',
+    more: 'Later chapters ask for specific shifts: opening, opening and closing, or the middle shift.',
     see: 'sys-depth-eight',
   },
   {

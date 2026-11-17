@@ -298,7 +298,7 @@ export function FleetPanel() {
             </Button>
           ) : null}
           <div className="ge-chip-row" aria-label="Fleet status">
-            <StatusChip tone={pocketsCleared >= 4 ? 'ready' : 'idle'} title="Four clears, Orbit on Mid, and Hold open Era 6.">
+            <StatusChip tone={pocketsCleared >= 4 ? 'ready' : 'idle'} title="Clear four pockets, staff the middle shift and hold off Off-Brand to reach the next chapter.">
               Pockets {pocketsCleared}/{pockets.length || 6}
             </StatusChip>
             {pocketsOutrunHauler(s) ? (

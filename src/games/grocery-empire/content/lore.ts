@@ -32,7 +32,7 @@ export const ERA_STORY: Record<
   },
   5: {
     title: 'Seed Barges',
-    line: 'Era 5 — Pocket Ops hauler ETAs, Orbit on Mid, Hold the drift war, ration facing.',
+    line: 'Era 5 — haulers clear pockets, staff the middle shift, hold off Off-Brand, feature ration packs.',
     epigraph: 'Someone still has to name what gets filled.',
   },
   6: {

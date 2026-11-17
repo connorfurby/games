@@ -549,7 +549,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-blast',
     era: 3,
     title: 'Build a blast plant',
-    hint: 'Only blast freezers drain regional yield. Compressors just pay rent.',
+    hint: 'Build a blast freezer in Cold. Only blast freezers use up the region’s supply.',
     done: (s) => plantCountOf(s, 'blast') >= 1,
     progress: (s) => frac(s.cash, plantCost(s)),
     cash: (s) => plantCost(s),
@@ -559,7 +559,7 @@ export const GOALS: GoalDef[] = [
     id: 'lobby',
     era: 3,
     title: 'Hire a lobbyist',
-    hint: 'File Lobby Retainer. Needs a Civic build.',
+    hint: 'Buy the Lobby Retainer memo. It needs a Civic building first.',
     done: (s) => memo(s, 'lobby-office'),
     progress: (s) => frac(s.cash, memoCash(s, 'lobby-office')),
     cash: (s) => ((s.builds.civic ?? 0) < 1 ? 450 : memoCash(s, 'lobby-office')),
@@ -570,7 +570,7 @@ export const GOALS: GoalDef[] = [
     id: 'pass-two-bills',
     era: 3,
     title: 'Pass two bills',
-    hint: 'Named county bills — hours, waste, labor, or tax.',
+    hint: 'In Politics, pass two county bills: hours, waste, labour or tax.',
     done: (s) => billsPassed(s) >= 2,
     progress: (s) => frac(billsPassed(s), 2),
     cash: (s) => billCost(s).cash,
@@ -583,7 +583,7 @@ export const GOALS: GoalDef[] = [
     id: 'brownout-drill',
     era: 3,
     title: 'Survive a brownout drill',
-    hint: 'Hire a plant operator, then clear the drill.',
+    hint: 'Hire a plant operator, then get through the power drill in Cold.',
     done: (s) => (s.depth?.drillsRun ?? 0) >= 1,
     progress: (s) => frac(s.depth?.drillsRun ?? 0, 1),
     cash: (s) => (s.staff.some((m) => m.role === 'plantOperator') ? 0 : hireCost(s, 'plantOperator')),
@@ -596,7 +596,7 @@ export const GOALS: GoalDef[] = [
     id: 'cooler-logs',
     era: 3,
     title: 'Sign cooler logs',
-    hint: 'Temp checks on a timer. Plant Operator on shift auto-signs.',
+    hint: 'Sign the cooler temperature log in Cold when it is due. A plant operator on shift signs it for you.',
     done: (s) => (s.depth?.cooler?.logsSigned ?? 0) >= DEPTH.coolerLogNeed,
     progress: (s) => frac(s.depth?.cooler?.logsSigned ?? 0, DEPTH.coolerLogNeed),
     action: (s) =>
@@ -607,7 +607,7 @@ export const GOALS: GoalDef[] = [
   {
     id: 'cold-leads-board',
     era: 3,
-    title: 'Staff Fresh + Cold on the board',
+    title: 'Staff produce and cold',
     hint: 'Put a Produce Lead and a Plant Operator on a shift once (Staff → Shifts & hours).',
     done: (s) => !!s.depth?.leadsOnBoard?.fresh && !!s.depth?.leadsOnBoard?.cold,
     progress: (s) =>
@@ -629,7 +629,7 @@ export const GOALS: GoalDef[] = [
     id: 'drain-yield',
     era: 3,
     title: 'Tap out the region',
-    hint: 'Blast freezers drain the regional yield. Build a tunnel too.',
+    hint: 'Keep blast freezers running until the region’s supply is used up. Build a cold tunnel too.',
     done: (s) =>
       s.cold.yieldLeft <= 0 &&
       (s.cold.plantList ?? []).some((p) => p.kind === 'blast') &&
@@ -650,7 +650,7 @@ export const GOALS: GoalDef[] = [
     id: 'leave-region',
     era: 3,
     title: 'Leave the region',
-    hint: 'Logs, blast+tunnel, bills, yield empty, then Leave the Region.',
+    hint: 'Sign the logs, build a blast freezer and tunnel, pass bills, use up the supply, then leave from Politics.',
     done: (s) => s.era >= 4,
     progress: (s) =>
       (s.cold.yieldLeft <= 0 ? 0.2 : 0) +
@@ -678,7 +678,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-lane',
     era: 4,
     title: 'Open a matched lane',
-    hint: 'Pick a route and lock a matching manifest.',
+    hint: 'In Logistics, pick a route and file a manifest that matches it.',
     done: (s) =>
       (s.fleet.laneList ?? []).some((l) => {
         const prefer = l.route === 'spice-route' ? 'import' : l.route === 'cold-line' ? 'frozen' : l.route === 'dry-haul' ? 'household' : 'bakery'
@@ -705,8 +705,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'exam-holds',
     era: 4,
-    title: 'Swear exam holds',
-    hint: 'File a lane exam-ready, then swear before the hold slips. An exam is not a clean.',
+    title: 'Pass route inspections',
+    hint: 'File a route ready for inspection, then confirm it before the hold runs out.',
     done: (s) => (s.depth?.dispatch?.examsHeld ?? 0) >= DEPTH.examHoldNeed,
     progress: (s) => frac(s.depth?.dispatch?.examsHeld ?? 0, DEPTH.examHoldNeed),
     action: (s) => {
@@ -722,7 +722,7 @@ export const GOALS: GoalDef[] = [
     id: 'clean-manifests',
     era: 4,
     title: 'File clean manifests',
-    hint: 'File a lane clean — it credits at once, on its own clock, and never doubles as an exam.',
+    hint: 'File a route with no mistakes. It counts right away.',
     done: (s) => (s.depth?.dispatch?.cleanManifests ?? 0) >= DEPTH.cleanManifestsNeed,
     progress: (s) => frac(s.depth?.dispatch?.cleanManifests ?? 0, DEPTH.cleanManifestsNeed),
     action: (s) => {
@@ -735,7 +735,7 @@ export const GOALS: GoalDef[] = [
     id: 'hire-logistics',
     era: 4,
     title: 'Hire a Dispatcher or Purser',
-    hint: 'Logistics seats open with the first lane.',
+    hint: 'You can hire for Logistics once your first route is open.',
     done: (s) => s.staff.some((m) => m.role === 'dispatcher' || m.role === 'purser'),
     progress: (s) => (s.staff.some((m) => m.role === 'dispatcher' || m.role === 'purser') ? 1 : 0.2),
     cash: (s) => hireCost(s, 'dispatcher'),
@@ -745,7 +745,7 @@ export const GOALS: GoalDef[] = [
     id: 'franchise-stable',
     era: 4,
     title: 'Hold the franchise line',
-    hint: 'Win back one defection, or keep a franchise loyal.',
+    hint: 'Win back a franchise that wants to leave, or keep one loyal.',
     done: (s) =>
       (s.depth?.defectionsHandled ?? 0) >= 1 ||
       (s.fleet.franchiseList ?? []).filter((f) => !f.defected).length >= 1,
@@ -763,8 +763,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'globe-planogram',
     era: 4,
-    title: 'Refile after Import',
-    hint: 'Practice, then credit the flagship layout once Import is unlocked.',
+    title: 'Redo the shelf layout after Import',
+    hint: 'Once Import is open, practise the flagship layout, then file it.',
     done: (s) => !!s.depth?.flagship?.globeCredited,
     progress: (s) => (s.depth?.flagship?.globeCredited ? 1 : s.categories.import ? 0.4 : 0.1),
     action: () => ({ type: 'fileStandardFlagship' }),
@@ -773,7 +773,7 @@ export const GOALS: GoalDef[] = [
     id: 'launch',
     era: 4,
     title: 'Launch the seed barges',
-    hint: 'Clean manifests, logistics staff, defection held, then Barge Berth.',
+    hint: 'File clean manifests, hire logistics staff, keep your franchises, then build the Barge Berth.',
     done: (s) => s.era >= 5,
     progress: (s) =>
       frac(s.depth?.dispatch?.cleanManifests ?? 0, DEPTH.cleanManifestsNeed) * 0.4 +
@@ -801,7 +801,7 @@ export const GOALS: GoalDef[] = [
     id: 'launch-hauler',
     era: 5,
     title: 'Launch a Hauler',
-    hint: 'Haulers clear matching biomass pockets.',
+    hint: 'In Fleet, send out a hauler. Haulers clear growth pockets.',
     done: (s) => (s.fleet.bargeList ?? []).some((b) => b.class === 'hauler') || s.fleet.launched,
     progress: (s) => (s.fleet.launched ? 1 : 0.3),
     cash: (s) => bargeCost(s),
@@ -811,7 +811,7 @@ export const GOALS: GoalDef[] = [
     id: 'clear-two-pockets',
     era: 5,
     title: 'Clear two pockets',
-    hint: 'Dispatch Haulers on matching Pocket Ops trips.',
+    hint: 'Send haulers on trips that match the pocket they are clearing.',
     done: (s) => (s.fleet.pockets ?? []).filter((p) => p.left <= 0).length >= 2,
     progress: (s) => frac((s.fleet.pockets ?? []).filter((p) => p.left <= 0).length, 2),
     cash: (s) => bargeCost(s),
@@ -836,7 +836,7 @@ export const GOALS: GoalDef[] = [
     id: 'berth-turnarounds',
     era: 5,
     title: 'Turn the berth',
-    hint: 'Haulers rest after arrival — each turnaround counts toward Era 6.',
+    hint: 'Haulers rest after each trip. Every round trip counts.',
     done: (s) => (s.depth?.berthTurnarounds ?? 0) >= DEPTH.berthTurnaroundNeed,
     progress: (s) => frac(s.depth?.berthTurnarounds ?? 0, DEPTH.berthTurnaroundNeed),
     cash: (s) => bargeCost(s),
@@ -860,8 +860,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'orbit-mid',
     era: 5,
-    title: 'Orbit on Mid',
-    hint: 'Assign a Pilot, Steward, or Hull Tech to the Mid shift.',
+    title: 'Staff the middle shift',
+    hint: 'Put a Pilot, Steward or Hull Tech on the middle shift (Staff → Shifts & hours).',
     done: (s) =>
       !!s.depth?.orbitMidOnce || (s.depth?.shifts?.daysCoveredMidOrbit ?? 0) >= 1 || s.era >= 6,
     progress: (s) => (s.depth?.orbitMidOnce ? 1 : 0.3),
@@ -878,8 +878,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'clear-biomass',
     era: 5,
-    title: 'Four pockets + ration + Hold',
-    hint: 'Clear four pockets via trips, feature ration, Orbit Mid, Hold the drift war.',
+    title: 'Hold the line',
+    hint: 'Clear four pockets, feature ration packs, staff the middle shift, and hold off Off-Brand.',
     done: (s) => s.era >= 6,
     progress: (s) => {
       const cleared = (s.fleet.pockets ?? []).filter((p) => p.left <= 0).length
@@ -922,7 +922,7 @@ export const GOALS: GoalDef[] = [
     id: 'stock-ration',
     era: 6,
     title: 'Stock ration packs',
-    hint: 'Keep ration on the flagship shelf during the week.',
+    hint: 'Keep ration packs on the flagship shelf for the week.',
     done: (s) =>
       sumQty(s.shelf, 'ration') + sumQty(s.backroom, 'ration') > 0 || !!s.depth?.facings?.ration,
     progress: (s) => (s.depth?.facings?.ration ? 0.7 : 0.2),
@@ -932,7 +932,7 @@ export const GOALS: GoalDef[] = [
     id: 'board-agenda',
     era: 6,
     title: 'Resolve a board agenda',
-    hint: 'Meetings still open the door.',
+    hint: 'Answer a board meeting in Books.',
     done: (s) => (s.stats.boardMeetings ?? 0) >= 1 || s.board.lastResolvedAt > 0,
     progress: (s) => (s.board.lastResolvedAt > 0 ? 1 : 0.3),
     action: () => ({ type: 'resolveBoard', agenda: 'expand' }),
@@ -941,7 +941,7 @@ export const GOALS: GoalDef[] = [
     id: 'promote-steward',
     era: 6,
     title: 'Promote Steward of the Counter',
-    hint: 'Name a lead before Accept / Continue / Reject.',
+    hint: 'Pick someone to lead the store before you make the final choice.',
     done: (s) => s.depth?.stewardId != null,
     progress: (s) => (s.depth?.stewardId != null ? 1 : 0.2),
     action: (s) => {
@@ -957,7 +957,7 @@ export const GOALS: GoalDef[] = [
     id: 'ration-ledger',
     era: 6,
     title: 'Stamp the ration ledger',
-    hint: 'One stamp per shift-day while stars are frozen — Continue needs them all.',
+    hint: 'Stamp the ration ledger once each shift-day. You need every stamp to continue.',
     done: (s) => (s.depth?.ledgerStamps ?? 0) >= DEPTH.rationLedgerNeed,
     progress: (s) => frac(s.depth?.ledgerStamps ?? 0, DEPTH.rationLedgerNeed),
     action: () => ({ type: 'stampLedger' }),
@@ -966,7 +966,7 @@ export const GOALS: GoalDef[] = [
     id: 'ending',
     era: 6,
     title: 'File the ration',
-    hint: 'Stamp the ledger, then Continue into the next aisle.',
+    hint: 'Stamp the ledger, then continue to the next chapter.',
     done: (s) => s.endingChoice !== null,
     progress: (s) =>
       frac(s.depth?.ledgerStamps ?? 0, DEPTH.rationLedgerNeed) * 0.6 + (s.endingChoice ? 0.4 : 0.2),

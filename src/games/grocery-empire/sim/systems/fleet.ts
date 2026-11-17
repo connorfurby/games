@@ -1180,7 +1180,7 @@ export function tickFleet(s: GameState, dt: number) {
       setEra(s, 6)
       s.depth.rationWeekUntil = s.time + DEPTH.rationWeekSec * (1 + upgradeEffect(s, 'ration-week-pad'))
       s.depth.starsFrozenAt = s.depth.stars
-      log(s, 'Four pockets cleared. Universal Ration week begins — Star Board freezes.', 'era')
+      log(s, 'Four pockets cleared. Ration week begins and your star rating holds still.', 'era')
     }
   }
 }
