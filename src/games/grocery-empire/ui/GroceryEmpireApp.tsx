@@ -17,6 +17,7 @@ import {
 import { applyAchievements } from '@/achievements/registry'
 import { onAchievementToast } from '@/achievements/toastBus'
 import { moodForEra, playAchievementFanfare, sfx, startMusic, stopMusic } from '@/shared/audio'
+import { useSoundDirector } from './fx/useSoundDirector'
 import {
   consumeDailyPending,
   loadDailyChallenge,
@@ -228,6 +229,12 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     startMusic(moodForEra(state.era))
   }, [state.era, meta.settings.muted, meta.settings.music, meta.settings.musicVolume, meta.settings.volume])
   useEffect(() => () => stopMusic(), [])
+  // The score follows the clock too: after dark it settles into the night piece.
+  useEffect(() => {
+    const id = window.setInterval(() => startMusic(moodForEra(state.era)), 5 * 60 * 1000)
+    return () => window.clearInterval(id)
+  }, [state.era])
+  useSoundDirector(state)
 
   // A department's `?` opens the Menu drawer on its wiki page.
   const [wikiNonce, setWikiNonce] = useState(0)

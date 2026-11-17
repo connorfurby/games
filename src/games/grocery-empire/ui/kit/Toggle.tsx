@@ -1,3 +1,4 @@
+import { sfx } from '@/shared/audio'
 import type { ReactNode } from 'react'
 import { cx } from './hooks'
 
@@ -25,7 +26,10 @@ export function Toggle({
       disabled={disabled}
       title={title}
       className={cx('gk-toggle', checked && 'is-on', className)}
-      onClick={() => onChange(!checked)}
+      onClick={() => {
+        sfx.toggle(!checked)
+        onChange(!checked)
+      }}
     >
       <span className="gk-toggle__track" aria-hidden>
         <span className="gk-toggle__knob" />

@@ -284,7 +284,13 @@ function burst(o: { dur: number; gain: number; freq: number; q?: number; type?: 
 }
 
 /** Per-cue minimum gap in ms, so a held key or a busy till never machine-guns. */
-const GAP: Record<string, number> = { click: 40, open: 120, blocked: 250, sale: 450, unpack: 60, coin: 90 }
+const GAP: Record<string, number> = { click: 40, open: 120, blocked: 250, sale: 2600, unpack: 60, coin: 90, toggle: 60, notice: 900, truck: 4000, hire: 300, goal: 600, rank: 800 }
+
+/** A few cents either way, so a cue heard twenty times in a row never sounds identical. */
+function vary(freq: number, cents = 30): number {
+  return freq * Math.pow(2, ((Math.random() * 2 - 1) * cents) / 1200)
+}
+let saleStep = 0
 const lastAt: Record<string, number> = {}
 function ready(name: string): boolean {
   if (mix.muted) return false
@@ -299,7 +305,20 @@ export const sfx = {
   /** Switching rooms or tabs: a soft wooden tick. */
   click() {
     if (!ready('click')) return
-    voice({ freq: 1320, type: 'triangle', dur: 0.035, gain: 0.014, to: 880 })
+    voice({ freq: vary(1320, 60), type: 'triangle', dur: 0.035, gain: 0.014, to: 880 })
+  },
+  /** A switch flipped: a small two-step clack. */
+  toggle(on = true) {
+    if (!ready('toggle')) return
+    voice({ freq: on ? 660 : 520, type: 'triangle', dur: 0.04, gain: 0.02, to: on ? 990 : 390 })
+    burst({ dur: 0.02, gain: 0.012, freq: 3000, q: 2, at: 0.02 })
+  },
+  /** A small spend: one coin on the counter. */
+  coin() {
+    if (!ready('coin')) return
+    const f = vary(2093, 50)
+    voice({ freq: f, type: 'sine', dur: 0.12, gain: 0.018 })
+    voice({ freq: f * 1.5, type: 'sine', dur: 0.09, gain: 0.008, at: 0.04 })
   },
   /** A sheet, drawer or dialog opening: paper sliding. */
   open() {
@@ -315,21 +334,57 @@ export const sfx = {
   /** Unpacking a crate: a cardboard thunk. */
   unpack() {
     if (!ready('unpack')) return
-    burst({ dur: 0.07, gain: 0.05, freq: 520, q: 1.2, type: 'lowpass' })
-    voice({ freq: 190, type: 'sine', dur: 0.08, gain: 0.04, to: 120 })
+    burst({ dur: 0.07, gain: 0.05, freq: vary(520, 120), q: 1.2, type: 'lowpass' })
+    voice({ freq: vary(190, 80), type: 'sine', dur: 0.08, gain: 0.04, to: 120 })
   },
-  /** A basket rung up: a small till bell. */
+  /** A basket rung up: the till bell, walking a little tune so a busy shop sings. */
   sale() {
     if (!ready('sale')) return
-    voice({ freq: 1568, type: 'sine', dur: 0.22, gain: 0.02 })
-    voice({ freq: 2349, type: 'sine', dur: 0.16, gain: 0.01 })
+    const tune = [1568, 1760, 1568, 2093, 1760, 1976]
+    const f = tune[saleStep++ % tune.length]!
+    voice({ freq: f, type: 'sine', dur: 0.24, gain: 0.014 })
+    voice({ freq: f * 1.5, type: 'sine', dur: 0.16, gain: 0.006, at: 0.02 })
+  },
+  /** A delivery pulls in: a soft two-tone horn and a door roll. */
+  truck() {
+    if (!ready('truck')) return
+    voice({ freq: 311, type: 'sawtooth', dur: 0.16, gain: 0.008 })
+    voice({ freq: 392, type: 'sawtooth', dur: 0.2, gain: 0.008, at: 0.17 })
+    burst({ dur: 0.5, gain: 0.012, freq: 260, to: 120, q: 0.7, type: 'lowpass', at: 0.4 })
+  },
+  /** Someone joins the crew: footsteps and a friendly chime. */
+  hire() {
+    if (!ready('hire')) return
+    burst({ dur: 0.04, gain: 0.025, freq: 700, q: 1.5, type: 'lowpass' })
+    burst({ dur: 0.04, gain: 0.022, freq: 640, q: 1.5, type: 'lowpass', at: 0.14 })
+    ;[659, 880].forEach((freq, i) => voice({ freq, type: 'triangle', dur: 0.2, gain: 0.025, at: 0.26 + i * 0.09 }))
+  },
+  /** A goal ticked off: a quick major arpeggio. */
+  goal() {
+    if (!ready('goal')) return
+    ;[523, 659, 784, 1047].forEach((freq, i) => voice({ freq, type: 'triangle', dur: 0.18, gain: 0.026, at: i * 0.06 }))
+  },
+  /** A new Empire rank: a bright chord with a low root. */
+  rank() {
+    if (!ready('rank')) return
+    voice({ freq: 131, type: 'sine', dur: 0.8, gain: 0.04, attack: 0.05 })
+    ;[523, 659, 784].forEach((freq) => voice({ freq, type: 'triangle', dur: 0.6, gain: 0.02, attack: 0.02 }))
+    voice({ freq: 1568, type: 'sine', dur: 0.7, gain: 0.012, at: 0.12 })
+  },
+  /** Something worth reading arrived: a single soft ding. */
+  notice() {
+    if (!ready('notice')) return
+    voice({ freq: 1175, type: 'sine', dur: 0.4, gain: 0.016 })
+    voice({ freq: 2350, type: 'sine', dur: 0.25, gain: 0.004 })
   },
   /** Paying for something: drawer click, then two bells. */
   purchase() {
     if (mix.muted) return
-    burst({ dur: 0.03, gain: 0.03, freq: 2400, q: 2 })
-    voice({ freq: 1047, type: 'sine', dur: 0.2, gain: 0.03, at: 0.03 })
-    voice({ freq: 1568, type: 'sine', dur: 0.28, gain: 0.026, at: 0.09 })
+    if (!ready('coin')) return
+    const k = vary(1, 40)
+    burst({ dur: 0.03, gain: 0.03, freq: 2400 * k, q: 2 })
+    voice({ freq: 1047 * k, type: 'sine', dur: 0.2, gain: 0.03, at: 0.03 })
+    voice({ freq: 1568 * k, type: 'sine', dur: 0.28, gain: 0.026, at: 0.09 })
   },
   /** A new room, memo or feature: three rising notes. */
   unlock() {
@@ -365,37 +420,90 @@ export const sfx = {
 // era. Runs only while sound is on and Music is ticked.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type MusicMood = 'corner' | 'chain' | 'cold' | 'stars'
+export type MusicMood = 'corner' | 'chain' | 'cold' | 'harbor' | 'stars' | 'night'
+
+interface Section {
+  /** Chords as semitone offsets from the root, one per bar. */
+  chords: number[][]
+  /** Chance of a melody note on each eighth. */
+  density: number
+}
 
 interface Score {
-  /** Seconds per chord. */
+  /** Seconds per bar. */
   bar: number
-  /** Chords as semitone offsets from the root. */
-  chords: number[][]
   /** Root note in Hz. */
   root: number
   /** Melody scale, semitones from the root. */
   scale: number[]
+  /** A and B sections; the score walks A A B A, then may move up a fourth for a while. */
+  sections: [Section, Section]
   pad: OscillatorType
-  /** Chance of a melody note on each beat. */
-  density: number
+  /** Lead voice: a plucked marimba, a struck bell, or a soft breathy lead. */
+  lead: 'pluck' | 'bell' | 'soft'
+  /** Brushed shaker level (0 = none). */
+  perc: number
+  /** Broken-chord arpeggio under the melody. */
+  arp: boolean
   cutoff: number
 }
 
 const SCORES: Record<MusicMood, Score> = {
-  // A warm morning on the corner: C major, unhurried.
-  corner: { bar: 4.2, root: 130.81, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], scale: [0, 2, 4, 7, 9, 12, 14, 16], pad: 'triangle', density: 0.42, cutoff: 1400 },
-  // A growing chain: a little brighter and busier.
-  chain: { bar: 3.6, root: 146.83, chords: [[0, 4, 7, 9], [5, 9, 12, 14], [2, 5, 9, 12], [7, 11, 14, 16]], scale: [0, 2, 4, 7, 9, 12, 14, 16, 19], pad: 'triangle', density: 0.55, cutoff: 1800 },
-  // Cold rooms and politics: minor, glassy.
-  cold: { bar: 4.8, root: 110, chords: [[0, 3, 7, 10], [8, 12, 15, 19], [3, 7, 10, 14], [10, 14, 17, 21]], scale: [0, 3, 5, 7, 10, 12, 15, 17], pad: 'sine', density: 0.34, cutoff: 1100 },
-  // The fleet and the worlds: wide, slow, open fifths.
-  stars: { bar: 6, root: 98, chords: [[0, 7, 14, 16], [5, 12, 19, 21], [3, 10, 17, 19], [7, 14, 21, 23]], scale: [0, 2, 7, 9, 12, 14, 19, 21], pad: 'sine', density: 0.26, cutoff: 900 },
+  // A warm morning on the corner: C major, unhurried, a marimba humming along.
+  corner: {
+    bar: 4.2, root: 130.81, scale: [0, 2, 4, 7, 9, 12, 14, 16], pad: 'triangle', lead: 'pluck', perc: 0, arp: false, cutoff: 1400,
+    sections: [
+      { chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], density: 0.4 },
+      { chords: [[5, 9, 12, 16], [4, 7, 11, 14], [2, 5, 9, 12], [7, 11, 14, 17]], density: 0.5 },
+    ],
+  },
+  // A growing chain: brighter, busier, a shaker keeping time.
+  chain: {
+    bar: 3.4, root: 146.83, scale: [0, 2, 4, 7, 9, 12, 14, 16, 19], pad: 'triangle', lead: 'pluck', perc: 0.006, arp: true, cutoff: 1900,
+    sections: [
+      { chords: [[0, 4, 7, 9], [5, 9, 12, 14], [2, 5, 9, 12], [7, 11, 14, 16]], density: 0.5 },
+      { chords: [[9, 12, 16, 19], [5, 9, 12, 16], [0, 4, 7, 11], [7, 11, 14, 17]], density: 0.6 },
+    ],
+  },
+  // Cold rooms and politics: minor, glassy bells.
+  cold: {
+    bar: 4.8, root: 110, scale: [0, 3, 5, 7, 10, 12, 15, 17], pad: 'sine', lead: 'bell', perc: 0, arp: false, cutoff: 1100,
+    sections: [
+      { chords: [[0, 3, 7, 10], [8, 12, 15, 19], [3, 7, 10, 14], [10, 14, 17, 21]], density: 0.32 },
+      { chords: [[5, 8, 12, 15], [3, 7, 10, 14], [8, 12, 15, 19], [7, 10, 14, 17]], density: 0.4 },
+    ],
+  },
+  // Barges at sea: lilting, a slow rocking arpeggio.
+  harbor: {
+    bar: 5, root: 116.54, scale: [0, 2, 4, 7, 9, 11, 12, 14], pad: 'triangle', lead: 'soft', perc: 0.004, arp: true, cutoff: 1300,
+    sections: [
+      { chords: [[0, 7, 11, 16], [5, 9, 12, 16], [9, 12, 16, 19], [7, 11, 14, 19]], density: 0.3 },
+      { chords: [[2, 5, 9, 12], [7, 11, 14, 17], [4, 7, 11, 14], [5, 9, 12, 16]], density: 0.38 },
+    ],
+  },
+  // The fleet and the worlds: wide, slow, open fifths and bells.
+  stars: {
+    bar: 6, root: 98, scale: [0, 2, 7, 9, 12, 14, 19, 21], pad: 'sine', lead: 'bell', perc: 0, arp: false, cutoff: 900,
+    sections: [
+      { chords: [[0, 7, 14, 16], [5, 12, 19, 21], [3, 10, 17, 19], [7, 14, 21, 23]], density: 0.24 },
+      { chords: [[8, 15, 19, 22], [5, 12, 16, 19], [10, 17, 21, 24], [7, 14, 19, 23]], density: 0.3 },
+    ],
+  },
+  // Late at night on your clock: hushed, sparse, a soft lead.
+  night: {
+    bar: 6.5, root: 103.83, scale: [0, 2, 3, 7, 9, 10, 12, 14], pad: 'sine', lead: 'soft', perc: 0, arp: false, cutoff: 800,
+    sections: [
+      { chords: [[0, 3, 7, 14], [5, 8, 12, 15], [10, 14, 17, 21], [3, 7, 10, 14]], density: 0.18 },
+      { chords: [[8, 12, 15, 19], [7, 10, 14, 17], [5, 9, 12, 15], [3, 7, 10, 14]], density: 0.22 },
+    ],
+  },
 }
 
-/** Which score plays in which era. */
-export function moodForEra(era: number): MusicMood {
-  if (era >= 5) return 'stars'
+/** Which score plays in which era. Late at night (by the player's clock) the hush wins. */
+export function moodForEra(era: number, hour: number = new Date().getHours()): MusicMood {
+  if (hour >= 22 || hour < 5) return 'night'
+  if (era >= 7) return 'stars'
+  if (era >= 5) return 'harbor'
   if (era >= 3) return 'cold'
   if (era >= 2) return 'chain'
   return 'corner'
@@ -447,7 +555,8 @@ export function startMusic(mood: MusicMood) {
     delay.connect(out)
     out.connect(ac.destination)
 
-    const hz = (semi: number) => sc.root * Math.pow(2, semi / 12)
+    let lift = 0
+    const hz = (semi: number) => sc.root * Math.pow(2, (semi + lift) / 12)
     let bar = 0
     let next = ac.currentTime + 0.15
     let seed = (Date.now() % 9973) + 1
@@ -455,36 +564,85 @@ export function startMusic(mood: MusicMood) {
       seed = (seed * 16807) % 2147483647
       return seed / 2147483647
     }
-    const note = (freq: number, t: number, dur: number, gain: number, type: OscillatorType, detune = 0) => {
+    const note = (freq: number, t: number, dur: number, gain: number, type: OscillatorType, detune = 0, attack?: number) => {
       const o = ac.createOscillator()
       const g = ac.createGain()
       o.type = type
       o.frequency.value = freq
       o.detune.value = detune
       g.gain.setValueAtTime(0.0001, t)
-      g.gain.exponentialRampToValueAtTime(gain, t + Math.min(1.2, dur * 0.35))
+      g.gain.exponentialRampToValueAtTime(gain, t + (attack ?? Math.min(1.2, dur * 0.35)))
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
       o.connect(g)
       g.connect(lp)
       o.start(t)
       o.stop(t + dur + 0.05)
     }
+    const lead = (freq: number, t: number) => {
+      if (sc.lead === 'pluck') {
+        note(freq, t, 0.55, 0.03, 'triangle', 0, 0.006)
+        note(freq * 2, t, 0.25, 0.008, 'sine', 0, 0.004)
+      } else if (sc.lead === 'bell') {
+        note(freq, t, 1.6, 0.022, 'sine', 0, 0.004)
+        note(freq * 2.76, t, 0.6, 0.006, 'sine', 0, 0.003)
+      } else {
+        note(freq, t, 1.4, 0.024, 'triangle', 3, 0.18)
+      }
+    }
+    const shaker = (t: number, gain: number) => {
+      if (!noiseBuf || noiseBuf.sampleRate !== ac.sampleRate) {
+        noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate)
+        const d = noiseBuf.getChannelData(0)
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+      }
+      const src = ac.createBufferSource()
+      src.buffer = noiseBuf
+      const f = ac.createBiquadFilter()
+      f.type = 'highpass'
+      f.frequency.value = 6500
+      const g = ac.createGain()
+      g.gain.setValueAtTime(gain, t)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07)
+      src.connect(f)
+      f.connect(g)
+      g.connect(out)
+      src.start(t)
+      src.stop(t + 0.1)
+    }
+    // A four-note motif per section that comes back each bar with small changes,
+    // so the melody sounds written rather than random.
+    const motifFor = () => Array.from({ length: 4 }, () => Math.floor(rnd() * sc.scale.length))
+    const motifs = [motifFor(), motifFor()]
+    const rhythm = [0, 2, 3, 5, 6]
+    const FORM = [0, 0, 1, 0]
     const schedule = () => {
       // Keep about one bar queued ahead of the clock.
       while (next < ac.currentTime + sc.bar) {
-        const chord = sc.chords[bar % sc.chords.length]!
+        const part = FORM[Math.floor(bar / 4) % FORM.length]!
+        const sec = sc.sections[part]!
+        // After every full form, sometimes lift the key a fourth for a while.
+        if (bar > 0 && bar % (FORM.length * 4) === 0) lift = lift === 0 && rnd() < 0.5 ? 5 : 0
+        const chord = sec.chords[bar % sec.chords.length]!
         for (const semi of chord) {
-          note(hz(semi), next, sc.bar * 1.15, 0.035, sc.pad, -5)
-          note(hz(semi), next, sc.bar * 1.15, 0.03, sc.pad, 6)
+          note(hz(semi), next, sc.bar * 1.15, 0.032, sc.pad, -5)
+          note(hz(semi), next, sc.bar * 1.15, 0.027, sc.pad, 6)
         }
-        // Bass on the downbeat.
         note(hz(chord[0]! - 12), next, sc.bar * 0.9, 0.05, 'sine')
-        // Sparse melody: quarter-bar steps, notes drawn from the scale near the chord.
-        const steps = 8
-        for (let i = 0; i < steps; i++) {
-          if (rnd() > sc.density) continue
-          const semi = sc.scale[Math.floor(rnd() * sc.scale.length)]! + 12
-          note(hz(semi), next + (i * sc.bar) / steps, 0.9 + rnd() * 0.8, 0.028, 'triangle')
+        if (sc.arp) {
+          const order = [0, 1, 2, 3, 2, 1]
+          order.forEach((k, i) => note(hz(chord[k % chord.length]! + 12), next + (i * sc.bar) / order.length, 0.4, 0.01, 'triangle', 0, 0.01))
+        }
+        if (sc.perc > 0) {
+          for (let i = 0; i < 8; i++) shaker(next + (i * sc.bar) / 8, i % 2 ? sc.perc * 0.6 : sc.perc)
+        }
+        // Melody: the section's motif on a loose rhythm; one note may wander each bar.
+        const motif = motifs[part]!.slice()
+        if (rnd() < 0.5) motif[Math.floor(rnd() * motif.length)] = Math.floor(rnd() * sc.scale.length)
+        let mi = 0
+        for (const step of rhythm) {
+          if (rnd() > sec.density + 0.25) continue
+          const idx = motif[mi++ % motif.length]!
+          lead(hz(sc.scale[idx]! + 12), next + (step * sc.bar) / 8)
         }
         next += sc.bar
         bar++

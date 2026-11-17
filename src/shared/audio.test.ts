@@ -15,10 +15,14 @@ describe('audio mix', () => {
     setAudioMix({ volume: 0.6, muted: true, ambience: true })
   })
   it('picks a score per era', () => {
-    expect(moodForEra(0)).toBe('corner')
-    expect(moodForEra(2)).toBe('chain')
-    expect(moodForEra(4)).toBe('cold')
-    expect(moodForEra(9)).toBe('stars')
+    expect(moodForEra(0, 12)).toBe('corner')
+    expect(moodForEra(2, 12)).toBe('chain')
+    expect(moodForEra(4, 12)).toBe('cold')
+    expect(moodForEra(5, 12)).toBe('harbor')
+    expect(moodForEra(9, 12)).toBe('stars')
+    // After dark the hush wins whatever the era.
+    expect(moodForEra(9, 23)).toBe('night')
+    expect(moodForEra(0, 2)).toBe('night')
   })
   it('stays silent and never throws while muted', () => {
     setAudioMix({ muted: true })

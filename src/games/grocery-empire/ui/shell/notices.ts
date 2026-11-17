@@ -1,3 +1,4 @@
+import { sfx } from '@/shared/audio'
 import { useSyncExternalStore } from 'react'
 
 /**
@@ -22,6 +23,7 @@ export function pushNotice(text: string, kind: Notice['kind'] = 'info', now = Da
   // The same line twice in a row within 5 s is one notice.
   if (last && last.text === text && now - last.at < 5000) return
   list = [{ id: ++seq, text, at: now, kind }, ...list].slice(0, MAX)
+  sfx.notice()
   for (const s of subs) s()
 }
 
