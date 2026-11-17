@@ -15,6 +15,19 @@
 | 2026-11-16 | **P0 closed.** Crawler rerun, 244 screens (Eras 0–7, 1440 and 390): 0 console errors (was 4 on Strategy), 0 horizontal overflow, tallest page 3.2k px (Land, phone; was 23.5k Museum). | — |
 | 2026-11-16 | **P1-01** type scale: every raw rem size snapped to 8 steps, guard test `design/typeScale.test.ts` (distinct sizes per screen 15 → 7 desktop / 5 phone) · **P1-03** blocked buttons keep their colour family (tinted, dashed, readable; crawler low-contrast 0) · **P1-04** secondary verbs are raised buttons; primary verb one row, 52 px · **P2-02** phone chrome: 3-significant-digit HUD figures, hub title hidden on phones, storefront toggle in hub head · **P2-03** phone rooms: chips as text + pannable band (all `RoomScene` rooms and Staff), **Floor portrait layout** · **P2-04** desktop stage paints wall/floor, no black bands · **P3-01** Next Goal single button (Do it / Show me) · **P3-04** tips are in-panel help cards mapped to their room · **P3-05** `?` on every PlayFrame department opens its wiki page · **P3-06** duplicate department eyebrow removed · **P5** coach card never covers its highlight; phone story line no longer hides the primary verb; phone primary verb is sticky at the page bottom | Crawl 242 screens: 0 errors, 0 overflow, 0 low contrast, 0 text under 11 px outside DevMode. Open from these phases: **P1-02/05/06/07/10/11** (spacing tokens, kit migration of chrome classes, legacy CSS cut), **P2-03 portrait Staff and Fleet** (they have the band today), **P2-07/08** 1920 max width and bottom sheets (**P2-05/06 done the same day:** 721–1100 px puts Next Goal on its own HUD row with short figures under 900; landscape phones get a one-row HUD and the sticky verb), **P3-02/03/07..11**. |
 
+
+### Owner feedback, 2026-11-16 evening (binding)
+
+| Ask | Status | Where it lives in the plan |
+| --- | --- | --- |
+| Tiny text-only buttons are unclear and ugly | **Done** for the verb tray, steppers, sheet footers. **Open:** the remaining ad-hoc pickers (see P4-F below). | P1-04, P4-F |
+| Side panel content is cut off and blocked | **Done.** Sheets and modals portal to the game root (`kit/hooks.overlayRoot`); toasts step aside. Rule: never render an overlay inside a panel. | P2-08 |
+| Inconsistent buttons and no margins inside a panel (Suppliers order row) | **Done** for Suppliers (`play/Field`, `FieldSet`, `SegmentedControl`); `.pf__body` now spaces every child. | P4-F |
+| No UI that shifts the layout | **Done:** Go link gone; alert pill hangs from the HUD edge; the reason line under a primary verb keeps its row; tips are picked when a room opens and leave only on Got it. **Law 13 (new):** nothing may appear or disappear in normal play in a way that moves another control. Crawler check to add in P11. | §2 law 13, P11 |
+| Reset must cover shop tokens, museum and achievements | **Done.** Settings → Reset has five tick boxes (run, slots, museum, shop and tokens, achievements). Achievements always take the shop with them so tokens cannot be paid twice. | P6 |
+
+**P4-F — one form language (new, M).** Every picker in every panel uses `Field` + `SegmentedControl`/`Stepper`/`Toggle` inside a `FieldSet`. Remaining ad-hoc pickers to convert: Floor (3 `Chip` rows), Backroom, Memos, Upgrades board, `p6-choice` cards in Cold/Logistics/Politics/Strategy. No bare `Chip` rows as radio groups; no control without a label.
+
 ---
 
 ## 0. What "1.0" means — the release gates
@@ -109,6 +122,7 @@ python3 docs/grocery-empire/audit-2026-11-16/analyze.py desk   # (paths inside t
 10. **Nothing empty.** Empty rooms show what will fill them and the verb that starts it.
 11. **Spoiler-safe chrome.** No era > current mentioned outside the wiki with spoilers on.
 12. **Numbers read as words where it helps.** "Cash $2.84K · +$17/s" not "+$17.34/s" mid-HUD on phones; full precision in tooltips/Books.
+13. **Nothing shifts.** In normal play, nothing may appear or disappear in a way that moves another control. Reserve the row or hang the newcomer over an edge. (Owner rule, 2026-11-16.)
 
 ---
 

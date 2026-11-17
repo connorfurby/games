@@ -69,3 +69,13 @@ export function useEscape(active: boolean, onEscape: () => void) {
     return () => window.removeEventListener('keydown', h)
   }, [active])
 }
+
+/**
+ * Where overlays mount: the game root (so tokens and layers apply), else the page body.
+ * Sheets and modals must not render inside a panel: panels animate with a transform,
+ * which turns `position: fixed` into "fixed to the panel" and tucks the overlay under the HUD.
+ */
+export function overlayRoot(): HTMLElement | null {
+  if (typeof document === 'undefined') return null
+  return document.querySelector<HTMLElement>('.ge-root') ?? document.body
+}

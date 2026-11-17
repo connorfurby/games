@@ -18,8 +18,8 @@ import { useGame } from '../GameContext'
 import { clock, money, qty } from '../format'
 import { MixPriority } from '../components/MixPriority'
 import { MENUS } from '../../content/menus'
-import { ActionRow, FailReason, PlayFrame } from '../play'
-import { Badge, Button, Chip, Disclosure, EmptyState, Meter, Sheet, Toggle, Tooltip } from '../kit'
+import { ActionRow, FailReason, Field, FieldSet, PlayFrame } from '../play'
+import { Badge, Button, Disclosure, EmptyState, Meter, SegmentedControl, Sheet, Toggle, Tooltip } from '../kit'
 import { DockScene } from '../scenes/live'
 
 const MAX_CRATES = 200
@@ -195,67 +195,71 @@ export function SuppliersPanel() {
           </Badge>
         </div>
 
-        <div className="p6-row" role="group" aria-label="Crates per order">
-          {qtySteps.map((n) => (
-            <Chip key={n} selected={qtyPick !== 'fill' && crates === n} onClick={() => setQtyPick(n)}>
-              ×{n}
-            </Chip>
-          ))}
-          <span title={`Max crates your cash covers, up to the room left in the backroom (${fillCrates})`}>
-            <Chip selected={qtyPick === 'fill'} onClick={() => setQtyPick('fill')}>
-              Fill · {fillCrates}
-            </Chip>
-          </span>
-          <span className="p6-copy">
-            {crates} × {qty(eachUnits)} = {qty(units)} units · {money(cost, numberFormat)}
-          </span>
-        </div>
+        <FieldSet title="Your order">
+          <Field
+            label="Crates"
+            note={`${crates} × ${qty(eachUnits)} = ${qty(units)} units · ${money(cost, numberFormat)}`}
+          >
+            <SegmentedControl
+              aria-label="Crates per order"
+              value={qtyPick === 'fill' ? 'fill' : String(crates)}
+              onChange={(v) => setQtyPick(v === 'fill' ? 'fill' : Number(v))}
+              options={[
+                ...qtySteps.map((n) => ({ value: String(n), label: `×${n}` })),
+                {
+                  value: 'fill',
+                  label: `Fill (${fillCrates})`,
+                  title: `As many crates as your cash covers, up to the room left in the backroom (${fillCrates})`,
+                },
+              ]}
+            />
+          </Field>
+          {unlocked.length > 1 ? (
+            <Field label="Aisle">
+              <SegmentedControl
+                aria-label="Aisle to order for"
+                value={cat}
+                onChange={(c) => dispatch({ type: 'setOrderCat', cat: c })}
+                options={unlocked.map((c) => ({ value: c, label: CATEGORIES[c].short, title: CATEGORIES[c].name }))}
+              />
+            </Field>
+          ) : null}
+          <Field
+            label="Supplier"
+            note={hasB ? 'Budget is cheaper, slower and sometimes short.' : 'Budget unlocks with the Second Wholesaler memo.'}
+          >
+            <SegmentedControl
+              aria-label="Supplier"
+              value={supplier === 'b' ? 'b' : 'a'}
+              onChange={(v) => dispatch({ type: 'setSupplier', supplier: v })}
+              options={[
+                { value: 'a', label: `Express · ${money(expressCost, numberFormat)}` },
+                {
+                  value: 'b',
+                  label: hasB ? `Budget · ${money(budgetCost, numberFormat)}` : 'Budget · locked',
+                  disabled: !hasB,
+                  title: hasB ? 'Cheaper, slower, sometimes short' : 'Unlock with the Second Wholesaler memo',
+                },
+              ]}
+            />
+            {coopOn ? (
+              <Button
+                tone="secondary"
+                size="sm"
+                disabled={!!coopCheck}
+                title={coopCheck ?? 'Co-op truck'}
+                onClick={() => dispatch({ type: 'coopOrder', cat })}
+              >
+                Co-op · {money(coopCost, numberFormat)}
+              </Button>
+            ) : null}
+          </Field>
+        </FieldSet>
         {backroomTight ? (
           <FailReason action={{ label: 'Open Build', onClick: () => setActiveMenu('build') }}>
             Backroom can’t hold this order — extra crates are refused at the door.
           </FailReason>
         ) : null}
-
-        <div className="p6-row">
-          {unlocked.map((c) => (
-            <Chip key={c} selected={cat === c} onClick={() => dispatch({ type: 'setOrderCat', cat: c })}>
-              {CATEGORIES[c].short}
-            </Chip>
-          ))}
-        </div>
-        <div className="p6-row">
-          <button
-            type="button"
-            className={`p6-choice p6-choice--row${supplier === 'a' ? ' is-on' : ''}`}
-            aria-pressed={supplier === 'a'}
-            onClick={() => dispatch({ type: 'setSupplier', supplier: 'a' })}
-          >
-            <strong>Express</strong>
-            <em>{money(expressCost, numberFormat)}</em>
-          </button>
-          <button
-            type="button"
-            className={`p6-choice p6-choice--row${supplier === 'b' ? ' is-on' : ''}`}
-            aria-pressed={supplier === 'b'}
-            disabled={!hasB}
-            title={hasB ? 'Cheaper, slower, sometimes short' : 'Unlock with Second Wholesaler memo'}
-            onClick={() => dispatch({ type: 'setSupplier', supplier: 'b' })}
-          >
-            <strong>Budget</strong>
-            <em>{hasB ? money(budgetCost, numberFormat) : '—'}</em>
-          </button>
-          {coopOn ? (
-            <Button
-              tone="ghost"
-              size="sm"
-              disabled={!!coopCheck}
-              title={coopCheck ?? 'Co-op truck'}
-              onClick={() => dispatch({ type: 'coopOrder', cat })}
-            >
-              Co-op · {money(coopCost, numberFormat)}
-            </Button>
-          ) : null}
-        </div>
 
         {orders.length > 0 ? (
           <ul className="p6-orders">

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
+import { createPortal } from 'react-dom'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
-import { cx, useEscape, usePhone, useReducedMotion } from './hooks'
+import { cx, useEscape, usePhone, useReducedMotion, overlayRoot } from './hooks'
 import { IconButton } from './IconButton'
 
 export interface SheetProps {
@@ -64,7 +65,7 @@ export function Sheet({ open, onClose, title, children, footer, reducedMotion, c
   const shown = phone ? { y: 0 } : { x: 0 }
   const dur = reduced ? 0 : 0.22
 
-  return (
+  const tree = (
     <AnimatePresence>
       {open ? (
         <div className="gk-sheet-root" key="sheet">
@@ -102,4 +103,6 @@ export function Sheet({ open, onClose, title, children, footer, reducedMotion, c
       ) : null}
     </AnimatePresence>
   )
+  const root = overlayRoot()
+  return root ? createPortal(tree, root) : tree
 }

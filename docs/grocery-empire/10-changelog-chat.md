@@ -2,6 +2,18 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## Y. 1.0 owner feedback pass — overlays, forms, no shifting, scoped reset (2026-11-16) · SAVE **36** (unchanged)
+
+UI and shell only. No sim or balance changes.
+
+- **Overlays:** `Sheet` and `Modal` render through `createPortal(…, overlayRoot())` (the `.ge-root`, else `body`). Panels animate with a transform, which had pinned "fixed" sheets to the panel and under the HUD. Toasts move left of a side sheet and hide under a bottom sheet.
+- **Forms:** `play/Field.tsx` (`Field`, `FieldSet`). Suppliers order is a labelled form (Crates / Aisle / Supplier) built from `SegmentedControl`. `.pf__body` is a flex column with `gap: var(--s-3)`, so panel children are never flush.
+- **Kit:** `Stepper` has two 44 px raised buttons and never stretches full width; ghost buttons in a sheet/modal footer get an edge.
+- **No shifting (design law 13):** the HUD alert is one element (`.g2-alert--hang`) absolutely placed on the HUD's bottom edge; `.pf__primary` reserves its reason line; `PanelHelp` picks its tip once per room visit, never times out on screen, and files itself on leaving after 8 s on screen.
+- **Phone portrait rooms:** Fleet (`TALL` layout in `FleetHarborScene`) and Staff (`StaffFloor` phone branch) join Floor.
+- **Reset:** `shell/resetData.ts` (`ResetScope`, `resetMeta`, `normalizeScope`, `describeScope`) + `museumStore.reset()`. Settings → Reset lets the player tick run, save slots, museum, shop and tokens, achievements. Achievements imply shop. Settings are never touched.
+- **Tests:** `npm test` 383 passed (`resetData.test.ts`); e2e 17/17 (`reset.spec.ts` new).
+
 ## X. 1.0 Phases 1–3 + first hour — one look, every size, one voice (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **1.0**
 
 UI only. No sim, balance or save changes; pacing untouched.

@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MENUS, type MenuId } from '../../content/menus'
-import { panelTip } from '../../content/tips'
+import { panelTip, TIPS } from '../../content/tips'
 import { wikiForMenu } from '../../content/wiki/articles'
 import { useGame } from '../GameContext'
 import { Button } from '../kit/Button'
 import { requestWiki } from '../shell/uiBus'
 
-/** How long a help card may sit unread before it files itself. */
-const AUTO_FILE_MS = 60_000
+/** A card that sat on screen this long counts as read when you leave the room. */
+const SEEN_MS = 8_000
 /** After one tip is filed, the next waits: help should not arrive as a parade. */
 const QUIET_MS = 90_000
 let quietUntil = 0
@@ -37,25 +37,33 @@ export function PanelHelpButton() {
 export function PanelHelp() {
   const { state: s, dispatch, activeMenu } = useGame()
   const tutoring = !!s.tutorials?.active
-  const [, bump] = useState(0)
-  const quiet = Date.now() < quietUntil
-  const tip = !s.introSeen || tutoring || quiet ? null : panelTip(s, activeMenu)
-  const id = tip?.id
-  const file = (tipId: string) => {
-    quietUntil = Date.now() + QUIET_MS
-    dispatch({ type: 'dismissTip', id: tipId })
-    bump((n) => n + 1)
-  }
+  // Chosen once, when the room opens. A card never pops in mid-visit and never leaves on
+  // a timer: the page under it only moves when the player presses Got it.
+  const [tipId, setTipId] = useState<string | null>(() =>
+    !s.introSeen || tutoring || Date.now() < quietUntil ? null : (panelTip(s, activeMenu)?.id ?? null),
+  )
+  const shownAt = useRef(0)
+  const tip = tipId && !s.tipsSeen[tipId] ? (TIPS.find((t) => t.id === tipId) ?? null) : null
 
   useEffect(() => {
-    if (!id) return
-    const t = window.setTimeout(() => file(id), AUTO_FILE_MS)
-    return () => window.clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+    if (!tipId) return
+    shownAt.current = Date.now()
+    // Leaving the room after a real look files the tip, so it does not greet you again.
+    return () => {
+      if (Date.now() - shownAt.current >= SEEN_MS) {
+        quietUntil = Date.now() + QUIET_MS
+        dispatch({ type: 'dismissTip', id: tipId })
+      }
+    }
+  }, [tipId, dispatch])
 
   if (!tip) return null
   const menu = activeMenu as MenuId
+  const file = () => {
+    quietUntil = Date.now() + QUIET_MS
+    dispatch({ type: 'dismissTip', id: tip.id })
+    setTipId(null)
+  }
   return (
     <aside className="pf-help" aria-label="Tip">
       <span className="pf-help__mark" aria-hidden="true">
@@ -68,7 +76,7 @@ export function PanelHelp() {
             More
           </Button>
         ) : null}
-        <Button size="sm" tone="secondary" onClick={() => file(tip.id)}>
+        <Button size="sm" tone="secondary" onClick={file}>
           Got it
         </Button>
       </span>

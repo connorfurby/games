@@ -872,9 +872,12 @@
   }
 
   /* ── Stepper ────────────────────────────────────────────────── */
+  /* Stepper: two real buttons around a readable number. Never a full-width bar. */
   .gk-stepper {
     display: inline-flex;
-    align-items: center;
+    align-items: stretch;
+    width: fit-content;
+    max-width: 100%;
     border: 1px solid var(--ge-line-strong);
     border-radius: var(--r-md);
     background: var(--ge-sunken);
@@ -883,17 +886,38 @@
   .gk-stepper .gk-btn {
     border: 0;
     border-radius: 0;
-    min-width: 40px;
-    min-height: 40px;
-    font-size: var(--t-md);
+    min-width: 44px;
+    min-height: 44px;
+    background: var(--ge-raised);
+    font-size: var(--t-lg);
+    font-weight: 700;
+  }
+  .gk-stepper .gk-btn:first-child {
+    border-right: 1px solid var(--ge-line-strong);
+  }
+  .gk-stepper .gk-btn:last-child {
+    border-left: 1px solid var(--ge-line-strong);
+  }
+  .gk-stepper .gk-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ge-raised) 80%, var(--ge-ink) 20%);
   }
   .gk-stepper__value {
-    min-width: 3.5ch;
-    padding: 0 var(--s-2);
+    display: grid;
+    place-items: center;
+    min-width: 6ch;
+    padding: 0 var(--s-3);
     text-align: center;
-    font-size: var(--t-sm);
+    font-size: var(--t-md);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* A sheet or modal footer never ends in bare text: its quiet button gets an edge. */
+  .gk-sheet__foot .gk-btn--ghost,
+  .gk-modal__foot .gk-btn--ghost {
+    --_bg: var(--ge-raised);
+    --_line: var(--ge-line-strong);
+    min-width: 5.5rem;
   }
 
   /* ── Select ─────────────────────────────────────────────────── */

@@ -1650,6 +1650,50 @@ button.primary {
   border-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
+.settings-reset {
+  display: grid;
+  gap: 0.35rem;
+}
+.settings-reset__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.settings-reset__row:has(input:checked) {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+}
+.settings-reset__row input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.15rem;
+  accent-color: var(--danger);
+}
+.settings-reset__row strong {
+  display: block;
+  font: 600 0.875rem / 1.3 var(--font-ui);
+  color: var(--ink);
+}
+.settings-reset__row em {
+  display: block;
+  font: 400 0.75rem / 1.35 var(--font-ui);
+  color: var(--muted);
+}
+.settings-reset__acts {
+  display: flex;
+  justify-content: flex-end;
+}
+.settings-hint {
+  margin: 0;
+  font: 400 0.8125rem / 1.4 var(--font-ui);
+  color: var(--muted);
+}
+
 .settings-block h3 {
   margin: 0;
   font-family: var(--font-display);

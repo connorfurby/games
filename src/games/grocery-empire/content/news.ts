@@ -71,6 +71,7 @@ export const NEWS: NewsArticle[] = [
       { label: 'Fits your phone', text: 'Rooms re-lay for small screens, numbers stay readable, and the main button rides the bottom edge in thumb reach.', band: 'meta' },
       { label: 'Help in the room', text: 'Tap ? on any department for its wiki page. Tips show inside the room they are about.', band: 'meta', wiki: 'start-controls' },
       { label: 'One button system', text: 'Tomato is the free verb, tag yellow spends, quiet is navigation.', band: 'meta', wiki: 'start-controls' },
+      { label: 'Reset what you choose', text: 'Settings can now clear the run, save slots, museum, shop tokens or achievements, each on its own.', band: 'meta' },
       { label: 'Museum by wing', text: 'The Museum opens on a card per wing. Tap one to walk its wall.', band: 'meta' },
     ],
     body: [

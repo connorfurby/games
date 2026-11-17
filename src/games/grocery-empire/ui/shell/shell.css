@@ -1121,7 +1121,7 @@
       left: 0.75rem;
       right: 0.75rem;
       /* Above the tab bar and above the sticky primary verb. */
-      bottom: calc(var(--g2-hubs-h, 64px) + env(safe-area-inset-bottom) + 6.5rem);
+      bottom: calc(var(--g2-hubs-h, 64px) + env(safe-area-inset-bottom) + 7.75rem);
     }
 
     .g2-root .g2-toasts .ge-toast:nth-last-child(n + 2) {
@@ -1332,5 +1332,47 @@
       padding-block: var(--s-2);
       background: linear-gradient(to top, var(--ge-bg2, #101a18) 70%, transparent);
     }
+  }
+
+  /* Notices step aside for an open side sheet; a bottom sheet owns the bottom edge. */
+  .ge-root:has(.gk-sheet--side) .g2-toasts {
+    right: calc(min(420px, 100vw) + 1rem);
+  }
+  .ge-root:has(.gk-sheet--bottom) .g2-toasts {
+    display: none;
+  }
+
+  /*
+   * Alert pill: hangs from the HUD's bottom edge instead of taking a row or a slot in the
+   * controls. It can come and go without moving anything else on screen.
+   */
+  .g2-hud .g2-alert--hang {
+    position: absolute;
+    top: 100%;
+    right: var(--s-3);
+    transform: translateY(-50%);
+    z-index: 2;
+    max-width: min(26rem, calc(100vw - 2 * var(--s-3)));
+    min-height: 26px;
+    padding: 0.2rem 0.7rem;
+    font-size: var(--t-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: var(--shadow-2);
+    background-color: var(--ge-bg);
+  }
+  .g2-root .g2-main {
+    padding-top: 1.15rem;
+  }
+  @media (max-width: 720px) {
+    .g2-root .g2-main {
+      padding-top: 1.05rem;
+    }
+  }
+
+  /* The reason line under a primary verb keeps its row whether or not there is a reason. */
+  .pf__primary {
+    min-height: calc(52px + var(--t-xs-lh, 1rem) + var(--s-1));
   }
 }

@@ -110,7 +110,7 @@ export function Hud({
       {alert ? (
         <button
           type="button"
-          className={`g2-alert g2-alert--compact is-${alert.tone}`}
+          className={`g2-alert g2-alert--hang is-${alert.tone}`}
           onClick={() => onMenu(alert.menu)}
           title={`Open ${MENUS[alert.menu].name}`}
         >
@@ -119,16 +119,6 @@ export function Hud({
       ) : null}
 
       <div className="g2-hud__controls">
-        {alert ? (
-          <button
-            type="button"
-            className={`g2-alert g2-alert--wide is-${alert.tone}`}
-            onClick={() => onMenu(alert.menu)}
-            title={`Open ${MENUS[alert.menu].name}`}
-          >
-            {alert.text}
-          </button>
-        ) : null}
         <div className="g2-transport" role="group" aria-label="Time">
           <button
             type="button"

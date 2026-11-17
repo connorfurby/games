@@ -19,8 +19,14 @@ test('a tip is a card in the room and Got it files it', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/play/grocery-empire/dev')
   await page.getByTitle('Saves, settings and tools').click()
-  await page.locator('.ge-dev-stage', { hasText: 'Era 0' }).first().click()
+  await page.locator('.ge-dev-stage', { hasText: 'Era 1' }).first().click()
   await page.keyboard.press('Escape')
+  // A tip is picked when a room opens (never popped in mid-visit), so walk out and back in.
+  await page.locator('.g2-subtab', { hasText: 'Backroom' }).click()
+  await expect(page.locator('.g2-subtab.is-active', { hasText: 'Backroom' })).toBeVisible()
+  await expect(page.locator('.pf__primary button').first()).toBeVisible()
+  await page.waitForTimeout(400) // let the room swap finish so Floor opens fresh
+  await page.locator('.g2-subtab', { hasText: 'Floor' }).click()
 
   const tip = page.locator('.pf-help')
   await expect(tip).toBeVisible()
