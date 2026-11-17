@@ -40,6 +40,7 @@ export function BillboardScene() {
 
   return (
     <RoomScene
+      phoneChipsOnly
       label={`Billboard, ad level ${ads}${celebrity ? `, celebrity ${clock(celebLeft)}` : ''}${
         war ? ', coupon war' : ''
       }${air.length ? `, broadcasting to ${air.join(' and ')}` : ''}${wire ? ', wire ad running' : ''}`}

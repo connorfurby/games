@@ -39,11 +39,12 @@ export function BuildSiteScene({ focusTrack }: { focusTrack?: string } = {}) {
     <RoomScene
       label={`Build site, ${tiers} tiers built${queued ? `, ${queued} queued` : ''}`}
       chips={[
-        { label: 'Track', value: sil?.label ?? 'Site' },
-        { label: 'Tier', value: `T${focusLvl}` },
+        { label: 'Building', value: sil?.label ?? 'Site' },
+        { label: 'Level', value: String(focusLvl) },
         { label: 'Facing', value: facingLabel.length > 18 ? facingLabel.slice(0, 16) + '…' : facingLabel },
-        { label: 'Upkeep', value: upkeepMin > 0 ? `$${upkeepMin}/m` : '—' },
+        { label: 'Upkeep', value: upkeepMin > 0 ? `$${upkeepMin}/min` : 'none' },
       ]}
+      phoneChipsOnly
       skyTop="#1c2530"
       skyBottom="#34402f"
     >
