@@ -2,6 +2,9 @@ import { CHARTER_AXES } from '../../content/lateEras'
 import type { GameState } from '../../sim/state'
 import { Hit } from '../scenes/room/Hit'
 
+/** Short labels under the charter bars; the full name is in the tooltip. */
+const AXIS_SHORT: Record<string, string> = { shell: 'Hull', replication: 'Copy', survey: 'Scout', transit: 'Speed', brand: 'Brand' }
+
 /**
  * Barges on the dark water, eating the biomass.
  * Pier labels carry barge count + biomass %; keel convoys labeled; Hits → launch / charter.
@@ -74,7 +77,7 @@ export function FleetHarbor({ state: s, motion }: { state: GameState; motion: bo
               <g key={a.id} transform={`translate(${16 + i * 26} 34)`}>
                 <rect y={70 - Math.min(60, lvl * 6)} width="16" height={Math.min(60, lvl * 6)} className="fh-pip" />
                 <text y="84" className="fh-pip-label">
-                  {a.name.slice(0, 3)}
+                  {AXIS_SHORT[a.id] ?? a.name}
                 </text>
               </g>
             )

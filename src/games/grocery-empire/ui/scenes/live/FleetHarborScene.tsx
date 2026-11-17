@@ -6,6 +6,9 @@ import { usePhone } from '../../kit/hooks'
 import { Badge, Hit, Person, RoomScene, Sign } from '../room'
 import { HarborOrnaments } from './HarborOrnaments'
 
+/** Short labels under the charter bars; the full name is in the tooltip. */
+const AXIS_SHORT: Record<string, string> = { shell: 'Hull', replication: 'Copy', survey: 'Scout', transit: 'Speed', brand: 'Brand' }
+
 interface Pt {
   x: number
   y: number
@@ -153,7 +156,7 @@ export function FleetHarborScene() {
               <rect width="18" height="70" rx="3" fill="#1e2836" />
               <rect y={70 - h} width="18" height={h} rx="3" fill="#d9a441" opacity="0.9" />
               <text className="rm-sign--sm" y="84" x="9" textAnchor="middle" fontSize="9">
-                {a.name.slice(0, 3)}
+                {AXIS_SHORT[a.id] ?? a.name}
               </text>
             </g>
           )

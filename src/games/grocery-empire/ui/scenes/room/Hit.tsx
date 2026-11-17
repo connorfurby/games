@@ -1,6 +1,8 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useGame } from '../../GameContext'
 
+const MIN_TAP = 48
+
 /**
  * Tappable SVG region. Jumps to a menu and/or scrolls to a coach/suggest target.
  */
@@ -88,7 +90,14 @@ export function Hit({
     >
       <title>{label}</title>
       <rect className="rm-hit__ring" x={x - 3} y={y - 3} width={w + 6} height={h + 6} rx="6" />
-      <rect x={x} y={y} width={w} height={h} fill="transparent" />
+      {/* Small zones get an invisible pad so a thumb can hit them on a phone. */}
+      <rect
+        x={x - Math.max(0, (MIN_TAP - w) / 2)}
+        y={y - Math.max(0, (MIN_TAP - h) / 2)}
+        width={Math.max(w, MIN_TAP)}
+        height={Math.max(h, MIN_TAP)}
+        fill="transparent"
+      />
       {children}
     </g>
   )
