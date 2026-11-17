@@ -28,10 +28,10 @@ export function BuildSiteScene({ focusTrack }: { focusTrack?: string } = {}) {
   const ownedFacing = focusTrack ? ownedVariantsForTrack(s, focusTrack as BuildFilter) : []
   const pending = focusTrack ? pendingVariantChoice(s, focusTrack as BuildFilter) : null
   const facingLabel = pending
-    ? 'Choose'
+    ? 'Pick one'
     : ownedFacing.length
       ? ownedFacing.map((v) => v.name).join(' · ')
-      : '—'
+      : 'none yet'
   const faceTint = ownedFacing[0] ? (ownedFacing[0].safe ? '#7cc47f' : '#e0a64a') : sil?.tint ?? '#c9a15a'
   const upkeepMin = BUILD_TRACKS.reduce((n, t) => n + (t.tiers[s.builds?.[t.id] ?? 0]?.upkeepPerMin ?? 0), 0)
 
@@ -41,7 +41,7 @@ export function BuildSiteScene({ focusTrack }: { focusTrack?: string } = {}) {
       chips={[
         { label: 'Building', value: sil?.label ?? 'Site' },
         { label: 'Level', value: String(focusLvl) },
-        { label: 'Facing', value: facingLabel.length > 18 ? facingLabel.slice(0, 16) + '…' : facingLabel },
+        { label: 'Style', value: facingLabel.length > 18 ? facingLabel.slice(0, 16) + '…' : facingLabel },
         { label: 'Upkeep', value: upkeepMin > 0 ? `$${upkeepMin}/min` : 'none' },
       ]}
       phoneChipsOnly
@@ -55,7 +55,7 @@ export function BuildSiteScene({ focusTrack }: { focusTrack?: string } = {}) {
           y={55}
           w={sil.w + 80}
           h={sil.h + 90}
-          label={pending ? `Facing open on ${sil.label}` : `Selected ${sil.label}`}
+          label={pending ? `Pick a style for ${sil.label}` : `Selected ${sil.label}`}
           coachId={focusTrack ? `build-${focusTrack}` : 'build-storefront'}
           menu="build"
         >
@@ -98,10 +98,10 @@ export function BuildSiteScene({ focusTrack }: { focusTrack?: string } = {}) {
               {sil.label}
             </text>
             <text x={(sil.w + 40) / 2} y={32} textAnchor="middle" fontSize="9" fill="#9aa7b4">
-              {pending ? 'Facing open' : ownedFacing[0] ? BUILD_VARIANT_BY_ID[ownedFacing[0].id]?.name : `Tier ${focusLvl}`}
+              {pending ? 'Pick a style' : ownedFacing[0] ? BUILD_VARIANT_BY_ID[ownedFacing[0].id]?.name : `Level ${focusLvl}`}
             </text>
           </g>
-          <Sign x={90} y={88} text={`${floors} floor${floors === 1 ? '' : 's'} · ${tiers} tiers`} />
+          <Sign x={90} y={88} text={`${floors} floor${floors === 1 ? '' : 's'} · ${tiers} levels built`} />
         </Hit>
       ) : (
         <Hit x={80} y={70} w={220} h={180} label="Scaffold" coachId="build-storefront" menu="build">
@@ -116,7 +116,7 @@ export function BuildSiteScene({ focusTrack }: { focusTrack?: string } = {}) {
       )}
 
       <CrateStack x={380} y={ROOM_GROUND - 30} count={Math.min(12, tiers)} cap={12} />
-      <Sign x={380} y={ROOM_GROUND + 10} text={`${ownedTracks}/${trackCount} tracks`} small />
+      <Sign x={380} y={ROOM_GROUND + 10} text={`${ownedTracks} of ${trackCount} building types`} small />
 
       {queued ? (
         <>

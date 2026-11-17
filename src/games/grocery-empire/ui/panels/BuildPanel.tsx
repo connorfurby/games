@@ -177,7 +177,7 @@ export function BuildPanel() {
         tray={{
           primary: facingReady && safePending && track
             ? {
-                label: `Facing · ${safePending.name}`,
+                label: `Style · ${safePending.name}`,
                 tone: 'free',
                 feedback: true,
                 coachId: suggested ? `build-${track.id}` : undefined,
@@ -223,7 +223,7 @@ export function BuildPanel() {
             },
             {
               key: 'sell',
-              label: 'Sell last',
+              label: 'Sell top level',
               disabled: !track || lvl <= (track.id === 'storefront' || track.id === 'storage' ? 1 : 0),
               onClick: () => {
                 if (!track || !current) return
@@ -231,7 +231,7 @@ export function BuildPanel() {
                 const refund = round2((current.cost ?? 0) * frac)
                 void confirm({
                   title: `Sell ${current.name}?`,
-                  body: `Refunds ${money(refund, numberFormat)}. Effects from that tier drop.`,
+                  body: `Refunds ${money(refund, numberFormat)}. You lose what that level did.`,
                   confirmLabel: `Sell · +${money(refund, numberFormat)}`,
                   tone: 'danger',
                 }).then((ok) => {
@@ -243,14 +243,14 @@ export function BuildPanel() {
               ? [
                   {
                     key: 'hibernate',
-                    label: 'Hibernate',
-                    fact: 'partial',
+                    label: 'Close for now',
+                    fact: 'part refund',
                     onClick: () => {
                       if (!track) return
                       void confirm({
-                        title: `Hibernate ${current?.name}?`,
-                        body: 'Partial refund. Its effects stop until you build the tier again.',
-                        confirmLabel: 'Hibernate',
+                        title: `Close ${current?.name} for now?`,
+                        body: 'You get part of the cost back. It stops working until you build that level again.',
+                        confirmLabel: 'Close it',
                         tone: 'danger',
                       }).then((ok) => {
                         if (ok) dispatch({ type: 'hibernateBuild', track: track.id })
@@ -308,7 +308,7 @@ export function BuildPanel() {
 
             {facingReady && pending ? (
               <div className="bd-facing" aria-label="Facing choice">
-                <p className="bd-facing__title">Facing · choose one</p>
+                <p className="bd-facing__title">Style · choose one</p>
                 <div className="bd-facing__grid">
                   {pending.map((v) => (
                     <button
@@ -331,7 +331,7 @@ export function BuildPanel() {
                 {owned.map((v) => (
                   <ActionRow
                     key={v.id}
-                    label={`Facing · ${v.name}`}
+                    label={`Style · ${v.name}`}
                     fact={v.safe ? 'Safe' : 'Bold'}
                     trail={v.blurb}
                     disabled
