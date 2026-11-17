@@ -809,7 +809,7 @@
 .co-center--sheet {
   align-items: stretch;
   width: min(100%, 36rem);
-  max-height: min(62vh, 28rem);
+  max-height: min(70dvh, 32rem);
   overflow: auto;
   padding: 0.25rem;
 }

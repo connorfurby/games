@@ -220,11 +220,13 @@ export function AchievementsPage() {
               </button>
             ))}
           </div>
-          <div className="aw-bar__share">
-            <Button size="sm" tone="secondary" disabled={picked.length === 0} onClick={sharePicked}>
-              Share picture{picked.length ? ` (${picked.length})` : ''}
-            </Button>
-          </div>
+          {picked.length > 0 ? (
+            <div className="aw-bar__share">
+              <Button tone="primary" onClick={sharePicked}>
+                Save picture ({picked.length})
+              </Button>
+            </div>
+          ) : null}
         </div>
 
         {AWARD_GROUPS.map((g) => {
@@ -317,7 +319,7 @@ export function AchievementsPage() {
                       {earned && entry ? (
                         <>
                           <Button size="sm" onClick={() => togglePick(a.id)}>
-                            {picked.includes(a.id) ? 'Remove from picture' : 'Add to share picture'}
+                            {picked.includes(a.id) ? 'Remove from picture' : 'Add to picture'}
                           </Button>
                           <Button size="sm" tone="secondary" onClick={() => downloadAchievementShareCard(a, entry.unlockedAt)}>
                             Save as a card

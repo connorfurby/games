@@ -12,6 +12,8 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Memo desk hides search, Ready-only, Jump, and empty Standing/Filed tabs until there is enough to sort.
 - Plain words: Unload → Unpack everywhere, "drifting" stores → "need a visit", Books chips Burn/Side → Costs/Other, Attention tip rewritten.
 - Starter crate button only appears when usable (law 15).
+- Museum (phone): chest reveal now portals to the game root and covers the money bar; page title and gallery come first, stats move under Chests; duplicate "Active perks" stat removed.
+- Awards: the save-picture button only appears once you pick awards (was a dead button).
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**
 

@@ -1,6 +1,8 @@
 import { sfx } from '@/shared/audio'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { overlayRoot } from '../kit/hooks'
 import { RARITY_INFO, WING_BY_ID } from '../../content/relics'
 import { openChest, type Chest, type OpenResult } from '../../sim/museum'
 import { perkText } from '../../content/relicPerks'
@@ -170,7 +172,8 @@ export function ChestOpener({
   const newCount = opened.filter((o) => o.isNew).length
   const dustTotal = opened.reduce((n, o) => n + (o.isNew ? 0 : o.dust), 0)
 
-  return (
+  // Portal to the game root so the reveal covers the money bar and goal strip too.
+  const tree = (
     <div
       className={`co co--${lead.rarity} co--${phase}${isBulk ? ' co--bulk' : ''}`}
       role="dialog"
@@ -317,4 +320,6 @@ export function ChestOpener({
       </div>
     </div>
   )
+  const root = overlayRoot()
+  return root ? createPortal(tree, root) : tree
 }

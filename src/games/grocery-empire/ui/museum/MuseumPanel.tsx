@@ -207,77 +207,6 @@ export function MuseumPanel() {
 
   return (
     <section className="ge-panel mu" aria-label="Relic Museum">
-      <header className="mu-hero">
-        <div className="mu-hero__title">
-          <p>Relics stay on this wall through every run, Rebrand and reset.</p>
-        </div>
-        <div className="mu-hero__stats">
-          <div className="mu-stat mu-stat--wide">
-            <span>Relics</span>
-            <strong>
-              {owned} <small>/ {total}</small>
-            </strong>
-            <i className="mu-bar">
-              <b style={{ transform: `scaleX(${owned / total})` }} />
-            </i>
-          </div>
-          <div className="mu-stat">
-            <span>Dust</span>
-            <strong className="mu-dust">{m.dust}</strong>
-          </div>
-          <label className="mu-stat mu-stat--select">
-            <span>Auto-dust</span>
-            <Select
-              aria-label="Auto-dust rarity ceiling"
-              value={(m.autoDust ?? '') as '' | Rarity}
-              options={[
-                { value: '' as const, label: 'Off' },
-                ...RARITIES.map((r) => ({
-                  value: r,
-                  label: `${RARITY_INFO[r].label} and below`,
-                })),
-              ]}
-              onChange={async (next) => {
-                if (!next) {
-                  museumStore.update((save) => setAutoDust(save, null))
-                  syncMuseum(dispatch)
-                  return
-                }
-                const rarity = next as Rarity
-                const name = RARITY_INFO[rarity].label
-                const ok = await confirm({
-                  title: 'Auto-dust relics?',
-                  body: `Dust new ${name} relics, and anything more common?`,
-                  tone: 'danger',
-                  confirmLabel: 'Dust them',
-                })
-                if (!ok) return
-                museumStore.update((save) => setAutoDust(save, rarity))
-                dispatch({ type: 'setAutoDust', rarityCeiling: rarity })
-                syncMuseum(dispatch)
-              }}
-            />
-          </label>
-          <div className="mu-stat">
-            <span>Wings done</span>
-            <strong>
-              {done.length} <small>/ {WINGS.length}</small>
-            </strong>
-          </div>
-          <div className="mu-stat">
-            <span>Active perks</span>
-            <strong>{owned}</strong>
-          </div>
-        </div>
-      </header>
-
-      {showPerks ? <PerkTotals /> : null}
-
-      <WingSockets
-        cap={socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'] || gs.horizon.socketsUnlocked >= 5)}
-        dispatch={dispatch}
-      />
-
       <HubStage
         purpose={MENUS.relics.purpose}
         department={MENUS.relics.name}
@@ -354,6 +283,73 @@ export function MuseumPanel() {
           </div>
         </details>
       </section>
+      <header className="mu-hero">
+        <div className="mu-hero__title">
+          <p>Relics stay on this wall through every run, Rebrand and reset.</p>
+        </div>
+        <div className="mu-hero__stats">
+          <div className="mu-stat mu-stat--wide">
+            <span>Relics</span>
+            <strong>
+              {owned} <small>/ {total}</small>
+            </strong>
+            <i className="mu-bar">
+              <b style={{ transform: `scaleX(${owned / total})` }} />
+            </i>
+          </div>
+          <div className="mu-stat">
+            <span>Dust</span>
+            <strong className="mu-dust">{m.dust}</strong>
+          </div>
+          <label className="mu-stat mu-stat--select">
+            <span title="New relics at or below this rarity turn straight into dust.">Auto-dust</span>
+            <Select
+              aria-label="Auto-dust rarity ceiling"
+              value={(m.autoDust ?? '') as '' | Rarity}
+              options={[
+                { value: '' as const, label: 'Off' },
+                ...RARITIES.map((r) => ({
+                  value: r,
+                  label: `${RARITY_INFO[r].label} and below`,
+                })),
+              ]}
+              onChange={async (next) => {
+                if (!next) {
+                  museumStore.update((save) => setAutoDust(save, null))
+                  syncMuseum(dispatch)
+                  return
+                }
+                const rarity = next as Rarity
+                const name = RARITY_INFO[rarity].label
+                const ok = await confirm({
+                  title: 'Auto-dust relics?',
+                  body: `Dust new ${name} relics, and anything more common?`,
+                  tone: 'danger',
+                  confirmLabel: 'Dust them',
+                })
+                if (!ok) return
+                museumStore.update((save) => setAutoDust(save, rarity))
+                dispatch({ type: 'setAutoDust', rarityCeiling: rarity })
+                syncMuseum(dispatch)
+              }}
+            />
+          </label>
+          <div className="mu-stat">
+            <span>Wings done</span>
+            <strong>
+              {done.length} <small>/ {WINGS.length}</small>
+            </strong>
+          </div>
+        </div>
+      </header>
+
+      {showPerks ? <PerkTotals /> : null}
+
+      <WingSockets
+        cap={socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'] || gs.horizon.socketsUnlocked >= 5)}
+        dispatch={dispatch}
+      />
+
       <div className="mu-wings-seg">
         <SegmentedControl
           aria-label="Wings"
