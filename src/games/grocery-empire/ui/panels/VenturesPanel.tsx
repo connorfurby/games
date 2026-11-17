@@ -10,7 +10,7 @@ import { useGame, useIsSuggested } from '../GameContext'
 import { money, rate } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Icon } from '../icons/Icon'
-import { Button, Card, EmptyState, Meter, Sheet } from '../kit'
+import { Button, Card, EmptyState, Meter, Sheet, Toggle } from '../kit'
 import type { VerbTrayProps } from '../play'
 import { EndlessBanNote } from '../horizon/EndlessBanNote'
 import { VenturesStreet } from '../ventures/VenturesStreet'
@@ -129,20 +129,10 @@ export function VenturesPanel() {
             ? [
                 {
                   key: 'sweep',
-                  label: 'Upgrade all',
+                  label: 'Upgrade every till',
                   disabled: !canSweep,
                   title: 'Raises open tills in order of income per dollar. Does not open a new one.',
                   onClick: runSweep,
-                },
-              ]
-            : []),
-          ...(open.length > 0
-            ? [
-                {
-                  key: 'ready',
-                  label: 'Ready only',
-                  fact: readyOnly ? 'on' : 'off',
-                  onClick: () => setReadyOnly((v) => !v),
                 },
               ]
             : []),
@@ -161,16 +151,15 @@ export function VenturesPanel() {
         },
         secondaries: [
           ...(anyOpened
-            ? [{ key: 'sweep', label: 'Upgrade all', disabled: !canSweep, onClick: runSweep }]
+            ? [{ key: 'sweep', label: 'Upgrade every till', disabled: !canSweep, onClick: runSweep }]
             : []),
-          { key: 'ready', label: 'Ready only', fact: readyOnly ? 'on' : 'off', onClick: () => setReadyOnly((v) => !v) },
         ],
       }
     }
     if (anyOpened) {
       return {
         primary: {
-          label: 'Upgrade all',
+          label: 'Upgrade every till',
           tone: 'primary',
           size: 'lg',
           disabled: !canSweep,
@@ -183,7 +172,6 @@ export function VenturesPanel() {
             ? `Need ${money(nextOpen.def.openCost, numberFormat)} to open ${nextOpen.def.name}, or cash for a level.`
             : 'No open till is affordable to raise yet.',
         secondaries: [
-          { key: 'ready', label: 'Ready only', fact: readyOnly ? 'on' : 'off', onClick: () => setReadyOnly((v) => !v) },
         ],
       }
     }
@@ -226,6 +214,13 @@ export function VenturesPanel() {
         </div>
       ) : null}
 
+      {open.length > 0 ? (
+        <div className="p6-row">
+          <Toggle checked={readyOnly} onChange={setReadyOnly}>
+            Only show tills with something to collect or buy
+          </Toggle>
+        </div>
+      ) : null}
       {readyOnly && open.length > 0 && shown.length === 0 ? (
         <p className="ge-empty">Nothing ready right now.</p>
       ) : null}
@@ -455,9 +450,7 @@ export function VenturesPanel() {
                   <Meter value={stored} max={Math.max(1, storeCap)} label={money(stored, numberFormat)} />
                 </>
               ) : (
-                <p className="ge-muted" style={{ margin: '0.35rem 0 0', fontSize: 'var(--t-2xs)' }}>
-                  After it opens, Upgrade on this card raises the till.
-                </p>
+                null
               )}
             </Card>
           )
@@ -467,11 +460,11 @@ export function VenturesPanel() {
       {listed.length === 0 ? (
         <EmptyState
           title="No side tills unlocked yet"
-          body={nextLocked ? `${nextLocked.def.name} opens at ${nextLocked.def.opensAt}.` : 'Keep growing the store.'}
+          body={nextLocked ? `${nextLocked.def.name} is first. Unlocked by: ${nextLocked.def.opensAt}.` : 'Keep growing the store.'}
         />
       ) : nextLocked ? (
         <p className="ge-muted">
-          Next till: {nextLocked.def.name} opens at {nextLocked.def.opensAt}.
+          Next side business: {nextLocked.def.name}. Unlocked by: {nextLocked.def.opensAt}.
         </p>
       ) : null}
       </HubStage>

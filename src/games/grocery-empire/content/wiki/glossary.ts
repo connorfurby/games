@@ -240,7 +240,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'score',
     era: 2,
     icon: 'empire',
-    short: 'Baskets become a rank. Rank opens upgrade bands; trait points buy doctrines.',
+    short: 'Baskets become a rank. Rank opens upgrade bands; trait points buy perks.',
   },
   {
     id: 'momentum',

@@ -713,4 +713,20 @@
   .pf-desk--doctrine .st-view {
     min-height: 28rem;
   }
+
+  /* Strategy: doctrines you hold, as small tappable tags. */
+  .st-owned {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+  }
+  .st-owned__chip {
+    cursor: pointer;
+    font: 600 var(--t-xs) / 1.2 var(--g2-ui);
+    color: var(--ge-ink);
+  }
+  .st-owned__chip:hover {
+    border-color: var(--ge-line-strong);
+  }
 }

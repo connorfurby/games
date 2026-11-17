@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useGame } from '../../GameContext'
 import { Hit } from './Hit'
 
 /** Furnished idle state — never a blank sky. */
@@ -25,6 +26,9 @@ export function RoomEmpty({
   onActivate?: () => void
   furniture?: ReactNode
 }) {
+  const { activeMenu } = useGame()
+  // A "go here →" link only when it goes somewhere: never a link to the page you are on.
+  const showCta = !!cta && (!!onActivate || (!!menu && menu !== activeMenu))
   return (
     <g className="rm-empty">
       {furniture}
@@ -35,7 +39,7 @@ export function RoomEmpty({
       <text className="rm-empty__body" x={x + w / 2} y={y + 50} textAnchor="middle">
         {body}
       </text>
-      {cta ? (
+      {showCta ? (
         <Hit
           x={x + w / 2 - 80}
           y={y + 58}

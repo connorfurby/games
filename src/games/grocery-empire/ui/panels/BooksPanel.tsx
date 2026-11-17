@@ -19,7 +19,7 @@ import { canResolveBoard } from '../../sim/systems/capital'
 import type { BoardAgenda } from '../../sim/state'
 import type { GameState, SalesBottleneck } from '../../sim/state'
 import { useGame } from '../GameContext'
-import { money, qty, rate } from '../format'
+import { money, qty } from '../format'
 import { Button, Card, DataTable, Disclosure, Meter, Sparkline, Stat, Tabs } from '../kit'
 import type { Column } from '../kit'
 import { LedgerScene } from '../scenes/live/LedgerScene'
@@ -173,19 +173,19 @@ function BooksPanelInner() {
 
   type FlowRow = { key: string; label: string; value: string; title?: string; neg?: boolean }
   const flowRows: FlowRow[] = [
-    { key: 'store', label: 'Store revenue', value: rate(storeRev) },
-    { key: 'venture', label: 'Venture fill', value: rate(ventureRate) },
-    { key: 'invest', label: 'Invest yield', value: rate(investYield) },
-    { key: 'rent', label: 'Rent', value: rate(rent) },
-    { key: 'wages', label: 'Wages', value: rate(wages) },
-    { key: 'burn', label: 'Burn', value: rate(burn), title: 'Cost + rent + wages' },
-    { key: 'net', label: 'Net', value: rate(net), neg: net < 0 },
+    { key: 'store', label: 'Sales', value: `${money(storeRev, numberFormat)}/s` },
+    ...(ventureRate > 0 ? [{ key: 'venture', label: 'Ventures', value: `${money(ventureRate, numberFormat)}/s` }] : []),
+    ...(investYield > 0 ? [{ key: 'invest', label: 'Investments', value: `${money(investYield, numberFormat)}/s` }] : []),
+    { key: 'rent', label: 'Rent', value: `−${money(rent, numberFormat)}/s`, neg: true },
+    { key: 'wages', label: 'Wages', value: `−${money(wages, numberFormat)}/s`, neg: true },
+    { key: 'burn', label: 'All costs', value: `−${money(burn, numberFormat)}/s`, title: 'Stock, rent and wages together', neg: true },
+    { key: 'net', label: 'You keep', value: `${money(net, numberFormat)}/s`, neg: net < 0 },
   ]
   const flowCols: Column<FlowRow>[] = [
-    { key: 'line', header: 'Line', render: (r) => (r.key === 'net' ? <strong>{r.label}</strong> : r.label) },
+    { key: 'line', header: '', render: (r) => (r.key === 'net' ? <strong>{r.label}</strong> : r.label) },
     {
       key: 'val',
-      header: 'Per sec',
+      header: 'Per second',
       align: 'end',
       render: (r) => (
         <span className={r.neg ? 'lh-neg' : undefined} title={r.title}>
@@ -217,55 +217,32 @@ function BooksPanelInner() {
 
   const wageShare = storeRev > 0.01 ? wages / storeRev : 0
 
-  const kpiChips = (
-    <div className="lh-chips" data-coach-id="books-kpis">
-      <StatusChip tone="idle">Cash {money(s.cash, numberFormat)}</StatusChip>
-      <StatusChip tone={net < 0 ? 'warn' : 'ready'} title="Till income minus burn, per second">
-        Net {rate(net)}
-      </StatusChip>
-      <StatusChip tone="idle" title="Cost + rent + wages">
-        Burn {rate(burn)}
-      </StatusChip>
-      <StatusChip
-        tone={net < -1e-6 ? 'warn' : 'ready'}
-        title="Cash ÷ net loss per second. Steady when income covers the bill."
-      >
-        Runway {net >= -1e-6 ? 'steady' : etaLabel(runwaySec)}
-      </StatusChip>
-    </div>
-  )
+  const kpiChips =
+    net < -1e-6 ? (
+      <div className="lh-chips" data-coach-id="books-kpis">
+        <StatusChip tone="warn" title="Cash ÷ net loss per second.">
+          Losing money · cash lasts {etaLabel(runwaySec)}
+        </StatusChip>
+      </div>
+    ) : (
+      <div data-coach-id="books-kpis" hidden />
+    )
 
   // The tray primary is the bottleneck jump; with no bottleneck it falls back to the next free move.
   const incorporateOpen = s.era >= 2 && !s.incorporated
-  const tray: VerbTrayProps = target
-    ? {
-        primary: {
-          label: `Go to ${target.label}`,
-          tone: 'free',
-          size: 'lg',
-          coachId: 'books-bottleneck',
-          onClick: () => setActiveMenu(target.menu),
-        },
-      }
-    : incorporateOpen
+  const incorporateCost = `${money(CAPITAL.incorporateCash, numberFormat)} + ${CAPITAL.incorporateRep} Reputation`
+  // A real action only: incorporating when it is possible. Advice lives in the callout below.
+  const tray: VerbTrayProps | undefined =
+    incorporateOpen && !incorporateBlocked
       ? {
           primary: {
-            label: `Incorporate · $${CAPITAL.incorporateCash} + ${CAPITAL.incorporateRep} Rep`,
+            label: `Incorporate · ${incorporateCost}`,
             tone: 'primary',
             size: 'lg',
-            disabled: !!incorporateBlocked,
             onClick: () => dispatch({ type: 'incorporate' }),
           },
-          failReason: incorporateBlocked,
         }
-      : {
-          primary: {
-            label: 'Back to the floor',
-            tone: 'free',
-            size: 'lg',
-            onClick: () => setActiveMenu('floor'),
-          },
-        }
+      : undefined
 
   return (
     <LateHubShell
@@ -277,7 +254,16 @@ function BooksPanelInner() {
       {kpiChips}
 
       {target ? (
-        <HubCallout title={bottleneck.label} tone={bottleneck.kind !== 'demand' ? 'warn' : undefined} />
+        <HubCallout
+          title={bottleneck.label}
+          tone={bottleneck.kind !== 'demand' ? 'warn' : undefined}
+          coachId="books-bottleneck"
+          action={
+            <Button tone="secondary" onClick={() => setActiveMenu(target.menu)}>
+              Open {target.label}
+            </Button>
+          }
+        />
       ) : null}
 
       {boardLifted ? boardCard : null}
@@ -285,9 +271,7 @@ function BooksPanelInner() {
       {buildUpkeepSec > 0 ? (
         <StatusChip tone={upkeepWarn ? 'warn' : 'ready'} title="Building upkeep">
           {upkeepWarn ? (
-            <button type="button" className="pf-chip__link" onClick={() => setActiveMenu('build')}>
-              Upkeep {money(buildUpkeepMin, numberFormat)}/min exceeds cash/s — open Build
-            </button>
+            <>Building upkeep {money(buildUpkeepMin, numberFormat)}/min is more than you earn</>
           ) : (
             <>Building upkeep {money(buildUpkeepMin, numberFormat)}/min</>
           )}
@@ -413,11 +397,11 @@ function BooksPanelInner() {
                 <p className="lh-note">Incorporated.</p>
               ) : incorporateBlocked ? (
                 <p className="lh-note" data-coach-id="books-incorporate">
-                  Incorporating costs ${CAPITAL.incorporateCash} and {CAPITAL.incorporateRep} Reputation. Not yet: {incorporateBlocked}
+                  Incorporating costs {incorporateCost}. {incorporateBlocked}
                 </p>
               ) : (
                 <Button tone="primary" coachId="books-incorporate" onClick={() => dispatch({ type: 'incorporate' })}>
-                  Incorporate · ${CAPITAL.incorporateCash} + {CAPITAL.incorporateRep} Reputation
+                  Incorporate · {incorporateCost}
                 </Button>
               )}
             </div>

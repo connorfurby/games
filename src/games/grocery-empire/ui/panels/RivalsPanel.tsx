@@ -1,3 +1,4 @@
+import { MENUS } from '../../content/menus'
 import { useState, type ReactNode } from 'react'
 import { RIVALS, type RivalDef } from '../../content/rivals'
 import { RIVAL_CHAINS } from '../../sim/balance'
@@ -179,8 +180,6 @@ export function RivalsPanel() {
   const cut = 1 - rivalDemandMul(s) * keelDemandMul(s)
   const owned = boughtRivalStores(s)
   const shown = RIVALS.filter((r) => r.era <= s.era + 1)
-  const boughtCount = RIVALS.filter((r) => s.rivals[r.id]?.bought).length + (keelOn && keel.bought ? 1 : 0)
-  const boughtTotal = RIVALS.length + (keelOn ? 1 : 0)
   const keelBuyCheck = can(s, { type: 'buyoutKeel' })
   const keelFrozen = Math.max(0, keel.frozenUntil - s.time)
   const keelPull = keel.bought ? 0 : 1 - keelDemandMul(s)
@@ -207,7 +206,7 @@ export function RivalsPanel() {
     <div className="rv">
       <section className="ge-panel">
         <PlayFrame
-          purpose="Each rival store pulls shoppers away until you beat it back or buy it."
+          purpose={MENUS.rivals.purpose}
           department="Rivals"
           room={<RivalStreetScene />}
           tray={{
@@ -230,16 +229,12 @@ export function RivalsPanel() {
                     cost: money(keelBuyoutCost(s), numberFormat),
                     onClick: () => setKeelBuy(true),
                   }
-                : {
-                    label: 'Street quiet',
-                    tone: 'ghost',
-                    disabled: true,
-                  },
+                : null,
             failReason:
               activeRival && activeSt && !activeSt.bought && !activeBuy.ok
                 ? activeBuy.reason
                 : cut > 0.001
-                  ? `−${(cut * 100).toFixed(1)}% shoppers to rivals`
+                  ? `Rivals take ${(cut * 100).toFixed(1)}% of your shoppers`
                   : !activeRival && !keelOn
                     ? 'No rival has opened near you yet.'
                     : undefined,
@@ -248,7 +243,7 @@ export function RivalsPanel() {
                 ? [
                     {
                       key: 'war',
-                      label: 'Price war',
+                      label: 'Start a price war',
                       fact: money(priceWarCost(s, activeRival.id), numberFormat),
                       disabled: !activeWar.ok,
                       title: activeWar.ok ? undefined : activeWar.reason,
@@ -256,21 +251,14 @@ export function RivalsPanel() {
                     },
                   ]
                 : []),
-              {
-                key: 'bought',
-                label: 'Bought',
-                fact: `${boughtCount}/${boughtTotal}`,
-                disabled: true,
-                onClick: () => {},
-              },
             ],
           }}
         >
           {activeRival && activeSt ? (
             <ActionRow
               label={activeRival.name}
-              fact={activeSt.bought ? 'Yours' : `−${(activePull * 100).toFixed(1)}%`}
-              trail={statusLine(s, activeRival, activeSt)}
+              fact={activeSt.bought ? 'Yours' : `Takes ${(activePull * 100).toFixed(1)}% of your shoppers · ${statusLine(s, activeRival, activeSt)}`}
+              trail="Details"
               onClick={() => setWho(activeRival.id)}
             />
           ) : null}
@@ -278,21 +266,19 @@ export function RivalsPanel() {
             <EmptyState title="Street quiet" body="No rival has opened near you yet. They show up as the store grows." />
           ) : null}
           <p className="ge-muted">
-            Pressure · {cut > 0.001 ? `−${(cut * 100).toFixed(1)}%` : 'none'}
-            {owned > 0 ? ` · +${owned.toFixed(2)} flagships from buyouts` : ''}
+            {cut > 0.001 ? `All rivals together take ${(cut * 100).toFixed(1)}% of your shoppers.` : 'No rival is taking your shoppers right now.'}
+            {owned > 0 ? ` Chains you bought add the pull of ${owned.toFixed(1)} extra flagships.` : ''}
           </p>
           <div className="p6-stack">
             {keelOn ? (
               <ActionRow
                 label={KEEL_CARD.name}
-                fact={keel.bought ? String(keel.convoys) : `−${(keelPull * 100).toFixed(1)}%`}
-                trail={
+                fact={
                   keel.bought
-                    ? `Yours · ${KEEL_CARD.founder}`
-                    : keelFrozen > 0
-                      ? `Paused · ${KEEL_CARD.founder}`
-                      : `${KEEL_CARD.founder} · On the route`
+                    ? `Yours · ${keel.convoys} convoys · ${KEEL_CARD.founder}`
+                    : `${KEEL_CARD.founder} · takes ${(keelPull * 100).toFixed(1)}% of your shoppers · ${keelFrozen > 0 ? 'paused' : 'on the route'}`
                 }
+                trail="Details"
                 onClick={() => setWho('keel')}
               />
             ) : null}
@@ -305,7 +291,8 @@ export function RivalsPanel() {
                     <ActionRow
                       key={def.id}
                       label="Someone is watching"
-                      fact={`Era ${def.era}`}
+                      fact={`A new rival arrives in Era ${def.era}`}
+                      trail="Details"
                       onClick={() => setWho(def.id)}
                     />
                   )
@@ -315,8 +302,12 @@ export function RivalsPanel() {
                   <ActionRow
                     key={def.id}
                     label={def.name}
-                    fact={st.bought ? String(st.boughtStores) : `−${(pull * 100).toFixed(1)}%`}
-                    trail={st.bought ? 'Yours' : s.time < st.frozenUntil ? 'Paused' : 'Growing'}
+                    fact={
+                      st.bought
+                        ? `Yours · ${st.boughtStores} stores`
+                        : `Takes ${(pull * 100).toFixed(1)}% of your shoppers · ${s.time < st.frozenUntil ? 'paused' : 'growing'}`
+                    }
+                    trail="Details"
                     onClick={() => setWho(def.id)}
                   />
                 )

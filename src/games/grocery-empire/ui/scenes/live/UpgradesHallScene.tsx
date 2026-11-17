@@ -27,7 +27,7 @@ export function UpgradesHallScene({
   activeId: TreeId
   mastery: number
   totalReady: number
-  onPick: (id: TreeId) => void
+  onPick?: (id: TreeId) => void
 }) {
   const cols = Math.min(PER_ROW, Math.max(1, trees.length))
   const rows = Math.max(1, Math.ceil(trees.length / PER_ROW))
@@ -65,7 +65,7 @@ export function UpgradesHallScene({
             w={w}
             h={PLAQUE_H}
             label={`${name} tree, ${t.ranks} ranks${t.ready > 0 ? `, ${t.ready} ready` : ''}`}
-            onActivate={() => onPick(t.id)}
+            onActivate={onPick ? () => onPick(t.id) : undefined}
           >
             <rect
               className={`uh-plaque${on ? ' is-active' : ''}${t.ready > 0 ? ' is-ready' : ''}`}

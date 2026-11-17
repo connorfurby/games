@@ -1,10 +1,11 @@
+import { MENUS } from '../../content/menus'
 import { useState } from 'react'
 import { DOCTRINES, doctrinesAtEra } from '../../content/era2'
 import { CAPITAL } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { doctrineCost, tournamentReadPayout } from '../../sim/systems/capital'
 import { useGame } from '../GameContext'
-import { qty } from '../format'
+
 import { Icon } from '../icons/Icon'
 import { ActionRow, PlayFrame } from '../play'
 import { StrategyHallScene } from '../scenes/live'
@@ -19,12 +20,10 @@ export function StrategyPanel() {
   const payout = tournamentReadPayout(s)
   const tournyCheck = can(s, { type: 'runTournament' })
   const coolLeft = Math.max(0, Math.ceil((s.compute.nextTournamentAt ?? 0) - s.time))
-  const readBank = Math.floor(s.read * 10) / 10
   const doctrineList = doctrinesAtEra(s.era)
   const detail = detailId ? doctrineList.find((d) => d.id === detailId) : null
 
   const shortAtt = /\bAtt(ention)?\b/.test(tournyCheck.reason ?? '')
-  const shortCool = !!tournyCheck.reason?.toLowerCase().includes('cool')
   // Attention is minted in the Memos drawer's Back office — open it rather than hunting for a column.
   const jumpMemos = () => {
     requestInbox('memos')
@@ -40,15 +39,15 @@ export function StrategyPanel() {
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose="Turn Attention into Read, then buy a doctrine."
+        purpose={MENUS.strategy.purpose}
         department="Strategy"
         room={<StrategyHallScene />}
         tray={{
           primary: {
             label:
               coolLeft > 0
-                ? `Cooling · ${coolLeft}s`
-                : `Run tournament · −${CAPITAL.tournamentAttention} Attention · +${payout} Read`,
+                ? `Next tournament in ${coolLeft}s`
+                : `Run a tournament · ${CAPITAL.tournamentAttention} Attention → +${payout} Read`,
             tone: tournyCheck.ok ? 'free' : 'primary',
             size: 'lg',
             coachId: 'strategy-tournament',
@@ -59,57 +58,44 @@ export function StrategyPanel() {
           // Plain reason + link: VerbTray renders the line (a block here nests <p> in <p>).
           failReason: tournyCheck.ok ? undefined : tournyCheck.reason,
           failAction: !tournyCheck.ok && shortAtt ? { label: 'Get Attention in Memos', onClick: jumpMemos } : undefined,
-          secondaries: [
-            {
-              key: 'memos',
-              label: 'Memos',
-              fact: 'spend Attention',
-              onClick: jumpMemos,
-            },
-            {
-              key: 'cooldown',
-              label: shortCool || coolLeft > 0 ? 'Cooldown' : 'Ready',
-              fact: coolLeft > 0 ? `${coolLeft}s` : 'now',
-              disabled: true,
-              onClick: () => {},
-            },
-          ],
         }}
       >
         <div className="p6-stack" aria-label="Doctrine ladder">
-          <p className="ge-muted">
-            Ladder · bank {qty(readBank, 'named')} Read · next costs {nextCost}
-          </p>
-          {doctrineList.map((d) => {
-            const have = (s.doctrines[d.id] ?? 0) > 0
-            const locked = d.order > owned
-            const canBuy = !have && !locked && s.read >= nextCost
-            const isNext = !have && !locked
+          {(() => {
+            const have = doctrineList.filter((d) => (s.doctrines[d.id] ?? 0) > 0)
+            const next = doctrineList.find((d) => (s.doctrines[d.id] ?? 0) <= 0 && d.order <= owned)
+            const later = doctrineList.filter((d) => (s.doctrines[d.id] ?? 0) <= 0 && d !== next).length
+            const canBuy = !!next && s.read >= nextCost
             return (
-              <ActionRow
-                key={d.id}
-                icon={<Icon name="doctrine" size={18} tone={have ? 'accent' : isNext ? undefined : 'muted'} />}
-                label={d.name}
-                fact={have ? 'Owned' : locked ? 'Locked' : `${nextCost} Read`}
-                trail={have ? '✓' : canBuy ? 'Buy' : isNext ? qty(readBank, 'named') : undefined}
-                disabled={have || locked}
-                className={canBuy ? 'is-ready' : undefined}
-                title={
-                  have
-                    ? d.blurb
-                    : locked
-                      ? 'Buy doctrines in order.'
-                      : s.read < nextCost
-                        ? `Need ${nextCost} Read (have ${Math.floor(s.read)})`
-                        : d.blurb
-                }
-                onClick={() => {
-                  if (canBuy) dispatch({ type: 'buyDoctrine', id: d.id })
-                  else setDetailId(d.id)
-                }}
-              />
+              <>
+                {next ? (
+                  <ActionRow
+                    icon={<Icon name="doctrine" size={18} tone="accent" />}
+                    label={`Next doctrine: ${next.name}`}
+                    fact={next.blurb}
+                    trail={`Buy · ${nextCost} Read`}
+                    disabled={!canBuy}
+                    className={canBuy ? 'is-ready' : undefined}
+                    title={canBuy ? next.blurb : `Needs ${nextCost} Read. You have ${Math.floor(s.read)}.`}
+                    onClick={() => dispatch({ type: 'buyDoctrine', id: next.id })}
+                  />
+                ) : (
+                  <p className="ge-muted">Every doctrine this era is yours.</p>
+                )}
+                {later > 0 ? <p className="ge-muted">{later} more after this one, bought in order.</p> : null}
+                {have.length ? (
+                  <div className="st-owned" aria-label="Doctrines you hold">
+                    <span className="ge-muted">You hold</span>
+                    {have.map((d) => (
+                      <button key={d.id} type="button" className="pf-chip st-owned__chip" title={d.blurb} onClick={() => setDetailId(d.id)}>
+                        {d.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </>
             )
-          })}
+          })()}
           {(s.upgrades['tourney-while-full'] ?? 0) >= 1 ? (
             <ActionRow
               label={s.compute.autoTourney === false ? 'Resume auto-tournament' : 'Pause auto-tournament'}

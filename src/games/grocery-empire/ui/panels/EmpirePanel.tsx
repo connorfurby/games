@@ -251,7 +251,7 @@ export function EmpireSections({
       <Sheet
         open={doctrineOpen}
         onClose={onDoctrineClose}
-        title={points > 0 ? `Doctrines · ${points} point${points > 1 ? 's' : ''} to spend` : 'Doctrines'}
+        title={points > 0 ? `Perks · ${points} trait point${points > 1 ? 's' : ''} to spend` : 'Perks'}
         reducedMotion={reducedMotion}
         className="pf-desk--wide pf-desk--doctrine"
       >
@@ -271,8 +271,8 @@ export function EmpireSections({
                 }
                 onClick={async () => {
                   const ok = await confirm({
-                    title: 'Refund every doctrine?',
-                    body: `Spend ${qty(respecCost)} Ideas to refund every doctrine and restore trait points. Exclusive forks clear. Archives already granted stay.`,
+                    title: 'Refund every perk?',
+                    body: `Spend ${qty(respecCost)} Ideas to refund every perk and get your trait points back. Exclusive forks clear. Archives already granted stay.`,
                     confirmLabel: `Refund · ${qty(respecCost)} Ideas`,
                   })
                   if (ok) dispatch({ type: 'respecPerks' })
@@ -284,7 +284,7 @@ export function EmpireSections({
           ) : null}
         </header>
 
-        <nav className="dt-branches" aria-label="Doctrine branches">
+        <nav className="dt-branches" aria-label="Perk branches">
           {BRANCHES.map((b) => {
             const list = PERKS.filter((p) => p.branch === b && perkVisible(s, p))
             const owned = list.reduce((n, p) => n + (s.empire.perks[p.id] ?? 0), 0)

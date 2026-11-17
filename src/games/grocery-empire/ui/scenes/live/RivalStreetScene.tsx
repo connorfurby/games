@@ -97,7 +97,7 @@ export function RivalStreetScene() {
                   <path d={`M26 ${h - 30} H50 M26 ${h - 22} H50 M26 ${h - 14} H50`} stroke="#cfe0ff" strokeWidth="2" />
                 </>
               ) : null}
-              <Sign x={38} y={h + 14} text={def.initials} small anchor="middle" />
+              <Sign x={38} y={h + 14} text={def.name.split(' ')[0]!} small anchor="middle" />
               <Badge x={8} y={h + 20} text={`${storeN}`} w={36} />
               <Sign x={48} y={h + 32} text="stores" small />
               <Blink x={70} y={22} on={growing} color={growing ? '#e0a64a' : '#5a6570'} />

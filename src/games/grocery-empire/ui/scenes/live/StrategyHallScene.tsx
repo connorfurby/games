@@ -42,8 +42,8 @@ export function StrategyHallScene() {
         <text x="108" y="112" textAnchor="middle" className="rm-sign" style={{ fontSize: 22, fontWeight: 700 }}>
           {qty(readBank, 'named')}
         </text>
-        <Sign x={108} y={148} text={coolLeft > 0 ? `Cool ${coolLeft}s` : `Tourny +${payout}`} small anchor="middle" />
-        <Badge x={58} y={168} text={`−${CAPITAL.tournamentAttention} Att`} w={100} />
+        <Sign x={108} y={148} text={coolLeft > 0 ? `Ready in ${coolLeft}s` : `Tournament +${payout}`} small anchor="middle" />
+        <Badge x={58} y={168} text={`${CAPITAL.tournamentAttention} Attention`} w={110} />
         {tournyReady ? (
           <circle cx="148" cy="78" r="5" fill="#7cc47f" className="ls-blink is-on" />
         ) : null}

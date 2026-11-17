@@ -371,7 +371,7 @@ export function UpgradesBoard() {
       const ok = await confirm({
         title: `Buy ${ranks} ranks?`,
         body: `Spend about ${money(spend, numberFormat)} on the best affordable upgrades.`,
-        confirmLabel: 'Upgrade Best',
+        confirmLabel: 'Buy them',
       })
       if (!ok) return
     }
@@ -383,7 +383,7 @@ export function UpgradesBoard() {
     })
   }
 
-  // Why Upgrade Best is grey: name the nearest rank so the wait has a number.
+  // Why the buy button is grey: name the nearest rank so the wait has a number.
   const nearest = active.views
     .filter((v) => v.shown && !v.locked && v.lvl < v.def.max && v.maxCount > 0)
     .sort((a, b) => a.cost1 - b.cost1)[0]
@@ -397,7 +397,7 @@ export function UpgradesBoard() {
   const bestDef = bestPick ? UPGRADE_BY_ID[bestPick.id] : null
   const bestHint =
     bestPick && bestDef
-      ? `Best: ${bestDef.name} · ${bestDef.per} for ${money(bestPick.cost, numberFormat)}`
+      ? `Starts with ${bestDef.name} (${bestDef.per}) for ${money(bestPick.cost, numberFormat)}`
       : undefined
   const note = sweepNote && sweepNote.bought === s.stats.upgradesBought ? sweepNote.text : null
 
@@ -408,7 +408,6 @@ export function UpgradesBoard() {
         activeId={active.id}
         mastery={mastery}
         totalReady={trees.reduce((n, t) => n + t.ready, 0)}
-        onPick={setTree}
       />
       <div data-coach-id="upgrades-floor">
         <SegmentedControl
@@ -455,7 +454,7 @@ export function UpgradesBoard() {
         room={room}
         tray={{
           primary: {
-            label: 'Upgrade Best',
+            label: `Buy the best ranks in ${TREES[active.id].name}`,
             tone: 'primary',
             size: 'lg',
             coachId: 'upgrades-best',
@@ -468,8 +467,7 @@ export function UpgradesBoard() {
           secondaries: [
             {
               key: 'all',
-              label: 'All trees',
-              fact: allReady ? 'ready' : 'nothing yet',
+              label: 'Buy the best in every tree',
               disabled: !allReady,
               title: 'Same pass across every tree. Capstones stay a choice.',
               onClick: () => void sweep('all'),
