@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import './design/layers.css'
 import './design/tokens.css'
 import './design/sceneTokens.css'
@@ -54,6 +55,9 @@ import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
 import { onInboxRequest, onWikiRequest } from './shell/uiBus'
 import { pushNotice } from './shell/notices'
+import { overlayRoot } from './kit/hooks'
+import { ERA_STORY } from '../content/lore'
+import { storeDisplayName } from '../sim/state'
 import { setWikiLanding } from './wiki/wikiLanding'
 import { computeHudAlert } from './shell/hudAlert'
 import { onToastRequest, performUndo } from './shell/undoAction'
@@ -859,9 +863,28 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 reducedMotion={reducedMotion}
                 expanded={sceneOpen}
                 onToggle={setSceneOpen}
+                onPhoto={() => setPhotoMode(true)}
               />
             ) : null}
-            {photoMode ? <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} /> : null}
+            {photoMode && overlayRoot()
+              ? createPortal(
+              <div className="g2-photo" role="dialog" aria-label="Photo mode">
+                <div className="g2-photo__frame">
+                  <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} />
+                </div>
+                <p className="g2-photo__caption">
+                  <strong>{storeDisplayName(state)}</strong>
+                  <span>{ERA_STORY[state.era]?.title ?? `Era ${state.era}`}</span>
+                </p>
+                <div className="g2-photo__acts">
+                  <Button tone="secondary" onClick={() => setPhotoMode(false)}>
+                    Done
+                  </Button>
+                </div>
+              </div>,
+                  overlayRoot()!,
+                )
+              : null}
             {hub ? (
               <div className="g2-hubhead">
                 {/* One title per screen: the room names itself in its own header. */}

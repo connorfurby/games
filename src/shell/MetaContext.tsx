@@ -145,6 +145,7 @@ export function MetaProvider({ children }: { children: ReactNode }) {
     root.classList.add(`anim-density--${dens}`)
     root.dataset.animDensity = dens
     root.classList.toggle('a11y-colorblind', !!meta.settings.colorblind)
+    root.classList.toggle('a11y-contrast', !!meta.settings.highContrast)
     root.classList.toggle('ge-reduced-motion', !!meta.settings.reducedMotion)
     // Colorblind must win over pack inline vars (applyPack sets --accent etc. as styles).
     if (meta.settings.colorblind) {
@@ -160,6 +161,7 @@ export function MetaProvider({ children }: { children: ReactNode }) {
   }, [
     meta.settings.animationDensity,
     meta.settings.colorblind,
+    meta.settings.highContrast,
     meta.settings.reducedMotion,
     meta.equippedPack,
   ])

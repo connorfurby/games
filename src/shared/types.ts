@@ -70,6 +70,8 @@ export interface PlayerSettings {
   pinnedMenu?: string | null
   /** Alternate accent set for color vision deficiency. */
   colorblind: boolean
+  /** Brighter text, stronger edges and no see-through surfaces. */
+  highContrast: boolean
   /** Next-buy tip strip + rail mark (on by default). */
   suggestNext: boolean
 }
@@ -91,6 +93,7 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
   speedUnlock: false,
   pinnedMenu: null,
   colorblind: false,
+  highContrast: false,
   suggestNext: true,
 }
 

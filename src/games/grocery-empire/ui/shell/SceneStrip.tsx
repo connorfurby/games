@@ -62,6 +62,7 @@ export function SceneStrip({
   expanded,
   onToggle,
   away = false,
+  onPhoto,
 }: {
   state: GameState
   museumOpen: boolean
@@ -70,6 +71,8 @@ export function SceneStrip({
   onToggle: (v: boolean) => void
   /** Not on the Store rooms: the banner stays (so tabs never jump between hubs) but phones drop it. */
   away?: boolean
+  /** Opens photo mode: just the street, full screen. */
+  onPhoto?: () => void
 }) {
   const [naming, setNaming] = useState(false)
   // The street answers a purchase: a ring and one line, laid over the banner (no layout change).
@@ -111,6 +114,11 @@ export function SceneStrip({
         {state.storeName ? 'Rename' : 'Name your store'}
       </button>
       {naming ? <StoreNameDialog open onClose={() => setNaming(false)} /> : null}
+      {onPhoto ? (
+        <button type="button" className="g2-scenebar__btn g2-scenewrap__photo" onClick={onPhoto} title="Photo mode: just your storefront (P)">
+          Photo
+        </button>
+      ) : null}
       <div id="g2-dialogue-slot" className="g2-scenewrap__say" />
       <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} band={!expanded} />
       <button

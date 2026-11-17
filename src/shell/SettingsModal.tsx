@@ -231,6 +231,14 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               />
               Colorblind accent set
             </label>
+            <label className="settings-check">
+              <input
+                type="checkbox"
+                checked={!!meta.settings.highContrast}
+                onChange={(e) => updateSettings({ highContrast: e.target.checked })}
+              />
+              High contrast
+            </label>
           </section>
 
           <section className="settings-block">

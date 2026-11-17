@@ -1635,4 +1635,168 @@
       display: none;
     }
   }
+
+  /*
+   * Ambience: a slow glow behind the rooms that takes its colour from the era, so the
+   * corner store feels warm, the cold chain feels cold and the fleet feels far away.
+   * Decoration only: behind everything, no pointer events, off under reduced motion.
+   */
+  .g2-root {
+    --amb-a: #f2c14e;
+    --amb-b: #ff5a43;
+  }
+  .g2-root[data-era='2'] {
+    --amb-a: #f2c14e;
+    --amb-b: #7cc47f;
+  }
+  .g2-root[data-era='3'],
+  .g2-root[data-era='4'] {
+    --amb-a: #7fb2d9;
+    --amb-b: #b9e3f0;
+  }
+  .g2-root[data-era='5'],
+  .g2-root[data-era='6'] {
+    --amb-a: #8f7be0;
+    --amb-b: #4aa3c7;
+  }
+  .g2-root[data-era='7'],
+  .g2-root[data-era='8'],
+  .g2-root[data-era='9'],
+  .g2-root[data-era='10'],
+  .g2-root[data-era='11'],
+  .g2-root[data-era='12'] {
+    --amb-a: #c58bd9;
+    --amb-b: #f2c14e;
+  }
+  .g2-main {
+    position: relative;
+    isolation: isolate;
+  }
+  .g2-main::before,
+  .g2-main::after {
+    content: '';
+    position: fixed;
+    z-index: -1;
+    width: 46vmax;
+    height: 46vmax;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(60px);
+    opacity: 0.1;
+    will-change: transform;
+  }
+  .g2-main::before {
+    right: -14vmax;
+    top: 4vmax;
+    background: var(--amb-a);
+    animation: g2-amb-a 46s ease-in-out infinite alternate;
+  }
+  .g2-main::after {
+    left: 4vmax;
+    bottom: -20vmax;
+    background: var(--amb-b);
+    opacity: 0.07;
+    animation: g2-amb-b 58s ease-in-out infinite alternate;
+  }
+  @keyframes g2-amb-a {
+    to {
+      transform: translate(-10vmax, 8vmax) scale(1.15);
+    }
+  }
+  @keyframes g2-amb-b {
+    to {
+      transform: translate(12vmax, -6vmax) scale(0.9);
+    }
+  }
+  html.ge-reduced-motion .g2-main::before,
+  html.ge-reduced-motion .g2-main::after {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .g2-main::before,
+    .g2-main::after {
+      animation: none;
+    }
+  }
+  @media (max-width: 720px) {
+    /* Phones: one still glow; blur is costly on small GPUs. */
+    .g2-main::after {
+      display: none;
+    }
+    .g2-main::before {
+      animation: none;
+      filter: blur(40px);
+    }
+  }
+
+  /* Photo mode: the street, the name, nothing else. */
+  .g2-scenewrap__photo {
+    position: absolute;
+    top: 0.5rem;
+    right: 5.25rem;
+    z-index: 2;
+    min-height: 28px;
+    padding: 0.15rem 0.6rem;
+    font-size: var(--t-xs);
+  }
+  .g2-photo {
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    align-content: center;
+    justify-items: center;
+    gap: var(--s-3);
+    padding: clamp(1rem, 4vw, 3rem);
+    background: #05080c;
+    animation: g2-photo-in 320ms ease-out;
+  }
+  @keyframes g2-photo-in {
+    from {
+      opacity: 0;
+    }
+  }
+  .g2-photo__frame {
+    align-self: center;
+    width: min(100%, 1400px);
+  }
+  .g2-photo__frame .sc-scene {
+    height: min(62vh, 520px);
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgb(0 0 0 / 0.6);
+  }
+  .g2-photo__caption {
+    margin: 0;
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+  .g2-photo__caption strong {
+    font: 650 var(--t-2xl) / 1.1 var(--g2-display, serif);
+    color: #f3ead7;
+  }
+  .g2-photo__caption span {
+    font: 500 var(--t-sm) / 1.3 var(--ge-font-ui, system-ui, sans-serif);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, #f3ead7 65%, transparent);
+  }
+  @media (max-width: 720px) {
+    .g2-scenewrap--band .g2-scenewrap__photo {
+      display: none;
+    }
+    .g2-photo__frame .sc-scene {
+      height: 42vh;
+    }
+  }
+  html.ge-reduced-motion .g2-photo {
+    animation: none;
+  }
+
+  .ge-root--photo .g2-dialogue,
+  .ge-root--photo .g2-toasts {
+    display: none;
+  }
 }

@@ -122,3 +122,36 @@
     }
   }
 }
+
+/*
+ * High contrast (Settings → High contrast). Free for everyone. Text goes to full
+ * strength, quiet text stops being faint, and every edge is drawn.
+ */
+@layer tokens {
+  html.a11y-contrast .ge-root,
+  html.a11y-contrast.shell-ds {
+    --ge-ink: #ffffff;
+    --ge-muted: #e3e8e4;
+    --ge-ink-muted: #e3e8e4;
+    --ge-line: color-mix(in srgb, #ffffff 34%, transparent);
+    --ge-line-strong: color-mix(in srgb, #ffffff 62%, transparent);
+    --ge-focus: #ffe066;
+  }
+}
+@layer motion {
+  html.a11y-contrast .gk-btn,
+  html.a11y-contrast .g2-subtab,
+  html.a11y-contrast .g2-hub,
+  html.a11y-contrast .g2-icon-btn {
+    border-width: 2px;
+  }
+  html.a11y-contrast .gk-btn:disabled,
+  html.a11y-contrast .gk-btn.is-short {
+    --_ink: #ffffff;
+  }
+  html.a11y-contrast .g2-main::before,
+  html.a11y-contrast .g2-main::after {
+    display: none;
+  }
+}
+
