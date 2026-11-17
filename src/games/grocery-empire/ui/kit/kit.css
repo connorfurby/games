@@ -143,7 +143,8 @@
     --_bg: var(--ge-raised);
   }
   .gk-btn--danger {
-    --_ink: var(--ge-danger);
+    /* Lifted toward the ink so red text stays readable on every surface. */
+    --_ink: color-mix(in srgb, var(--ge-danger) 62%, var(--ge-ink));
     --_bg: color-mix(in srgb, var(--ge-danger) 10%, transparent);
     --_line: color-mix(in srgb, var(--ge-danger) 50%, transparent);
   }
