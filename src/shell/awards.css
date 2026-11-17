@@ -1,0 +1,497 @@
+/* Awards wall. Shares the shell tokens (html.shell-ds). */
+@layer kit {
+  .aw {
+    --aw-bronze: #c98a56;
+    --aw-silver: #c9d2da;
+    --aw-gold: #f2c14e;
+    --aw-mythic: #b99cf0;
+  }
+
+  .aw-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 22rem);
+    gap: 28px;
+    align-items: center;
+    padding: 16px 0 22px;
+  }
+  .aw-hero__ring {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+  .aw-ring__track {
+    fill: none;
+    stroke: color-mix(in srgb, var(--ge-ink) 12%, transparent);
+    stroke-width: 7;
+  }
+  .aw-ring__fill {
+    fill: none;
+    stroke: var(--aw-gold);
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .aw-hero__count {
+    position: absolute;
+    display: grid;
+    justify-items: center;
+    line-height: 1;
+  }
+  .aw-hero__count strong {
+    font: 650 var(--t-2xl, 2rem) / 1 var(--ge-font-display, serif);
+    color: var(--ge-ink);
+  }
+  .aw-hero__count small {
+    margin-top: 4px;
+    font: 500 var(--t-xs, 0.75rem) / 1 var(--ge-font-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .aw-hero__stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+  }
+  .aw-hero__stats > div {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--ge-line);
+    background: var(--ge-sunken);
+  }
+  .aw-hero__stats dt {
+    font: 600 var(--t-2xs, 0.6875rem) / 1.2 var(--ge-font-ui, sans-serif);
+    letter-spacing: 0.04em;
+    color: var(--ge-ink-muted);
+  }
+  .aw-hero__stats dd {
+    margin: 3px 0 0;
+    font: 700 var(--t-md, 0.9375rem) / 1.2 var(--ge-font-mono, monospace);
+    color: var(--ge-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .aw-hero__stats dd small {
+    font-weight: 500;
+    color: var(--ge-ink-muted);
+  }
+  .aw-hero__tier--bronze dt {
+    color: var(--aw-bronze);
+  }
+  .aw-hero__tier--silver dt {
+    color: var(--aw-silver);
+  }
+  .aw-hero__tier--gold dt {
+    color: var(--aw-gold);
+  }
+  .aw-hero__tier--mythic dt {
+    color: var(--aw-mythic);
+  }
+
+  .aw-now {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .aw-now__card {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--ge-line);
+    background: var(--ge-raised);
+  }
+  .aw-now__card h2 {
+    margin: 0 0 8px;
+    font: 700 var(--t-xs, 0.75rem) / 1.2 var(--ge-font-ui, sans-serif);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ge-ink-muted);
+  }
+  .aw-now__empty {
+    margin: 0;
+    font: 500 var(--t-sm, 0.8125rem) / 1.45 var(--ge-font-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .aw-now__row {
+    appearance: none;
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .aw-now__row:hover,
+  .aw-now__row:focus-visible {
+    border-color: var(--ge-line-strong);
+    background: var(--ge-sunken);
+  }
+  .aw-now__row strong {
+    display: block;
+    font: 700 var(--t-sm, 0.8125rem) / 1.3 var(--ge-font-ui, sans-serif);
+    color: var(--ge-ink);
+  }
+  .aw-now__row em {
+    display: block;
+    font: 500 var(--t-xs, 0.75rem) / 1.35 var(--ge-font-ui, sans-serif);
+    font-style: normal;
+    color: var(--ge-ink-muted);
+  }
+  .aw-near {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .aw-near .aw-now__row {
+    grid-template-columns: minmax(0, 1fr) minmax(4rem, 9rem) auto;
+  }
+  .aw-near b {
+    font: 700 var(--t-xs, 0.75rem) / 1 var(--ge-font-mono, monospace);
+    color: var(--ge-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .aw-near__meter,
+  .aw-plaque__meter,
+  .aw-group__meter {
+    display: block;
+    height: 6px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--ge-ink) 12%, transparent);
+    overflow: hidden;
+  }
+  .aw-near__meter i,
+  .aw-plaque__meter i,
+  .aw-group__meter i {
+    display: block;
+    height: 100%;
+    background: var(--aw-gold);
+    transform-origin: left center;
+    transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .aw-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .aw-bar__share {
+    margin-left: auto;
+  }
+  .aw-seg {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid var(--ge-line);
+    background: var(--ge-sunken);
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .aw-seg button {
+    appearance: none;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ge-ink-muted);
+    font: 600 var(--t-sm, 0.8125rem) / 1 var(--ge-font-ui, sans-serif);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+  }
+  .aw-seg button:hover {
+    color: var(--ge-ink);
+  }
+  .aw-seg button.is-on {
+    background: var(--ge-ink);
+    color: var(--ge-bg, #0d1513);
+  }
+  .aw-seg button:focus-visible {
+    outline: 2px solid var(--ge-focus, var(--aw-gold));
+    outline-offset: 2px;
+  }
+
+  .aw-group {
+    margin-bottom: 26px;
+  }
+  .aw-group__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--ge-line);
+  }
+  .aw-group__head h2 {
+    margin: 0;
+    font: 650 var(--t-xl, 1.5rem) / 1.15 var(--ge-font-display, serif);
+    color: var(--ge-ink);
+  }
+  .aw-group__head p {
+    margin: 2px 0 0;
+    font: 500 var(--t-sm, 0.8125rem) / 1.4 var(--ge-font-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .aw-group__count {
+    display: grid;
+    gap: 5px;
+    min-width: 6rem;
+    text-align: right;
+    font: 700 var(--t-sm, 0.8125rem) / 1 var(--ge-font-mono, monospace);
+    color: var(--ge-ink);
+  }
+
+  .aw-wall {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+    gap: 10px;
+  }
+  .aw-plaque {
+    --aw-metal: var(--aw-bronze);
+    appearance: none;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 10.5rem;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto;
+    justify-items: center;
+    gap: 5px;
+    padding: 14px 12px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--ge-line);
+    background: var(--ge-sunken);
+    color: inherit;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition:
+      transform 140ms ease,
+      border-color 140ms ease,
+      box-shadow 140ms ease;
+  }
+  .aw-plaque--silver {
+    --aw-metal: var(--aw-silver);
+  }
+  .aw-plaque--gold {
+    --aw-metal: var(--aw-gold);
+  }
+  .aw-plaque--mythic {
+    --aw-metal: var(--aw-mythic);
+  }
+  .aw-plaque:hover,
+  .aw-plaque:focus-visible {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--aw-metal) 60%, transparent);
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
+  }
+  .aw-plaque:focus-visible {
+    outline: 2px solid var(--ge-focus, var(--aw-gold));
+    outline-offset: 2px;
+  }
+  .aw-plaque.is-earned {
+    border-color: color-mix(in srgb, var(--aw-metal) 55%, transparent);
+    background:
+      radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--aw-metal) 16%, transparent), transparent 70%),
+      var(--ge-raised);
+  }
+  .aw-plaque.is-picked {
+    box-shadow: 0 0 0 2px var(--aw-metal);
+  }
+  /* An earned plaque catches the light now and then. */
+  .aw-plaque.is-earned::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.1) 50%, transparent 60%);
+    transform: translateX(-120%);
+    animation: aw-sheen 7s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .aw-wall li:nth-child(3n) .aw-plaque.is-earned::after {
+    animation-delay: 2.3s;
+  }
+  .aw-wall li:nth-child(3n + 1) .aw-plaque.is-earned::after {
+    animation-delay: 4.1s;
+  }
+  @keyframes aw-sheen {
+    0%,
+    70% {
+      transform: translateX(-120%);
+    }
+    100% {
+      transform: translateX(120%);
+    }
+  }
+  .aw-plaque__name {
+    font: 700 var(--t-sm, 0.8125rem) / 1.25 var(--ge-font-ui, sans-serif);
+    color: var(--ge-ink);
+  }
+  .aw-plaque__line {
+    font: 500 var(--t-xs, 0.75rem) / 1.35 var(--ge-font-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .aw-plaque__meter {
+    width: 100%;
+  }
+  .aw-plaque__reward {
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid color-mix(in srgb, var(--aw-metal) 45%, transparent);
+    font: 600 var(--t-2xs, 0.6875rem) / 1.4 var(--ge-font-ui, sans-serif);
+    color: color-mix(in srgb, var(--aw-metal) 70%, var(--ge-ink));
+  }
+  .aw-plaque:not(.is-earned) .aw-plaque__name {
+    color: color-mix(in srgb, var(--ge-ink) 80%, transparent);
+  }
+
+  .aw-medal {
+    --aw-metal: var(--aw-bronze);
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    border: 2px dashed color-mix(in srgb, var(--aw-metal) 45%, transparent);
+    color: color-mix(in srgb, var(--aw-metal) 55%, var(--ge-ink-muted));
+    flex: none;
+  }
+  .aw-medal--silver {
+    --aw-metal: var(--aw-silver);
+  }
+  .aw-medal--gold {
+    --aw-metal: var(--aw-gold);
+  }
+  .aw-medal--mythic {
+    --aw-metal: var(--aw-mythic);
+  }
+  .aw-medal.is-earned {
+    border: 0;
+    color: #17110a;
+    background:
+      radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.65), transparent 42%),
+      linear-gradient(145deg, color-mix(in srgb, var(--aw-metal) 92%, white), color-mix(in srgb, var(--aw-metal) 70%, black));
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--aw-metal) 55%, black),
+      0 4px 10px rgb(0 0 0 / 0.35);
+  }
+
+  .aw-detail {
+    width: min(26rem, calc(100vw - 2rem));
+    padding: 22px 20px 16px;
+    border-radius: 16px;
+    border: 1px solid var(--ge-line-strong);
+    background: var(--ge-surface, var(--ge-raised));
+    color: var(--ge-ink);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    text-align: center;
+    animation: aw-pop 220ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  @keyframes aw-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+  }
+  .aw-detail .aw-medal {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+  .aw-detail .aw-medal svg {
+    width: 40px;
+    height: 40px;
+  }
+  .aw-detail h2 {
+    margin: 0;
+    font: 650 var(--t-xl, 1.5rem) / 1.15 var(--ge-font-display, serif);
+  }
+  .aw-detail__tier {
+    margin: 6px 0 0;
+    font: 700 var(--t-2xs, 0.6875rem) / 1.2 var(--ge-font-ui, sans-serif);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ge-ink-muted);
+  }
+  .aw-detail__blurb,
+  .aw-detail__meta {
+    margin: 0;
+    font: 500 var(--t-sm, 0.8125rem) / 1.45 var(--ge-font-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .aw-detail__progress {
+    width: 100%;
+    display: grid;
+    gap: 5px;
+    margin: 4px 0;
+  }
+  .aw-detail__progress b {
+    font: 700 var(--t-sm, 0.8125rem) / 1 var(--ge-font-mono, monospace);
+  }
+  .aw-detail__acts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 860px) {
+    .aw-hero {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .aw-hero__stats {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .aw-now {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 520px) {
+    .aw-hero__ring svg {
+      width: 96px;
+      height: 96px;
+    }
+    .aw-wall {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .aw-near .aw-now__row {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .aw-near__meter {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .aw-bar__share {
+      margin-left: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aw-plaque.is-earned::after,
+    .aw-detail {
+      animation: none;
+    }
+  }
+  html.ge-reduced-motion .aw-plaque.is-earned::after,
+  html.ge-reduced-motion .aw-detail {
+    animation: none;
+  }
+}
