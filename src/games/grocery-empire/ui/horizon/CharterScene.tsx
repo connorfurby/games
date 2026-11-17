@@ -22,7 +22,7 @@ export function CharterScene({
     <RoomScene
       label={`${kept} clauses kept. ${seals} embassies.`}
       chips={[
-        { label: 'Clauses', value: `${kept}/3` },
+        { label: 'Clauses', value: `${kept}/4` },
         { label: 'Embassies', value: String(seals) },
         ...(seal != null ? [{ label: 'Seal', value: seal < 10 ? seal.toFixed(1) : String(Math.floor(seal)) }] : []),
         { label: 'Charter', value: signed ? 'Signed' : 'Open' },
@@ -35,10 +35,10 @@ export function CharterScene({
     >
       <ellipse cx="420" cy="168" rx="260" ry="48" fill="#6a543c" />
       <ellipse cx="420" cy="158" rx="260" ry="48" fill="#c4a574" />
-      {[0, 1, 2].map((i) => (
+      {[0, 1, 2, 3].map((i) => (
         <rect
           key={i}
-          x={300 + i * 90}
+          x={262 + i * 82}
           y="136"
           width="70"
           height="44"
@@ -49,7 +49,7 @@ export function CharterScene({
         />
       ))}
       {signed ? <circle cx="420" cy="158" r="16" fill="none" stroke="#8d2a2a" strokeWidth="3" /> : null}
-      <Sign x={420} y={230} text={signed ? 'Charter signed' : `${kept} clauses on the table`} anchor="middle" />
+      <Sign x={420} y={230} text={signed ? 'Charter signed' : `${kept} of 4 clauses on the table`} anchor="middle" />
 
       <Hit
         x={700}

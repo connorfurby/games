@@ -107,7 +107,7 @@ describe('worlds hub panels', () => {
     expect(out).toContain('Open Hours')
     expect(out).toContain('Clauses')
     expect(out).toContain('Open embassy')
-    expect(out).toContain('Charter layer')
+    expect(out).toContain('charter lifts sales')
   })
 
   it('renders the last aisle', () => {

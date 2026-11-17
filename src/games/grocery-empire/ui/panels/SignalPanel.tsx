@@ -6,8 +6,8 @@ import { HORIZON } from '../../sim/balance'
 import { postedAgentId, relayCost, relayNetworkMul } from '../../sim/systems/horizon'
 import { phraseClueBonus } from '../../sim/systems/lateHubs'
 import { useGame } from '../GameContext'
-import { Button } from '../kit'
-import type { VerbTrayProps } from '../play'
+import { Button, SegmentedControl } from '../kit'
+import { Field, type VerbTrayProps } from '../play'
 import { clock, money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { HorizonGoalStrip } from '../horizon/HorizonGoalStrip'
@@ -161,7 +161,7 @@ export function SignalPanel() {
         title={standard.ok ? 'Send the standard phrase' : h.relays < 1 ? 'Buy a relay' : 'Clear the phrase'}
         progress={h.phraseScores.length ? h.phraseScores.reduce((a, b) => a + b, 0) / h.phraseScores.length : null}
         progressLabel={`${h.phrasesCleared} cleared · ${h.relays} relay${h.relays === 1 ? '' : 's'}`}
-        payoff={`Signal layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}
+        payoff={`Good phrases lift sales (now ×${layer < 10 ? layer.toFixed(2) : layer.toFixed(0)}) and pay for agents.`}
         eta={phrase ? 'phrase on the wire' : nextPhrase > 0 ? `next phrase in ${clock(nextPhrase)}` : null}
         ready={standard.ok || relay.ok}
         coachId="signal-goal"
@@ -182,8 +182,8 @@ export function SignalPanel() {
         <span>+{signalRate.toFixed(2)}/s</span>
       </p>
       <PuzzleFrame
-        title="Phrase"
-        purpose="Four marks, two showing. Clues name the world mark."
+        title="Decode a phrase yourself"
+        purpose="Each phrase has four marks and shows two. Fill in the hidden two; clues hint at the world mark."
         score={lastScore}
         hideStandard
         standardDisabled={!standard.ok}
@@ -194,7 +194,7 @@ export function SignalPanel() {
         onStandard={() => dispatch({ type: 'fileStandardPhrase' })}
         onCommit={() => dispatch({ type: 'commitPhrase', symbols })}
       >
-        <Phrase
+        {phrase ? <Phrase
           showClue={phraseClueBonus(s) > 0}
           phrase={phrase}
           symbols={symbols}
@@ -208,30 +208,24 @@ export function SignalPanel() {
               return next
             })
           }
-        />
+        /> : <p className="hz-note">No phrase yet. One arrives once a relay is up.</p>}
       </PuzzleFrame>
 
       <article className="ge-card" data-coach-id="signal-agents">
         <header className="ge-empire-block__head">
           <h3>Agents</h3>
           <p>
-            {h.agents.length} hired · wage {money(wageEach, numberFormat)}/s each. Pick a habit once, then hire.
+            {h.agents.length} hired · each costs {money(wageEach, numberFormat)}/s. Choose what the next one does, then hire.
           </p>
         </header>
-        <label className="hz-field">
-          <span>Hire habit</span>
-          <select
-            aria-label="Hire habit"
+        <Field label="Next agent will" note={habitLine(hireHabit)}>
+          <SegmentedControl
+            aria-label="Next agent's habit"
             value={hireHabit}
-            onChange={(e) => setHireHabit(e.target.value as AgentHabit)}
-          >
-            {HABITS.map((habit) => (
-              <option key={habit} value={habit}>
-                {habit} — {habitLine(habit)}
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={(v) => setHireHabit(v as AgentHabit)}
+            options={HABITS.map((habit) => ({ value: habit, label: habit, title: habitLine(habit) }))}
+          />
+        </Field>
         {post ? (
           <p
             className={`hz-pocket${post.agentId == null ? ' hz-pocket--warn' : ''}`}
@@ -246,7 +240,7 @@ export function SignalPanel() {
           </p>
         ) : null}
         <ul className="hz-roster">
-          {h.agents.length === 0 ? <li className="hz-empty">The desk is empty.</li> : null}
+          {h.agents.length === 0 ? <li className="hz-empty">No agents yet.</li> : null}
           {h.agents.map((agent) => {
             const fire = can(s, { type: 'fireAgent', id: agent.id })
             const locked = postedId === agent.id
@@ -261,28 +255,24 @@ export function SignalPanel() {
                   <HabitMark habit={agent.habit} />
                   <strong>{agent.name}</strong>
                   <span>
-                    {locked ? `posted on ${agent.habit} · locked` : agent.habit} · xp {agent.xp} ·{' '}
-                    {money(wageEach, numberFormat)}/s
+                    {agent.habit} · experience {agent.xp} · {money(wageEach, numberFormat)}/s
                   </span>
                 </div>
-                <label className="hz-field" title={locked ? gateTitle(habitCheck) : undefined}>
-                  <span>{locked ? 'Habit · posted' : 'Habit'}</span>
-                  <select
+                {locked || !habitCheck.ok ? (
+                  <span className="hz-note">{locked ? 'On watch for a phrase — habit locked' : gateTitle(habitCheck)}</span>
+                ) : (
+                  <SegmentedControl
                     aria-label={`${agent.name} habit`}
-                    disabled={locked}
                     value={agent.habit}
-                    onChange={(e) => dispatch({ type: 'setAgentHabit', id: agent.id, habit: e.target.value as AgentHabit })}
-                  >
-                    {HABITS.map((habit) => (
-                      <option key={habit} value={habit}>
-                        {habit}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <Button tone="danger" disabled={!fire.ok} title={gateTitle(fire)} onClick={() => dispatch({ type: 'fireAgent', id: agent.id })}>
-                  Fire
-                </Button>
+                    onChange={(v) => dispatch({ type: 'setAgentHabit', id: agent.id, habit: v as AgentHabit })}
+                    options={HABITS.map((habit) => ({ value: habit, label: habit, title: habitLine(habit) }))}
+                  />
+                )}
+                {fire.ok ? (
+                  <Button tone="danger" size="sm" onClick={() => dispatch({ type: 'fireAgent', id: agent.id })}>
+                    Let go
+                  </Button>
+                ) : null}
               </li>
             )
           })}

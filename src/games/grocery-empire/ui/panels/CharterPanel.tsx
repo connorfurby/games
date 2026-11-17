@@ -229,6 +229,11 @@ export function CharterPanel() {
           title={`Clauses · ${h.clauses.length} of 4 kept`}
           reducedMotion={reducedMotion}
         >
+          {(() => {
+            const reasons = CLAUSES.filter((c) => !h.clauses.includes(c.id)).map((c) => can(s, { type: 'toggleClause', id: c.id }))
+            const shared = reasons.length > 0 && reasons.every((r) => !r.ok && r.reason === reasons[0]!.reason) ? reasons[0]!.reason : null
+            return shared ? <p className="hz-note hz-note--warn">{shared}</p> : null
+          })()}
           <div className="hz-clause-grid" data-coach-id="charter-clauses">
             {CLAUSES.map((clause) => {
               const kept = h.clauses.includes(clause.id)
@@ -239,14 +244,14 @@ export function CharterPanel() {
                     <h3>{clause.name}</h3>
                     <p>{helpLine(clause)}</p>
                   </header>
-                  <p className="hz-note">{clause.grudge}</p>
+                  <p className="hz-note">Downside: {clause.grudge}</p>
                   {kept || check.ok ? <Button
                     tone={kept ? 'secondary' : 'primary'}
                     title={gateTitle(check, `${clause.grudge} · ${helpLine(clause)}`)}
                     onClick={() => toggle(clause)}
                   >
                     {kept ? 'Drop' : 'Keep'}
-                  </Button> : <p className="hz-note">{check.reason}</p>}
+                  </Button> : CLAUSES.every((c) => h.clauses.includes(c.id) || can(s, { type: 'toggleClause', id: c.id }).reason === check.reason) ? null : <p className="hz-note">{check.reason}</p>}
                 </article>
               )
             })}
@@ -260,17 +265,15 @@ export function CharterPanel() {
           title={`Hearing · session ${Math.min((docket?.answered ?? 0) + 1, docket?.needed ?? 3)}/${docket?.needed ?? 3}`}
           reducedMotion={reducedMotion}
           footer={
-            <Button
-              tone="free"
-              size="lg"
-              disabled={!answerCheck.ok}
-              title={gateTitle(answerCheck, amend ? 'The clause stays seated; its grudge is struck.' : 'The clause and its grudge stand.')}
-              onClick={() => {
-                dispatch({ type: 'answerHearing' })
-              }}
-            >
-              {amend ? 'Amend & answer' : 'Answer'}
-            </Button>
+            answerCheck.ok ? (
+              <Button
+                tone="free"
+                title={amend ? 'The clause stays; its downside is struck out.' : 'The clause and its downside both stand.'}
+                onClick={() => dispatch({ type: 'answerHearing' })}
+              >
+                {amend ? 'Amend and answer' : 'Answer the hearing'}
+              </Button>
+            ) : undefined
           }
         >
           {heard ? (
@@ -282,23 +285,23 @@ export function CharterPanel() {
                 </dd>
               </div>
               <div className={`hz-hearing__row${amend ? ' is-struck' : ''}`}>
-                <dt>Grudge</dt>
+                <dt>Downside</dt>
                 <dd>{heard.grudge}</dd>
               </div>
               <div className="hz-hearing__row">
-                <dt>Minutes Clerk</dt>
+                <dt>Clerk</dt>
                 <dd>
                   {amend
-                    ? 'Amends this session: grudge struck, seat kept.'
+                    ? 'Your Minutes Clerk can strike the downside this time.'
                     : minutesClerk
-                      ? 'Amend spent this docket.'
-                      : 'Not hired. Hire one to amend a session.'}
+                      ? 'Your Minutes Clerk has already amended one this round.'
+                      : 'Hire a Minutes Clerk to strike a downside.'}
                 </dd>
               </div>
             </dl>
           ) : (
             <p className="hz-note">
-              {`Docket ${docket?.answered ?? 0}/${docket?.needed ?? 3}. Concord opens the next session when you seat a clause.`}
+              {`${docket?.answered ?? 0} of ${docket?.needed ?? 3} hearings answered. The next one opens when you keep a new clause.`}
             </p>
           )}
         </Sheet>
@@ -321,7 +324,7 @@ export function CharterPanel() {
           title={goalTitle}
           progress={h.clauses.length / 4}
           progressLabel={`${h.clauses.length}/4 clauses`}
-          payoff={`Charter layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}
+          payoff={`Your charter lifts sales (now ×${layer < 10 ? layer.toFixed(2) : layer.toFixed(0)}).`}
           ready={goalReady}
           coachId="charter-goal"
         />
@@ -361,7 +364,7 @@ export function CharterPanel() {
             })}
           </div>
         ) : (
-          <p className="hz-note">The fork opens after four clauses.</p>
+          <p className="hz-note">Keep four clauses, then choose which charter to sign.</p>
         )}
       </HubStage>
 

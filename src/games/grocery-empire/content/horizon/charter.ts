@@ -45,7 +45,7 @@ export const CLAUSES: ClauseDef[] = [
     blurb: 'One fair margin. Clever commits are refused — the tooltip says so before you toggle.',
     helpStat: 'margin',
     helpAmt: 0.06,
-    grudge: 'Puzzle commits other than File the standard are refused.',
+    grudge: 'Puzzles only accept the standard answer.',
   },
   {
     id: 'local-shelf',
