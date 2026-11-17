@@ -50,6 +50,8 @@ export function shortFigure(text: string): string {
   if (!m) return text
   const [, lead = '', whole = '', frac = '', unit = ''] = m
   const digits = whole.replace(/,/g, '').length
+  // Plain dollars under $100 keep their cents: "$36.42" is no wider than "$103K".
+  if (!unit.trim() && digits <= 2 && frac) return `${lead}${whole}.${frac.slice(0, 2)}`
   if (!frac || digits >= 3) return `${lead}${whole}${unit}`
   return `${lead}${whole}.${frac.slice(0, digits === 2 ? 1 : 2)}${unit}`
 }
