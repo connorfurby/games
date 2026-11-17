@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { sfx } from '@/shared/audio'
+import { WING_BY_ID } from '../../content/relics'
+import { completedWings } from '../../sim/museum'
+import { useMuseum } from '../museum/store'
 import type { MenuId } from '../../content/menus'
 import type { GameState } from '../../sim/state'
 import { StoreNameDialog } from './StoreNameDialog'
@@ -75,10 +79,27 @@ export function SceneStrip({
   onPhoto?: () => void
 }) {
   const [naming, setNaming] = useState(false)
+  // Each finished museum wing flies a pennant on the storefront.
+  const museum = useMuseum()
+  const wingsDone = completedWings(museum)
+  const wingKey = wingsDone.join(',')
+  const pennants = useMemo(() => (wingKey ? wingKey.split(',').map((id) => WING_BY_ID[id as keyof typeof WING_BY_ID]?.hue ?? 40) : []), [wingKey])
+  const wingsSeen = useRef(wingsDone.length)
   // The street answers a purchase: a ring and one line, laid over the banner (no layout change).
   const growth = storeGrowth(state)
   const seen = useRef(growth)
   const [bump, setBump] = useState<string | null>(null)
+  useEffect(() => {
+    if (wingsDone.length > wingsSeen.current) {
+      setBump('A museum wing is complete: a new pennant goes up')
+      sfx.award()
+      wingsSeen.current = wingsDone.length
+      const t = window.setTimeout(() => setBump(null), 3200)
+      return () => window.clearTimeout(t)
+    }
+    wingsSeen.current = wingsDone.length
+    return undefined
+  }, [wingsDone.length])
   useEffect(() => {
     const prev = seen.current
     seen.current = growth
@@ -120,7 +141,7 @@ export function SceneStrip({
         </button>
       ) : null}
       <div id="g2-dialogue-slot" className="g2-scenewrap__say" />
-      <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} band={!expanded} />
+      <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} band={!expanded} pennants={pennants} />
       <button
         type="button"
         className="g2-scenebar__btn g2-scenewrap__hide"

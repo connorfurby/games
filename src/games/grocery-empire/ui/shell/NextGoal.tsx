@@ -111,9 +111,42 @@ export function NextGoal({
   const act0 = g?.action?.(s) ?? null
   const readyCalm = useSticky(!!act0 && can(s, act0).ok, 2500)
   if (!g) {
+    // After the story: endless worlds get a running milestone so there is always a next thing.
+    const h = s.horizon
+    const worlds = h?.endless ? (h.endlessPlanets ?? 0) : 0
+    const steps = [5, 10, 25, 50, 100, 250, 500, 1000]
+    const target = steps.find((n) => n > worlds) ?? Math.ceil((worlds + 1) / 1000) * 1000
+    const prev = [...steps].reverse().find((n) => n <= worlds) ?? 0
+    const frac = target > prev ? (worlds - prev) / (target - prev) : 0
     return (
-      <div className="g2-goal is-done" role="status">
-        <span className="g2-goal__title">Every era is behind you.</span>
+      <div className="g2-goal is-done" role="group" aria-label="After the story">
+        <div className="g2-goal__copy">
+          <span className="g2-goal__eyebrow">{h?.endless ? 'Endless worlds' : 'The story is told'}</span>
+          <span className="g2-goal__title">
+            <span className="g2-goal__title-text">
+              {h?.endless ? `Reach ${target} endless worlds` : 'Every era is behind you'}
+            </span>
+          </span>
+          <span className="g2-goal__hint">
+            {h?.endless
+              ? `${worlds} past the named eight so far. Keep launching probes and stocking shelves.`
+              : 'The store keeps running. Chase awards, fill the museum, or start a new game.'}
+          </span>
+        </div>
+        {h?.endless ? (
+          <>
+            <div className="g2-goal__meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(frac * 100)} aria-label="Endless worlds progress">
+              <span style={{ transform: `scaleX(${frac})` }} />
+            </div>
+            {onMenu ? (
+              <div className="g2-goal__acts">
+                <button type="button" className="g2-goal__do g2-goal__do--free" onClick={() => onMenu('planets' as MenuId)}>
+                  Show me
+                </button>
+              </div>
+            ) : null}
+          </>
+        ) : null}
       </div>
     )
   }

@@ -529,7 +529,7 @@ function Horizon({
   )
 }
 
-function Facade({ s, x }: { s: GameState; x: number }) {
+function Facade({ s, x, pennants = [] }: { s: GameState; x: number; pennants?: readonly number[] }) {
   const tier = Math.max(1, Math.min(FACADE.length - 1, s.builds.storefront ?? 1))
   const f = FACADE[tier]!
   const top = GROUND - f.h
@@ -582,6 +582,24 @@ function Facade({ s, x }: { s: GameState; x: number }) {
       ))}
       {/* body */}
       <rect x={x} y={top} width={f.w} height={f.h} fill="var(--sc-brick)" />
+      {/* Completed museum wings fly as pennants along the roofline. */}
+      {pennants.length > 0 ? (
+        <g className="sc-bunting" aria-hidden>
+          <path
+            d={`M${x + 4} ${top - 3} Q${x + f.w / 2} ${top + 5} ${x + f.w - 4} ${top - 3}`}
+            fill="none"
+            stroke="#e8dcc4"
+            strokeOpacity="0.6"
+          />
+          {pennants.map((hue, i) => {
+            const n = pennants.length
+            const px = x + 10 + ((f.w - 20) * (i + 0.5)) / n
+            const sag = 10 * (1 - Math.pow((2 * (i + 0.5)) / n - 1, 2))
+            const py = top - 3 + sag * 0.5
+            return <path key={i} d={`M${px - 5} ${py} L${px + 5} ${py} L${px} ${py + 11} Z`} fill={`hsl(${hue} 70% 58%)`} />
+          })}
+        </g>
+      ) : null}
       {/* sign */}
       <rect x={x + 10} y={top + 6} width={f.w - signCut} height={24} rx={3} fill="var(--sc-sign)" />
       <text
@@ -929,11 +947,14 @@ function SceneInner({
   museumOpen,
   view,
   reducedMotion = false,
+  pennants = [],
 }: {
   s: GameState
   museumOpen: boolean
   view: View
   reducedMotion?: boolean
+  /** One hue per completed museum wing: bunting along the roofline. */
+  pennants?: readonly number[]
 }) {
   const era = Math.max(0, Math.min(SKY.length - 1, s.era))
   const phase = dayPhase(s)
@@ -1019,7 +1040,7 @@ function SceneInner({
         <Lamps xs={[facadeX - 110, facadeX + FACADE[tier]!.w + 140]} />
       </g>
       <Props s={s} x={facadeX} w={FACADE[tier]!.w} />
-      <Facade s={s} x={facadeX} />
+      <Facade s={s} x={facadeX} pennants={pennants} />
       <HorizonMarks
         era={s.era}
         x={facadeX}
@@ -1113,15 +1134,19 @@ const Memo = memo(
     museumOpen,
     view,
     reducedMotion,
+    pennants,
   }: {
     s: GameState
     k: string
     museumOpen: boolean
     view: View
     reducedMotion: boolean
-  }) => <SceneInner s={s} museumOpen={museumOpen} view={view} reducedMotion={reducedMotion} />,
-  (a, b) => a.k === b.k && a.view.w === b.view.w && a.view.x0 === b.view.x0 && a.view.h === b.view.h,
+    pennants: readonly number[]
+  }) => <SceneInner s={s} museumOpen={museumOpen} view={view} reducedMotion={reducedMotion} pennants={pennants} />,
+  (a, b) => a.k === b.k && a.pennants.join() === b.pennants.join() && a.view.w === b.view.w && a.view.x0 === b.view.x0 && a.view.h === b.view.h,
 )
+
+const NO_PENNANTS: readonly number[] = []
 
 /** Visible slice of the 1200-wide world: wider containers see more sky and street. */
 function useView(ref: React.RefObject<HTMLDivElement | null>, center: number, band: boolean): View {
@@ -1251,9 +1276,12 @@ export function StoreScene({
   museumOpen = false,
   reducedMotion = false,
   band = false,
+  pennants = NO_PENNANTS,
 }: {
   state: GameState
   museumOpen?: boolean
+  /** Hues of completed museum wings. */
+  pennants?: readonly number[]
   reducedMotion?: boolean
   /** Short banner: crops the sky and keeps the street, so the store stays large. */
   band?: boolean
@@ -1274,6 +1302,7 @@ export function StoreScene({
         museumOpen={museumOpen}
         view={view}
         reducedMotion={reducedMotion}
+        pennants={pennants}
       />
       <SceneLive s={state} reducedMotion={reducedMotion} view={view} />
     </div>
