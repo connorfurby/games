@@ -11,6 +11,7 @@ export function LateHubShell({
   purpose,
   scene,
   tray,
+  desks,
   primary,
   stats,
   actions,
@@ -21,6 +22,8 @@ export function LateHubShell({
   scene?: ReactNode
   /** The verb tray (one primary verb, optional secondaries, fail reason). */
   tray?: VerbTrayProps
+  /** Desk cards laid out under the tray (see PlayFrame). */
+  desks?: ReactNode
   /** @deprecated Use `tray`. Ignored when `tray` is set. */
   primary?: ReactNode
   /** @deprecated Rendered in the primary slot only when `tray` is absent. */
@@ -36,6 +39,7 @@ export function LateHubShell({
         department={title}
         room={scene}
         tray={tray}
+        desks={desks}
         primarySlot={
           !tray && (primary || stats || actions) ? (
             <div className="lh-primary-slot">

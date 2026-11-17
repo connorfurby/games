@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { scrollToDesk } from '../kit/desk'
 import type { Command } from '../../sim/commands'
 import { can } from '../../sim/commands'
 import { engine } from '../../sim/engine'
@@ -29,8 +29,6 @@ export function ColdPanel() {
   const treatyCheck = can(s, { type: 'cryoTreaty' })
   const immune = cryoImmune(s)
   const treatyLeft = immune ? Math.ceil(s.late.cryoImmuneUntil - s.time) : 0
-  const [coolerSheet, setCoolerSheet] = useState(false)
-  const [plantSheet, setPlantSheet] = useState(false)
   const logsSigned = s.depth?.cooler?.logsSigned ?? 0
   const missed = s.depth?.cooler?.missed ?? 0
   const nextDue = s.depth?.cooler?.nextDueAt ?? 0
@@ -49,91 +47,14 @@ export function ColdPanel() {
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose={MENUS.cold.purpose}
-        department="Cold"
-        room={<ColdScene />}
-        tray={{
-          primary: signReady
-            ? {
-                label: `Sign log · ${logsSigned}/${DEPTH.coolerLogNeed}`,
-                tone: 'free',
-                size: 'lg',
-                feedback: true,
-                coachId: 'cold-sign-log',
-                title: c.browned ? brownoutNote : undefined,
-                onClick: () => dispatch({ type: 'signCoolerLog' }),
-              }
-            : {
-                label: 'Build buffer',
-                tone: 'primary',
-                size: 'lg',
-                coachId: 'cold-momentum',
-                disabled: !balancedAny,
-                title: !balancedAny ? 'Need cash for plant or tank' : `Cold line · surplus ${surplus}`,
-                onClick: () => {
-                  for (const cmd of BALANCED_COLD) {
-                    if (engine.can(cmd).ok) engine.dispatch(cmd)
-                  }
-                },
-              },
-          failReason: signReady ? signCheck.reason : !balancedAny ? 'Need cash for plant or tank' : undefined,
-          secondaries: [
-            ...(showCooler
-              ? [
-                  {
-                    key: 'cooler',
-                    label: 'Cooler log',
-                    fact: `${logsSigned}/${DEPTH.coolerLogNeed}`,
-                    onClick: () => setCoolerSheet(true),
-                  },
-                ]
-              : []),
-            {
-              key: 'plants',
-              label: 'Plants',
-              fact: String(c.plants),
-              onClick: () => setPlantSheet(true),
-            },
-            {
-              key: 'tank',
-              label: 'Tank',
-              fact: String(c.tanks),
-              disabled: !tankCheck.ok,
-              title: !tankCheck.ok ? tankCheck.reason : undefined,
-              onClick: () => dispatch({ type: 'buyTank' }),
-            },
-          ],
-        }}
-      >
-        {c.browned ? (
-          <FailReason action={showCooler ? { label: 'Open Cooler log', onClick: () => setCoolerSheet(true) } : undefined}>
-            {brownoutNote}
-          </FailReason>
-        ) : null}
-        {blastDrain ? (
-          <FailReason action={showCooler ? { label: 'Open Cooler log', onClick: () => setCoolerSheet(true) } : undefined}>
-            Blast is draining yield — tunnel spoil cut returns after Cooler log.
-          </FailReason>
-        ) : null}
-        <div className="p6-row">
-          <Badge tone={c.browned ? 'danger' : 'muted'}>
-            {c.plants} plant{c.plants === 1 ? '' : 's'} · {c.tanks} tank{c.tanks === 1 ? '' : 's'}
-          </Badge>
-          {c.momentumOn ? <Badge tone="success">Momentum ×{c.momentum.toFixed(2)}</Badge> : null}
-          {c.browned ? <Badge tone="danger">Brownout</Badge> : null}
-        </div>
-      </PlayFrame>
-
-      <Sheet
-        open={coolerSheet}
-        onClose={() => setCoolerSheet(false)}
-        title="Cooler Log"
+        desks={
+          <>
+            <Sheet
+        open
+        onClose={() => {}}
+        title="Cooler log"
         reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setCoolerSheet(false)}>
-            Done
-          </Button>
-        }
+        deskHidden={!showCooler}
       >
         <div className="p6-stack">
           <Meter
@@ -149,29 +70,18 @@ export function ColdPanel() {
                   : 'due now'
             }
           />
-          <Button
-            tone="free"
-            size="lg"
-            disabled={!signCheck.ok}
-            title={!signCheck.ok ? signCheck.reason : 'Sign — free'}
-            feedback
-            onClick={() => dispatch({ type: 'signCoolerLog' })}
-          >
-            Sign log
-          </Button>
+          {signCheck.ok ? (
+            <Button tone="free" feedback onClick={() => dispatch({ type: 'signCoolerLog' })}>
+              Sign the log
+            </Button>
+          ) : null}
         </div>
       </Sheet>
-
-      <Sheet
-        open={plantSheet}
-        onClose={() => setPlantSheet(false)}
-        title="Cold plants"
+            <Sheet
+        open
+        onClose={() => {}}
+        title="Cooling plants & tanks"
         reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setPlantSheet(false)}>
-            Done
-          </Button>
-        }
       >
         <div className="p6-stack">
           {(
@@ -222,36 +132,31 @@ export function ColdPanel() {
                     (c.poweredKinds ?? []).includes(pair[1]) &&
                     (c.poweredKinds ?? []).length === 2
                   return (
-                    <Button
+                    on || check.ok ? <Button
                       key={pair.join('-')}
-                      tone={on ? 'primary' : 'ghost'}
+                      tone={on ? 'primary' : 'secondary'}
                       size="sm"
-                      disabled={!check.ok}
                       title={!check.ok ? check.reason : `Power ${pair.join(' + ')}`}
                       onClick={() => dispatch({ type: 'setPlantPower', kinds: [...pair] })}
                     >
                       {pair.join(' + ')}
-                    </Button>
+                    </Button> : null
                   )
                 })}
               </div>
             </div>
           ) : null}
           <div className="p6-row">
-            <Button
-              tone="ghost"
+            {decommissionCheck.ok ? <Button
+              tone="secondary"
               size="sm"
-              disabled={!decommissionCheck.ok}
-              title={!decommissionCheck.ok ? decommissionCheck.reason : undefined}
               onClick={() => dispatch({ type: 'decommissionPlant' })}
             >
-              Decommission 1
-            </Button>
-            <Button
+              Remove one plant
+            </Button> : null}
+            {c.plants >= 1 ? <Button
               tone="danger"
               size="sm"
-              disabled={c.plants < 1}
-              title={c.plants < 1 ? 'No plants to remove' : undefined}
               onClick={async () => {
                 const n = c.plants
                 if (n < 1) return
@@ -265,28 +170,68 @@ export function ColdPanel() {
                 for (let i = 0; i < n; i++) dispatch({ type: 'decommissionPlant' })
               }}
             >
-              Decommission all
-            </Button>
-            {s.era >= 11 ? (
-              <Button
-                tone="primary"
-                size="sm"
-                disabled={!treatyCheck.ok}
-                title={
-                  immune
-                    ? `Cryo Treaty · ${treatyLeft}s`
-                    : !treatyCheck.ok
-                      ? treatyCheck.reason
-                      : `Spend ${HORIZON.clauseToggleSeal} seal`
-                }
-                onClick={() => dispatch({ type: 'cryoTreaty' })}
-              >
-                {immune ? `Treaty · ${treatyLeft}s` : 'Cryo treaty'}
+              Remove all plants
+            </Button> : null}
+            {s.era >= 11 && immune ? <span className="p6-copy">Cryo treaty · {treatyLeft}s left</span> : null}
+            {s.era >= 11 && !immune && treatyCheck.ok ? (
+              <Button tone="primary" size="sm" title={`Spend ${HORIZON.clauseToggleSeal} seal`} onClick={() => dispatch({ type: 'cryoTreaty' })}>
+                Sign the cryo treaty
               </Button>
             ) : null}
           </div>
         </div>
       </Sheet>
+          </>
+        }
+        purpose={MENUS.cold.purpose}
+        department="Cold"
+        room={<ColdScene />}
+        tray={{
+          primary: signReady
+            ? {
+                label: `Sign log · ${logsSigned}/${DEPTH.coolerLogNeed}`,
+                tone: 'free',
+                size: 'lg',
+                feedback: true,
+                coachId: 'cold-sign-log',
+                title: c.browned ? brownoutNote : undefined,
+                onClick: () => dispatch({ type: 'signCoolerLog' }),
+              }
+            : {
+                label: 'Build buffer',
+                tone: 'primary',
+                size: 'lg',
+                coachId: 'cold-momentum',
+                disabled: !balancedAny,
+                title: !balancedAny ? 'Need cash for plant or tank' : `Cold line · surplus ${surplus}`,
+                onClick: () => {
+                  for (const cmd of BALANCED_COLD) {
+                    if (engine.can(cmd).ok) engine.dispatch(cmd)
+                  }
+                },
+              },
+          failReason: signReady ? signCheck.reason : !balancedAny ? 'Need cash for plant or tank' : undefined,
+        }}
+      >
+        {c.browned ? (
+          <FailReason action={showCooler ? { label: 'Open Cooler log', onClick: () => scrollToDesk('desk-cooler') } : undefined}>
+            {brownoutNote}
+          </FailReason>
+        ) : null}
+        {blastDrain ? (
+          <FailReason action={showCooler ? { label: 'Open Cooler log', onClick: () => scrollToDesk('desk-cooler') } : undefined}>
+            Blast is draining yield — tunnel spoil cut returns after Cooler log.
+          </FailReason>
+        ) : null}
+        <div className="p6-row">
+          <Badge tone={c.browned ? 'danger' : 'muted'}>
+            {c.plants} plant{c.plants === 1 ? '' : 's'} · {c.tanks} tank{c.tanks === 1 ? '' : 's'}
+          </Badge>
+          {c.momentumOn ? <Badge tone="success">Momentum ×{c.momentum.toFixed(2)}</Badge> : null}
+          {c.browned ? <Badge tone="danger">Brownout</Badge> : null}
+        </div>
+      </PlayFrame>
+
     </section>
   )
 }

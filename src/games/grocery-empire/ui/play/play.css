@@ -374,10 +374,28 @@
     color: var(--ge-ink-muted);
   }
 
+  /* The trail is the row's verb: a small pill, so the row reads as something to press. */
   .pf-row__trail {
     flex: 0 0 auto;
-    font: 600 var(--t-xs) / 1 var(--ge-font-ui, system-ui, sans-serif);
-    color: var(--ge-ink-muted);
+    padding: 6px var(--s-3);
+    border-radius: var(--r-pill);
+    background: color-mix(in srgb, var(--ge-ink) 10%, transparent);
+    font: 700 var(--t-xs) / 1 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink);
+  }
+  .pf-row:hover .pf-row__trail {
+    background: color-mix(in srgb, var(--ge-ink) 18%, transparent);
+  }
+
+  /* A row that cannot be used yet is information, not a control. */
+  .pf-row--info {
+    cursor: default;
+    background: transparent;
+    border-style: dashed;
+  }
+  .pf-row__why {
+    font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-warn);
   }
 
   .pf-chip {

@@ -74,7 +74,7 @@ describe('late hub panels (money, empire)', () => {
     expect(out).toContain('Scrutiny')
     expect(out).toContain('Council chamber')
     const early = html(createElement(PoliticsPanel), prep(3))
-    expect(early).toContain('Leave the Region')
+    expect(early).toContain('Acquire a neighbor')
     expect(early).not.toContain('Petitions')
   })
 

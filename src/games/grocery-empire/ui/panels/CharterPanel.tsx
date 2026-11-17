@@ -1,3 +1,4 @@
+import { scrollToDesk } from '../kit/desk'
 import { useState } from 'react'
 import { MENUS } from '../../content/menus'
 import { CHARTERS, CLAUSES, CLAUSE_BY_ID, type CharterId, type ClauseDef } from '../../content/horizon'
@@ -51,8 +52,6 @@ export function CharterPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
   const h = s.horizon
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
-  const [clausesOpen, setClausesOpen] = useState(false)
-  const [hearingOpen, setHearingOpen] = useState(false)
   const embassy = can(s, { type: 'openEmbassy' })
   const cost = embassyCost(s)
   const freeLeft = Math.max(0, HORIZON.freeClauseToggles - h.clauseToggles)
@@ -125,7 +124,6 @@ export function CharterPanel() {
   let goalFail: string | undefined = embassy.ok ? undefined : embassy.reason
   let goalReady = embassy.ok
   let primaryIsEmbassy = true
-  let primaryIsHearing = false
 
   const seatCheck = can(s, { type: 'seatClause' })
   const seatNeed = HORIZON.clauseSeatingNeed
@@ -148,13 +146,12 @@ export function CharterPanel() {
     goalTitle = 'Answer the hearing'
     goalReady = true
     primaryIsEmbassy = false
-    primaryIsHearing = true
     goalFail = undefined
     goalPrimary = {
       label: 'Answer hearing',
       tone: 'free',
       size: 'lg',
-      onClick: () => setHearingOpen(true),
+      onClick: () => scrollToDesk('desk-hearing'),
     }
   } else if (!h.charter && h.clauses.length >= 4) {
     goalTitle = 'Sign Standard, Boutique, or Co-op'
@@ -202,15 +199,6 @@ export function CharterPanel() {
     primary: goalPrimary,
     failReason: goalFail,
     secondaries: [
-      {
-        key: 'clauses',
-        label: 'Clauses',
-        fact: `${h.clauses.length}/4`,
-        onClick: () => setClausesOpen(true),
-      },
-      ...(hearingDue && !primaryIsHearing
-        ? [{ key: 'hearing', label: 'Hearing', onClick: () => setHearingOpen(true) }]
-        : []),
       ...(!primaryIsEmbassy
         ? [
             {
@@ -233,39 +221,12 @@ export function CharterPanel() {
         purpose={MENUS.charter.purpose}
         department={MENUS.charter.name}
         tray={tray}
-        scene={
-          <CharterScene
-          kept={h.clauses.length}
-          embassies={h.embassies}
-          signed={!!h.charter}
-          seal={h.seal}
-          reducedMotion={reducedMotion}
-          onEmbassy={() => {
-            if (embassy.ok) dispatch({ type: 'openEmbassy' })
-          }}
-        />
-        }
-      >
-        <HorizonGoalStrip
-          title={goalTitle}
-          progress={h.clauses.length / 4}
-          progressLabel={`${h.clauses.length}/4 clauses`}
-          payoff={`Charter layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}
-          ready={goalReady}
-          coachId="charter-goal"
-        />
-        {seatNeed > 0 && (seatDone > 0 || (h.seatingUntil ?? 0) > 0 || seatCheck.ok) ? (
-          <SeatingMeter done={seatDone} need={seatNeed} />
-        ) : null}
-        <p className="hz-pocket" data-coach-id="charter-seal" title={`${freeLeft} free toggle${freeLeft === 1 ? '' : 's'} left. Seal buys the rest.`}>
-          <span>Seal</span>
-          <strong>{pocket(h.seal, numberFormat)}</strong>
-          <span>+{sealRate.toFixed(2)}/s</span>
-        </p>
-        <Sheet
-          open={clausesOpen}
-          onClose={() => setClausesOpen(false)}
-          title={`Clauses · ${h.clauses.length}/4`}
+        desks={
+          <>
+            <Sheet
+          open
+          onClose={() => {}}
+          title={`Clauses · ${h.clauses.length} of 4 kept`}
           reducedMotion={reducedMotion}
         >
           <div className="hz-clause-grid" data-coach-id="charter-clauses">
@@ -279,22 +240,23 @@ export function CharterPanel() {
                     <p>{helpLine(clause)}</p>
                   </header>
                   <p className="hz-note">{clause.grudge}</p>
-                  <Button
-                    tone={kept ? 'primary' : 'ghost'}
-                    disabled={!check.ok}
+                  {kept || check.ok ? <Button
+                    tone={kept ? 'secondary' : 'primary'}
                     title={gateTitle(check, `${clause.grudge} · ${helpLine(clause)}`)}
                     onClick={() => toggle(clause)}
                   >
                     {kept ? 'Drop' : 'Keep'}
-                  </Button>
+                  </Button> : <p className="hz-note">{check.reason}</p>}
                 </article>
               )
             })}
           </div>
         </Sheet>
-        <Sheet
-          open={hearingOpen}
-          onClose={() => setHearingOpen(false)}
+            <Sheet
+          open
+          onClose={() => {}}
+          deskHidden={!hearingDue}
+          className="desk-hearing"
           title={`Hearing · session ${Math.min((docket?.answered ?? 0) + 1, docket?.needed ?? 3)}/${docket?.needed ?? 3}`}
           reducedMotion={reducedMotion}
           footer={
@@ -305,7 +267,6 @@ export function CharterPanel() {
               title={gateTitle(answerCheck, amend ? 'The clause stays seated; its grudge is struck.' : 'The clause and its grudge stand.')}
               onClick={() => {
                 dispatch({ type: 'answerHearing' })
-                setHearingOpen(false)
               }}
             >
               {amend ? 'Amend & answer' : 'Answer'}
@@ -341,7 +302,37 @@ export function CharterPanel() {
             </p>
           )}
         </Sheet>
-
+          </>
+        }
+        scene={
+          <CharterScene
+          kept={h.clauses.length}
+          embassies={h.embassies}
+          signed={!!h.charter}
+          seal={h.seal}
+          reducedMotion={reducedMotion}
+          onEmbassy={() => {
+            if (embassy.ok) dispatch({ type: 'openEmbassy' })
+          }}
+        />
+        }
+      >
+        <HorizonGoalStrip
+          title={goalTitle}
+          progress={h.clauses.length / 4}
+          progressLabel={`${h.clauses.length}/4 clauses`}
+          payoff={`Charter layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}
+          ready={goalReady}
+          coachId="charter-goal"
+        />
+        {seatNeed > 0 && (seatDone > 0 || (h.seatingUntil ?? 0) > 0 || seatCheck.ok) ? (
+          <SeatingMeter done={seatDone} need={seatNeed} />
+        ) : null}
+        <p className="hz-pocket" data-coach-id="charter-seal" title={`${freeLeft} free toggle${freeLeft === 1 ? '' : 's'} left. Seal buys the rest.`}>
+          <span>Seal</span>
+          <strong>{pocket(h.seal, numberFormat)}</strong>
+          <span>+{sealRate.toFixed(2)}/s</span>
+        </p>
         {h.charter ? (
           <p className="hz-note">
             {CHARTERS[h.charter].name} is signed. {CHARTERS[h.charter].blurb}

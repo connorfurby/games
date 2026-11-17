@@ -13,6 +13,7 @@ export function ScreenPanel({
   icon: _icon,
   scene,
   tray,
+  desks,
   primary,
   stats,
   actions,
@@ -26,6 +27,8 @@ export function ScreenPanel({
   scene?: ReactNode
   /** The verb tray (one primary verb, optional secondaries, fail reason). */
   tray?: VerbTrayProps
+  /** Desk cards laid out under the tray (see PlayFrame). */
+  desks?: ReactNode
   /** @deprecated Use `tray`. Ignored when `tray` is set. */
   primary?: ReactNode
   /** @deprecated Rendered in the primary slot only when `tray` is absent. */
@@ -42,6 +45,7 @@ export function ScreenPanel({
         department={title}
         room={scene}
         tray={tray}
+        desks={desks}
         primarySlot={
           !tray && (primary || stats || actions) ? (
             <div className="p6-primary-slot">

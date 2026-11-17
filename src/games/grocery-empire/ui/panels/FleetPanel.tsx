@@ -52,8 +52,6 @@ function NavFail({ reason, onJump, jumpLabel }: { reason?: string; onJump?: () =
 
 export function FleetPanel() {
   const { state: s, dispatch, reducedMotion, numberFormat, setActiveMenu } = useGame()
-  const [charterOpen, setCharterOpen] = useState(false)
-  const [warOpen, setWarOpen] = useState(false)
   const [cls, setCls] = useState<BargeClass>('hauler')
   const [pocketId, setPocketId] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null)
@@ -134,29 +132,146 @@ export function FleetPanel() {
             fact: `${stamps}/${DEPTH.rationLedgerNeed}`,
             coachId: 'fleet-ledger',
             disabled: !stampCheck.ok,
-            title: stampCheck.ok ? 'Stamp the ration ledger — free.' : stampCheck.reason,
+            title: 'Stamp the ration ledger — free.',
             onClick: () => dispatch({ type: 'stampLedger' }),
           },
         ]
       : []),
-    {
-      key: 'charter',
-      label: 'Charter',
-      fact: `${pool} free`,
-      title: 'Points shape every barge.',
-      onClick: () => setCharterOpen(true),
-    },
-    {
-      key: 'war',
-      label: 'Drift war',
-      fact: warStep > 0 ? `${warStep}/3` : f.warOn ? 'on' : 'optional',
-      onClick: () => setWarOpen(true),
-    },
   ]
 
   return (
     <section className="ge-panel fv">
       <PlayFrame
+        desks={
+          <>
+            <Sheet
+        open
+        onClose={() => {}}
+        title={`Charter · ${pool} free · ${spent} placed`}
+        reducedMotion={reducedMotion}
+      >
+        <p className="ge-muted">Points shape every barge. Read on hand: {qty(s.read, numberFormat)}.</p>
+        {!charterCheck.ok && needsRead(charterCheck.reason) ? (
+          <NavFail
+            reason={charterCheck.reason}
+            jumpLabel="Open Strategy to bank Read"
+            onJump={() => {jumpStrategy()
+            }}
+          />
+        ) : null}
+        <div className="fl-row">
+          <Button
+            tone="primary"
+            coachId="fleet-charter"
+            disabled={!charterCheck.ok}
+            title={charterCheck.ok ? 'One Charter point' : charterCheck.reason}
+            onClick={() => dispatch({ type: 'buyCharter' })}
+          >
+            +1 point · {FLEET.readPerCharterPoint} Read
+          </Button>
+          <Button
+            tone="ghost"
+            disabled={!charterCheck.ok}
+            title={charterCheck.ok ? `Up to 10 points · ${FLEET.readPerCharterPoint * 10} Read` : charterCheck.reason}
+            onClick={() => {
+              for (let i = 0; i < 10; i++) {
+                if (!can(engine.getState(), { type: 'buyCharter' }).ok) break
+                dispatch({ type: 'buyCharter' })
+              }
+            }}
+          >
+            +10
+          </Button>
+          <Button
+            tone="ghost"
+            coachId="fleet-guardian"
+            disabled={!guardianCheck.ok}
+            title={guardianCheck.ok ? 'Safe opener: Shell 5, Replication 4, Survey 1, Transit 1.' : guardianCheck.reason}
+            onClick={() => dispatch({ type: 'applyGuardian' })}
+          >
+            Safe opener
+          </Button>
+          <Button
+            tone="ghost"
+            disabled={!rebootCheck.ok}
+            title={rebootCheck.ok ? 'Refund every placed point.' : rebootCheck.reason}
+            onClick={() => dispatch({ type: 'rebootFleet' })}
+          >
+            Refund all
+          </Button>
+        </div>
+        <section className="fv-axes" aria-label="Charter axes">
+          {CHARTER_AXES.map((a) => {
+            const lvl = f.charter[a.id] ?? 0
+            const minus = can(s, { type: 'setCharterAxis', axis: a.id, delta: -1 })
+            const plus = can(s, { type: 'setCharterAxis', axis: a.id, delta: 1 })
+            return (
+              <div key={a.id} className="fv-axis">
+                <div className="fv-axis__who">
+                  <strong>{a.name}</strong>
+                  <span>{axisEffect(a.id, lvl)}</span>
+                </div>
+                <div className="fl-stepper fv-stepper">
+                  <button
+                    type="button"
+                    disabled={!minus.ok}
+                    aria-label={`Take a point from ${a.name}`}
+                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: -1 })}
+                  >
+                    −
+                  </button>
+                  <output aria-label={`${a.name} points`}>{lvl}</output>
+                  <button
+                    type="button"
+                    disabled={!plus.ok}
+                    title={plus.ok ? undefined : plus.reason}
+                    aria-label={`Put a point in ${a.name}`}
+                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: 1 })}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </section>
+      </Sheet>
+            <Sheet
+        open
+        onClose={() => {}}
+        title={`Drift war · ${f.legacy.toFixed(1)} Legacy`}
+        reducedMotion={reducedMotion}
+      >
+        <p className="ge-muted" data-coach-id="fleet-drift">
+          {f.warOn || warStep > 0
+            ? `Sight, Board, Hold. Resist ÷${resist.toFixed(1)}.`
+            : 'Optional. Legacy from the war raises the Charter cap.'}
+        </p>
+        <div className="fl-row">
+          {!f.warOn && warStep === 0 ? (
+            <Button
+              tone="ghost"
+              disabled={!driftCheck.ok}
+              title={driftCheck.ok ? 'Start the Drift war' : driftCheck.reason}
+              onClick={() => dispatch({ type: 'startDriftWar' })}
+            >
+              Start the war
+            </Button>
+          ) : null}
+          {warStep > 0 && warStep < 3 ? (
+            <Button
+              tone="secondary"
+              disabled={!advanceCheck.ok}
+              title={advanceCheck.ok ? 'Advance Sight, Board, Hold' : advanceCheck.reason}
+              onClick={() => dispatch({ type: 'advanceDriftWar' })}
+            >
+              Advance ({warStep}/3)
+            </Button>
+          ) : null}
+        </div>
+      </Sheet>
+          </>
+        }
         purpose="Send haulers on pocket trips."
         department="Fleet"
         room={<FleetHarborScene />}
@@ -396,136 +511,6 @@ export function FleetPanel() {
           ) : null}
         </div>
       </PlayFrame>
-
-      <Sheet
-        open={charterOpen}
-        onClose={() => setCharterOpen(false)}
-        title={`Charter · ${pool} free · ${spent} placed`}
-        reducedMotion={reducedMotion}
-      >
-        <p className="ge-muted">Points shape every barge. Read on hand: {qty(s.read, numberFormat)}.</p>
-        {!charterCheck.ok && needsRead(charterCheck.reason) ? (
-          <NavFail
-            reason={charterCheck.reason}
-            jumpLabel="Open Strategy to bank Read"
-            onJump={() => {
-              setCharterOpen(false)
-              jumpStrategy()
-            }}
-          />
-        ) : null}
-        <div className="fl-row">
-          <Button
-            tone="primary"
-            coachId="fleet-charter"
-            disabled={!charterCheck.ok}
-            title={charterCheck.ok ? 'One Charter point' : charterCheck.reason}
-            onClick={() => dispatch({ type: 'buyCharter' })}
-          >
-            +1 point · {FLEET.readPerCharterPoint} Read
-          </Button>
-          <Button
-            tone="ghost"
-            disabled={!charterCheck.ok}
-            title={charterCheck.ok ? `Up to 10 points · ${FLEET.readPerCharterPoint * 10} Read` : charterCheck.reason}
-            onClick={() => {
-              for (let i = 0; i < 10; i++) {
-                if (!can(engine.getState(), { type: 'buyCharter' }).ok) break
-                dispatch({ type: 'buyCharter' })
-              }
-            }}
-          >
-            +10
-          </Button>
-          <Button
-            tone="ghost"
-            coachId="fleet-guardian"
-            disabled={!guardianCheck.ok}
-            title={guardianCheck.ok ? 'Safe opener: Shell 5, Replication 4, Survey 1, Transit 1.' : guardianCheck.reason}
-            onClick={() => dispatch({ type: 'applyGuardian' })}
-          >
-            Safe opener
-          </Button>
-          <Button
-            tone="ghost"
-            disabled={!rebootCheck.ok}
-            title={rebootCheck.ok ? 'Refund every placed point.' : rebootCheck.reason}
-            onClick={() => dispatch({ type: 'rebootFleet' })}
-          >
-            Refund all
-          </Button>
-        </div>
-        <section className="fv-axes" aria-label="Charter axes">
-          {CHARTER_AXES.map((a) => {
-            const lvl = f.charter[a.id] ?? 0
-            const minus = can(s, { type: 'setCharterAxis', axis: a.id, delta: -1 })
-            const plus = can(s, { type: 'setCharterAxis', axis: a.id, delta: 1 })
-            return (
-              <div key={a.id} className="fv-axis">
-                <div className="fv-axis__who">
-                  <strong>{a.name}</strong>
-                  <span>{axisEffect(a.id, lvl)}</span>
-                </div>
-                <div className="fl-stepper fv-stepper">
-                  <button
-                    type="button"
-                    disabled={!minus.ok}
-                    aria-label={`Take a point from ${a.name}`}
-                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: -1 })}
-                  >
-                    −
-                  </button>
-                  <output aria-label={`${a.name} points`}>{lvl}</output>
-                  <button
-                    type="button"
-                    disabled={!plus.ok}
-                    title={plus.ok ? undefined : plus.reason}
-                    aria-label={`Put a point in ${a.name}`}
-                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: 1 })}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </section>
-      </Sheet>
-
-      <Sheet
-        open={warOpen}
-        onClose={() => setWarOpen(false)}
-        title={`Drift war · ${f.legacy.toFixed(1)} Legacy`}
-        reducedMotion={reducedMotion}
-      >
-        <p className="ge-muted" data-coach-id="fleet-drift">
-          {f.warOn || warStep > 0
-            ? `Sight, Board, Hold. Resist ÷${resist.toFixed(1)}.`
-            : 'Optional. Legacy from the war raises the Charter cap.'}
-        </p>
-        <div className="fl-row">
-          {!f.warOn && warStep === 0 ? (
-            <Button
-              tone="ghost"
-              disabled={!driftCheck.ok}
-              title={driftCheck.ok ? 'Start the Drift war' : driftCheck.reason}
-              onClick={() => dispatch({ type: 'startDriftWar' })}
-            >
-              Start the war
-            </Button>
-          ) : null}
-          {warStep > 0 && warStep < 3 ? (
-            <Button
-              tone="secondary"
-              disabled={!advanceCheck.ok}
-              title={advanceCheck.ok ? 'Advance Sight, Board, Hold' : advanceCheck.reason}
-              onClick={() => dispatch({ type: 'advanceDriftWar' })}
-            >
-              Advance ({warStep}/3)
-            </Button>
-          ) : null}
-        </div>
-      </Sheet>
 
       <ConfirmModal
         open={acceptOpen}

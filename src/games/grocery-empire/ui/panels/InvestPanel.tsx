@@ -13,7 +13,6 @@ import {
   scrutinyDrag,
 } from '../../sim/systems/lateHubs'
 import type { GameState, InvestRisk } from '../../sim/state'
-import { useState } from 'react'
 import { useGame } from '../GameContext'
 import { money } from '../format'
 import { Button, Card, DataTable, Disclosure, Meter, Sheet } from '../kit'
@@ -55,7 +54,6 @@ function memoCashShortfall(s: GameState): { name: string; need: number } | null 
 
 export function InvestPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion } = useGame()
-  const [moveOpen, setMoveOpen] = useState(false)
   const bal = s.passbook?.balance ?? 0
   const rate = passbookRate(s)
   const pbCap = passbookCap(s)
@@ -141,13 +139,7 @@ export function InvestPanel() {
   // Primary verb: the advisor's deposit / withdraw when it has one, otherwise open the passbook sheet.
   const depositCheck = can(s, { type: 'depositPassbook', amount: depositSuggest })
   const withdrawCheck = can(s, { type: 'withdrawPassbook', amount: withdrawSuggest })
-  const moveSecondary = {
-    key: 'move',
-    label: 'Move cash',
-    fact: money(bal, numberFormat),
-    onClick: () => setMoveOpen(true),
-  }
-  const tray: VerbTrayProps = wantDeposit
+  const tray: VerbTrayProps | undefined = wantDeposit
     ? {
         primary: {
           label: `Deposit ${money(depositSuggest, numberFormat)}`,
@@ -158,7 +150,6 @@ export function InvestPanel() {
           onClick: () => dispatch({ type: 'depositPassbook', amount: depositSuggest }),
         },
         failReason: depositCheck.ok ? undefined : depositCheck.reason,
-        secondaries: [moveSecondary],
       }
     : wantWithdraw
       ? {
@@ -171,52 +162,17 @@ export function InvestPanel() {
             onClick: () => dispatch({ type: 'withdrawPassbook', amount: withdrawSuggest }),
           },
           failReason: withdrawCheck.ok ? undefined : withdrawCheck.reason,
-          secondaries: [moveSecondary],
-        }
-      : {
-          primary: {
-            label: 'Move cash',
-            tone: 'free',
-            size: 'lg',
-            coachId: 'invest-move',
-            disabled: s.cash < 1 && bal < 0.01,
-            onClick: () => setMoveOpen(true),
-          },
-          failReason: s.cash < 1 && bal < 0.01 ? 'No cash or passbook balance to move yet.' : undefined,
-        }
+          }
+      : undefined
 
   return (
     <LateHubShell
-      title={MENUS.invest.name}
-      purpose={MENUS.invest.purpose}
-      scene={<TickerScene />}
-      tray={tray}
-    >
-      {kpiChips}
-
-      {wantDeposit || wantWithdraw ? (
-        <HubCallout
-          coachId="invest-advisor"
-          tone="ready"
-          title={wantDeposit ? 'Surplus is idle' : 'Passbook is full'}
-        >
-          {wantDeposit
-            ? `Park ${money(depositSuggest, numberFormat)} and keep ${money(reserve, numberFormat)} for bills.`
-            : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from the passbook.`}
-        </HubCallout>
-      ) : null}
-      <div className="lh-callout" data-coach-id="invest-passbook">
-        <div className="lh-callout__copy">
-          <h3>Passbook {money(bal, numberFormat)}</h3>
-          <p>
-            {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · cap {money(pbCap, numberFormat)}
-          </p>
-        </div>
-      </div>
-      <Sheet
-        open={moveOpen}
-        onClose={() => setMoveOpen(false)}
-        title="Passbook"
+        desks={
+          <>
+            <Sheet
+        open
+        onClose={() => {}}
+        title="Passbook · deposit and withdraw"
         reducedMotion={reducedMotion}
       >
         <div className="lh-stack">
@@ -255,6 +211,34 @@ export function InvestPanel() {
           </div>
         </div>
       </Sheet>
+          </>
+        }
+      title={MENUS.invest.name}
+      purpose={MENUS.invest.purpose}
+      scene={<TickerScene />}
+      tray={tray}
+    >
+      {kpiChips}
+
+      {wantDeposit || wantWithdraw ? (
+        <HubCallout
+          coachId="invest-advisor"
+          tone="ready"
+          title={wantDeposit ? 'Surplus is idle' : 'Passbook is full'}
+        >
+          {wantDeposit
+            ? `Park ${money(depositSuggest, numberFormat)} and keep ${money(reserve, numberFormat)} for bills.`
+            : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from the passbook.`}
+        </HubCallout>
+      ) : null}
+      <div className="lh-callout" data-coach-id="invest-passbook">
+        <div className="lh-callout__copy">
+          <h3>Passbook {money(bal, numberFormat)}</h3>
+          <p>
+            {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · cap {money(pbCap, numberFormat)}
+          </p>
+        </div>
+      </div>
       {outgrown ? (
         <p className="lh-note" role="note">
           <strong>Small change now.</strong> A full passbook earns about {money(pbCap * rate, numberFormat)}/s against{' '}

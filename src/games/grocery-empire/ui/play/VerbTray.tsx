@@ -15,7 +15,7 @@ export interface VerbSecondary {
 
 export interface VerbTrayProps {
   /** The one primary verb for this screen. */
-  primary: ButtonProps & { label: ReactNode }
+  primary: (ButtonProps & { label: ReactNode }) | null
   /** Up to four secondary actions (open sheets, etc.). */
   secondaries?: VerbSecondary[]
   /** Shown under a disabled primary — usually can() reason. */
@@ -27,21 +27,25 @@ export interface VerbTrayProps {
 }
 
 export function VerbTray({ primary, secondaries = [], failReason, failAction, hint }: VerbTrayProps) {
-  const { label, tone = 'free', className, ...rest } = primary
-  const secs = secondaries.slice(0, 4)
+  // A secondary that cannot be used yet is left out, not shown greyed (no dead buttons).
+  const secs = secondaries.filter((s) => !s.disabled).slice(0, 4)
+  if (!primary && secs.length === 0) return null
+  const { label, tone = 'free', className, ...rest } = primary ?? { label: null }
   return (
     <div className="pf__tray">
-      <div className="pf__primary">
-        <Button
-          {...rest}
-          tone={tone}
-          className={`pf-press${className ? ` ${className}` : ''}`.trim()}
-        >
-          {label}
-        </Button>
-        {hint && !rest.disabled ? <p className="pf__hint">{hint}</p> : null}
-        {failReason && rest.disabled ? <FailReason action={failAction}>{failReason}</FailReason> : null}
-      </div>
+      {primary ? (
+        <div className="pf__primary">
+          <Button
+            {...rest}
+            tone={tone}
+            className={`pf-press${className ? ` ${className}` : ''}`.trim()}
+          >
+            {label}
+          </Button>
+          {hint && !rest.disabled ? <p className="pf__hint">{hint}</p> : null}
+          {failReason && rest.disabled ? <FailReason action={failAction}>{failReason}</FailReason> : null}
+        </div>
+      ) : null}
       {secs.length ? (
         <div className="pf__secondaries">
           {secs.map((s) => (

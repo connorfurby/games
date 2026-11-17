@@ -1,3 +1,5 @@
+import { MENUS } from '../../content/menus'
+import { scrollToDesk } from '../kit/desk'
 import { useEffect, useMemo, useState } from 'react'
 import {
   BUILD_TRACKS,
@@ -80,7 +82,6 @@ export function BuildPanel() {
   } = useGame()
   const confirm = useConfirm()
   const [filter, setFilter] = useState<BuildFilter>('storefront')
-  const [upkeepSheet, setUpkeepSheet] = useState(false)
 
   const visibleTracks = useMemo(
     () =>
@@ -137,7 +138,40 @@ export function BuildPanel() {
   return (
     <section className="ge-panel bd">
       <PlayFrame
-        purpose="Raise the shell — each track is a room; facings lock tradeoffs."
+        desks={
+          <>
+            <Sheet
+        open
+        onClose={() => {}}
+        title={`Upkeep · ${money(upkeepMin, numberFormat)}/min`}
+        reducedMotion={reducedMotion}
+      >
+        <p className="ge-muted">
+          What your buildings cost to keep open{upkeepWarn ? ' — right now more than you earn.' : '.'}
+        </p>
+        <div className="p6-stack">
+          {BUILD_TRACKS.map((t) => {
+            const lv = buildLevel(s, t.id)
+            const u = t.tiers[lv]?.upkeepPerMin ?? 0
+            if (u <= 0) return null
+            return (
+              <ActionRow
+                key={t.id}
+                label={t.name}
+                fact={`${money(u, numberFormat)}/min`}
+                trail={t.tiers[lv]?.name}
+                disabled
+              />
+            )
+          })}
+        </div>
+        <Button tone="secondary" onClick={() => setActiveMenu('books')}>
+          Open Books
+        </Button>
+      </Sheet>
+          </>
+        }
+        purpose={MENUS.build.purpose}
         department="Build"
         room={<BuildSiteScene focusTrack={filter} />}
         tray={{
@@ -169,11 +203,7 @@ export function BuildPanel() {
                     tone: 'primary',
                     onClick: () => runBestEffort(STARTER_CORNER),
                   }
-                : {
-                    label: 'Track maxed',
-                    tone: 'ghost',
-                    disabled: true,
-                  },
+                : null,
           failReason: facingReady ? (
             <FailReason>Pick a facing before the next raise — Safe or Bold.</FailReason>
           ) : lockedEra ? (
@@ -181,7 +211,7 @@ export function BuildPanel() {
           ) : !canBuy && next ? (
             'Not enough cash'
           ) : upkeepWarn ? (
-            'Upkeep exceeds cash/s — see sheet'
+            'Upkeep costs more than you earn — see Upkeep below'
           ) : undefined,
           secondaries: [
             {
@@ -209,12 +239,6 @@ export function BuildPanel() {
                 })
               },
             },
-            {
-              key: 'upkeep',
-              label: 'Upkeep',
-              fact: `${money(upkeepMin, numberFormat)}/min`,
-              onClick: () => setUpkeepSheet(true),
-            },
             ...(hibernateCheck.ok
               ? [
                   {
@@ -240,7 +264,7 @@ export function BuildPanel() {
       >
         {upkeepWarn ? (
           <StatusChip tone="warn">
-            <button type="button" className="pf-chip__link" onClick={() => setUpkeepSheet(true)}>
+            <button type="button" className="pf-chip__link" onClick={() => scrollToDesk('desk-upkeep')}>
               Cash/s below upkeep — open Books or trim a tier
             </button>
           </StatusChip>
@@ -336,41 +360,6 @@ export function BuildPanel() {
         ) : null}
       </PlayFrame>
 
-      <Sheet
-        open={upkeepSheet}
-        onClose={() => setUpkeepSheet(false)}
-        title="Upkeep"
-        reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setUpkeepSheet(false)}>
-            Done
-          </Button>
-        }
-      >
-        <p className="ge-muted">
-          Buildings drain {money(upkeepMin, numberFormat)}/min
-          {upkeepWarn ? ' — more than cash/s right now.' : '.'}
-        </p>
-        <div className="p6-stack">
-          {BUILD_TRACKS.map((t) => {
-            const lv = buildLevel(s, t.id)
-            const u = t.tiers[lv]?.upkeepPerMin ?? 0
-            if (u <= 0) return null
-            return (
-              <ActionRow
-                key={t.id}
-                label={t.name}
-                fact={`${money(u, numberFormat)}/min`}
-                trail={t.tiers[lv]?.name}
-                disabled
-              />
-            )
-          })}
-        </div>
-        <Button tone="ghost" onClick={() => { setUpkeepSheet(false); setActiveMenu('books') }}>
-          Open Books
-        </Button>
-      </Sheet>
     </section>
   )
 }

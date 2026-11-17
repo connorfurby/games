@@ -10,6 +10,7 @@ import './hubStage.css'
 export function HubStage({
   scene,
   tray,
+  desks,
   primary,
   children,
   className = '',
@@ -22,6 +23,8 @@ export function HubStage({
   scene?: ReactNode
   /** The verb tray (one primary verb, optional secondaries, fail reason). */
   tray?: VerbTrayProps
+  /** Desk cards laid out under the tray (see PlayFrame). */
+  desks?: ReactNode
   /** @deprecated Use `tray`. Ignored when `tray` is set. */
   primary?: ReactNode
   children?: ReactNode
@@ -44,6 +47,7 @@ export function HubStage({
           ) : undefined
         }
         tray={tray}
+        desks={desks}
         primarySlot={
           !tray && primary ? (
             <div className={`hub-stage__primary ${primaryClassName}`.trim()}>{primary}</div>
