@@ -249,7 +249,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   purser: {
     id: 'purser',
     name: 'Purser',
-    blurb: 'Books Control from the work itself — log-scaled still.',
+    blurb: 'Earns Control from the work itself (less with each one).',
     hireBase: 110_000,
     hireGrowth: 1.45,
     wagePerMin: 160,

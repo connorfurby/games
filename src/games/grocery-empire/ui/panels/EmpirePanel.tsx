@@ -257,8 +257,8 @@ export function EmpireSections({
       >
         <header className="ge-empire-block__head">
           <p className="ge-muted">
-            Every rank gives a trait point. Spend them on permanent perks below; tap a perk to see it. Some pairs are
-            choose-one.
+            Every rank gives a trait point. Spend them on permanent perks below; tap a perk to see it. In some pairs you
+            can only pick one.
           </p>
           {spent > 0 ? (
             <div className="ge-chip-row" style={{ marginTop: '0.35rem' }}>
@@ -310,7 +310,7 @@ export function EmpireSections({
         </p>
         <SkillTree
           nodes={PERKS.filter((p) => p.branch === branch).map((p) => perkNode(s, p))}
-          tiers={[{ label: 'Basics' }, { label: 'Deeper' }, { label: 'Signature', note: 'some are choose-one' }]}
+          tiers={[{ label: 'Basics' }, { label: 'Deeper' }, { label: 'Signature', note: 'some pairs: pick one' }]}
           tint={BRANCH_TINT[branch]}
           selected={focusId && PERK_BY_ID[focusId]?.branch === branch ? focusId : null}
           onSelect={setFocusId}

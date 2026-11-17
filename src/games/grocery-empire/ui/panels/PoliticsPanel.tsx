@@ -116,7 +116,7 @@ export function PoliticsPanel() {
 
       <HubCallout title={council ? `Seat a delegate · ${paying}/${seatCap}` : `Acquire · ${p.acquisitions} owned`}>
         {council
-          ? `+${councilSeatAdd(s).toFixed(2)} store-equivalents${seats > seatCap ? ' · extras pay 40%' : ''}.`
+          ? `Seats add as much as ${councilSeatAdd(s).toFixed(2)} extra stores${seats > seatCap ? ' · seats past the limit pay 40%' : ''}.`
           : `${p.acquisitions} neighbor${p.acquisitions === 1 ? '' : 's'} bought.`}
       </HubCallout>
 
@@ -136,7 +136,7 @@ export function PoliticsPanel() {
           ) : (
             <p className="lh-note">
               {capitalNet >= 0 ? '+' : ''}
-              {capitalNet.toFixed(3)} Capital/s · leak {POLITICS.leakPerSec}/s, each {council ? 'whip' : 'lobbyist'} +
+              {capitalNet.toFixed(3)} Capital/s · drains {POLITICS.leakPerSec}/s, each {council ? 'whip' : 'lobbyist'} +
               {POLITICS.lobbyGainPerSec}/s.
             </p>
           )}
