@@ -32,43 +32,43 @@ function clauseHint(act: Command | null, fallback: string): string {
   if (!act) return fallback
   switch (act.type) {
     case 'unpack':
-      return 'Unpack a crate onto the shelf.'
+      return 'Press Unpack on the Floor.'
     case 'setFacing':
-      return 'Pick which cans to feature in Regulars on the Floor.'
+      return 'Store → Floor → Regulars.'
     case 'buyWholesale':
-      return 'Buy a crate while wholesale prices are low.'
+      return 'Store → Floor → Restock, on a low price.'
     case 'serveRegular':
-      return 'A regular is waiting: serve them before they give up.'
+      return 'A regular is waiting: serve them.'
     case 'dockCheckIn':
-      return 'Check in a truck at the dock with a receiver on shift.'
+      return 'Supply → Suppliers → Dock check-in.'
     case 'hire':
-      return 'Hire someone to cover the opening shift.'
+      return 'Team → Staff → Hire.'
     case 'assignShift':
-      return 'Put someone on the opening shift (Staff → Shifts & hours).'
+      return 'Team → Staff → Shifts & hours.'
     case 'buyMemo':
       return fallback.includes(',') ? `Buy the next memo in Memos.` : fallback
     case 'buyBuild':
-      return 'Buy the next building in Build.'
+      return 'Store → Build.'
     case 'openStore':
-      return 'Open your next store on Land.'
+      return 'Empire → Land.'
     case 'buyPlant':
-      return 'Build the next cooling plant in Cold.'
+      return 'Supply → Cold.'
     case 'signCoolerLog':
       return 'Sign the cooler log.'
     case 'setManifest':
     case 'setManifestStance':
-      return 'File a manifest that matches the run.'
+      return 'Supply → Logistics → Dispatch.'
     case 'openLane':
-      return 'Open a new route in Logistics.'
+      return 'Supply → Logistics.'
     case 'dispatchHauler':
-      return 'Send a hauler out from Fleet.'
+      return 'Empire → Fleet.'
     case 'launchBarge':
       return 'Launch the next barge.'
     case 'printFlyerWeek':
-      return 'Print this week’s flyer in Marketing.'
+      return 'Team → Marketing → Weekly flyer.'
     case 'fileFlagshipPlanogram':
     case 'fileStandardPlanogram':
-      return 'File the planogram in Regulars on the Floor.'
+      return 'Store → Floor → Regulars.'
     case 'toggleClause':
       return 'Keep the next charter clause.'
     case 'setCharter':
@@ -200,7 +200,7 @@ export function NextGoal({
         <span className="g2-goal__title" title={starsTitle}>
           <span className="g2-goal__title-text">{g.title}</span>
         </span>
-        <span className="g2-goal__hint">
+        <span className="g2-goal__hint" title={typeof hint === 'string' ? hint : undefined}>
           {hint}
           {also.length > (isFree ? 0 : 1) ? (
             <span className="g2-goal__eta"> Also needs {also.slice(isFree ? 0 : 1).join(' and ')}.</span>
