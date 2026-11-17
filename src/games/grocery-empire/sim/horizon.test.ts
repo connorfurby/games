@@ -327,7 +327,7 @@ describe('horizon door and puzzles', () => {
     raw.version = 7
     delete raw.horizon
     const m = migrate(raw)
-    expect(SAVE_VERSION).toBe(36)
+    expect(SAVE_VERSION).toBe(37)
     expect(m.version).toBe(SAVE_VERSION)
     expect(m.horizon.continued).toBe(false)
     expect(m.horizon.planets).toEqual([])

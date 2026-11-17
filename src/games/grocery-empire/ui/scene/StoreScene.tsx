@@ -158,7 +158,7 @@ function Harbor({ lanes, paused, right = W }: { lanes: number; paused: boolean; 
   const n = Math.min(10, lanes)
   return (
     <g className="sc-harbor">
-      <rect x={HARBOR_X} y={GROUND - 6} width={right - HARBOR_X} height={H - GROUND + 6} fill="var(--sc-water)" />
+      <rect x={HARBOR_X} y={GROUND - 6} width={Math.max(0, right - HARBOR_X)} height={H - GROUND + 6} fill="var(--sc-water)" />
       {Array.from({ length: n }, (_, i) => (
         <g
           key={i}
@@ -1012,8 +1012,8 @@ function SceneInner({
       <rect x={view.x0} y={HORIZON - 60} width={view.w} height={80} fill="url(#sc-haze)" />
       {(s.fleet?.lanes ?? 0) > 0 || era >= 4 ? <Harbor lanes={s.fleet?.lanes ?? 0} paused={paused} right={view.x0 + view.w} /> : null}
       {/* street */}
-      <rect x={view.x0} y={GROUND} width={(era >= 4 ? HARBOR_X : view.x0 + view.w) - view.x0} height={H - GROUND} fill="var(--sc-street)" />
-      <rect x={view.x0} y={GROUND} width={(era >= 4 ? HARBOR_X : view.x0 + view.w) - view.x0} height={4} fill="var(--sc-curb)" />
+      <rect x={view.x0} y={GROUND} width={Math.max(0, (era >= 4 ? HARBOR_X : view.x0 + view.w) - view.x0)} height={H - GROUND} fill="var(--sc-street)" />
+      <rect x={view.x0} y={GROUND} width={Math.max(0, (era >= 4 ? HARBOR_X : view.x0 + view.w) - view.x0)} height={4} fill="var(--sc-curb)" />
       <ellipse cx={facadeX + FACADE[tier]!.w * 0.6} cy={GROUND} rx={FACADE[tier]!.w * 0.8} ry={70} fill="url(#sc-glow)" />
       <g opacity={0.25 + dark * 0.75}>
         <Lamps xs={[facadeX - 110, facadeX + FACADE[tier]!.w + 140]} />

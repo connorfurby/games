@@ -3,6 +3,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { plateSrc, type PlateId, type SpeakerId } from '../../art/cast'
 import { CHAPTERS } from '../chapters'
+import { useGame } from '../GameContext'
+import { clock, money, qty } from '../format'
+import { StoreScene } from '../scene/StoreScene'
+import { storeDisplayName } from '../../sim/state'
 import { Btn } from './Btn'
 import { SpeakerChrome } from './SpeakerChrome'
 
@@ -37,6 +41,7 @@ export function ChapterCard({
   const beat = beats[Math.min(beatIdx, beats.length - 1)]!
   const last = beatIdx >= beats.length - 1
   const plate = plateSrc(def.plate)
+  const { state: s, numberFormat } = useGame()
 
   const next = () => {
     if (last) onAccept()
@@ -67,9 +72,33 @@ export function ChapterCard({
         </p>
         <h2 id="ge-chapter-title">{beat.title ?? def.title}</h2>
         {beatIdx === 0 ? <p className="ge-chapter__epigraph">“{def.epigraph}”</p> : null}
+        {beatIdx === 0 ? (
+          <figure className="ge-chapter__store">
+            <StoreScene state={s} reducedMotion={reducedMotion} band />
+            <figcaption>{storeDisplayName(s)}, as it stands today</figcaption>
+          </figure>
+        ) : null}
         <p className="ge-chapter__body">{beat.body}</p>
         {last ? (
           <>
+            <dl className="ge-chapter__stats" aria-label="Your run so far">
+              <div>
+                <dt>Baskets sold</dt>
+                <dd>{qty(s.stats.sold, numberFormat)}</dd>
+              </div>
+              <div>
+                <dt>Best cash</dt>
+                <dd>{money(s.stats.peakCash, numberFormat)}</dd>
+              </div>
+              <div>
+                <dt>Crew</dt>
+                <dd>{s.staff.length}</dd>
+              </div>
+              <div>
+                <dt>Time played</dt>
+                <dd>{clock(s.stats.playSec ?? 0)}</dd>
+              </div>
+            </dl>
             <ul className="ge-chapter__recap">
               {def.lines.slice(0, 3).map((line) => (
                 <li key={line}>{line}</li>

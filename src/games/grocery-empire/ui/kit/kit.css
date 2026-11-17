@@ -80,8 +80,8 @@
     --_line: color-mix(in srgb, var(--ge-ink) 26%, transparent);
   }
   .gk-btn--ghost:disabled {
-    border-style: solid;
-    --_line: transparent;
+    --_bg: transparent;
+    --_line: color-mix(in srgb, var(--ge-ink) 22%, transparent);
     --_ink: color-mix(in srgb, var(--ge-ink) 60%, transparent);
   }
 
@@ -130,8 +130,17 @@
   .gk-btn--secondary:hover:not(:disabled) {
     --_bg: color-mix(in srgb, var(--ge-raised) 85%, var(--ge-ink) 10%);
   }
+  /*
+   * The quiet button still looks like a button: a hairline edge, everywhere. A bare word
+   * that happens to be clickable is not allowed (owner rule, 2026-11-16). Links inside
+   * running text use LinkButton or an <a>, not a ghost Button.
+   */
   .gk-btn--ghost {
-    --_line: transparent;
+    --_line: var(--ge-line-strong);
+    --_bg: color-mix(in srgb, var(--ge-raised) 45%, transparent);
+  }
+  .gk-btn--ghost:hover:not(:disabled) {
+    --_bg: var(--ge-raised);
   }
   .gk-btn--danger {
     --_ink: var(--ge-danger);

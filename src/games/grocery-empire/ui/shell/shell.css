@@ -1460,4 +1460,79 @@
       display: none;
     }
   }
+
+  /* Era chapter: the store as it stands, and what the run has done so far. */
+  .ge-chapter__store {
+    margin: var(--s-2) 0;
+  }
+  .ge-chapter__store .sc-scene {
+    height: 6rem;
+    border-radius: var(--r-md);
+  }
+  .ge-chapter__store figcaption {
+    margin-top: var(--s-1);
+    font: 500 var(--t-xs) / 1.3 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+    text-align: center;
+  }
+  .ge-chapter__stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--s-2);
+    margin: var(--s-2) 0;
+  }
+  .ge-chapter__stats > div {
+    padding: var(--s-2);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--ge-line);
+    background: var(--ge-sunken);
+  }
+  .ge-chapter__stats dt {
+    font: 600 var(--t-2xs) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .ge-chapter__stats dd {
+    margin: 2px 0 0;
+    font: 700 var(--t-md) / 1.2 var(--ge-font-mono, monospace);
+    font-variant-numeric: tabular-nums;
+    color: var(--ge-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (max-width: 720px) {
+    .ge-chapter__stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Storefront reacts the moment something is built, hired or opened. */
+  @keyframes g2-scene-bump {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--ge-tag) 70%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 14px transparent;
+    }
+  }
+  .g2-scenewrap.is-bumped .sc-scene {
+    animation: g2-scene-bump 0.9s ease-out;
+  }
+  .g2-scenewrap__new {
+    position: absolute;
+    left: 50%;
+    bottom: 0.4rem;
+    transform: translateX(-50%);
+    z-index: 2;
+    padding: 2px var(--s-3);
+    border-radius: var(--r-pill);
+    background: var(--ge-tag);
+    color: var(--ge-tag-ink);
+    font: 700 var(--t-xs) / 1.4 var(--ge-font-ui, system-ui, sans-serif);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  html.ge-reduced-motion .g2-scenewrap.is-bumped .sc-scene {
+    animation: none;
+  }
 }

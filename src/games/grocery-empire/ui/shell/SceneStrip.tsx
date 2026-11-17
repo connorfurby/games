@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MenuId } from '../../content/menus'
 import type { GameState } from '../../sim/state'
 import { StoreNameDialog } from './StoreNameDialog'
@@ -69,8 +69,36 @@ export function SceneStrip({
   onToggle: (v: boolean) => void
 }) {
   const [naming, setNaming] = useState(false)
+  // The street answers a purchase: a ring and one line, laid over the banner (no layout change).
+  const growth = storeGrowth(state)
+  const seen = useRef(growth)
+  const [bump, setBump] = useState<string | null>(null)
+  useEffect(() => {
+    const prev = seen.current
+    seen.current = growth
+    const what =
+      growth.era > prev.era
+        ? 'A new era on the street'
+        : growth.builds > prev.builds
+          ? 'Built: the store just grew'
+          : growth.stores > prev.stores
+            ? 'A new store opened'
+            : growth.staff > prev.staff
+              ? 'New hire on the floor'
+              : null
+    if (!what) return
+    setBump(what)
+    const t = window.setTimeout(() => setBump(null), 2200)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [growth.era, growth.builds, growth.stores, growth.staff])
   return (
-    <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}`}>
+    <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}${bump ? ' is-bumped' : ''}`}>
+      {bump ? (
+        <span className="g2-scenewrap__new" role="status">
+          {bump}
+        </span>
+      ) : null}
       <button
         type="button"
         className={`g2-scenebar__btn g2-scenewrap__name${state.storeName ? ' is-named' : ''}`}
@@ -92,4 +120,14 @@ export function SceneStrip({
       </button>
     </div>
   )
+}
+
+/** The few numbers that change what the street looks like. */
+function storeGrowth(s: GameState) {
+  return {
+    era: s.era,
+    builds: Object.values(s.builds ?? {}).reduce((a, n) => a + (typeof n === 'number' ? n : 0), 0),
+    stores: s.stores?.length ?? 0,
+    staff: s.staff?.length ?? 0,
+  }
 }
