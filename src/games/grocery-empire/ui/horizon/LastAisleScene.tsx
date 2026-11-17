@@ -56,7 +56,7 @@ export function LastAisleScene({
         y={56}
         w={320}
         h={180}
-        label="File the standard"
+        label="Fill with the standard"
         menu="lastaisle"
         coachId="lastaisle-standard"
         onActivate={onFile}
@@ -81,7 +81,7 @@ export function LastAisleScene({
           </g>
         ))}
       </Hit>
-      <Sign x={258} y={240} text={n === 0 ? 'File the standard — five lines' : `${n} of 5 filled`} anchor="middle" />
+      <Sign x={258} y={240} text={n === 0 ? 'Five lines to fill' : `${n} of 5 filled`} anchor="middle" />
     </RoomScene>
   )
 }

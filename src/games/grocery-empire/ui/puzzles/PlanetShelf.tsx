@@ -88,7 +88,7 @@ export function PlanetShelf({
         onActivate={onCommit}
       >
         {filled === 0 ? (
-          <Sign x={28} y={72} text="File the standard — or place six goods" />
+          <Sign x={28} y={72} text="Use the standard shelf, or place six goods" />
         ) : (
           <Sign x={28} y={72} text={`${filled} of 6 bays · tap to file`} small />
         )}

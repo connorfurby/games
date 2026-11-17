@@ -73,16 +73,15 @@ describe('worlds hub panels', () => {
     const planet = open.horizon.planets[0]
     if (planet) planet.stocked = false
     const out = html(createElement(PlanetsPanel), open)
-    expect(out).toContain('File the standard')
+    expect(out).toContain('standard shelf')
     expect(out).toContain('of 6 tags')
   })
 
   it('renders the exchange', () => {
     const out = html(createElement(ExchangePanel), state)
     expect(out).toContain('Freight')
-    expect(out).toContain('Open circuit')
     expect(out).toContain('Keel')
-    expect(out).toContain('Route layer')
+    expect(out).toContain('lifts flagship sales')
   })
 
   it('renders cultivars', () => {
@@ -91,7 +90,7 @@ describe('worlds hub panels', () => {
     expect(out).toContain('Seed')
     expect(out).toContain('Buy greenhouse')
     expect(out).toContain('Bed 1')
-    expect(out).toContain('Greenhouse layer')
+    expect(out).toContain('greenhouse lifts sales')
   })
 
   it('renders the signal desk', () => {
@@ -113,7 +112,7 @@ describe('worlds hub panels', () => {
 
   it('renders the last aisle', () => {
     const out = html(createElement(LastAislePanel), state)
-    expect(out).toContain('File the standard')
+    expect(out).toContain('with the standard')
     expect(out).toContain('Accept')
     expect(out).toContain('Reject')
     expect(out).toContain('Stakes preview')

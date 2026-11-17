@@ -194,7 +194,7 @@ export function PlanetsPanel() {
   const standardVerb: Verb | null =
     run && def
       ? {
-          label: `File the standard · ${standardScore.toFixed(2)}`,
+          label: `Stock the standard shelf · scores ${standardScore.toFixed(2)}`,
           ready: standard.ok,
           disabled: !standard.ok,
           title: gateTitle(standard, 'File the authored shelf and follow the flagship price. Fast is 0.85; slow is 0.72.'),
@@ -245,7 +245,7 @@ export function PlanetsPanel() {
     const other = commit.ok ? standardVerb : commitVerb
     secondaries.push({
       key: commit.ok ? 'standard' : 'commit',
-      label: commit.ok ? 'File the standard' : 'Commit shelf',
+      label: commit.ok ? 'Stock the standard shelf' : 'Stock this shelf',
       fact: commit.ok ? standardScore.toFixed(2) : `${placed}/6 placed`,
       disabled: other.disabled,
       coachId: commit.ok ? undefined : commitVerb.coachId,
@@ -283,7 +283,7 @@ export function PlanetsPanel() {
       key: 'edit',
       label: 'Clever shelf',
       fact: run.score.toFixed(2),
-      title: `Reopen the shelf — commit a clever one or file the standard at ${standardScore.toFixed(2)}.`,
+      title: `Reopen the shelf. Stock your own, or use the standard (scores ${standardScore.toFixed(2)}).`,
       onClick: () => setEditing(true),
     })
   }

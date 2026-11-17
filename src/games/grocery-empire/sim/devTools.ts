@@ -228,7 +228,7 @@ export function devSet(field: DevField, v: number) {
 
 export function devSetEra(era: number) {
   mutate((s) => {
-    const e = Math.max(0, Math.min(6, Math.floor(era)))
+    const e = Math.max(0, Math.min(12, Math.floor(era)))
     if (e > s.era) setEra(s, e)
     else s.era = e
     s.chapterQueue = []

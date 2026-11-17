@@ -143,11 +143,11 @@ export function CultivarPanel() {
         }
       : primaryKind === 'chore'
         ? {
-            label: `Season chore · ${seasonChore}`,
+            label: `Do the season chore · ${seasonChore}`,
             tone: 'free',
             size: 'lg',
             disabled: !chore.ok,
-            title: gateTitle(chore, `${seasonChore} this season locks the bed until the turn (no clever cross) — or Season Hand on shift saves a miss.`),
+            title: gateTitle(chore, `Doing the ${seasonChore} chore holds one bed until the season turns, so you cannot cross in it. A Season Hand on shift covers a missed chore.`),
             onClick: doChore,
           }
         : primaryKind === 'house'
@@ -161,12 +161,12 @@ export function CultivarPanel() {
               onClick: buyHouse,
             }
           : {
-              label: 'File the standard cross',
+              label: 'Plant the standard cross',
               tone: 'primary',
               size: 'lg',
               coachId: 'cultivars-standard',
               disabled: !standard.ok,
-              title: gateTitle(standard, 'Plant the two traits this season wants.'),
+              title: gateTitle(standard, 'Plants the two traits this season wants. Safe; a cross you pick yourself can score higher.'),
               onClick: fileStandard,
             }
   const primaryCheck =
@@ -179,10 +179,9 @@ export function CultivarPanel() {
         ? [
             {
               key: 'chore',
-              label: 'Season chore',
-              fact: seasonChore,
+              label: `Do the season chore · ${seasonChore}`,
               disabled: !chore.ok,
-              title: gateTitle(chore, `${seasonChore} this season locks the bed until the turn (no clever cross) — or Season Hand on shift saves a miss.`),
+              title: gateTitle(chore, `Doing the ${seasonChore} chore holds one bed until the season turns, so you cannot cross in it. A Season Hand on shift covers a missed chore.`),
               onClick: doChore,
             },
           ]
@@ -204,29 +203,14 @@ export function CultivarPanel() {
         ? [
             {
               key: 'standard',
-              label: 'File standard cross',
-              fact: '0.72',
+              label: 'Plant the standard cross',
               coachId: 'cultivars-standard',
               disabled: !standard.ok,
-              title: gateTitle(standard, 'Plant the two traits this season wants.'),
+              title: gateTitle(standard, 'Plants the two traits this season wants. Safe; a cross you pick yourself can score higher.'),
               onClick: fileStandard,
             },
           ]
         : []),
-      {
-        key: 'clever',
-        label: 'Clever cross',
-        fact: bedLock ? `locked · ${bedLock}` : undefined,
-        disabled: !!bedLock,
-        title: bedLock
-          ? `The ${bedLock} chore holds the bed until the season turns.`
-          : 'Scrolls to the cross board. Pick two parents, preview, then plant.',
-        onClick: () =>
-          document.querySelector('[data-coach-id="cultivars-commit"]')?.scrollIntoView({
-            block: 'center',
-            behavior: reducedMotion ? 'auto' : 'smooth',
-          }),
-      },
     ],
   }
 
@@ -255,7 +239,7 @@ export function CultivarPanel() {
               title={`${SEASON_NAMES[h.season]} · ${wants[0]} + ${wants[1]}`}
               progress={1 - left / HORIZON.seasonSec}
               progressLabel={`${planted}/${Math.max(1, h.plots.length)} beds · turns in ${clock(left)}`}
-              payoff={`Greenhouse layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}
+              payoff={`Your greenhouse lifts sales (now ×${layer < 10 ? layer.toFixed(2) : layer.toFixed(0)}). Plant what the season wants.`}
               eta={left > 0 ? `season ends in ${clock(left)}` : null}
               ready={standard.ok || house.ok}
               coachId="cultivars-goal"
@@ -279,8 +263,8 @@ export function CultivarPanel() {
               </p>
             ) : null}
             <PuzzleFrame
-              title="Cross"
-              purpose="Two parents. Preview the child before you plant."
+              title="Breed a cross yourself"
+              purpose="Pick one trait from each parent. The score shows how well the child fits the season before you plant."
               score={preview}
               hideStandard
               standardDisabled={!standard.ok}
@@ -288,6 +272,7 @@ export function CultivarPanel() {
               standardTitle={gateTitle(standard, 'Plant the two traits this season wants.')}
               commitTitle={gateTitle(plant, 'Plant this bed.')}
               commitCoach="cultivars-commit"
+              commitLabel="Plant this cross"
               onStandard={() => dispatch({ type: 'fileStandardCross', ...(bed ? { index: safeIndex } : {}) })}
               onCommit={() => {
                 if (!a || !b) return

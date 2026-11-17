@@ -28,7 +28,7 @@ export function PuzzleFrame({
   onCommit,
   standardTitle,
   commitTitle,
-  standardLabel = 'File the standard',
+  standardLabel = 'Use the standard',
   commitLabel = 'Commit',
   standardCoach,
   commitCoach,
@@ -81,22 +81,20 @@ export function PuzzleFrame({
       {showActions ? (
         <div className="ge-sticky-actions">
           {note ? <p className="hz-note">{note}</p> : null}
-          {hideStandard ? null : (
+          {hideStandard || standardDisabled ? null : (
             <Btn
               tone="primary"
               coachId={standardCoach}
-              disabled={standardDisabled}
               title={standardTitle}
               onClick={onStandard}
             >
               {standardLabel}
             </Btn>
           )}
-          {hideCommit ? null : (
+          {hideCommit || commitDisabled ? null : (
             <Btn
-              tone={hideStandard ? 'secondary' : 'ghost'}
+              tone={hideStandard ? 'primary' : 'secondary'}
               coachId={commitCoach}
-              disabled={commitDisabled}
               title={commitTitle}
               onClick={onCommit}
             >

@@ -59,7 +59,7 @@ export function SignalScene({
           </g>
         ))}
       </Hit>
-      {filled === 0 ? <Sign x={560} y={230} text="File the standard — four marks" anchor="middle" /> : null}
+      {filled === 0 ? <Sign x={560} y={230} text="Four marks to send" anchor="middle" /> : null}
       <Person x={60} y={230} tint="#8d84c4" name="Listener" scale={0.85} working={filled > 0} />
     </RoomScene>
   )

@@ -308,7 +308,7 @@ const EXTRA: Record<string, Extra> = {
     cost: c(),
     visible: (s) => had(s, 'ivos-list'),
     run: (s) => queueTutorial(s, 'hz-ending'),
-    done: 'File the standard is the solve on the last list.',
+    done: 'The standard fills every line on the last list.',
   },
   'new-counter-form': {
     cost: c(),

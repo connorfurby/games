@@ -1,3 +1,5 @@
+import { SegmentedControl } from '../kit'
+import { Field } from '../play'
 import { SEASON_WANTS, crossTraits, type TraitId } from '../../content/horizon'
 
 const TRAITS: TraitId[] = ['sweet', 'sturdy', 'pretty', 'lasting', 'rich', 'quiet']
@@ -29,32 +31,25 @@ export function Cross({
           </em>
         ))}
       </p>
-      <div className="hz-chips" role="group" aria-label="Parent A">
-        {TRAITS.map((trait) => (
-          <button
-            key={`a-${trait}`}
-            type="button"
-            className={`hz-chip${a === trait ? ' is-on' : ''}${wants.includes(trait) ? ' is-want' : ''}`}
-            aria-pressed={a === trait}
-            onClick={() => onA(trait)}
-          >
-            A · {trait}
-          </button>
-        ))}
-      </div>
-      <div className="hz-chips" role="group" aria-label="Parent B">
-        {TRAITS.map((trait) => (
-          <button
-            key={`b-${trait}`}
-            type="button"
-            className={`hz-chip${b === trait ? ' is-on' : ''}${wants.includes(trait) ? ' is-want' : ''}`}
-            aria-pressed={b === trait}
-            onClick={() => onB(trait)}
-          >
-            B · {trait}
-          </button>
-        ))}
-      </div>
+      {(
+        [
+          ['First parent', a, onA],
+          ['Second parent', b, onB],
+        ] as const
+      ).map(([label, value, set]) => (
+        <Field key={label} label={label}>
+          <SegmentedControl
+            aria-label={label}
+            value={value ?? ''}
+            onChange={(v) => set(v as typeof TRAITS[number])}
+            options={TRAITS.map((trait) => ({
+              value: trait,
+              label: wants.includes(trait) ? `${trait} ★` : trait,
+              title: wants.includes(trait) ? 'This season wants it' : undefined,
+            }))}
+          />
+        </Field>
+      ))}
       <div className="hz-child-preview" aria-live="polite">
         {child ? (
           <>
@@ -63,7 +58,7 @@ export function Cross({
             <em className={`hz-badge${intense ? ' is-on' : ''}`}>{intense ? 'Intense' : 'Mixed'}</em>
           </>
         ) : (
-          <span className="hz-note">Pick both parents to preview the child.</span>
+          <span className="hz-note">Pick a trait from each parent to see the child. ★ marks what this season wants.</span>
         )}
       </div>
     </div>

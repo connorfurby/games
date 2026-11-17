@@ -80,7 +80,7 @@ export function SignalPanel() {
   const primary: VerbTrayProps['primary'] =
     primaryKind === 'standard'
       ? {
-          label: 'File the standard',
+          label: 'Send the standard phrase',
           tone: 'primary',
           size: 'lg',
           coachId: 'signal-standard',
@@ -158,7 +158,7 @@ export function SignalPanel() {
         }
       >
       <HorizonGoalStrip
-        title={standard.ok ? 'File the standard phrase' : h.relays < 1 ? 'Buy a relay' : 'Clear the phrase'}
+        title={standard.ok ? 'Send the standard phrase' : h.relays < 1 ? 'Buy a relay' : 'Clear the phrase'}
         progress={h.phraseScores.length ? h.phraseScores.reduce((a, b) => a + b, 0) / h.phraseScores.length : null}
         progressLabel={`${h.phrasesCleared} cleared · ${h.relays} relay${h.relays === 1 ? '' : 's'}`}
         payoff={`Signal layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${layer.toFixed(0)}`} on sales`}

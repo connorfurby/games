@@ -78,7 +78,7 @@ export function LastAislePanel() {
             onClick: confirmAccept,
           }
         : {
-            label: 'File the standard',
+            label: 'Fill every line with the standard',
             tone: 'primary',
             size: 'lg',
             coachId: 'lastaisle-standard',
@@ -135,7 +135,7 @@ export function LastAislePanel() {
         title={ready ? 'Accept or reject the list' : 'Fill five lines'}
         progress={h.listScore}
         progressLabel={`${filled}/5 lines · mean ${h.listScore.toFixed(2)}`}
-        payoff={ready ? 'Accept opens endless worlds. Reject pauses the run.' : 'File the standard to fill every line.'}
+        payoff={ready ? 'Accept opens endless worlds. Reject pauses the run.' : 'Use the standard to fill every line.'}
         ready={fileCheck.ok || ready}
         coachId="lastaisle-goal"
       />

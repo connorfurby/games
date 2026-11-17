@@ -238,12 +238,12 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
         <p className="ge-coach__recovery">{step.recovery}</p>
         {stuck ? (
           <p className="ge-coach__recovery">
-            That control isn&apos;t on screen — use {showDoForMe ? 'Do it for me' : nextLabel} or Skip.
+            You can&apos;t see that part right now. Tap {showDoForMe ? 'Do it for me' : nextLabel}, or skip the tour.
           </p>
         ) : look ? (
-          <p className="ge-coach__recovery">Keep playing — Got it when you&apos;ve seen it.</p>
+          <p className="ge-coach__recovery">Keep playing, and tap Got it when you&apos;ve seen it.</p>
         ) : (
-          <p className="ge-coach__recovery">Click the highlight, or use the buttons below.</p>
+          <p className="ge-coach__recovery">Tap the glowing part, or use the buttons below.</p>
         )}
         <div className="ge-coach__actions">
           <Btn tone="ghost" onClick={onSkip}>

@@ -17,7 +17,7 @@ import {
 } from '../../sim/systems/horizon'
 import { statMul } from '../../sim/systems/stats'
 import { useGame } from '../GameContext'
-import { Button } from '../kit'
+import { Button, Select } from '../kit'
 import type { VerbTrayProps } from '../play'
 import { clock, money, qty } from '../format'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
@@ -121,9 +121,9 @@ export function ExchangePanel() {
   const named = (id: string) => planetDef(id)?.name ?? (id || '—')
   const keelLive = h.keel.convoys > 0 && !h.keel.bought
 
-  let goalTitle = 'File a circuit'
-  let goalLabel = `${h.circuits.length}/${HORIZON.maxCircuits} circuits · mean ${mean > 0 ? mean.toFixed(2) : '—'}`
-  let goalPayoff = `Stops have spoil/tariff/delay. Route layer ${layer < 10 ? `×${layer.toFixed(2)}` : `×${qty(layer)}`} on flagship sales`
+  let goalTitle = 'File a trade route'
+  let goalLabel = `${h.circuits.length} of ${HORIZON.maxCircuits} routes${mean > 0 ? ` · average score ${mean.toFixed(2)}` : ''}`
+  let goalPayoff = `Every route you file lifts flagship sales (now ×${layer < 10 ? layer.toFixed(2) : qty(layer)}). The middle stop can spoil, tax or delay the load.`
   const fileStandard = () =>
     dispatch({
       type: 'fileStandardConvoy',
@@ -133,12 +133,12 @@ export function ExchangePanel() {
       ...(good ? { good } : {}),
     })
   let goalPrimary: VerbTrayProps['primary'] = {
-    label: 'File the standard',
+    label: 'Send the standard convoy',
     tone: 'primary',
     size: 'lg',
     coachId: 'exchange-standard',
     disabled: !standard.ok,
-    title: gateTitle(standard, 'File a standard packed circuit. Fast is three at 0.85; slow is five at 0.72.'),
+    title: gateTitle(standard, 'A ready-made convoy on this route. Safe, but it scores less than one you pack yourself.'),
     onClick: fileStandard,
   }
   let goalFail: string | undefined = standard.ok ? undefined : standard.reason
@@ -214,8 +214,7 @@ export function ExchangePanel() {
         ? [
             {
               key: 'standard',
-              label: 'File the standard',
-              fact: '0.72',
+              label: 'Send the standard convoy',
               disabled: !standard.ok,
               title: gateTitle(standard, 'File a standard packed circuit at 0.72.'),
               onClick: fileStandard,
@@ -224,21 +223,11 @@ export function ExchangePanel() {
         : []),
       {
         key: 'circuit',
-        label: 'Open circuit',
+        label: 'Open a new route',
         fact: `${Math.ceil(freightCost)} freight`,
         disabled: !open.ok,
         title: gateTitle(open, 'Reserve an empty circuit'),
         onClick: () => dispatch({ type: 'openCircuit' }),
-      },
-      {
-        key: 'clever',
-        label: 'Clever convoy',
-        title: 'Scrolls to the packing board. Pick the route, pack five bays, then commit.',
-        onClick: () =>
-          document.querySelector('[data-coach-id="exchange-commit"]')?.scrollIntoView({
-            block: 'center',
-            behavior: reducedMotion ? 'auto' : 'smooth',
-          }),
       },
     ],
   }
@@ -286,15 +275,15 @@ export function ExchangePanel() {
       </p>
 
       <PuzzleFrame
-        title="Convoy"
-        purpose="Origin, stop, destination, a good — then pack the five bays."
+        title="Pack a convoy yourself"
+        purpose="Pick where it starts, stops and ends, choose a good, then fill the five bays. A good pack beats the standard."
         score={formReady ? live : null}
         hideStandard
         standardDisabled={!standard.ok}
         commitDisabled={!convoy.ok}
         commitTitle={gateTitle(convoy, 'Commit this packed circuit.')}
         commitCoach="exchange-commit"
-        commitLabel="Commit convoy"
+        commitLabel="Send this convoy"
         onStandard={() =>
           dispatch({
             type: 'fileStandardConvoy',
@@ -330,37 +319,36 @@ export function ExchangePanel() {
         <div className="hz-route-grid">
           {(
             [
-              ['Origin', origin, setOrigin],
+              ['Start', origin, setOrigin],
               ['Stop', stop, setStop],
-              ['Dest', dest, setDest],
+              ['End', dest, setDest],
             ] as const
           ).map(([label, value, set]) => (
             <label key={label} className="hz-field">
               <span>{label}</span>
-              <select value={value} aria-label={label} onChange={(e) => set(e.target.value)}>
-                <option value="">Choose</option>
-                {worlds.map((w) => {
-                  const def = planetDef(w.id)
-                  return (
-                    <option key={w.id} value={w.id}>
-                      {def?.name ?? w.id} · {def?.wanted.join(', ')}
-                    </option>
-                  )
-                })}
-              </select>
+              <Select
+                aria-label={label}
+                value={value}
+                onChange={(v) => set(v)}
+                options={[
+                  { value: '', label: 'Choose a world' },
+                  ...worlds.map((w) => {
+                    const def = planetDef(w.id)
+                    return { value: w.id, label: `${def?.name ?? w.id} · wants ${def?.wanted.join(', ')}` }
+                  }),
+                ]}
+              />
               {value ? <em className="hz-field__hint">Wants {wantsLine(value)}</em> : null}
             </label>
           ))}
           <label className="hz-field">
             <span>Good</span>
-            <select value={good} aria-label="Good" onChange={(e) => setGood(e.target.value)}>
-              <option value="">Choose</option>
-              {PLANET_SKUS.map((sku) => (
-                <option key={sku.id} value={sku.id}>
-                  {sku.name} · {sku.tags.join(', ')}
-                </option>
-              ))}
-            </select>
+            <Select
+              aria-label="Good"
+              value={good}
+              onChange={(v) => setGood(v)}
+              options={[{ value: '', label: 'Choose a good' }, ...PLANET_SKUS.map((sku) => ({ value: sku.id, label: `${sku.name} · ${sku.tags.join(', ')}` }))]}
+            />
           </label>
         </div>
 
@@ -382,8 +370,8 @@ export function ExchangePanel() {
       {h.circuits.length > 0 ? (
         <article className="ge-card">
           <header className="ge-empire-block__head">
-            <h3>Circuits</h3>
-            <p>Standing route lets agents refile one convoy.</p>
+            <h3>Your routes</h3>
+            <p>Tap a route to load it. Pin one and your agents keep sending it for you.</p>
           </header>
           <ul className="hz-list">
             {h.circuits.map((row, i) => (
@@ -402,34 +390,31 @@ export function ExchangePanel() {
             ))}
           </ul>
           <div className="ge-chip-row">
-            <Button
-              tone="ghost"
-              disabled={!pin.ok}
-              title={gateTitle(pin, 'Agents refile this route')}
+            {pin.ok ? <Button
+              tone="secondary"
+              title="Your agents keep sending this route"
               onClick={() => pinIndex != null && dispatch({ type: 'setStandingRoute', index: pinIndex })}
             >
-              {h.standingRoute ? 'Repin standing route' : 'Pin standing route'}
-            </Button>
-            <Button
+              {h.standingRoute ? 'Pin this route instead' : 'Pin this route'}
+            </Button> : null}
+            {clear.ok ? <Button
               tone="danger"
-              disabled={!clear.ok}
-              title={gateTitle(clear)}
               onClick={() => {
                 if (index == null) return
                 dispatch({ type: 'clearCircuit', index })
                 setIndex(null)
               }}
             >
-              Clear
-            </Button>
+              Remove route
+            </Button> : null}
           </div>
         </article>
       ) : null}
 
       {!h.keel.bought ? (
         <p className="hz-note">
-          Keel & Sons: {h.keel.convoys} convoy{h.keel.convoys === 1 ? '' : 's'}
-          {frozen > 0 ? ` · frozen ${clock(frozen)}` : ''}. Actions live on the goal strip when they matter.
+          Keel & Sons run {h.keel.convoys} convoy{h.keel.convoys === 1 ? '' : 's'} on your routes
+          {frozen > 0 ? `, frozen for ${clock(frozen)}` : ''}.
         </p>
       ) : (
         <p className="hz-note">Keel flies your flag. {h.keel.convoys} convoy{h.keel.convoys === 1 ? '' : 's'} in the network.</p>

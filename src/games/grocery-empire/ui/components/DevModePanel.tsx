@@ -322,7 +322,7 @@ function DevEdit() {
       <section className="dv-block">
         <h4>Era</h4>
         <div className="dv-row">
-          {[0, 1, 2, 3, 4, 5, 6].map((e) => (
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((e) => (
             <button key={e} type="button" className={`dv-btn${s.era === e ? ' is-on' : ''}`} onClick={() => devSetEra(e)}>
               Era {e}
             </button>

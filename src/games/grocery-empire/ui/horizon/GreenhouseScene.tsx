@@ -45,15 +45,18 @@ export function GreenhouseScene({
       floor="#1c1916"
       height={240}
     >
-      <path d="M80 90 L480 40 L880 90" fill="none" stroke="#1c1916" strokeOpacity="0.25" strokeWidth="2" />
-      <rect x="36" y="56" width="520" height="8" rx="4" fill="#1c1916" opacity="0.25" />
-      <rect x="36" y="56" width={520 * frac} height="8" rx="4" fill="#1c1916" opacity="0.7" />
+      {/* Season dial under the chips, then the glasshouse roof over the beds. */}
+      <Sign x={36} y={74} text={`${name} · ${Math.round(frac * 100)}% through`} small />
+      <rect x="36" y="80" width="300" height="6" rx="3" fill="#1c1916" opacity="0.25" />
+      <rect x="36" y="80" width={300 * frac} height="6" rx="3" fill="#1c1916" opacity="0.7" />
+      <path d="M70 118 L480 92 L890 118" fill="none" stroke="#1c1916" strokeOpacity="0.3" strokeWidth="2" />
+      <path d="M70 118 V172 M890 118 V172" stroke="#1c1916" strokeOpacity="0.2" strokeWidth="2" />
 
       <Hit
         x={60}
-        y={100}
+        y={116}
         w={820}
-        h={120}
+        h={64}
         label={shown.length === 0 ? 'Buy greenhouse' : 'Plant beds'}
         menu="cultivars"
         coachId={shown.length === 0 ? 'cultivars-greenhouse' : 'cultivars-standard'}
@@ -63,7 +66,7 @@ export function GreenhouseScene({
           const x = 80 + i * gap
           const w = Math.max(36, gap - 16)
           return (
-            <g key={i} transform={`translate(${x} 108)`}>
+            <g key={i} transform={`translate(${x} 122)`}>
               <rect width={w} height="52" rx="4" fill={filled ? '#3f6b3a' : '#efe9dc'} opacity={filled ? 1 : 0.55} />
               {filled ? (
                 <path
@@ -77,7 +80,7 @@ export function GreenhouseScene({
           )
         })}
         {shown.length === 0 ? (
-          <Sign x={480} y={160} text="Buy a greenhouse — plant the beds" anchor="middle" />
+          <Sign x={480} y={156} text="No beds yet — buy a greenhouse" anchor="middle" />
         ) : null}
       </Hit>
 

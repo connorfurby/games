@@ -66,7 +66,7 @@ export function CharterPanel() {
       charter === 'standard'
         ? [
             `Network ×${HORIZON.standardNetwork.toFixed(2)}.`,
-            'File the standard becomes the only legal puzzle commit.',
+            'Puzzles can only use the standard from then on.',
             'Boutique craft scores lock out.',
           ]
         : charter === 'coop'

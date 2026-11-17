@@ -709,7 +709,7 @@ SEE ALSO  Era 4–6 systems detail · Dispatch.`,
     era: 12,
     topic: 'choices',
     blurb: 'Sign one before the Last Aisle. It reshapes your multipliers.',
-    body: `Standard: network ×1.25, but only File the standard is a legal commit and scores lock at 0.72.
+    body: `Standard: network ×1.25, but you can only use the standard on puzzles and scores stay at 0.72.
 Boutique: no network multiplier, puzzle scores may reach 1, excess over 0.72 scales that layer only (cap ×1.5).
 Co-op: ventures ×1.12, network ×0.92. The fork sits on your Next Goal until you sign.
 SEE ALSO  Eras 7–12 · Worlds puzzles (charter → Last Aisle).`,
