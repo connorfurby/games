@@ -212,18 +212,16 @@ export function MoreSections({ only }: { only?: MoreSection }) {
             >
               Photo mode
             </Btn>
-            <Btn
-              tone="ghost"
-              disabled={!undoGate.ok}
-              title={
-                undoGate.ok
-                  ? `Undo ${undoLabel(undoGate.label ?? 'last action')} · ${undoSecondsLeft()}s left`
-                  : 'Nothing to undo (5s window)'
-              }
-              onClick={() => performUndo()}
-            >
-              Undo{undoGate.ok && undoGate.label ? ` · ${undoLabel(undoGate.label)}` : ''}
-            </Btn>
+            {/* Only offered while there is something to undo (no dead button). */}
+            {undoGate.ok ? (
+              <Btn
+                tone="ghost"
+                title={`Undo ${undoLabel(undoGate.label ?? 'last action')} · ${undoSecondsLeft()}s left`}
+                onClick={() => performUndo()}
+              >
+                Undo{undoGate.label ? ` · ${undoLabel(undoGate.label)}` : ''}
+              </Btn>
+            ) : null}
           </div>
           <div className="ge-more-sparks">
             <Sparkline values={s.history?.cash ?? []} label="Cash" width={160} height={28} />
@@ -482,11 +480,24 @@ export function MoreSections({ only }: { only?: MoreSection }) {
               </Link>
             ) : null}
           </div>
-          <p className="ge-more-also">
-            Also:{' '}
-            <Link to="/news">News</Link> · <Link to="/guide/grocery-empire">Guide</Link> ·{' '}
-            <Link to="/achievements">Awards</Link> · <Link to="/shop">Shop</Link>
-          </p>
+          <div className="ge-more-links ge-more-links--site" style={{ marginTop: "0.5rem" }}>
+            <Link className="ge-more-link" to="/news">
+              <strong>News</strong>
+              <span>What changed</span>
+            </Link>
+            <Link className="ge-more-link" to="/guide/grocery-empire">
+              <strong>Guide</strong>
+              <span>How to play</span>
+            </Link>
+            <Link className="ge-more-link" to="/achievements">
+              <strong>Awards</strong>
+              <span>Your wall</span>
+            </Link>
+            <Link className="ge-more-link" to="/shop">
+              <strong>Shop</strong>
+              <span>Spend tokens</span>
+            </Link>
+          </div>
           <p className="ge-muted" style={{ marginTop: '0.4rem', fontSize: 'var(--t-xs)' }}>
             Grocery Empire v{GAME_VERSION}
           </p>

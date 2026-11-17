@@ -186,7 +186,7 @@ const PRESSURE: DialogueLine[] = [
   {
     id: 'first-arrears',
     speaker: 'operations',
-    text: 'Rent slipped into arrears. Sales pay it down — or the landlord’s patience thins.',
+    text: 'We came up short on rent. Sales will pay it off, but the landlord’s patience thins.',
     when: (s) => s.arrears > 0,
   },
   {

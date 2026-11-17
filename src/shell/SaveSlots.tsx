@@ -134,7 +134,14 @@ export function SaveSlots({
                 ) : null}
               </span>
               {action('Save', () => askSave(slot, filled))}
-              {action('Load', () => askLoad(slot), !filled)}
+              {filled ? (
+                action('Load', () => askLoad(slot))
+              ) : (
+                // Empty slot: nothing to load. Keep the column so rows line up.
+                <span aria-hidden style={{ visibility: 'hidden' }}>
+                  {action('Load', () => {})}
+                </span>
+              )}
             </div>
           )
         })}

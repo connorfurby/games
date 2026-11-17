@@ -380,7 +380,7 @@ export const TUTORIALS: TutorialDef[] = [
         id: 'rent-spot',
         coachId: 'floor-rent',
         title: 'Rent is a soft pressure',
-        body: 'Rent ticks softly. Short cash becomes arrears you pay down from sales — no game over.',
+        body: 'Rent is taken a little at a time. If you run short, it becomes unpaid rent that sales pay off later. There is no game over.',
         recovery: 'Mentor crates and bailouts buy another morning.',
         doneWhen: { kind: 'stat', key: 'rentPaid', min: 1 },
       },

@@ -39,6 +39,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Rooms that only cropped badly on phones show their numbers only: Council, Ventures street, Invest.
 - Invest room chips: Savings, Invested, then Holdings / Returns once instruments exist (was Lots / Yield/s / Book / Pads at zero).
 - Story: about 25 character lines and chapter cards keep their voice but drop jargon (drift, yield, Momentum, surplus, dry lanes, doctrine with teeth) and say where to act.
+- Menu drawer: Undo only appears when there is something to undo; News / Guide / Awards / Shop are cards instead of small underlined links; empty save slots hide Load (column kept). "Arrears" is "unpaid rent" in Books, the rent lesson and the story line.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

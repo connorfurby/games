@@ -314,7 +314,7 @@ function BooksPanelInner() {
               ...(s.arrears > 0.005
                 ? [
                     {
-                      label: 'Arrears',
+                      label: 'Unpaid rent',
                       value: `${money(s.arrears, numberFormat)} · ${etaLabel(arrearsEta)}`,
                       title: `${Math.round(RECOVERY.arrearsRevenueShare * 100)}% of store sales go to arrears`,
                     },
