@@ -1,3 +1,4 @@
+import { DAILY_RULE_ORDER, type DailyRuleId } from './balance'
 import { normalizeBuildVariants } from '../content/builds'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import {
@@ -1439,6 +1440,12 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
 
       // v37: store name (display only). Older saves simply have none yet.
       base.storeName = cleanStoreName(raw.storeName)
+
+      // v38: daily twist. Only a known rule survives; anything else is a normal run.
+      base.dailyRule =
+        typeof raw.dailyRule === 'string' && (DAILY_RULE_ORDER as readonly string[]).includes(raw.dailyRule)
+          ? (raw.dailyRule as DailyRuleId)
+          : null
 
       if (isObject(raw.tipsSeen)) {
         const seen: Record<string, true> = {}

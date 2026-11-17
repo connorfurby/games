@@ -1,3 +1,4 @@
+import { DAILY_RULE_TEXT, dailyRuleForSeed } from '../../content/dailyRules'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { NumberFormat } from '@/shared/bn'
@@ -92,12 +93,13 @@ export function MoreSections({ only }: { only?: MoreSection }) {
       if (hasSave) engine.saveToSlot(3)
       saveDailyChallenge({ day: today.day, seed: today.seed, active: true })
       engine.newGame(today.seed)
+      engine.dispatch({ type: 'setDailyRule', rule: dailyRuleForSeed(today.seed) })
       setIoMsg('Today’s corner has started.')
     }
     if (hasSave) {
       setConfirm({
         title: "Start Today's corner?",
-        body: 'Your current run is copied to save slot 3 first, then today’s run starts from the first counter.',
+        body: `Today: ${DAILY_RULE_TEXT[dailyRuleForSeed(today.seed)].name}. ${DAILY_RULE_TEXT[dailyRuleForSeed(today.seed)].line} Your current run is copied to save slot 3 first, then today’s run starts from the first counter.`,
         confirmLabel: 'Start corner',
         tone: 'danger',
         onConfirm: run,
@@ -246,7 +248,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
           {dailyActive || bestToday ? (
             <p className="ge-muted">
               {dailyActive
-                ? 'You are playing today’s corner'
+                ? `You are playing today’s corner${s.dailyRule ? ` · ${DAILY_RULE_TEXT[s.dailyRule].name}` : ''}`
                 : null}
               {bestToday
                 ? `${dailyActive ? ' · ' : ''}Best today ${bestToday.baskets.toLocaleString()} baskets`

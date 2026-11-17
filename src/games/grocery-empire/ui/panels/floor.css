@@ -406,4 +406,14 @@
     font: 600 var(--t-xs) / 1.3 var(--ge-font-ui, system-ui, sans-serif);
     color: var(--ge-success, #7cc47f);
   }
+
+  /* Daily run twist, one plain line above the desks. */
+  .fp-daily {
+    margin: 0 0 var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md);
+    border: 1px solid color-mix(in srgb, var(--ge-tag) 45%, transparent);
+    background: color-mix(in srgb, var(--ge-tag) 8%, transparent);
+    font-size: var(--t-sm);
+  }
 }

@@ -1,3 +1,4 @@
+import { DAILY_RULES, type DailyRuleMods } from './balance'
 import { offworldSalesMul, wireAdActive } from './systems/late'
 import { hasFork } from './ventureForks'
 export { annexSeatCap } from './staffAnnex'
@@ -295,8 +296,14 @@ export function unitCost(s: GameState, cat: CategoryId, supplier: SupplierId = s
   return base
 }
 
+/** Today's daily-run multiplier for one lever; 1 in every normal run. */
+export function dailyMod(s: GameState, key: keyof DailyRuleMods): number {
+  const rule = s.dailyRule ? DAILY_RULES[s.dailyRule] : null
+  return rule?.[key] ?? 1
+}
+
 export function crateCost(s: GameState, cat: CategoryId, supplier: SupplierId = s.supplier) {
-  return Math.round(unitCost(s, cat, supplier) * crateSize(s) * 100) / 100
+  return Math.round(unitCost(s, cat, supplier) * crateSize(s) * dailyMod(s, 'crateCost') * 100) / 100
 }
 
 export function cheapestCrate(s: GameState) {
@@ -321,7 +328,7 @@ export function deliveryTime(s: GameState, supplier: SupplierId) {
   if (receivers > 0) {
     t *= Math.max(0.4, Math.pow(DEPTH.receiverEtaMul, Math.min(3, receivers)))
   }
-  return Math.max(1, t)
+  return Math.max(1, t * dailyMod(s, 'truckTime'))
 }
 
 export function shortShipChance(s: GameState) {
@@ -625,7 +632,8 @@ export function demandPerSec(s: GameState, price = s.price) {
     priceFactor(s, price) *
     demandBreakdown(s).total *
     basketUnits(s) *
-    chainDemandMul(s)
+    chainDemandMul(s) *
+    dailyMod(s, 'demand')
   )
 }
 
@@ -893,7 +901,7 @@ export function wagesPerSec(s: GameState) {
     const cap = rev * DEPTH.payroll.softCapFrac
     if (wage > cap) wage = cap
   }
-  return wage
+  return wage * dailyMod(s, 'wages')
 }
 
 export function staffLevelCap(s: GameState) {

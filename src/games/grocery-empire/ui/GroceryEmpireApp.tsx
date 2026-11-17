@@ -1,3 +1,4 @@
+import { dailyRuleForSeed } from '../content/dailyRules'
 import { exportScenePng } from './scene/exportPng'
 import { completedWings } from '../sim/museum'
 import { WING_BY_ID } from '../content/relics'
@@ -338,6 +339,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     const daily = loadDailyChallenge()
     if (!daily?.active) return
     engine.newGame(daily.seed)
+    engine.dispatch({ type: 'setDailyRule', rule: dailyRuleForSeed(daily.seed) })
   }, [devMode])
 
   // Local daily leaderboard: best baskets for today's seeded run.

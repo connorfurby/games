@@ -120,6 +120,9 @@ export function freshRunKeepingMeta(
   fresh.seenLines = { ...s.seenLines }
   fresh.tipsSeen = { ...s.tipsSeen }
   fresh.introSeen = true
+  // A new sign over the same door keeps the name the player gave it, and a daily run keeps its rule.
+  fresh.storeName = s.storeName
+  fresh.dailyRule = s.dailyRule
   fresh.museum = s.museum
   fresh.speed = s.speed
   fresh.cash = Math.round(fresh.cash * (1 + fresh.rebrand.goodwill * REBRAND.startCashPerGoodwill))

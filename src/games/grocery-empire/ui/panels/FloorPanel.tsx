@@ -1,3 +1,4 @@
+import { DAILY_RULE_TEXT, dailyRuleFigures } from '../../content/dailyRules'
 import { valueMul } from '../../sim/systems/network'
 import { memo, useState } from 'react'
 import { useMeta } from '@/shell/MetaContext'
@@ -431,6 +432,11 @@ function FloorPanelInner() {
           ],
         }}
       >
+        {s.dailyRule ? (
+          <p className="fp-daily" title={dailyRuleFigures(s.dailyRule)}>
+            <strong>Today: {DAILY_RULE_TEXT[s.dailyRule].name}.</strong> {DAILY_RULE_TEXT[s.dailyRule].line}
+          </p>
+        ) : null}
         {checkoutLimit && s.menus.staff ? (
           <FailReason action={{ label: 'Open Staff', onClick: () => setActiveMenu('staff') }}>
             The checkout line is the limit — more cashiers would sell more.

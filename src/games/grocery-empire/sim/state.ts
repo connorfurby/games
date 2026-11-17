@@ -5,6 +5,7 @@ import { CHARTER_AXES } from '../content/lateEras'
 import { MENU_IDS, type MenuId } from '../content/menus'
 import type { RoleId, StaffTraitId } from '../content/staff'
 import { COLD, COMPUTE, FLEET, HISTORY, SAVE_VERSION, START, WHOLESALE } from './balance'
+import type { DailyRuleId } from './balance'
 
 export type SupplierId = 'a' | 'b'
 export type WeatherId = 'fair' | 'rain' | 'heat' | 'cold'
@@ -608,6 +609,9 @@ export interface GameState {
   /** The player's name for their store. Empty until they choose one; display only. */
   storeName: string
 
+  /** Today's twist in a daily run; null in every normal run. */
+  dailyRule: DailyRuleId | null
+
   /** Dismissed tip-whisper ids (plan Part C5 / O). */
   tipsSeen: Record<string, true>
 
@@ -1030,6 +1034,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     },
 
     storeName: '',
+    dailyRule: null,
 
     tipsSeen: {},
     seenLines: {},

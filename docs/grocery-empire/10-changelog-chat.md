@@ -2,6 +2,14 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**
+
+- **Daily twist (SAVE 38).** `GameState.dailyRule: DailyRuleId | null` (default null; migrate keeps only known ids). `balance.ts` `DAILY_RULES` / `DAILY_RULE_ORDER`: eight rules, each one upside and one downside on demand, crate cost, truck time or wages. `formulas.dailyMod(s, key)` multiplies `demandPerSec`, `crateCost`, `deliveryTime`, `wagesPerSec`; 1 in every normal run, so pacing is untouched. Command `setDailyRule` only before the first sale and only once. Starting Today's corner sets the rule from the seed (`content/dailyRules.dailyRuleForSeed`, same pick as the theme name). Floor shows "Today: …" with one plain line; the Menu daily section and confirm say which twist. Tests `sim/dailyRule.test.ts`.
+- **Rebrand keeps the store name** (was lost) and the daily rule.
+- **Phone rooms:** Empire hall has a portrait layout (ring + rank, next reward, points); `RoomScene phoneChipsOnly` for lettering-heavy rooms (Books, Upgrades, Strategy) shows only chips on a phone.
+- **Dead CSS cut:** ~3,500 lines from `grocery.css` and `g2.css` (rules whose classes no code uses, prefix-aware). Before/after full crawl compared pixel by pixel: no visual change beyond live values and animation frames.
+- **Contrast:** danger button ink mixed toward ink.
+
 ## AC. 1.0 fourth pass — every panel, Worlds era, ambience, collection (2026-11-17, on `main`) · SAVE **37** (unchanged)
 
 No state or balance changes; pacing untouched (`driftShopperLoss` is a pure extraction).

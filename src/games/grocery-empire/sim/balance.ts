@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 37
+export const SAVE_VERSION = 38
 
 /** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
 export const PUZZLE_SLOW = 0.72
@@ -1276,3 +1276,47 @@ export const RIVAL_CHAINS = {
 
 /** Relic Museum: +0.1% shoppers per relic owned (soft-capped like every stat). */
 export const RELIC_DEMAND_PER = 0.001
+
+/**
+ * Daily run twists: one upside and one downside each, only in a daily run (normal runs and the
+ * pacing bots have no rule). Order matches the daily theme's second word (shell/dailyStamp).
+ */
+export type DailyRuleId =
+  | 'morning-rush'
+  | 'delivery-day'
+  | 'market-day'
+  | 'payday'
+  | 'school-run'
+  | 'late-shift'
+  | 'street-fair'
+  | 'stock-take'
+
+export interface DailyRuleMods {
+  demand?: number
+  crateCost?: number
+  truckTime?: number
+  wages?: number
+}
+
+export const DAILY_RULE_ORDER: readonly DailyRuleId[] = [
+  'morning-rush',
+  'delivery-day',
+  'market-day',
+  'payday',
+  'school-run',
+  'late-shift',
+  'street-fair',
+  'stock-take',
+]
+
+export const DAILY_RULES: Record<DailyRuleId, DailyRuleMods> = {
+  'morning-rush': { demand: 1.15, wages: 1.15 },
+  'delivery-day': { truckTime: 0.6, crateCost: 1.1 },
+  'market-day': { crateCost: 0.85, demand: 0.92 },
+  payday: { demand: 1.2, crateCost: 1.12 },
+  'school-run': { demand: 1.1, truckTime: 1.25 },
+  'late-shift': { wages: 0.85, demand: 0.94 },
+  'street-fair': { demand: 1.25, wages: 1.2 },
+  'stock-take': { crateCost: 0.8, truckTime: 1.3 },
+}
+

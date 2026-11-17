@@ -1,3 +1,4 @@
+import { DAILY_RULE_ORDER, type DailyRuleId } from './balance'
 import { cashLabel } from '@/shared/bn'
 import { valueMul } from './systems/network'
 import { buyout, canBuyout, canPriceWar, priceWar } from './systems/rivals'
@@ -208,6 +209,7 @@ export type Command =
   | { type: 'callStarterCrate' }
   | { type: 'dismissTip'; id: string }
   | { type: 'setStoreName'; name: string }
+  | { type: 'setDailyRule'; rule: DailyRuleId }
   | { type: 'advanceDialogue' }
   | { type: 'finishIntro' }
   | { type: 'introBeat'; index: number }
@@ -1576,6 +1578,18 @@ const coreHandlers = {
     },
     run: (s, cmd) => {
       s.storeName = cleanStoreName((cmd as Extract<Command, { type: 'setStoreName' }>).name)
+    },
+  },
+  setDailyRule: {
+    can: (s, cmd) => {
+      const rule = (cmd as Extract<Command, { type: 'setDailyRule' }>).rule
+      if (!(DAILY_RULE_ORDER as readonly string[]).includes(rule)) return no('No such rule.')
+      if (s.dailyRule) return no('Today already has its rule.')
+      if (s.stats.sold > 0) return no('The rule is set when a daily run starts.')
+      return ok
+    },
+    run: (s, cmd) => {
+      s.dailyRule = (cmd as Extract<Command, { type: 'setDailyRule' }>).rule
     },
   },
   dismissTip: {
