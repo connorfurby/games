@@ -356,7 +356,7 @@ export function pendingTip(s: GameState): TipDef | null {
 
 /**
  * The department a tip is about, so it shows as a help card inside that room instead of
- * floating over play. Unlisted tips are general and show on whatever room is open.
+ * floating over play. Unlisted tips are general and show on the Floor.
  */
 const TIP_MENU: Record<string, string> = {
   'first-unpack': 'floor',
@@ -408,19 +408,22 @@ const TIP_MENU: Record<string, string> = {
   'e2-doctrine-read': 'strategy',
   'e2-rival-match': 'rivals',
   'e2-raid': 'rivals',
+  'e6-legacy': 'fleet',
+  attention: 'land',
 }
 
 export function tipMenu(id: string): string | null {
   return TIP_MENU[id] ?? null
 }
 
-/** The help card for the open room: the first unseen, live tip that is about it (or about nothing in particular). */
+/** The help card for the open room: the first unseen, live tip that belongs to it. */
 export function panelTip(s: GameState, menu: string): TipDef | null {
   for (const tip of TIPS) {
     if (s.tipsSeen[tip.id]) continue
     if (tipEra(tip) < s.era - 1) continue
-    const home = TIP_MENU[tip.id]
-    if (home && home !== menu) continue
+    // A tip with no room of its own waits for the Floor, so it is never repeated room to room.
+    const home = TIP_MENU[tip.id] ?? 'floor'
+    if (home !== menu) continue
     try {
       if (tip.when(s)) return tip
     } catch {

@@ -43,7 +43,7 @@ export function PoliticsPanel() {
         tone="idle"
         title={`Leak ${POLITICS.leakPerSec}/s while you hold any; each ${council ? 'whip' : 'lobbyist'} +${POLITICS.lobbyGainPerSec}/s`}
       >
-        Capital {p.capital.toFixed(1)} PC · {capitalNet >= 0 ? '+' : ''}
+        Capital {p.capital.toFixed(1)} · {capitalNet >= 0 ? '+' : ''}
         {capitalNet.toFixed(3)}/s
       </StatusChip>
       <StatusChip
@@ -65,7 +65,7 @@ export function PoliticsPanel() {
 
   const tray: VerbTrayProps = {
     primary: {
-      label: `${council ? 'Seat a delegate' : 'Acquire a neighbor'} · ${money(acq.cash, numberFormat)} + ${acq.capital} PC`,
+      label: `${council ? 'Seat a delegate' : 'Acquire a neighbor'} · ${money(acq.cash, numberFormat)} + ${acq.capital} Capital`,
       tone: 'primary',
       size: 'lg',
       coachId: 'politics-acquire',
@@ -82,7 +82,7 @@ export function PoliticsPanel() {
         coachId: 'politics-lobby',
         disabled: !lobbyCheck.ok,
         title: lobbyCheck.ok
-          ? `+${POLITICS.lobbyCapitalGain} PC now, then +${POLITICS.lobbyGainPerSec}/s`
+          ? `+${POLITICS.lobbyCapitalGain} Capital now, then +${POLITICS.lobbyGainPerSec}/s`
           : lobbyCheck.reason,
         onClick: () => dispatch({ type: 'hireLobby' }),
       },
@@ -136,7 +136,7 @@ export function PoliticsPanel() {
           ) : (
             <p className="lh-note">
               {capitalNet >= 0 ? '+' : ''}
-              {capitalNet.toFixed(3)} PC/s · leak {POLITICS.leakPerSec}/s, each {council ? 'whip' : 'lobbyist'} +
+              {capitalNet.toFixed(3)} Capital/s · leak {POLITICS.leakPerSec}/s, each {council ? 'whip' : 'lobbyist'} +
               {POLITICS.lobbyGainPerSec}/s.
             </p>
           )}
@@ -173,7 +173,7 @@ export function PoliticsPanel() {
         ) : (
           <>
           <div className="lh-stack">
-            <p className="lh-note" title={`Next bill ${money(billCost(s).cash, numberFormat)} + ${billCost(s).capital} PC. Pass two before you leave.`}>
+            <p className="lh-note" title={`Next bill ${money(billCost(s).cash, numberFormat)} + ${billCost(s).capital} Capital. Pass two before you leave.`}>
               Bills · {billsPassed(s)}/4
             </p>
             <div className="lh-actions">
