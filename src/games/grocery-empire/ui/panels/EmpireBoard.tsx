@@ -78,8 +78,9 @@ export function EmpireBoard() {
         },
       }
     : {
-        label: 'Open Upgrades',
-        tone: 'primary' as const,
+        label: 'Open Upgrades →',
+        // Navigation, not a spend: yellow is reserved for buttons that cost something.
+        tone: 'secondary' as const,
         size: 'lg' as const,
         title: 'Cash trees — each rank also grants trait points for doctrines.',
         onClick: () => setActiveMenu('upgrades'),

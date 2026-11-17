@@ -353,3 +353,79 @@ export function pendingTip(s: GameState): TipDef | null {
   }
   return null
 }
+
+/**
+ * The department a tip is about, so it shows as a help card inside that room instead of
+ * floating over play. Unlisted tips are general and show on whatever room is open.
+ */
+const TIP_MENU: Record<string, string> = {
+  'first-unpack': 'floor',
+  'first-basket': 'floor',
+  'first-price': 'floor',
+  'first-wholesale': 'suppliers',
+  'first-staff': 'staff',
+  produce: 'floor',
+  cold: 'cold',
+  fleet: 'fleet',
+  ventures: 'ventures',
+  upgrades: 'upgrades',
+  'empire-vs-upgrades': 'empire',
+  scanner: 'floor',
+  'e2-depot': 'land',
+  'e2-board': 'empire',
+  'e2-book': 'books',
+  'e2-brand': 'marketing',
+  'e4-lanes': 'logistics',
+  'e4-franchise': 'map',
+  celebrity: 'marketing',
+  'e2-policy': 'staff',
+  'e2-incorporate': 'books',
+  'e2-store-drift': 'map',
+  'e2-read': 'strategy',
+  'e2-doctrine': 'strategy',
+  'e2-rival': 'rivals',
+  'e2-coupon': 'marketing',
+  'e2-ghost': 'rivals',
+  'e2-autonomous': 'empire',
+  'e3-brownout': 'cold',
+  'e3-capital': 'politics',
+  'e4-fuel': 'logistics',
+  'e4-control': 'logistics',
+  'e4-brand': 'marketing',
+  'e4-autonomous-stores': 'map',
+  'e5-charter': 'fleet',
+  'e5-guardian': 'fleet',
+  'e6-biomass': 'fleet',
+  'e3-tanks': 'cold',
+  'e3-yield': 'cold',
+  'e3-monopoly': 'politics',
+  'e3-leave': 'politics',
+  'e3-private-label': 'suppliers',
+  'e4-clone': 'map',
+  'e4-lane-count': 'logistics',
+  'e2-walk-train': 'map',
+  'e2-soft-opening': 'map',
+  'e2-doctrine-read': 'strategy',
+  'e2-rival-match': 'rivals',
+  'e2-raid': 'rivals',
+}
+
+export function tipMenu(id: string): string | null {
+  return TIP_MENU[id] ?? null
+}
+
+/** The help card for the open room: the first unseen, live tip that is about it (or about nothing in particular). */
+export function panelTip(s: GameState, menu: string): TipDef | null {
+  for (const tip of TIPS) {
+    if (s.tipsSeen[tip.id]) continue
+    if (tipEra(tip) < s.era - 1) continue
+    const home = TIP_MENU[tip.id]
+    if (home && home !== menu) continue
+    try {
+      if (tip.when(s)) return tip
+    } catch {
+      /* ignore bad predicates */
+    }
+  }
+  return null
+}

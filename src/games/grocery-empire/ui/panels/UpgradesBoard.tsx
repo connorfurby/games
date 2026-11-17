@@ -27,7 +27,7 @@ import { treeRanks } from '../../sim/systems/stats'
 import { hasAffordableUpgrade, pickBestUpgrade, planAffordableUpgrades } from '../../sim/upgradePlan'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { Chip, SegmentedControl, useConfirm } from '../kit'
+import { SegmentedControl, useConfirm, Toggle } from '../kit'
 import { PlayFrame, StatusChip } from '../play'
 import { UpgradesHallScene } from '../scenes/live'
 import './waveC.css'
@@ -488,9 +488,10 @@ export function UpgradesBoard() {
             ]}
           />
           {view === 'list' ? (
-            <Chip selected={affordOnly} onClick={() => setAffordOnly((v) => !v)}>
-              Can buy
-            </Chip>
+            <label className="pf-switch">
+              <Toggle checked={affordOnly} onChange={setAffordOnly} aria-label="Can buy now" />
+              <span>Can buy now</span>
+            </label>
           ) : null}
         </div>
 

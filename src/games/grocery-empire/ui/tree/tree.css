@@ -62,7 +62,7 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--ge-bg) 85%, #000);
   border: 1px solid var(--g2-line);
-  font-size: 0.68rem;
+  font-size: var(--t-2xs);
   white-space: nowrap;
 }
 
@@ -75,6 +75,7 @@
 
 .st-tier small {
   color: var(--ge-muted);
+  font-size: var(--t-2xs);
 }
 
 .st-link {
@@ -220,7 +221,7 @@
   border-radius: 999px;
   background: #12171a;
   border: 1px solid var(--g2-line);
-  font-size: 0.6rem;
+  font-size: var(--t-2xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ge-muted);
@@ -230,7 +231,7 @@
 .st-node__name {
   width: 118px;
   margin-top: 0.35rem;
-  font-size: 0.7rem;
+  font-size: var(--t-2xs);
   font-weight: 600;
   line-height: 1.15;
   text-align: center;
@@ -241,7 +242,7 @@
 }
 
 .st-node__sub {
-  font-size: 0.62rem;
+  font-size: var(--t-2xs);
   color: var(--ge-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -335,7 +336,7 @@
   left: 0.75rem;
   bottom: 0.4rem;
   margin: 0;
-  font-size: 0.66rem;
+  font-size: var(--t-2xs);
   color: var(--ge-muted);
   pointer-events: none;
 }
@@ -352,7 +353,7 @@
 
 .st-empty {
   color: var(--ge-muted);
-  font-size: 0.85rem;
+  font-size: var(--t-sm);
 }
 
 /* Detail panel content (shared by upgrades and doctrines) */
@@ -378,18 +379,18 @@
 .sd-head h3 {
   margin: 0;
   font-family: var(--g2-display);
-  font-size: 1.15rem;
+  font-size: var(--t-lg);
   line-height: 1.15;
 }
 
 .sd-head small {
   color: var(--ge-muted);
-  font-size: 0.72rem;
+  font-size: var(--t-xs);
 }
 
 .sd-blurb {
   margin: 0 0 0.6rem;
-  font-size: 0.8rem;
+  font-size: var(--t-sm);
   color: var(--ge-muted);
   font-style: italic;
 }
@@ -410,7 +411,7 @@
   padding: 0.3rem 0.5rem;
   border-radius: var(--g2-r-sm);
   background: rgba(0, 0, 0, 0.2);
-  font-size: 0.78rem;
+  font-size: var(--t-xs);
 }
 
 .sd-rows strong {
@@ -431,7 +432,7 @@
 
 .sd-links {
   margin: 0.6rem 0 0;
-  font-size: 0.74rem;
+  font-size: var(--t-xs);
   color: var(--ge-muted);
 }
 

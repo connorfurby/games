@@ -64,8 +64,8 @@
     min-width: 0;
   }
   .fp-unpack .gk-btn__label {
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    gap: var(--s-2);
   }
   .fp-unpack__main {
     display: inline-flex;

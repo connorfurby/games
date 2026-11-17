@@ -24,9 +24,9 @@ import { sumQty } from '../../sim/helpers'
 import { useGame } from '../GameContext'
 import { clock, money, qty, rate } from '../format'
 import { Icon } from '../icons/Icon'
-import { Button, Chip, Meter, Sheet, Stepper, Toggle } from '../kit'
+import { Button, Chip, Meter, Sheet, Stepper, Toggle, SegmentedControl } from '../kit'
 import { MENUS } from '../../content/menus'
-import { FailReason, PlayFrame, StatusChip } from '../play'
+import { FailReason, PlayFrame, StatusChip, Field } from '../play'
 import { activeFacingBan } from '../../sim/systems/horizonVerbs'
 import { useStable } from '../useStable'
 import { FloorRoom } from '../scenes/room'
@@ -308,15 +308,14 @@ function FloorPanelInner() {
       >
         <div className="fp-card__stack">
           {unlockedCats.length > 1 ? (
-            <div className="fp-aisles" role="group" aria-label="Aisle to buy">
-              {unlockedCats.map((c) => (
-                <span key={c} title={CATEGORIES[c].role}>
-                  <Chip selected={orderCat === c} onClick={() => dispatch({ type: 'setOrderCat', cat: c })}>
-                    {CATEGORIES[c].short}
-                  </Chip>
-                </span>
-              ))}
-            </div>
+            <Field label="Aisle">
+              <SegmentedControl
+                aria-label="Aisle to buy"
+                value={orderCat}
+                onChange={(c) => dispatch({ type: 'setOrderCat', cat: c })}
+                options={unlockedCats.map((c) => ({ value: c, label: CATEGORIES[c].short, title: CATEGORIES[c].role }))}
+              />
+            </Field>
           ) : null}
           {eff != null ? <p className="fp-note">{orderName} keeps ~{Math.round(eff / 60)}m on the shelf.</p> : null}
           <div className="fp-row">

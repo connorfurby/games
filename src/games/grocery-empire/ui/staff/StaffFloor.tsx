@@ -5,7 +5,9 @@ import { sumQty } from '../../sim/helpers'
 import type { Batch, StaffMember } from '../../sim/state'
 import { rate } from '../format'
 import { Badge, Hit, Person as RoomPerson, ROOM_W, Register, ShelfBay, Sign } from '../scenes/room'
-import { RoomHud, type RoomHudChip } from '../scenes/room/RoomHud'
+import { usePhone } from '../kit/hooks'
+import { RoomChips, RoomHud, type RoomHudChip } from '../scenes/room/RoomHud'
+import { BAND_TOP } from '../scenes/room/RoomScene'
 import '../scenes/room/room.css'
 
 /**
@@ -233,6 +235,7 @@ export function StaffFloor({
   const cap = Math.max(1, shelfCapacity)
   const perBay = Math.max(1, cap / Math.max(1, shownCats.length))
 
+  const phone = usePhone()
   const clerkSlots = STATION.clerk?.length ?? 4
   const cashierSlots = STATION.cashier?.length ?? 4
   const clerks = counts.clerk ?? 0
@@ -250,9 +253,117 @@ export function StaffFloor({
     ...(annexOn ? [{ label: 'Annex', value: String(annexStaffed || annexPeople.length) }] : []),
   ]
 
+  // Phone: the same stations re-laid in portrait at close to 1:1, with the whole crew
+  // standing in one row so nobody is cropped off the side.
+  if (phone) {
+    const PW = 360
+    const PH = 296
+    const groundY = PH - 52
+    const crew = roster.filter((m) => !isHorizonRole(m.role))
+    const row = crew.slice(0, 11)
+    const bays = shownCats.slice(0, 4)
+    return (
+      <figure className={`sf rm rm--portrait${motion ? ' is-live' : ''}`}>
+        <RoomChips chips={chips} label="Staff numbers" />
+        <div className="rm-stage">
+          <svg className="rm-svg" viewBox={`0 0 ${PW} ${PH}`} role="img" aria-label="Staff on the store floor">
+            <defs>
+              <linearGradient id="sf-sky-p" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#070b12" />
+                <stop offset="1" stopColor="#1a2218" />
+              </linearGradient>
+            </defs>
+            <rect width={PW} height={PH} fill="url(#sf-sky-p)" />
+            <rect y={groundY} width={PW} height={PH - groundY} fill="#0c1014" />
+            <rect y={groundY - 6} width={PW} height="6" fill="#1a1e24" />
+
+            {/* Unload */}
+            <rect x="8" y="10" width="118" height="96" rx="6" fill="#0a0e14" stroke="#ff5a43" strokeOpacity="0.4" />
+            <Sign x={18} y={30} text="Unload" />
+            <Badge x={18} y={38} text={clerks > clerkSlots ? `${clerks} clerks` : `${clerks}/${clerkSlots} clerks`} w={96} />
+            {[0, 1, 2].map((i) => (
+              <rect
+                key={i}
+                x={18 + i * 34}
+                y={70}
+                width="28"
+                height="22"
+                rx="3"
+                fill={i < clerks ? '#ff5a43' : '#1a1512'}
+                opacity={i < clerks ? 0.85 : 1}
+              />
+            ))}
+
+            {/* Shelf */}
+            <Sign x={140} y={30} text="Shelf" />
+            <Badge x={186} y={16} text={`${Math.floor(totalShelf)}u`} w={52} />
+            {bays.map((c, i) => (
+              <ShelfBay
+                key={c}
+                x={140 + i * 52}
+                y={40}
+                w={44}
+                h={66}
+                fill={Math.min(1, sumQty(shelf, c) / perBay)}
+                tint={CAT_TINT[c] ?? '#c9a15a'}
+                label={CATEGORIES[c]?.short ?? c.slice(0, 3)}
+                labelInside
+              />
+            ))}
+            {shownCats.length > bays.length ? (
+              <Sign x={352} y={30} text={`+${shownCats.length - bays.length} aisles`} small anchor="end" />
+            ) : null}
+
+            {/* Registers */}
+            <Sign x={8} y={134} text="Registers" />
+            <Badge x={88} y={120} text={cashiers > cashierSlots ? `${cashiers} on tills` : `${cashiers}/${cashierSlots} tills`} w={92} />
+            <Register x={8} y={144} queue={bottleneck === 'checkout' ? Math.max(1, cashiers) : 0} />
+            <Register x={78} y={144} queue={0} />
+            {annexOn ? (
+              <Badge x={196} y={120} text={`Annex ${annexStaffed || annexPeople.length}`} w={84} />
+            ) : null}
+
+            {/* The crew, one row */}
+            {row.map((m, i) => {
+              const on = lit.has(m.id)
+              return (
+                <g key={m.id} transform={`translate(${20 + i * 30} ${groundY - 24})`}>
+                  <g className={`sf-person${motion && on ? ' is-live' : ''}${!on ? ' is-idle' : ''}`}>
+                    <title>
+                      {m.name} · {ROLES[m.role].name} · Lv {m.level}
+                      {on ? ' · working' : ''}
+                    </title>
+                    <RoomPerson x={0} y={0} tint={SHIRT[m.role]} working={on} delay={(m.id % 5) * 0.2} />
+                  </g>
+                </g>
+              )
+            })}
+            {roster.length === 0 ? (
+              <text x={PW / 2} y={groundY - 22} textAnchor="middle" className="sf-empty">
+                Nobody on the clock
+              </text>
+            ) : null}
+            {crew.length > row.length ? (
+              <Sign x={PW - 8} y={groundY + 22} text={`+${crew.length - row.length} more on the floor`} small anchor="end" />
+            ) : null}
+          </svg>
+        </div>
+        <figcaption>{bottleneckLabel ?? (roster.length === 0 ? 'Empty payroll.' : `${headcount} on the clock.`)}</figcaption>
+      </figure>
+    )
+  }
+
   return (
-    <figure className={`sf rm${motion ? ' is-live' : ''}${annexOn ? ' has-annex' : ''}`}>
-      <svg viewBox={`0 0 ${ROOM_W} ${height}`} role="img" aria-label="Staff on the store floor">
+    <figure className={`sf rm${phone ? ' rm--band' : ''}${motion ? ' is-live' : ''}${annexOn ? ' has-annex' : ''}`}>
+      {phone ? <RoomChips chips={chips} label="Staff numbers" /> : null}
+      <div className="rm-stage">
+      <svg
+        className="rm-svg"
+        viewBox={phone ? `0 ${BAND_TOP} ${ROOM_W} ${height - BAND_TOP}` : `0 0 ${ROOM_W} ${height}`}
+        role="img"
+        aria-label="Staff on the store floor"
+        style={phone ? { aspectRatio: `${ROOM_W} / ${height - BAND_TOP}` } : undefined}
+      >
         <defs>
           <linearGradient id="sf-sky" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#070b12" />
@@ -263,13 +374,13 @@ export function StaffFloor({
         <rect y={FLOOR_H - 40} width={ROOM_W} height="40" fill="#0c1014" />
         <rect y={FLOOR_H - 44} width={ROOM_W} height="6" fill="#1a1e24" />
 
-        <RoomHud chips={chips} chipW={annexOn ? 148 : 170} />
+        {phone ? null : <RoomHud chips={chips} chipW={annexOn ? 148 : 170} />}
 
         {/* Unload / clerks — tomato free station */}
         <g>
           <rect x="28" y="52" width="168" height="52" rx="6" fill="#0a0e14" stroke="#ff5a43" strokeOpacity="0.4" />
           <Sign x={36} y={58} text="Unload" />
-          <Badge x={96} y={44} text={`${clerks}/${clerkSlots} clerks`} w={108} />
+          <Badge x={96} y={44} text={clerks > clerkSlots ? `${clerks} clerks` : `${clerks}/${clerkSlots} clerks`} w={108} />
           {[0, 1, 2].map((i) => (
             <rect
               key={i}
@@ -310,7 +421,7 @@ export function StaffFloor({
         {/* Registers */}
         <g>
           <Sign x={540} y={58} text="Registers" />
-          <Badge x={620} y={44} text={`${cashiers}/${cashierSlots} tills`} w={108} />
+          <Badge x={620} y={44} text={cashiers > cashierSlots ? `${cashiers} on tills` : `${cashiers}/${cashierSlots} tills`} w={108} />
           <Register x={540} y={78} queue={bottleneck === 'checkout' ? Math.max(1, cashiers) : 0} />
           <Register x={610} y={78} queue={0} />
           {overflow.cashier ? <Badge x={680} y={78} text={`+${overflow.cashier}`} w={36} /> : null}
@@ -351,6 +462,7 @@ export function StaffFloor({
           <Annex people={annexPeople} litIds={lit} roster={roster} motion={motion} annexByRole={annexByRole} />
         ) : null}
       </svg>
+      </div>
       <figcaption>
         {roster.length === 0
           ? 'Empty payroll.'

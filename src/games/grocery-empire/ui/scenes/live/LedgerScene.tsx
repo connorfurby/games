@@ -100,7 +100,7 @@ export function LedgerScene() {
           })}
         </g>
       ) : (
-        <Sign x={720} y={120} text="Horizon opens Era 7" small />
+        <Sign x={720} y={120} text="More pots open later" small />
       )}
     </RoomScene>
   )

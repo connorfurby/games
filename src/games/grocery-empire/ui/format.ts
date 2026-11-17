@@ -40,3 +40,17 @@ export function clock(sec: number): string {
   const m = Math.floor((sec % 3600) / 60)
   return `${h}h ${m}m`
 }
+
+/**
+ * Phone HUD figure: three significant digits so "$103.89K" reads "$103K" and never clips. Cut, not rounded: it never shows more than you have.
+ * Full precision stays in the tooltip and in Books.
+ */
+export function shortFigure(text: string): string {
+  const m = /^(-?\$?)([\d,]+)(?:\.(\d+))?(.*)$/.exec(text)
+  if (!m) return text
+  const [, lead = '', whole = '', frac = '', unit = ''] = m
+  const digits = whole.replace(/,/g, '').length
+  if (!frac || digits >= 3) return `${lead}${whole}${unit}`
+  return `${lead}${whole}.${frac.slice(0, digits === 2 ? 1 : 2)}${unit}`
+}
+

@@ -328,7 +328,7 @@ export function EmpireSections({
             )
           })}
         </nav>
-        <p className="ge-muted" style={{ margin: '0 0 0.6rem', fontSize: '0.8rem' }}>
+        <p className="ge-muted" style={{ margin: '0 0 0.6rem', fontSize: 'var(--t-sm)' }}>
           {PERK_BRANCHES[branch].blurb}
         </p>
         <SkillTree
@@ -345,7 +345,7 @@ export function EmpireSections({
         />
 
         {focus?.touches ? (
-          <p className="ge-muted" style={{ marginTop: '0.55rem', fontSize: '0.72rem' }}>
+          <p className="ge-muted" style={{ marginTop: '0.55rem', fontSize: 'var(--t-xs)' }}>
             {focus.name} synergizes cash node <strong>{focus.touches}</strong>.
           </p>
         ) : null}

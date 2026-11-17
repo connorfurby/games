@@ -304,3 +304,15 @@ export function searchArticles(list: WikiArticle[], q: string): WikiArticle[] {
     .sort((p, q2) => q2.score - p.score)
     .map((r) => r.a)
 }
+
+/** Article prefixes in the order a "what is this room?" question wants them. */
+const HELP_ORDER = ['sys-', 'choice-', 'faq-', 'era', 'late-', 'walk-', 'start-']
+
+/** The wiki page behind a department's `?` button. Falls back to the controls primer. */
+export function wikiForMenu(menu: MenuId): string {
+  for (const prefix of HELP_ORDER) {
+    const hit = WIKI_ARTICLES.find((a) => a.id.startsWith(prefix) && a.menus.includes(menu))
+    if (hit) return hit.id
+  }
+  return 'start-controls'
+}

@@ -5,7 +5,7 @@ import { isDevSave } from '../../sim/saveKey'
 
 /**
  * The museum's own save. Separate from the run (and from site meta) so relics survive
- * New Game, Rebrand and hard reset. The DevMode sandbox gets its own copy.
+ * New Game and Rebrand. A reset clears it only when the player ticks Museum. The DevMode sandbox gets its own copy.
  */
 const KEY = () => (isDevSave() ? 'grocery-museum-dev' : 'grocery-museum')
 
@@ -52,6 +52,18 @@ export const museumStore = {
       saveGame(loadedKey, current)
     } catch {
       /* storage full or blocked: keep going in memory */
+    }
+    for (const s of subs) s()
+  },
+  /** Empty the museum (relics, chests, progress) and save the empty copy. */
+  reset() {
+    ensure()
+    current = emptyMuseum()
+    version++
+    try {
+      saveGame(loadedKey, current)
+    } catch {
+      /* storage blocked: the empty copy still holds for this visit */
     }
     for (const s of subs) s()
   },

@@ -32,24 +32,11 @@ function readPref(): boolean | null {
 }
 
 /**
- * The storefront banner with a collapse toggle. Your choice is kept for the browser
- * session; until you choose, it opens on the Floor and tucks away on panels that
- * show their own live scene.
+ * Whether the storefront banner is open. Your choice is kept for the browser session;
+ * until you choose, it opens only on panels that do not paint their own room.
  */
-export function SceneStrip({
-  state,
-  menu,
-  museumOpen,
-  reducedMotion,
-}: {
-  state: GameState
-  menu: MenuId
-  museumOpen: boolean
-  reducedMotion: boolean
-}) {
+export function useScenePref(menu: MenuId): [boolean, (v: boolean) => void] {
   const [pref, setPref] = useState<boolean | null>(readPref)
-  const expanded = pref ?? !OWN_SCENE.has(menu)
-
   const set = (v: boolean) => {
     setPref(v)
     try {
@@ -58,35 +45,39 @@ export function SceneStrip({
       /* private mode: the choice just won't outlive this render */
     }
   }
+  // Unchosen: full scene on panels with no room of their own, banner elsewhere.
+  return [pref ?? !OWN_SCENE.has(menu), set]
+}
 
-  if (!expanded) {
-    return (
-      <div className="g2-scenebar">
-        <span className="g2-scenebar__label">Storefront</span>
-        <button
-          type="button"
-          className="g2-scenebar__btn"
-          onClick={() => set(true)}
-          aria-expanded={false}
-          title="Show the storefront"
-        >
-          Show
-        </button>
-      </div>
-    )
-  }
-
+/**
+ * The storefront. By default it is a short living banner over the Store hub: every build,
+ * hire and era shows up on the street. Expanded, it is the full scene with sky and skyline.
+ * The banner keeps its height in both the "Floor" and its sibling tabs, so nothing jumps.
+ */
+export function SceneStrip({
+  state,
+  museumOpen,
+  reducedMotion,
+  expanded,
+  onToggle,
+}: {
+  state: GameState
+  museumOpen: boolean
+  reducedMotion: boolean
+  expanded: boolean
+  onToggle: (v: boolean) => void
+}) {
   return (
-    <div className="g2-scenewrap">
-      <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} />
+    <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}`}>
+      <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} band={!expanded} />
       <button
         type="button"
         className="g2-scenebar__btn g2-scenewrap__hide"
-        onClick={() => set(false)}
-        aria-expanded
-        title="Collapse the storefront"
+        onClick={() => onToggle(!expanded)}
+        aria-expanded={expanded}
+        title={expanded ? 'Shrink the storefront to a banner' : 'Show the whole street'}
       >
-        Hide
+        {expanded ? 'Shrink' : 'Expand'}
       </button>
     </div>
   )

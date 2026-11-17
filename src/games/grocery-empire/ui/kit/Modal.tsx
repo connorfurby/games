@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, type ReactNode } from 'react'
-import { cx, useEscape, useReducedMotion } from './hooks'
+import { cx, useEscape, useReducedMotion, overlayRoot } from './hooks'
 
 export interface ModalProps {
   open: boolean
@@ -23,7 +24,7 @@ export function Modal({ open, onClose, title, children, footer, tone = 'default'
   }, [open])
   const dur = reduced ? 0 : 0.16
 
-  return (
+  const tree = (
     <AnimatePresence>
       {open ? (
         <div className="gk-modal-root" key="modal">
@@ -55,4 +56,6 @@ export function Modal({ open, onClose, title, children, footer, tone = 'default'
       ) : null}
     </AnimatePresence>
   )
+  const root = overlayRoot()
+  return root ? createPortal(tree, root) : tree
 }

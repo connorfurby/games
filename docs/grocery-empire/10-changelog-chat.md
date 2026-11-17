@@ -2,12 +2,51 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
-## W. Fluid opening lesson (2026-11-16) · SAVE unchanged · GAME_VERSION **40.1**
+## Y. 1.0 owner feedback pass — overlays, forms, no shifting, scoped reset (2026-11-16) · SAVE **36** (unchanged)
+
+UI and shell only. No sim or balance changes.
+
+- **Overlays:** `Sheet` and `Modal` render through `createPortal(…, overlayRoot())` (the `.ge-root`, else `body`). Panels animate with a transform, which had pinned "fixed" sheets to the panel and under the HUD. Toasts move left of a side sheet and hide under a bottom sheet.
+- **Forms:** `play/Field.tsx` (`Field`, `FieldSet`). Suppliers order is a labelled form (Crates / Aisle / Supplier) built from `SegmentedControl`. `.pf__body` is a flex column with `gap: var(--s-3)`, so panel children are never flush.
+- **Kit:** `Stepper` has two 44 px raised buttons and never stretches full width; ghost buttons in a sheet/modal footer get an edge.
+- **No shifting (design law 13):** the HUD alert is one element (`.g2-alert--hang`) absolutely placed on the HUD's bottom edge; `.pf__primary` reserves its reason line; `PanelHelp` picks its tip once per room visit, never times out on screen, and files itself on leaving after 8 s on screen.
+- **Phone portrait rooms:** Fleet (`TALL` layout in `FleetHarborScene`) and Staff (`StaffFloor` phone branch) join Floor.
+- **Reset:** `shell/resetData.ts` (`ResetScope`, `resetMeta`, `normalizeScope`, `describeScope`) + `museumStore.reset()`. Settings → Reset lets the player tick run, save slots, museum, shop and tokens, achievements. Achievements imply shop. Settings are never touched.
+- **Storefront banner (P7-01, first half):** `StoreScene` takes `band` (crops the sky, keeps the street; `BAND` slice in the view box). `SceneStrip` now always renders on the Store hub: a 6.75 rem banner by default (5.25 rem on phones, hidden on short landscape), `Expand`/`Shrink` for the full scene. The hub-head "Show storefront" button is gone.
+- **Form language (P4-F):** Floor restock aisle and Backroom dump aisle are `Field` + `SegmentedControl`; the Upgrades "Can buy" and Memos "Ready only" filters are labelled switches (`.pf-switch`). No panel uses `Chip` as a picker any more.
+- **Tests:** `npm test` 383 passed (`resetData.test.ts`); e2e 17/17 (`reset.spec.ts` new).
+
+## Opening lesson (2026-11-16) · SAVE unchanged · GAME_VERSION **1.0**
 
 - One continuous Era 0 `opening` tour after the intro (Unpack → Baskets look-note → Price → Restock). Legacy unpack/baskets/price/wholesale stay in the Coach catalog; rent and meta-shelf leave the auto-queue.
-- Opening strip dialogue no longer auto-queues; finishIntro marks openers seen and starts the tour immediately. Whisper tips and SuggestTip stay muted while any coach is active; first-action tips/lines are silenced as each step completes.
+- Opening strip dialogue no longer auto-queues; finishIntro marks openers seen and starts the tour immediately. SuggestTip stays muted while any coach is active; first-action tips/lines are silenced as each step completes.
 - Coach spotlight: measure once then track (no per-tick scroll jump); card docks above VerbTray holes; follows `floor-price-step` / `floor-wholesale-buy` into sheets; z-index above sheet scrim; look steps and missing targets do not full-block the screen. Soft-pause only on `act` steps.
-- Tests: `openingLesson.test.ts`, `coachPlacement.test.ts`; docs 09-ui + news 40.1.
+- Tests: `openingLesson.test.ts`, `coachPlacement.test.ts`; docs 09-ui.
+
+## X. 1.0 Phases 1–3 + first hour — one look, every size, one voice (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **1.0**
+
+UI only. No sim, balance or save changes; pacing untouched.
+
+- **Type:** game UI CSS uses only `--t-2xs … --t-3xl` (11–48 px). `design/typeScale.test.ts` fails on a raw rem size anywhere, and on raw px outside the five files that style SVG scene text (px there are viewBox units).
+- **Buttons:** blocked = same colour family, 6–7% fill, dashed edge, readable ink (`.gk-btn:disabled`, `.is-short`). `VerbTray` secondaries are `tone="secondary"`, 44 px (48 on phones, odd last one spans the row). Primary verb is one row (icon · label · amount), 52 px. Navigation primaries are not yellow (`EmpireBoard` "Open Upgrades →").
+- **Rooms:** `RoomScene` has three modes. `wide` (desktop): stage background repeats the sky/floor/ground so wide panels show no bands. `band` (phone default): `RoomChips` (HTML) + a pannable 8.5 rem illustration with scene lettering hidden. `portrait` (phone, opt-in via the `portrait` prop; caller branches on `usePhone()`): Floor is re-laid at 360×346. `StaffFloor` uses the band. **Fleet and Staff portrait layouts are still to do.**
+- **Phone chrome:** `shortFigure` (three significant digits, cut not rounded) for HUD cash and baskets; hub title row hidden when tabs exist; storefront toggle is a ghost button in the hub head (`useScenePref`), no full-width bar; `.pf__primary` is `position: sticky; bottom: 0` (the tray is `display: contents` on phones) so the verb is always in thumb reach; toasts and the story line stack above it.
+- **Guidance:** Next Goal has one button: `Do it` when ready, `Show me` (opens the room) while saving; the Go link is gone. `PanelHelpButton` (`?`) → `requestWiki(wikiForMenu(menu))` → Menu drawer on that article. `PanelHelp` shows `panelTip(s, menu)` in the panel flow (More / Got it, auto-files after 60 s); `TIP_MENU` in `content/tips.ts` maps tips to rooms. `PlayFrame` no longer renders `department`.
+- **Coach:** the card takes the side of the highlight with more room (`.ge-coach--top`).
+- **Fixes on the way:** Fleet pocket labels cut to four letters; Museum back-pay toasts; status chips stretched into full-width bars; forced Title Case (`text-transform: capitalize`) on callouts and wrapped segments; tree tier label at 9 px.
+- **Crawler** (`audit-2026-11-16/audit.cjs`): parses `color(srgb …)` and inherited opacity, so blocked-button contrast is measured for real.
+- **Tests:** `npm test` 378 passed (type scale, `shortFigure`); e2e 16/16 (`help.spec.ts` new; visual baselines refreshed).
+
+## W. 1.0 Phase 0 — stop-ship fixes and owner decisions (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **1.0**
+
+UI and tests only. No sim, balance or save changes; pacing untouched. Plan and progress log: [13-release-1.0-plan.md](13-release-1.0-plan.md).
+
+- **Version:** display version is **1.0**. `content/news.ts` holds one launch article; pre-1.0 bulletins were erased on the owner's call. (`40.0`/`40.1` section names below are historical.)
+- **Guidance:** floating tip card and the Suggested strip are gone. Next Goal is the single voice; `suggestNext` now only marks tabs. Tips still file themselves in the sim after 20 s.
+- **Phone HUD:** fits 360–430 px; one cycling speed button; Coach icon lives in the palette/Menu on phones. Toasts sit bottom-right (desktop) or above the tab bar (phone).
+- **Museum:** opens on wing cards (`.mu-wingcard`); a wing's wall renders only when chosen. Escape in `ChestOpener` is capture-phase and stops, so it no longer leaves the Museum. Bulk open guards against Strict Mode's double mount.
+- **Land / Strategy / Books:** deed cards, valid DOM for fail reasons, spoiler sign reworded.
+- **Tests:** all 14 e2e green; phone visual baseline refreshed. `npm test` 374 passed.
 
 ## V. 40.1 — front door, Ops Wiki, Bulletin, one button system (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **40.1**
 

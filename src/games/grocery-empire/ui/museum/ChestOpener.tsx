@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { RARITY_INFO, WING_BY_ID } from '../../content/relics'
 import { openChest, type Chest, type OpenResult } from '../../sim/museum'
 import { perkText } from '../../content/relicPerks'
@@ -81,11 +81,14 @@ export function ChestOpener({
   const [result, setResult] = useState<OpenResult | null>(null)
   const [opened, setOpened] = useState<OpenResult[]>([])
   const [bulkReady, setBulkReady] = useState(false)
+  const openedOnce = useRef(false)
   const chest = chests[index]
 
   // Bulk: crack every chest once on mount, then hold on burst → reveal.
   useEffect(() => {
-    if (!isBulk) return
+    if (!isBulk || openedOnce.current) return
+    // Strict Mode mounts twice in dev; a second pass would find the chests gone and blank the sheet.
+    openedOnce.current = true
     const got = openAllChests(chests)
     setOpened(got)
     setBulkReady(true)
@@ -140,6 +143,8 @@ export function ChestOpener({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
+        // Capture phase + stop: Escape closes this dialog only, not the department behind it.
+        e.stopPropagation()
         finish()
       } else if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault()
@@ -149,8 +154,8 @@ export function ChestOpener({
         else if (phase === 'reveal') nextOne()
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
   })
 
   if (!chest && !isBulk) return null

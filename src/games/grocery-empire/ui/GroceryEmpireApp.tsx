@@ -27,7 +27,6 @@ import { MEMOS } from '../content/memos'
 import { DIALOGUE_BY_ID } from '../content/dialogue'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { can } from '../sim/commands'
-import { pendingTip } from '../content/tips'
 import { PRICE } from '../sim/balance'
 import type { Command } from '../sim/commands'
 import { enterDevSandbox, ensurePrimarySandbox, leaveDevSandbox } from '../sim/devMode'
@@ -42,23 +41,22 @@ import { FxLayer, useMilestones } from './fx'
 import { DevModeBar } from './components/DevModeBar'
 import { Ledger } from './components/Ledger'
 import { useSalePops } from './components/Pop'
-import { nextGoal } from '../content/goals'
-import { channelToMenu, SuggestTip, tipAlignsWithGoal } from './components/SuggestTip'
-import { goalDest } from './shell/goalTarget'
+import { channelToMenu } from './components/SuggestTip'
 import { Hud } from './shell/Hud'
 import { useStable } from './useStable'
 import { isDevSave } from '../sim/saveKey'
 import { ToolsDrawer, type ToolsTab } from './shell/ToolsDrawer'
 import { HUBS, HUB_BY_ID, MENU_COACH, hubOf, type HubId } from './shell/hubs'
 import { StoreScene } from './scene/StoreScene'
-import { SceneStrip } from './shell/SceneStrip'
+import { SceneStrip, useScenePref } from './shell/SceneStrip'
 import { HubNav } from './shell/HubNav'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
-import { onInboxRequest } from './shell/uiBus'
+import { onInboxRequest, onWikiRequest } from './shell/uiBus'
+import { setWikiLanding } from './wiki/wikiLanding'
 import { computeHudAlert } from './shell/hudAlert'
 import { onToastRequest, performUndo } from './shell/undoAction'
-import { ConfirmProvider, ToastProvider } from './kit'
+import { Button, ConfirmProvider, ToastProvider } from './kit'
 import { useFxDeltas } from './hooks/useFxDeltas'
 import { Icon } from './icons/Icon'
 import { BackroomPanel } from './panels/BackroomPanel'
@@ -156,8 +154,17 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       { replace: true },
     )
   }, [menu])
+  // Phones scroll the hub's tab row: keep the active department in view (1.0 P0-07).
+  useEffect(() => {
+    const row = document.querySelector<HTMLElement>('.g2-hubhead .g2-subtabs')
+    const tab = row?.querySelector<HTMLElement>('.g2-subtab.is-active')
+    if (!row || !tab || row.scrollWidth <= row.clientWidth) return
+    const left = tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2
+    row.scrollTo({ left: Math.max(0, left), behavior: 'auto' })
+  }, [menu])
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([])
   const [photoMode, setPhotoMode] = useState(false)
+  const [sceneOpen, setSceneOpen] = useScenePref(menu)
   const [inboxOpen, setInboxOpenRaw] = useState(false)
   const setInboxOpen = (v: boolean | ((p: boolean) => boolean)) =>
     setInboxOpenRaw((prev) => {
@@ -194,6 +201,20 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     setMenu('floor')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu])
+  // A department's `?` opens the Menu drawer on its wiki page.
+  const [wikiNonce, setWikiNonce] = useState(0)
+  useEffect(
+    () =>
+      onWikiRequest((id) => {
+        setWikiLanding({ view: 'article', id })
+        toolsTabPicked.current = true
+        setToolsTab('wiki')
+        setWikiNonce((n) => n + 1)
+        setToolsOpen(true)
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
   const [focusNonce, setFocusNonce] = useState(0)
   const [focusTarget, setFocusTarget] = useState<string | null>(null)
   const reducedMotion = meta.settings.reducedMotion
@@ -644,15 +665,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     return () => window.clearTimeout(t)
   }, [lineId, state.introSeen, state.tutorials.active, state.chapterQueue])
   const Active = PANEL[menu]!
-  const tip = pendingTip(state)
-  const tipShown =
-    !!tip && state.introSeen && !state.offlineReceipt && !state.pendingAccept && state.chapterQueue[0] == null
-  // Tips file themselves after a while; nobody should have to click "Got it" to see the next one.
-  useEffect(() => {
-    if (!tip || !tipShown) return
-    const t = window.setTimeout(() => engine.dispatch({ type: 'dismissTip', id: tip.id }), 20_000)
-    return () => window.clearTimeout(t)
-  }, [tip?.id, tipShown])
 
   const suggestOn = !!meta.settings.suggestNext
   const suggestionsRaw = useMemo(
@@ -812,7 +824,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
           <main className="g2-main" ref={mainRef}>
             {hub === 'store' && !photoMode ? (
-              <SceneStrip state={state} menu={menu} museumOpen={museum.unlocked} reducedMotion={reducedMotion} />
+              <SceneStrip
+                state={state}
+                museumOpen={museum.unlocked}
+                reducedMotion={reducedMotion}
+                expanded={sceneOpen}
+                onToggle={setSceneOpen}
+              />
             ) : null}
             {photoMode ? <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} /> : null}
             {hub ? (
@@ -858,28 +876,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 ) : null}
               </div>
             ) : null}
-            {suggestOn &&
-            !photoMode &&
-            !state.offlineReceipt &&
-            state.introSeen &&
-            !state.tutorials.active
-              ? (() => {
-                  const goal = nextGoal(state)
-                  const goalAct = goal?.action?.(state) ?? null
-                  // One guidance channel: hide tips that restate Next Goal.
-                  if (tipAlignsWithGoal(topSuggest, goalAct, goalDest(goalAct))) return null
-                  return (
-                    <SuggestTip
-                      tip={topSuggest}
-                      reducedMotion={reducedMotion}
-                      onGo={(sg) => focusSuggestion(sg)}
-                      onDo={(cmd) => {
-                        dispatch(cmd)
-                      }}
-                    />
-                  )
-                })()
-              : null}
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={menu}
@@ -940,6 +936,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           <AnimatePresence>
             {toolsOpen ? (
               <ToolsDrawer
+                key={`tools-${wikiNonce}`}
                 tab={toolsTab}
                 onTab={(t) => {
                   toolsTabPicked.current = true
@@ -962,7 +959,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
           <OverlayManager
             state={state}
-            tip={tip}
             toasts={toasts}
             reducedMotion={reducedMotion}
             dispatch={dispatch}

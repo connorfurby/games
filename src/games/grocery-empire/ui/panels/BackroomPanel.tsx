@@ -8,8 +8,8 @@ import { useGame } from '../GameContext'
 import { clock, qty } from '../format'
 import { MixPriority } from '../components/MixPriority'
 import { Icon } from '../icons/Icon'
-import { Button, Chip, Disclosure, EmptyState, Meter, useConfirm } from '../kit'
-import { PlayFrame } from '../play'
+import { Button, Disclosure, EmptyState, Meter, useConfirm, SegmentedControl } from '../kit'
+import { PlayFrame, Field } from '../play'
 import { BackroomScene } from '../scenes/live/BackroomScene'
 import './backroom.css'
 
@@ -218,13 +218,14 @@ export function BackroomPanel() {
               </ul>
             )}
             {perishableCats.length > 1 ? (
-              <div className="bk-row" role="group" aria-label="Aisle to partial-dump">
-                {perishableCats.map((c) => (
-                  <Chip key={c} selected={selectedCat === c} onClick={() => setDumpCat(c)}>
-                    {CATEGORIES[c].short}
-                  </Chip>
-                ))}
-              </div>
+              <Field label="Aisle">
+                <SegmentedControl
+                  aria-label="Aisle to partial-dump"
+                  value={selectedCat}
+                  onChange={(c) => setDumpCat(c)}
+                  options={perishableCats.map((c) => ({ value: c, label: CATEGORIES[c].short, title: CATEGORIES[c].name }))}
+                />
+              </Field>
             ) : null}
             <div className="bk-row">
               <Button

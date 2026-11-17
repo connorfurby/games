@@ -6,22 +6,20 @@ import { useGame } from '../GameContext'
 import { Button } from '../kit'
 import { WikiBrowser } from './WikiBrowser'
 import type { WikiNav } from './nav'
-
-/** Where the drawer wiki was last left, so reopening the Menu returns to the same page. */
-let lastNav: WikiNav = { view: 'home' }
+import { setWikiLanding, wikiLanding } from './wikiLanding'
 
 /** The Ops Wiki inside play (Menu drawer → Wiki). Same pages as the site Guide. */
 export function InGameWiki({ onOpenMenu, onPlayLesson }: { onOpenMenu: (m: MenuId) => void; onPlayLesson: (id: string, menu?: MenuId) => void }) {
   const { state: s } = useGame()
   const { meta, updateSettings } = useMeta()
-  const [nav, setNav] = useState<WikiNav>(lastNav)
+  const [nav, setNav] = useState<WikiNav>(wikiLanding)
   const unlocked = (m: MenuId) => !!s.menus[m]
   return (
     <WikiBrowser
       compact
       nav={nav}
       go={(n) => {
-        lastNav = n
+        setWikiLanding(n)
         setNav(n)
       }}
       playEra={s.era}

@@ -2,6 +2,8 @@
 
 Use this as the “what’s left” list for the next agent. Check items off here when done, and move finished work into [10-changelog-chat.md](10-changelog-chat.md).
 
+**Next:** the 1.0 release plan in [13-release-1.0-plan.md](13-release-1.0-plan.md) supersedes ad-hoc polish items below.
+
 ## After 40.0 (still open)
 
 - [ ] Human multi-hour playtest pass — bot ≠ feel. Especially charter Boutique/Co-op, Accept rebuild, two regulars, flyer deep/soft.

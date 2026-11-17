@@ -3,6 +3,7 @@ import { REGULAR_BY_ID } from '../../../content/depth'
 import { backroomCap, manualUnpackAmount, salesBottleneck, shelfCap, shelfPrice } from '../../../sim/formulas'
 import { sumQty } from '../../../sim/helpers'
 import { useGame } from '../../GameContext'
+import { usePhone } from '../../kit/hooks'
 import { money, qty, rate } from '../../format'
 import { Hit } from './Hit'
 import { Badge, Person, Register, ShelfBay, Sign } from './primitivesV2'
@@ -22,9 +23,13 @@ const CAT_TINT: Record<CategoryId, string> = {
   ration: '#9a8a6a',
 }
 
+const PORTRAIT_W = 360
+const PORTRAIT_H = 346
+
 /** Illustrated aisle for the Floor panel — live numbers + tappable stations. */
 export function FloorRoom() {
   const { state: s, dispatch, numberFormat } = useGame()
+  const phone = usePhone()
   const shelf = sumQty(s.shelf)
   const back = sumQty(s.backroom)
   const cap = Math.max(1, shelfCap(s))
@@ -57,14 +62,9 @@ export function FloorRoom() {
           ? bn.label
           : null
 
-  return (
-    <RoomScene
-      label={`Floor, shelf ${qty(shelf)} of ${qty(cap)}, back ${qty(back)}, ${rate(sold)} baskets per second`}
-      chips={chips}
-      skyTop="var(--sc-aisle, #070b12)"
-      skyBottom="#1a2218"
-    >
-      {/* Unload bay */}
+  const label = `Floor, shelf ${qty(shelf)} of ${qty(cap)}, back ${qty(back)}, ${rate(sold)} baskets per second`
+
+  const unload = (
       <Hit
         x={24}
         y={70}
@@ -104,8 +104,8 @@ export function FloorRoom() {
         <Sign x={40} y={210} text={back > 0 ? `Tap · +${unpackAmt}` : 'Empty'} small />
         <Person x={98} y={ROOM_GROUND - 24} tint="var(--sc-tomato, #ff5a43)" delay={0.2} working={back > 0 && shelf < cap} />
       </Hit>
-
-      {/* Shelf bays */}
+  )
+  const shelfBays = (
       <Hit x={190} y={70} w={320} h={150} label="Shelf stock" coachId="floor-wholesale" menu="floor">
         <Sign x={200} y={88} text="Shelf" />
         <Badge x={250} y={74} text={`${Math.round((shelf / cap) * 100)}%`} w={44} />
@@ -126,8 +126,9 @@ export function FloorRoom() {
         })}
         {cats.length === 0 ? <Sign x={220} y={160} text="Unlock aisles" small /> : null}
       </Hit>
-
-      {/* Price tag */}
+  )
+  const priceTag = (
+    <>
       <Hit
         x={530}
         y={78}
@@ -153,15 +154,75 @@ export function FloorRoom() {
         </text>
       </Hit>
       <Sign x={530} y={164} text={`Cans sell ${money(price, numberFormat)}`} small />
-
-      {/* Registers */}
+    </>
+  )
+  const registers = (
       <Hit x={660} y={90} w={140} h={110} label="Registers" coachId="staff-hire-clerk" menu="staff">
         <Sign x={668} y={108} text="Registers" />
         <Register x={668} y={120} queue={bn.kind === 'checkout' ? Math.max(1, Math.ceil(sold * 2)) : 0} />
         <Register x={736} y={120} queue={0} />
         <Badge x={668} y={162} text={`${cashiers} on till`} w={70} />
-        <Person x={700} y={ROOM_GROUND - 24} tint="#7fa3c9" delay={0.5} working={sold > 0.2} />
+        {phone ? null : <Person x={700} y={ROOM_GROUND - 24} tint="#7fa3c9" delay={0.5} working={sold > 0.2} />}
       </Hit>
+  )
+  const emptyCard = (
+    <>
+      {shelf <= 0 && back <= 0 ? (
+        <g>
+          <rect x="200" y="110" width="380" height="72" rx="8" fill="#0f1317" stroke="#3a444e" opacity="0.94" />
+          <text x="390" y="138" textAnchor="middle" className="rm-empty__title">
+            Nothing to sell
+          </text>
+          <text x="390" y="158" textAnchor="middle" className="rm-empty__body">
+            Order a crate, then unpack to the shelf.
+          </text>
+          <Hit x={300} y={162} w={180} h={18} label="Open suppliers" menu="suppliers" coachId="floor-wholesale">
+            <text x="390" y={176} textAnchor="middle" className="rm-sign" fill="#f2c14e">
+              Open suppliers →
+            </text>
+          </Hit>
+        </g>
+      ) : null}
+    </>
+  )
+
+  // Phone: the same stations re-laid in portrait (shelf on top, unload left, price and
+  // registers right) at close to 1:1, so every label stays readable. The door's rate
+  // moves to a chip.
+  if (phone) {
+    return (
+      <RoomScene
+        label={label}
+        chips={[...chips, { label: 'Sold', value: rate(sold) }]}
+        skyTop="var(--sc-aisle, #070b12)"
+        skyBottom="#1a2218"
+        portrait={{ w: PORTRAIT_W, h: PORTRAIT_H }}
+      >
+        <g transform="translate(-170 -62)">{shelfBays}</g>
+        <g transform="translate(-16 50)">{unload}</g>
+        <g transform="translate(-350 38)">{priceTag}</g>
+        <g transform="translate(-486 120)">{registers}</g>
+        {bnLabel && !(shelf <= 0 && back <= 0) ? (
+          <g>
+            <rect x="8" y={PORTRAIT_H - 34} width={PORTRAIT_W - 16} height="26" rx="6" fill="#2a1814" stroke="#d9665b" />
+            <text x={PORTRAIT_W / 2} y={PORTRAIT_H - 17} textAnchor="middle" fill="#f0c4bc" fontSize="12" fontWeight="700">
+              {bnLabel.length > 44 ? `${bnLabel.slice(0, 42)}…` : bnLabel}
+            </text>
+          </g>
+        ) : null}
+        <g transform="translate(-210 -40)">{emptyCard}</g>
+      </RoomScene>
+    )
+  }
+
+  return (
+    <RoomScene label={label} chips={chips} skyTop="var(--sc-aisle, #070b12)" skyBottom="#1a2218">
+      {/* Unload bay */}
+      {unload}
+      {/* Shelf bays */}
+      {shelfBays}
+      {priceTag}
+      {registers}
 
       {/* Door / traffic + regulars in the aisle */}
       <g transform="translate(860 80)">
@@ -193,22 +254,7 @@ export function FloorRoom() {
         </g>
       ) : null}
 
-      {shelf <= 0 && back <= 0 ? (
-        <g>
-          <rect x="200" y="110" width="380" height="72" rx="8" fill="#0f1317" stroke="#3a444e" opacity="0.94" />
-          <text x="390" y="138" textAnchor="middle" className="rm-empty__title">
-            Nothing to sell
-          </text>
-          <text x="390" y="158" textAnchor="middle" className="rm-empty__body">
-            Order a crate, then unpack to the shelf.
-          </text>
-          <Hit x={300} y={162} w={180} h={18} label="Open suppliers" menu="suppliers" coachId="floor-wholesale">
-            <text x="390" y={176} textAnchor="middle" className="rm-sign" fill="#f2c14e">
-              Open suppliers →
-            </text>
-          </Hit>
-        </g>
-      ) : null}
+      {emptyCard}
     </RoomScene>
   )
 }

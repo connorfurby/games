@@ -23,7 +23,7 @@ import { officeRebalanceCost } from '../../sim/systems/office'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money, qty } from '../format'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { Button, Chip, Disclosure, EmptyState, Meter, SegmentedControl, useConfirm } from '../kit'
+import { Button, Disclosure, EmptyState, Meter, SegmentedControl, useConfirm, Toggle } from '../kit'
 import { Icon } from '../icons/Icon'
 import { PlayFrame, StatusChip } from '../play'
 import './waveC.css'
@@ -185,7 +185,7 @@ function SpinePath({ s, fmt }: { s: GS; fmt: NumberFormat }) {
           )
         })}
       </div>
-      <p className="ge-muted" style={{ margin: '0.25rem 0 0', fontSize: '0.72rem' }}>
+      <p className="ge-muted" style={{ margin: '0.25rem 0 0', fontSize: 'var(--t-xs)' }}>
         Spine {done}/{steps.length}
         {next ? ` · next: ${next.name} (${costLabel(next, s, fmt)})` : ' · complete'}
       </p>
@@ -206,7 +206,7 @@ function ColdChainGraph({ s }: { s: GS }) {
   ]
   const next = nodes.find((n) => !n.done)
   return (
-    <p className="ge-muted ge-coldgraph" style={{ margin: '0.4rem 0', fontSize: '0.72rem' }}>
+    <p className="ge-muted ge-coldgraph" style={{ margin: '0.4rem 0', fontSize: 'var(--t-xs)' }}>
       {nodes.map((n, i) => (
         <span key={n.id}>
           {i > 0 ? ' → ' : ''}
@@ -241,14 +241,14 @@ function FiledList({ s }: { s: GS }) {
               <Icon name="memo" size={14} tone="accent" />
             </span>
             <strong>{m.name}</strong>
-            <span className="ge-muted" style={{ fontSize: '0.62rem' }}>
+            <span className="ge-muted" style={{ fontSize: 'var(--t-2xs)' }}>
               {eraChipLabel(m.era)}
             </span>
           </div>
           <span className="ge-memo__effect" title={m.effect}>
             {m.effect}
           </span>
-          <p className="ge-muted" style={{ margin: '0.2rem 0 0', fontSize: '0.7rem' }}>
+          <p className="ge-muted" style={{ margin: '0.2rem 0 0', fontSize: 'var(--t-2xs)' }}>
             {m.done}
           </p>
         </li>
@@ -336,7 +336,7 @@ function MemoRow({
           <Icon name="memo" size={14} tone="accent" />
         </span>
         <strong>{m.name}</strong>
-        <span className="ge-muted" style={{ fontSize: '0.62rem' }}>
+        <span className="ge-muted" style={{ fontSize: 'var(--t-2xs)' }}>
           {eraChipLabel(m.era)}
         </span>
         {fresh ? <span className="ge-memo__new">New</span> : null}
@@ -972,9 +972,10 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
               onChange={(e) => setQ(e.target.value)}
               aria-label="Search memos"
             />
-            <Chip selected={readyOnly} onClick={() => setReadyOnly((v) => !v)}>
-              Ready only
-            </Chip>
+            <label className="pf-switch">
+              <Toggle checked={readyOnly} onChange={setReadyOnly} aria-label="Ready only" />
+              <span>Ready only</span>
+            </label>
           </div>
         ) : null}
 

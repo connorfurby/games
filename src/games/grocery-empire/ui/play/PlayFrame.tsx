@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { PanelHelp, PanelHelpButton } from './PanelHelp'
 import { VerbTray, type VerbTrayProps } from './VerbTray'
 import './play.css'
 
@@ -8,7 +9,6 @@ import './play.css'
  */
 export function PlayFrame({
   purpose,
-  department,
   room,
   tray,
   primarySlot,
@@ -17,7 +17,7 @@ export function PlayFrame({
 }: {
   /** One sentence from hubs.ts (or the department purpose). */
   purpose?: ReactNode
-  /** Active subtab name when the tab bar can scroll away. */
+  /** @deprecated The hub head already names the department (design law 1: one title). Not rendered. */
   department?: ReactNode
   room?: ReactNode
   tray?: VerbTrayProps
@@ -29,8 +29,13 @@ export function PlayFrame({
 }) {
   return (
     <div className={`pf${className ? ` ${className}` : ''}`.trim()}>
-      {department ? <p className="pf__dept">{department}</p> : null}
-      {purpose ? <p className="pf__purpose">{purpose}</p> : null}
+      {purpose ? (
+        <div className="pf__head">
+          <p className="pf__purpose">{purpose}</p>
+          <PanelHelpButton />
+        </div>
+      ) : null}
+      <PanelHelp />
       {room ? <div className="pf__room">{room}</div> : null}
       {tray ? <VerbTray {...tray} /> : null}
       {!tray && primarySlot ? <div className="pf__tray">{primarySlot}</div> : null}

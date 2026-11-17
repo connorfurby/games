@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/games/grocery-empire/ui/kit'
 import { Link } from 'react-router-dom'
 import type { NumberFormat } from '@/shared/bn'
-import { deserializeState, exportSave, importSave, loadGame, loadMeta } from '@/shared/save'
+import { clearGameSave, deserializeState, exportSave, importSave, loadGame, loadMeta } from '@/shared/save'
 import { DEFAULT_META, type MetaSave } from '@/shared/types'
 import { GAME_VERSION } from '@/games/grocery-empire/content/news'
 import { engine } from '@/games/grocery-empire/sim/engine'
@@ -10,6 +10,8 @@ import { migrate } from '@/games/grocery-empire/sim/migrate'
 import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
 import { clearDailyPending, deactivateDailyChallenge } from './dailyChallenge'
 import { useMeta } from './MetaContext'
+import { museumStore } from '@/games/grocery-empire/ui/museum/store'
+import { describeScope, normalizeScope, RESET_EVERYTHING, resetMeta, type ResetScope } from './resetData'
 import { SaveSlots, ShellConfirm } from './SaveSlots'
 
 interface GroceryPlayGlance {
@@ -20,6 +22,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const { meta, updateSettings, replaceMeta } = useMeta()
   const [msg, setMsg] = useState('')
   const [resetDraft, setResetDraft] = useState('')
+  const [scope, setScope] = useState<ResetScope>({ run: true, slots: false, museum: false, shop: false, achievements: false })
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [, bump] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -127,17 +130,28 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     }
   }
 
+  const chosen = normalizeScope(scope)
+  const anyChosen = Object.values(chosen).some(Boolean)
   const hardReset = () => {
     if (resetDraft.trim() !== 'RESET') {
       setMsg('Type RESET exactly to confirm.')
       return
     }
-    deactivateDailyChallenge()
-    clearDailyPending()
-    setActiveSaveId(PRIMARY_SAVE_ID)
-    engine.newGame()
+    if (!anyChosen) {
+      setMsg('Tick at least one thing to reset.')
+      return
+    }
+    if (chosen.run) {
+      deactivateDailyChallenge()
+      clearDailyPending()
+      setActiveSaveId(PRIMARY_SAVE_ID)
+      engine.newGame()
+    }
+    if (chosen.slots) for (const slot of [1, 2, 3]) clearGameSave(`${PRIMARY_SAVE_ID}-slot-${slot}`)
+    if (chosen.museum) museumStore.reset()
+    replaceMeta(resetMeta(meta, chosen))
     setResetDraft('')
-    setMsg('Wiped. Reloading…')
+    setMsg(`Reset: ${describeScope(chosen)}. Reloading…`)
     window.location.assign('/')
   }
 
@@ -258,7 +272,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 checked={!!meta.settings.suggestNext}
                 onChange={(e) => updateSettings({ suggestNext: e.target.checked })}
               />
-              Suggested next buy (Grocery Empire)
+              Mark the suggested next buy on tabs (Grocery Empire)
             </label>
             <div className="settings-profile-card">
               <p className="settings-profile-card__title">Profile</p>
@@ -345,9 +359,39 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
           </section>
 
           <section className="settings-block settings-block--danger">
-            <h3>Danger</h3>
+            <h3>Reset</h3>
+            <p className="settings-hint">Pick what to clear. Settings are always kept. This cannot be undone.</p>
+            <div className="settings-reset" role="group" aria-label="What to reset">
+              {(
+                [
+                  ['run', 'Current run', 'Cash, stock, staff and eras.'],
+                  ['slots', 'Save slots', 'The three manual slots.'],
+                  ['museum', 'Museum', 'Relics, chests and wing progress.'],
+                  ['shop', 'Shop and tokens', 'Tokens go to 0; packs, skins and stickers return to the starters.'],
+                  ['achievements', 'Achievements', 'Also rank, universes and daily streak. Resets the shop too, so tokens are not paid twice.'],
+                ] as const
+              ).map(([key, label, hint]) => (
+                <label key={key} className="settings-reset__row">
+                  <input
+                    type="checkbox"
+                    checked={chosen[key]}
+                    disabled={key === 'shop' && scope.achievements}
+                    onChange={(e) => setScope((sc) => ({ ...sc, [key]: e.target.checked }))}
+                  />
+                  <span>
+                    <strong>{label}</strong>
+                    <em>{hint}</em>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="settings-reset__acts">
+              <Button size="sm" onClick={() => setScope(RESET_EVERYTHING)}>
+                Select everything
+              </Button>
+            </div>
             <label className="settings-field">
-              <span>Hard reset run (type RESET)</span>
+              <span>Type RESET to confirm</span>
               <input
                 type="text"
                 value={resetDraft}
@@ -357,8 +401,8 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 spellCheck={false}
               />
             </label>
-            <Button tone="danger" disabled={resetDraft.trim() !== 'RESET'} onClick={hardReset}>
-              Wipe grocery save
+            <Button tone="danger" disabled={resetDraft.trim() !== 'RESET' || !anyChosen} onClick={hardReset}>
+              Reset {describeScope(chosen)}
             </Button>
           </section>
         </div>

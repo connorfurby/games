@@ -2,16 +2,22 @@ import { CHARTER_AXES } from '../../../content/lateEras'
 import { fleetHarvestPerSec } from '../../../sim/systems/fleet'
 import { useGame } from '../../GameContext'
 import { qty } from '../../format'
+import { usePhone } from '../../kit/hooks'
 import { Badge, Hit, Person, RoomScene, Sign } from '../room'
 import { HarborOrnaments } from './HarborOrnaments'
 
-const NEB = { x: 800, y: 118 }
-const PIER = { x: 440, y: 150 }
+interface Pt {
+  x: number
+  y: number
+}
+const WIDE = { neb: { x: 800, y: 118 }, pier: { x: 440, y: 150 } }
+/** Phone: cloud and pockets on top, drydock bottom-left, pier bottom-right, near 1:1. */
+const TALL = { w: 360, h: 322, neb: { x: 180, y: 84 }, pier: { x: 262, y: 206 } }
 
 /** Where pocket `i` of `n` hangs in orbit around the biomass cloud. */
-function pocketAt(i: number, n: number) {
+function pocketAt(i: number, n: number, neb: Pt) {
   const a = (i / Math.max(1, n)) * Math.PI * 2 - Math.PI / 2
-  return { x: NEB.x + Math.cos(a) * 92, y: NEB.y + Math.sin(a) * 56 }
+  return { x: neb.x + Math.cos(a) * 92, y: neb.y + Math.sin(a) * 56 }
 }
 
 /**
@@ -20,6 +26,9 @@ function pocketAt(i: number, n: number) {
  */
 export function FleetHarborScene() {
   const { state: s } = useGame()
+  const phone = usePhone()
+  const NEB = phone ? TALL.neb : WIDE.neb
+  const PIER = phone ? TALL.pier : WIDE.pier
   const f = s.fleet
   const barges = Math.max(0, Math.floor(f.barges))
   const shown = Math.min(8, barges)
@@ -50,9 +59,10 @@ export function FleetHarborScene() {
       ground="#0a1630"
       floor="#12264a"
       height={260}
+      portrait={{ w: TALL.w, h: TALL.h }}
     >
       {/* Stars */}
-      {[60, 150, 260, 340, 420, 560, 640, 700, 880, 930].map((x, i) => (
+      {(phone ? [24, 70, 120, 250, 300, 340] : [60, 150, 260, 340, 420, 560, 640, 700, 880, 930]).map((x, i) => (
         <circle
           key={x}
           cx={x}
@@ -90,7 +100,7 @@ export function FleetHarborScene() {
 
       {/* Pockets in orbit */}
       {pockets.map((p, i) => {
-        const at = pocketAt(i, pockets.length)
+        const at = pocketAt(i, pockets.length, NEB)
         const done = p.left <= 0
         const frac = p.max > 0 ? Math.max(0, Math.min(1, p.left / p.max)) : 0
         return (
@@ -99,7 +109,7 @@ export function FleetHarborScene() {
             <circle r="11" fill="#0f1317" stroke={done ? '#7cc47f' : '#a58be0'} strokeWidth="2" />
             {done ? null : <circle r={3 + frac * 6} fill="#a58be0" opacity="0.85" />}
             <text className="rm-badge__text" y={done ? 4 : 24} textAnchor="middle" fill={done ? '#7cc47f' : '#b4bfc9'}>
-              {done ? '✓' : p.ration.slice(0, 4)}
+              {done ? '✓' : p.ration}
             </text>
           </g>
         )
@@ -108,7 +118,7 @@ export function FleetHarborScene() {
       {/* Haulers on live trips: position follows the sim clock */}
       {trips.slice(0, 4).map((t) => {
         const idx = Math.max(0, pockets.findIndex((p) => p.id === t.pocketId))
-        const at = pocketAt(idx, pockets.length)
+        const at = pocketAt(idx, pockets.length, NEB)
         const span = Math.max(1, t.arriveAt - t.departAt)
         const k = Math.max(0, Math.min(1, (s.time - t.departAt) / span))
         const x = PIER.x + (at.x - PIER.x) * k
@@ -131,6 +141,7 @@ export function FleetHarborScene() {
       })}
 
       {/* Charter drydock */}
+      <g transform={phone ? 'translate(-16 112)' : undefined}>
       <Hit x={24} y={58} w={160} h={130} label="Charter drydock" menu="fleet" coachId="fleet-charter">
         <rect x="24" y="58" width="160" height="130" rx="8" fill="#0f131a" stroke="#4a5a72" strokeWidth="2" />
         <Sign x={38} y={80} text="Charter" />
@@ -152,41 +163,61 @@ export function FleetHarborScene() {
           <Sign x={104} y={181} text="No points yet" small anchor="middle" />
         ) : null}
       </Hit>
+      </g>
 
       {/* Pier + barges */}
-      <Hit x={200} y={96} w={270} h={104} label="Launch a barge" menu="fleet" coachId="fleet-launch">
-        <rect x="200" y="176" width="270" height="12" rx="2" fill="#3a2f26" stroke="#5a4e44" />
-        {[212, 262, 312, 362, 412, 452].map((x) => (
-          <rect key={x} x={x} y="188" width="6" height="14" fill="#2a221c" />
-        ))}
-        <Sign x={212} y={112} text="Pier" />
-        <Sign x={212} y={128} text={`${barges} barge${barges === 1 ? '' : 's'}`} small />
-        {Array.from({ length: shown }, (_, i) => {
-          const x = 214 + (i % 4) * 62
-          const y = i < 4 ? 150 : 124
-          return (
-            <g key={i} transform={`translate(${x} ${y})`}>
+      {phone ? (
+        <Hit x={184} y={170} w={168} h={130} label="Launch a barge" menu="fleet" coachId="fleet-launch">
+          <rect x="184" y="170" width="168" height="130" rx="8" fill="#0b1226" stroke="#3a4a6a" strokeWidth="2" />
+          <Sign x={196} y={192} text="Pier" />
+          <Sign x={236} y={192} text={`${barges} barge${barges === 1 ? '' : 's'}`} small />
+          <rect x="192" y="282" width="152" height="10" rx="2" fill="#3a2f26" stroke="#5a4e44" />
+          {Array.from({ length: Math.min(4, barges) }, (_, i) => (
+            <g key={i} transform={`translate(${198 + (i % 2) * 74} ${i < 2 ? 252 : 220})`}>
               <g className="rm-person" style={{ animationDelay: `${i * 0.25}s` }}>
                 <path d="M0 14 H48 L40 24 H8 Z" fill="#9aa7c7" />
                 <rect x="14" y="4" width="20" height="10" rx="1" fill="#e7ecf5" />
-                <path
-                  d={`M24 4 Q${60 + i * 14} ${-20 - (i % 2) * 10} ${NEB.x - 110 - x} ${NEB.y - y}`}
-                  fill="none"
-                  stroke="#c3aaf0"
-                  strokeOpacity="0.28"
-                  className="rm-pulse"
-                />
               </g>
             </g>
-          )
-        })}
-        {barges === 0 ? <Sign x={212} y={162} text="Berth is empty — launch a barge" small /> : null}
-        {barges > shown ? <Sign x={330} y={128} text={`+${barges - shown} in the dark`} small /> : null}
-      </Hit>
+          ))}
+          {barges === 0 ? <Sign x={268} y={246} text="Berth is empty" small anchor="middle" /> : null}
+          {barges > 4 ? <Sign x={268} y={212} text={`+${barges - 4} in the dark`} small anchor="middle" /> : null}
+        </Hit>
+      ) : (
+        <Hit x={200} y={96} w={270} h={104} label="Launch a barge" menu="fleet" coachId="fleet-launch">
+          <rect x="200" y="176" width="270" height="12" rx="2" fill="#3a2f26" stroke="#5a4e44" />
+          {[212, 262, 312, 362, 412, 452].map((x) => (
+            <rect key={x} x={x} y="188" width="6" height="14" fill="#2a221c" />
+          ))}
+          <Sign x={212} y={112} text="Pier" />
+          <Sign x={212} y={128} text={`${barges} barge${barges === 1 ? '' : 's'}`} small />
+          {Array.from({ length: shown }, (_, i) => {
+            const x = 214 + (i % 4) * 62
+            const y = i < 4 ? 150 : 124
+            return (
+              <g key={i} transform={`translate(${x} ${y})`}>
+                <g className="rm-person" style={{ animationDelay: `${i * 0.25}s` }}>
+                  <path d="M0 14 H48 L40 24 H8 Z" fill="#9aa7c7" />
+                  <rect x="14" y="4" width="20" height="10" rx="1" fill="#e7ecf5" />
+                  <path
+                    d={`M24 4 Q${60 + i * 14} ${-20 - (i % 2) * 10} ${NEB.x - 110 - x} ${NEB.y - y}`}
+                    fill="none"
+                    stroke="#c3aaf0"
+                    strokeOpacity="0.28"
+                    className="rm-pulse"
+                  />
+                </g>
+              </g>
+            )
+          })}
+          {barges === 0 ? <Sign x={212} y={162} text="Berth is empty — launch a barge" small /> : null}
+          {barges > shown ? <Sign x={330} y={128} text={`+${barges - shown} in the dark`} small /> : null}
+        </Hit>
+      )}
 
-      <HarborOrnaments />
+      {phone ? null : <HarborOrnaments />}
 
-      {convoys > 0 ? (
+      {convoys > 0 && !phone ? (
         <g transform="translate(500 214)">
           <Sign x={0} y={-4} text="Keel convoys" small />
           {Array.from({ length: Math.min(6, convoys) }, (_, i) => (
@@ -196,10 +227,14 @@ export function FleetHarborScene() {
         </g>
       ) : null}
 
-      {f.warOn ? <rect width="960" height="260" fill="#d9665b" opacity="0.08" className="rm-pulse" pointerEvents="none" /> : null}
+      {f.warOn ? <rect width={phone ? TALL.w : 960} height={phone ? TALL.h : 260} fill="#d9665b" opacity="0.08" className="rm-pulse" pointerEvents="none" /> : null}
 
-      <Person x={196} y={170} tint="#c9a15a" working={barges > 0} delay={0.2} />
-      <Person x={480} y={170} tint="#8fb6e0" working={trips.length > 0} delay={0.6} />
+      {phone ? null : (
+        <>
+          <Person x={196} y={170} tint="#c9a15a" working={barges > 0} delay={0.2} />
+          <Person x={480} y={170} tint="#8fb6e0" working={trips.length > 0} delay={0.6} />
+        </>
+      )}
     </RoomScene>
   )
 }

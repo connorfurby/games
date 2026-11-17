@@ -7,8 +7,20 @@ test('play route reloads in place and the till keeps ticking', async ({ page }) 
   const cash = page.locator('.g2-stat--cash .g2-stat__value')
   await expect(cash).toBeVisible()
 
+  // A fresh run opens on the intro, which holds the clock. Skip it, then make one sale by hand.
+  const skip = page.getByRole('button', { name: 'Skip intro' })
+  if (await skip.count()) await skip.click()
   const text1 = await cash.textContent()
-  await expect.poll(async () => cash.textContent(), { timeout: 4000 }).not.toBe(text1)
+  await expect
+    .poll(
+      async () => {
+        const verb = page.locator('.pf__primary button').first()
+        if (await verb.isEnabled().catch(() => false)) await verb.click().catch(() => {})
+        return cash.textContent()
+      },
+      { timeout: 8000 },
+    )
+    .not.toBe(text1)
 
   await page.reload()
   await expect(page).toHaveURL(/\/play\/grocery-empire/)
