@@ -55,6 +55,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - One word for one thing: the items bought on the Strategy page are **strategies** everywhere a player reads (panel, tips, memos, rebrand carry, notices, glossary). Code ids stay `doctrine`.
 - **Text size setting** (Normal / Large / Larger) in the menu drawer and full Settings. It sets the root font size (112.5% / 125%), so text and controls scale together; the money bar and hub bar counter-scale with `zoom` so their numbers never collide. Phone crawl at 125%: 125 screens, 0 errors / overflow / shifts. Meta setting with a default, so no save migration.
 - Welcome back: says "You were away 8 hours" (was "480 min simulated"), hides a zero Spoiled line, and its secondary buttons are solid instead of grey-looking. Award pop-ups move under the money bar while any window is open on a phone. Settings: Close button instead of Esc, plain number-format hint.
+- Spacing (P1): 340 gap/margin/padding declarations in grocery.css, g2.css, play.css and shell.css snapped to the `--s-*` scale when within 1 px (`/home/claude/tools/spacing.py`); calc() left alone. Desktop crawl d10: 0 errors / overflow / shifts, pixel diffs under 5% (live numbers and 1 px nudges). Phone floor visual baseline refreshed (it predated this round's copy). Strategy room sign: Strategy board.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

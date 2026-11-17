@@ -67,9 +67,9 @@ export function StrategyHallScene() {
       </g>
 
       {/* Doctrine board with plaques */}
-      <Hit x={280} y={48} w={360} h={170} label="Doctrine board" menu="strategy">
+      <Hit x={280} y={48} w={360} h={170} label="Strategy board" menu="strategy">
         <rect x="280" y="48" width="360" height="170" rx="8" fill="#121820" stroke="#4a5a72" strokeWidth="2" />
-        <Sign x={296} y={72} text="Doctrine board" />
+        <Sign x={296} y={72} text="Strategy board" />
         {visible.map((d, i) => {
           const have = (s.doctrines[d.id] ?? 0) > 0
           const isNext = !have && d.order === owned

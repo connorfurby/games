@@ -73,7 +73,7 @@
   .g2-stat__label {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--s-1);
     font-size: var(--t-xs);
     color: var(--ge-muted);
   }
@@ -116,7 +116,7 @@
     column-gap: 0.9rem;
     row-gap: 0.4rem;
     align-items: center;
-    padding: 0.5rem 0.55rem 0.5rem 0.9rem;
+    padding: var(--s-2) var(--s-2) var(--s-2) 0.9rem;
     border-radius: var(--g2-r-md);
     background: color-mix(in srgb, var(--ge-bg2) 90%, var(--g2-tag) 4%);
     border: 1px solid color-mix(in srgb, var(--g2-tag) 22%, transparent);
@@ -194,7 +194,7 @@
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.3rem;
+    gap: var(--s-1);
   }
 
   .g2-goal__fork {
@@ -205,7 +205,7 @@
     align-items: flex-start;
     gap: 0.1rem;
     min-width: 0;
-    padding: 0.35rem 0.45rem;
+    padding: 0.35rem var(--s-2);
     font-family: var(--g2-ui);
     text-align: left;
     color: var(--ge-ink);
@@ -282,7 +282,7 @@
     color: var(--ge-ink);
     min-width: 2.1rem;
     height: 2.1rem;
-    padding: 0 0.45rem;
+    padding: 0 var(--s-2);
     border-radius: 6px;
     cursor: pointer;
     display: inline-flex;
@@ -307,7 +307,7 @@
   }
 
   .g2-icon-btn__label {
-    margin-left: 0.2rem;
+    margin-left: var(--s-1);
   }
 
   .g2-icon-btn--text,
@@ -323,7 +323,7 @@
     align-items: center;
     gap: 0.4rem;
     height: 2.3rem;
-    padding: 0 0.8rem;
+    padding: 0 var(--s-3);
     border-radius: var(--g2-r-sm);
     border: 1px solid var(--g2-line-strong);
     background: transparent;
@@ -344,7 +344,7 @@
     cursor: pointer;
     font-family: var(--g2-ui);
     font-size: var(--t-xs);
-    padding: 0.35rem 0.7rem;
+    padding: 0.35rem var(--s-3);
     border-radius: 99px;
     background: color-mix(in srgb, var(--g2-tag) 16%, transparent);
     color: var(--g2-tag);
@@ -364,8 +364,8 @@
     grid-area: hubs;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.8rem 0.5rem;
+    gap: var(--s-1);
+    padding: var(--s-3) var(--s-2);
     border-right: 1px solid var(--g2-line);
     background: color-mix(in srgb, var(--ge-bg) 94%, #000);
   }
@@ -378,8 +378,8 @@
     color: var(--ge-muted);
     display: grid;
     justify-items: center;
-    gap: 0.3rem;
-    padding: 0.75rem 0.25rem 0.65rem;
+    gap: var(--s-1);
+    padding: var(--s-3) var(--s-1) 0.65rem;
     border-radius: var(--g2-r-md);
     cursor: pointer;
     font-family: var(--g2-ui);
@@ -444,19 +444,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.7rem 0.8rem 0.5rem;
+    padding: var(--s-3) var(--s-3) var(--s-2);
     border-bottom: 1px solid var(--g2-line);
   }
 
   .g2-inbox__tabs {
     display: flex;
-    gap: 0.3rem;
+    gap: var(--s-1);
   }
 
   .g2-inbox__body {
     flex: 1;
     overflow-y: auto;
-    padding: 0.6rem 0.8rem 2rem;
+    padding: 0.6rem var(--s-3) var(--s-7);
   }
 
   /* ── Main column + hub-head copy ───────────────────────────────────── */
@@ -504,11 +504,11 @@
 
     .g2-hud__money {
       min-width: 0;
-      gap: 0.55rem;
+      gap: var(--s-2);
     }
 
     .g2-hud__controls {
-      gap: 0.25rem;
+      gap: var(--s-1);
     }
 
     .g2-hud__controls .g2-alert {
@@ -543,7 +543,7 @@
     .g2-hud__controls .g2-inbox-btn {
       min-width: 2.25rem;
       min-height: 2.25rem;
-      padding-inline: 0.3rem;
+      padding-inline: var(--s-1);
     }
 
     /* Cash and baskets sit side by side, each a value over its rate. */
@@ -593,7 +593,7 @@
 
     .g2-hub {
       flex: 1;
-      padding: 0.45rem 0.1rem 0.35rem;
+      padding: var(--s-2) 0.1rem 0.35rem;
       font-size: var(--t-xs);
     }
 
@@ -610,7 +610,7 @@
   /* Small phones (≤ 380 px): tighter money, smaller buttons; nothing hides that the player needs. */
   @media (max-width: 380px) {
     .g2-hud__money {
-      gap: 0.5rem;
+      gap: var(--s-2);
     }
 
     .g2-stat__value,
@@ -629,7 +629,7 @@
     .g2-hud__controls .g2-icon-btn,
     .g2-hud__controls .g2-inbox-btn {
       min-width: 2rem;
-      padding-inline: 0.2rem;
+      padding-inline: var(--s-1);
     }
   }
 
@@ -654,14 +654,14 @@
   .g2-tools__tabs {
     display: grid;
     gap: 2px;
-    padding: 3px;
+    padding: var(--s-1);
     border-radius: 11px;
     background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
   }
   .g2-tools__tab {
     min-width: 0;
     min-height: 2.25rem;
-    padding: 0.35rem 0.25rem;
+    padding: 0.35rem var(--s-1);
     border: 0;
     border-radius: 8px;
     background: transparent;
@@ -694,7 +694,7 @@
   .g2-tools .ge-more {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--s-3);
   }
 
   .g2-tools .ge-more-block {
@@ -710,7 +710,7 @@
   }
 
   .g2-tools .ge-more-block__head p {
-    margin: 0 0 0.5rem;
+    margin: 0 0 var(--s-2);
     font-size: var(--t-sm);
     color: var(--ge-muted);
   }
@@ -720,7 +720,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--s-2);
   }
 
   /* Settings: calm column — one field per row, no wrap-pill soup. */
@@ -728,7 +728,7 @@
     flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 0.55rem;
+    gap: var(--s-2);
   }
 
   .g2-tools .ge-more-fields .ge-more-field select {
@@ -739,8 +739,8 @@
   .g2-tools .ge-more-slots {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    margin-bottom: 0.5rem;
+    gap: var(--s-1);
+    margin-bottom: var(--s-2);
   }
 
   .g2-tools .ge-more-slot {
@@ -769,7 +769,7 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.55rem;
+    gap: var(--s-2);
     padding: 0.15rem 0.1rem 0;
     flex-shrink: 0;
   }
@@ -779,7 +779,7 @@
     align-items: baseline;
     gap: 0.6rem;
     min-width: 0;
-    padding-bottom: 0.5rem;
+    padding-bottom: var(--s-2);
   }
 
   .g2-hubhead__title h1 {
@@ -803,15 +803,15 @@
 
   .g2-hubhead__title .g2-hubhead__dept::before {
     content: '/';
-    margin-right: 0.45rem;
+    margin-right: var(--s-2);
     opacity: 0.5;
   }
 
   .g2-hubhead .g2-subtabs {
     width: 100%;
-    gap: 0.3rem;
+    gap: var(--s-1);
     margin: 0;
-    padding: 0.28rem;
+    padding: var(--s-1);
     background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
     border: 1px solid var(--g2-line);
     border-radius: 12px;
@@ -826,7 +826,7 @@
     border-radius: 9px;
     background: transparent;
     color: var(--ge-muted);
-    padding: 0.5rem 0.75rem;
+    padding: var(--s-2) var(--s-3);
     min-height: 2.45rem;
     font-size: var(--t-md);
     font-weight: 600;
@@ -848,14 +848,14 @@
     content: '';
     width: 6px;
     height: 6px;
-    margin-left: 0.3rem;
+    margin-left: var(--s-1);
     border-radius: 50%;
     background: var(--g2-tag);
   }
 
   @media (max-width: 720px) {
     .g2-hubhead {
-      gap: 0.45rem;
+      gap: var(--s-2);
     }
 
     .g2-hubhead__title {
@@ -943,7 +943,7 @@
     flex-direction: column;
     align-items: stretch;
     justify-content: center;
-    gap: 0.25rem;
+    gap: var(--s-1);
     min-width: 0;
     max-width: 7.2rem;
   }
@@ -963,7 +963,7 @@
     font-size: var(--t-xs);
     font-weight: 650;
     min-height: 0;
-    padding: 0.1rem 0.2rem;
+    padding: 0.1rem var(--s-1);
     border: none;
     border-radius: 0;
     color: var(--ge-muted);
@@ -1024,7 +1024,7 @@
     display: grid;
     align-items: start;
     justify-items: center;
-    padding: 14vh 1rem 1rem;
+    padding: 14vh var(--s-4) var(--s-4);
     background: rgba(5, 7, 10, 0.55);
   }
 
@@ -1048,19 +1048,19 @@
     color: var(--ge-ink);
     font: inherit;
     font-size: var(--t-md);
-    padding: 0.9rem 1rem;
+    padding: 0.9rem var(--s-4);
     border-bottom: 1px solid var(--g2-line);
   }
 
   .g2-palette__list {
     list-style: none;
     margin: 0;
-    padding: 0.3rem;
+    padding: var(--s-1);
     overflow-y: auto;
   }
 
   .g2-palette__empty {
-    padding: 0.8rem;
+    padding: var(--s-3);
     color: var(--ge-muted);
     font-size: var(--t-sm);
   }
@@ -1071,8 +1071,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-    padding: 0.55rem 0.7rem;
+    gap: var(--s-4);
+    padding: var(--s-2) var(--s-3);
     border: none;
     border-radius: var(--g2-r-md);
     background: transparent;
@@ -1101,7 +1101,7 @@
       width: 100%;
       text-align: left;
       font-size: var(--t-xs);
-      padding: 0.3rem 0.65rem;
+      padding: var(--s-1) 0.65rem;
     }
 
     .g2-goal__acts {
@@ -1112,13 +1112,13 @@
     .g2-goal__acts .g2-tag {
       min-width: 0;
       padding-left: 1.1rem;
-      padding-right: 0.45rem;
+      padding-right: var(--s-2);
     }
 
     .g2-goal__do {
       min-height: 2.1rem;
       font-size: var(--t-sm);
-      padding: 0 0.55rem;
+      padding: 0 var(--s-2);
     }
 
     .g2-goal__go {
@@ -1244,7 +1244,7 @@
     }
     /* Next Goal: two tight lines. */
     .g2-hud .g2-goal {
-      padding-block: 0.45rem;
+      padding-block: var(--s-2);
     }
     .g2-hud .g2-goal__hint {
       display: -webkit-box;
@@ -1254,12 +1254,12 @@
     }
     .g2-hud .g2-alert--compact {
       min-height: 0;
-      padding-block: 0.2rem;
+      padding-block: var(--s-1);
     }
     /* The tab bar has its own grid row; the page needs no extra tail under it. */
     .g2-root .g2-main {
       padding-top: 0.6rem;
-      padding-bottom: 0.75rem;
+      padding-bottom: var(--s-3);
     }
   }
 
@@ -1283,7 +1283,7 @@
   }
   .ge-coach--top .ge-coach__card {
     margin-bottom: 0;
-    margin-top: 0.5rem;
+    margin-top: var(--s-2);
   }
   .ge-coach__card {
     max-height: calc(100dvh - 2rem);
@@ -1299,14 +1299,14 @@
       bottom: calc(var(--g2-hubs-h, 64px) + env(safe-area-inset-bottom) + 11.5rem);
     }
     .ge-coach {
-      padding: 0.5rem;
+      padding: var(--s-2);
     }
     .ge-coach__card {
-      padding: 0.75rem 0.85rem;
+      padding: var(--s-3) 0.85rem;
     }
     .ge-coach__card > p:not(.ge-coach__recovery) {
       font-size: var(--t-sm);
-      margin: 0.2rem 0 0.35rem;
+      margin: var(--s-1) 0 0.35rem;
     }
   }
 
@@ -1359,11 +1359,11 @@
     }
     .g2-hud .g2-goal {
       grid-area: goal;
-      padding-block: 0.3rem;
+      padding-block: var(--s-1);
     }
     .g2-root .g2-main {
       padding-top: 0.4rem;
-      padding-bottom: 0.5rem;
+      padding-bottom: var(--s-2);
     }
     /* The verb stays in reach while the room scrolls under it. */
     .pf__tray {
@@ -1398,7 +1398,7 @@
     z-index: 2;
     max-width: min(26rem, calc(100vw - 2 * var(--s-3)));
     min-height: 30px;
-    padding: 0.25rem 0.75rem;
+    padding: var(--s-1) var(--s-3);
     font-size: var(--t-xs);
     white-space: nowrap;
     overflow: hidden;
@@ -1411,7 +1411,7 @@
   }
   @media (max-width: 720px) {
     .g2-root .g2-main {
-      padding-top: 1.05rem;
+      padding-top: var(--s-4);
     }
   }
 
@@ -1792,7 +1792,7 @@
     align-content: center;
     justify-items: center;
     gap: var(--s-3);
-    padding: clamp(1rem, 4vw, 3rem);
+    padding: clamp(var(--s-4), 4vw, 3rem);
     background: #05080c;
     animation: g2-photo-in 320ms ease-out;
   }
@@ -1856,8 +1856,8 @@
     place-items: center;
     min-width: 1.1rem;
     height: 1.1rem;
-    margin-left: 4px;
-    padding: 0 4px;
+    margin-left: var(--s-1);
+    padding: 0 var(--s-1);
     border-radius: var(--r-pill);
     background: var(--ge-tag);
     color: var(--ge-tag-ink);
