@@ -3,7 +3,7 @@ import type { GameState } from '../../sim/state'
 import { Hit } from '../scenes/room/Hit'
 
 /** Short labels under the charter bars; the full name is in the tooltip. */
-const AXIS_SHORT: Record<string, string> = { shell: 'Hull', replication: 'Copy', survey: 'Scout', transit: 'Speed', brand: 'Brand' }
+const AXIS_SHORT: Record<string, string> = { shell: 'Hull', replication: 'Copy', survey: 'Scout', transit: 'Speed', 'brand-seal': 'Brand' }
 
 /**
  * Barges on the dark water, eating the biomass.

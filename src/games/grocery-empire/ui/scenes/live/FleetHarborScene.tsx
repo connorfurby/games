@@ -7,7 +7,7 @@ import { Badge, Hit, Person, RoomScene, Sign } from '../room'
 import { HarborOrnaments } from './HarborOrnaments'
 
 /** Short labels under the charter bars; the full name is in the tooltip. */
-const AXIS_SHORT: Record<string, string> = { shell: 'Hull', replication: 'Copy', survey: 'Scout', transit: 'Speed', brand: 'Brand' }
+const AXIS_SHORT: Record<string, string> = { shell: 'Hull', replication: 'Copy', survey: 'Scout', transit: 'Speed', 'brand-seal': 'Brand' }
 
 interface Pt {
   x: number
@@ -150,14 +150,15 @@ export function FleetHarborScene() {
         <Sign x={38} y={80} text="Charter" />
         {CHARTER_AXES.map((a, i) => {
           const lvl = Math.max(0, f.charter[a.id] ?? 0)
-          const h = Math.min(70, lvl * 7)
+          // One row per axis: name on the left, bar on the right, so labels never collide.
+          const w = Math.min(84, lvl * 8.4)
           return (
-            <g key={a.id} transform={`translate(${42 + i * 28} 94)`}>
-              <rect width="18" height="70" rx="3" fill="#1e2836" />
-              <rect y={70 - h} width="18" height={h} rx="3" fill="#d9a441" opacity="0.9" />
-              <text className="rm-sign--sm" y="84" x="9" textAnchor="middle" fontSize="9">
+            <g key={a.id} transform={`translate(36 ${96 + i * 17})`}>
+              <text className="rm-sign--sm" x="0" y="10">
                 {AXIS_SHORT[a.id] ?? a.name}
               </text>
+              <rect x="56" y="2" width="84" height="10" rx="3" fill="#1e2836" />
+              <rect x="56" y="2" width={w} height="10" rx="3" fill="#d9a441" opacity="0.9" />
             </g>
           )
         })}
@@ -192,8 +193,8 @@ export function FleetHarborScene() {
           {[212, 262, 312, 362, 412, 452].map((x) => (
             <rect key={x} x={x} y="188" width="6" height="14" fill="#2a221c" />
           ))}
-          <Sign x={212} y={112} text="Pier" />
-          <Sign x={212} y={128} text={`${barges} barge${barges === 1 ? '' : 's'}`} small />
+          <Sign x={212} y={110} text="Pier" />
+          <Sign x={256} y={110} text={`${barges} barge${barges === 1 ? '' : 's'}`} small />
           {Array.from({ length: shown }, (_, i) => {
             const x = 214 + (i % 4) * 62
             const y = i < 4 ? 150 : 124
@@ -214,7 +215,7 @@ export function FleetHarborScene() {
             )
           })}
           {barges === 0 ? <Sign x={212} y={162} text="Berth is empty — launch a barge" small /> : null}
-          {barges > shown ? <Sign x={330} y={128} text={`+${barges - shown} in the dark`} small /> : null}
+          {barges > shown ? <Sign x={350} y={110} text={`+${barges - shown} out in the dark`} small /> : null}
         </Hit>
       )}
 

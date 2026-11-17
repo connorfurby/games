@@ -47,7 +47,7 @@ export function LaneScene() {
             <Badge
               x={110}
               y={y - 48}
-              text={s.fuel > 0 ? 'wet' : 'dry'}
+              text={s.fuel > 0 ? 'fuelled' : 'no fuel'}
               w={40}
             />
             <path d={d} fill="none" stroke="#5aa0c0" strokeWidth="2" strokeDasharray="6 6" opacity="0.7" />

@@ -2,6 +2,15 @@ import { councilPayingSeats, councilSeatCap, councilSeats } from '../../../sim/s
 import { useGame } from '../../GameContext'
 import { Badge, Gauge, Hit, Person, RoomScene, Sign } from '../room'
 import { Blink } from './primitives'
+import { qty } from '../../format'
+import type { BillId } from '../../../sim/state'
+
+const BILLS: { id: BillId; name: string }[] = [
+  { id: 'hours', name: 'Hours' },
+  { id: 'waste', name: 'Waste' },
+  { id: 'labor', name: 'Labour' },
+  { id: 'tax', name: 'Tax' },
+]
 
 const SLOTS = 14
 
@@ -16,6 +25,49 @@ export function CouncilScene() {
   const lobby = Math.min(3, s.politics?.lobby ?? 0)
   const council = s.era >= 7
   const scrutinyPct = Math.round(scrutiny * 100)
+
+  if (!council) {
+    const capital = s.politics?.capital ?? 0
+    const lobbyists = s.politics?.lobby ?? 0
+    const passed = BILLS.filter((b) => s.politics?.bills?.[b.id]).length
+    const yMax = Math.max(1, s.cold?.yieldMax ?? 1)
+    const yFrac = Math.max(0, Math.min(1, (s.cold?.yieldLeft ?? 0) / yMax))
+    const yPct = Math.round(yFrac * 100)
+    return (
+      <RoomScene
+        label={`County hall, ${qty(capital)} capital, ${lobbyists} lobbyists, ${passed} of 4 bills passed, region supply ${yPct} percent`}
+        chips={[
+          { label: 'Capital', value: qty(capital) },
+          { label: 'Lobbyists', value: String(lobbyists) },
+          { label: 'Bills', value: `${passed}/4` },
+          { label: 'Region supply', value: `${yPct}%`, neg: yFrac < 0.15 },
+        ]}
+        skyTop="#1a1d28"
+        skyBottom="#2b2f3c"
+        phoneChipsOnly
+      >
+        <Sign x={60} y={60} text="County bills" />
+        {BILLS.map((b, i) => {
+          const on = !!s.politics?.bills?.[b.id]
+          const x = 60 + i * 150
+          return (
+            <Hit key={b.id} x={x} y={76} w={130} h={110} label={`${b.name} bill, ${on ? 'passed' : 'not passed'}`} menu="politics">
+              <rect x={x} y={80} width={120} height={100} rx="6" fill={on ? '#2f3a2c' : '#20252e'} stroke={on ? '#7cc47f' : '#3a444e'} />
+              <Sign x={x + 60} y={112} text={b.name} anchor="middle" />
+              <Sign x={x + 60} y={150} text={on ? 'Passed' : 'Not yet'} small anchor="middle" />
+            </Hit>
+          )
+        })}
+        {Array.from({ length: Math.min(6, lobbyists) }, (_, i) => (
+          <Person key={i} x={90 + i * 48} y={232} tint="#9fb9d4" delay={0.3 * i} scale={0.9} />
+        ))}
+        <Hit x={780} y={70} w={140} h={160} label={`Region supply ${yPct}%`} menu="cold">
+          <Sign x={850} y={88} text="Region supply" anchor="middle" />
+          <Gauge x={836} y={100} h={100} w={28} fill={yFrac} color={yFrac < 0.15 ? '#d9665b' : '#7cc47f'} value={`${yPct}%`} />
+        </Hit>
+      </RoomScene>
+    )
+  }
 
   return (
     <RoomScene
@@ -50,7 +102,7 @@ export function CouncilScene() {
             <g transform={`translate(${x} ${y})`}>
               <rect x="-14" y="-10" width="28" height="18" rx="4" fill={fill} stroke="#3a444e" />
               {held ? <circle cy="-18" r="5" fill="#e6c2a0" opacity={pays ? 1 : 0.7} /> : null}
-              <Sign x={0} y={22} text={`${i + 1}`} small anchor="middle" />
+              <Sign x={0} y={24} text={`${i + 1}`} small anchor="middle" />
             </g>
           </Hit>
         )
@@ -71,7 +123,6 @@ export function CouncilScene() {
           w={28}
           fill={Math.min(1, scrutiny)}
           color={lamp}
-          label={`${scrutinyPct}%`}
           value={`${scrutinyPct}%`}
         />
       </Hit>

@@ -187,7 +187,8 @@ export function Gauge({
   w?: number
   fill?: number
   color?: string
-  label: string
+  /** Optional caption under the bar; skip it when a sign above already names the gauge. */
+  label?: string
   value: string
 }) {
   const f = Math.max(0, Math.min(1, fill))
@@ -196,10 +197,12 @@ export function Gauge({
     <g transform={`translate(${x} ${y})`}>
       <rect width={w} height={h} rx="4" fill="#0f1317" stroke="#3a444e" />
       <rect x="2" y={h - 2 - fh} width={w - 4} height={fh} rx="2" fill={color} opacity="0.9" />
-      <text className="rm-sign--sm" x={w / 2} y={h + 12} textAnchor="middle">
-        {label}
-      </text>
-      <text className="rm-badge__text" x={w / 2} y={h + 24} textAnchor="middle" fill="#efe9dc">
+      {label ? (
+        <text className="rm-sign--sm" x={w / 2} y={h + 12} textAnchor="middle">
+          {label}
+        </text>
+      ) : null}
+      <text className="rm-badge__text" x={w / 2} y={label ? h + 24 : h + 14} textAnchor="middle" fill="#efe9dc">
         {value}
       </text>
     </g>
