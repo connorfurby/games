@@ -210,13 +210,13 @@ const PRESSURE: DialogueLine[] = [
   {
     id: 'second-store',
     speaker: 'operations',
-    text: 'Second door. Attention splits or the new key drifts into spoil.',
+    text: 'Second store. Share your Attention, or the new one slowly loses shoppers.',
     when: (s) => s.stores.length >= 2,
   },
   {
     id: 'depot-online',
     speaker: 'operations',
-    text: 'Depot online. Routes beat vanity footprints — open store five only when the shed is built.',
+    text: 'Depot online. Every store gets more shoppers now. Open a fifth store only once it is built.',
     when: (s) => !!s.depot,
   },
   {
@@ -519,7 +519,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'store-drift',
     speaker: 'operations',
-    text: 'A store is drifting. Walk it before spoil and shrink write the review.',
+    text: 'A store needs a visit. Go on Land before spoilage and theft write the review.',
     when: (s) => s.stores.some((st) => st.drift >= 0.5),
   },
   {
@@ -531,7 +531,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'invest-book',
     speaker: 'operations',
-    text: 'Investment book open. Park surplus inside the cap; the rest earns nothing.',
+    text: 'Investment book open. Put in spare cash up to the cap; anything over it earns nothing.',
     when: (s) => s.invest.unlocked,
   },
   {
@@ -555,7 +555,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'doctrine-first',
     speaker: 'operations',
-    text: 'First doctrine bought. An opinion with teeth — buy them in order.',
+    text: 'First strategy bought. Buy them in order; each one builds on the last.',
     when: (s) => s.stats.doctrinesBought >= 1,
   },
   {
@@ -591,7 +591,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'momentum-on',
     speaker: 'cold',
-    text: 'Momentum is live. Keep surplus positive and it compounds quietly.',
+    text: 'Cold bonus is on. Keep supply ahead of demand and it grows quietly.',
     when: (s) => !!s.cold?.momentumOn,
   },
   {
@@ -651,7 +651,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'walk-done',
     speaker: 'operations',
-    text: 'Walk completed. Drift forgot your name for a while.',
+    text: 'Visit done. That store is back on track for a while.',
     when: (s) => (s.stats.walks ?? 0) >= 1,
   },
   {
@@ -723,7 +723,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'passbook-open',
     speaker: 'operations',
-    text: 'Passbook open. Park surplus; interest is slow honesty.',
+    text: 'Savings open. Park spare cash; the interest is slow but honest.',
     when: (s) => !!s.menus.invest || (s.passbook?.balance ?? 0) > 0 || !!s.memos['passbook'],
   },
   {

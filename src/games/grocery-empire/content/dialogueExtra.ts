@@ -278,7 +278,7 @@ const CHAIN_MORE: DialogueLine[] = [
   {
     id: 'store-drift-heavy',
     speaker: 'operations',
-    text: 'A door is nearly lost to drift. Walk it now; the numbers lag the smell.',
+    text: 'One of our stores is slipping. Visit it on Land now; the numbers lag the smell.',
     when: (s) => s.stores.some((st) => st.drift >= 0.9),
   },
   {
@@ -338,13 +338,13 @@ const CHAIN_MORE: DialogueLine[] = [
   {
     id: 'invest-circuit',
     speaker: 'operations',
-    text: 'Circuit breaker tripped on the book. Safety sirens are doing their job.',
+    text: 'The investment book paused itself after a fall. Take some out or lower the risk to restart it.',
     when: (s) => !!s.invest?.circuitBreaker,
   },
   {
     id: 'doctrine-three',
     speaker: 'operations',
-    text: 'Three doctrines in the binder. Read accrues; opinions harden.',
+    text: 'Three strategies in the binder. Tournaments pay more Read now.',
     when: (s) => s.stats.doctrinesBought >= 3,
   },
   {
@@ -560,7 +560,7 @@ const ERA_FIRSTS: DialogueLine[] = [
   {
     id: 'era3-first',
     speaker: 'cold',
-    text: 'Cold chain era. Freshness is infrastructure now. Keep surplus positive.',
+    text: 'Cold chain era. Keep more cold supply than demand, and the food stays fresh.',
     when: (s) => s.era >= 3,
   },
   {
@@ -618,25 +618,25 @@ const COLD_POLITICS_MORE: DialogueLine[] = [
   {
     id: 'momentum-high',
     speaker: 'cold',
-    text: 'Momentum is compounding. Do not stare at it; babysit surplus.',
+    text: 'Your cold bonus is growing. Keep supply ahead of demand and leave it be.',
     when: (s) => (s.cold?.momentum ?? 1) >= 1.5,
   },
   {
     id: 'yield-half',
     speaker: 'cold',
-    text: 'County yield at half. The easy frost is gone; the map beckons.',
+    text: 'Half the region’s supply is used up. The easy frost is gone; the map beckons.',
     when: (s) => !!s.cold && s.cold.yieldMax > 0 && s.cold.yieldLeft <= s.cold.yieldMax * 0.5,
   },
   {
     id: 'yield-empty',
     speaker: 'lobbyist',
-    text: 'County yield emptied. The committee wants a farewell lunch. Leave when ready.',
+    text: 'The region’s supply is gone. The committee wants a farewell lunch. Leave from Politics when ready.',
     when: (s) => !!s.cold && s.cold.yieldMax > 0 && s.cold.yieldLeft <= 0,
   },
   {
     id: 'quadratic-live',
     speaker: 'cold',
-    text: 'Plants count twice. The yield will vanish faster than the headline.',
+    text: 'Plants use supply twice as fast now. It will run out sooner than you think.',
     when: (s) => !!s.cold?.quadratic,
   },
   {
@@ -676,7 +676,7 @@ const LATE_MORE: DialogueLine[] = [
   {
     id: 'fuel-low',
     speaker: 'guardian',
-    text: 'Fuel is low. Dry tanks idle lanes — never brick. Top them up.',
+    text: 'Fuel is low. Routes without fuel just wait; top them up in Logistics.',
     when: (s) => (s.fleet?.lanes ?? 0) >= 1 && s.fuel < 10,
   },
   {
@@ -688,7 +688,7 @@ const LATE_MORE: DialogueLine[] = [
   {
     id: 'franchise-first',
     speaker: 'lobbyist',
-    text: 'First franchise. Brand will drift; seal it before the fonts wander.',
+    text: 'First franchise. It will slowly wear on our Brand; the Brand Seal in Charter stops that.',
     when: (s) => (s.fleet?.franchises ?? 0) >= 1,
   },
   {
@@ -712,19 +712,19 @@ const LATE_MORE: DialogueLine[] = [
   {
     id: 'drift-war',
     speaker: 'guardian',
-    text: 'Drift war is live. Off-Brand wears your fonts; Brand Seal is the shield.',
+    text: 'Off-Brand is copying us, fonts and all. The Brand Seal is our shield.',
     when: (s) => !!s.fleet?.warOn,
   },
   {
     id: 'drift-win',
     speaker: 'guardian',
-    text: 'A drift win. Legacy ticks up. The plaque has room for more.',
+    text: 'We beat Off-Brand back. Legacy ticks up. The plaque has room for more.',
     when: (s) => (s.fleet?.driftWins ?? 0) >= 1,
   },
   {
     id: 'biomass-thin',
     speaker: 'guardian',
-    text: 'Biomass is thin. Guardian shell keeps the last barge; use it before you need it.',
+    text: 'Biomass is thin. Guardian protects the last barge; turn it on before you need it.',
     when: (s) => !!s.fleet?.launched && s.fleet.biomass < s.fleet.biomassMax * 0.3,
   },
   {

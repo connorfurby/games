@@ -68,20 +68,20 @@ export const CHAPTERS: Record<number, ChapterDef> = {
     ['Open a second door', 'Split Attention', 'Grow the investment book'],
     [
       { speaker: 'operations', title: 'Chain', body: 'More than one keyring. Attention splits across doors.' },
-      { speaker: 'operations', body: 'Policies keep neglected stores from drifting into spoil and shrink.' },
+      { speaker: 'operations', body: 'A store you never visit slowly loses shoppers. Land shows which ones need you.' },
       { speaker: 'operations', body: 'The book grows money while you sleep. Depot before store five.' },
       { speaker: 'operations', body: 'Autonomous fulfillment ends manual pricing — bank Read before you flip it.' },
     ],
   ),
   3: chapter(
     3,
-    'Freshness becomes a plant. Tanks. Momentum. Lobbyists.',
-    ['Buy plants and tanks', 'Ride Momentum carefully', 'Lobby or leave a region'],
+    'Fresh food needs cold plants, tanks and lobbyists.',
+    ['Buy plants and tanks', 'Keep supply ahead of demand', 'Lobby or leave a region'],
     [
-      { speaker: 'cold', title: 'Cold chain', body: 'Freshness is infrastructure now. Plants hum. Tanks buy buffer.' },
-      { speaker: 'cold', body: 'Momentum compounds above 100%. Brownout floors at 25% — auto-shed trims load.' },
-      { speaker: 'lobbyist', body: 'Politics arrives with the tanks. Capital leaks into hearings. Acquisition has a temperature.' },
-      { speaker: 'cold', body: 'Empty the county yield, then leave the region when the reserve is ready.' },
+      { speaker: 'cold', title: 'Cold chain', body: 'Fresh food needs cold now. Plants make it; tanks keep you going when the power dips.' },
+      { speaker: 'cold', body: 'Keep food fully fresh and a bonus grows. If demand outruns supply, the power dips: freshness falls to 25% until you recover.' },
+      { speaker: 'lobbyist', body: 'Politics opens too. Lobbyists earn Political Capital; spend it to buy out neighbours and pass bills.' },
+      { speaker: 'cold', body: 'Use up the region’s supply, then leave the region from Politics when you have the Capital.' },
     ],
   ),
   4: chapter(
@@ -90,19 +90,19 @@ export const CHAPTERS: Record<number, ChapterDef> = {
     ['Charter ocean lanes', 'Watch fuel and Control', 'Keep brand steady'],
     [
       { speaker: 'lobbyist', title: 'Globe', body: 'Human retail becomes a ledger line. Control spends like cash used to.' },
-      { speaker: 'guardian', body: 'Lanes need fuel. Dry lanes idle. Brand drifts if you look away.' },
+      { speaker: 'guardian', body: 'Routes need fuel; without it they just wait. Brand slowly slips if you ignore it.' },
       { speaker: 'guardian', body: 'Franchise is speed; company-owned holds the label steadier.' },
     ],
   ),
   5: chapter(
     5,
     'Seed barges leave gravity. Drift wars. Charter keeps the last barge named.',
-    ['Launch seed barges', 'Survive drift wars', 'Spend Charter carefully'],
+    ['Launch seed barges', 'Hold off Off-Brand', 'Spend Charter carefully'],
     [
       { speaker: 'guardian', title: 'Seed barges', body: 'Charter points buy axes — shell, replication, survey, seal.' },
-      { speaker: 'guardian', body: 'Drift rises with Charter cap. The last barge is protected. Guardian is always offered under pressure.' },
+      { speaker: 'guardian', body: 'Off-Brand gets bolder as your fleet grows. Your last barge is always protected, and Guardian is offered when things get tight.' },
       { speaker: 'guardian', body: 'War costs time and Legacy opportunity. The last barge still has a name.' },
-      { speaker: 'operations', body: 'Universe biomass is finite. Watch the meter; the ledger will tell you when it matters.' },
+      { speaker: 'operations', body: 'There is only so much biomass out there. Watch the meter in Fleet.' },
     ],
   ),
   6: chapter(

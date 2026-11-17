@@ -38,6 +38,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Long primary verbs wrap to two lines instead of running off both edges (Strategy's tournament button on phones).
 - Rooms that only cropped badly on phones show their numbers only: Council, Ventures street, Invest.
 - Invest room chips: Savings, Invested, then Holdings / Returns once instruments exist (was Lots / Yield/s / Book / Pads at zero).
+- Story: about 25 character lines and chapter cards keep their voice but drop jargon (drift, yield, Momentum, surplus, dry lanes, doctrine with teeth) and say where to act.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**
