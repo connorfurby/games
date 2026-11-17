@@ -82,7 +82,7 @@ export function LastAisleScene({
           </g>
         ))}
       </Hit>
-      <Sign x={258} y={240} text={n === 0 ? 'Five lines to fill' : `${n} of 5 filled`} anchor="middle" />
+      <Sign x={258} y={278} text={n === 0 ? 'Five lines to fill' : `${n} of 5 filled`} anchor="middle" />
     </RoomScene>
   )
 }

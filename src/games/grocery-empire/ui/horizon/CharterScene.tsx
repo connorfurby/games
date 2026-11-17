@@ -49,7 +49,7 @@ export function CharterScene({
         />
       ))}
       {signed ? <circle cx="420" cy="158" r="16" fill="none" stroke="#8d2a2a" strokeWidth="3" /> : null}
-      <Sign x={420} y={230} text={signed ? 'Charter signed' : `${kept} of 4 clauses on the table`} anchor="middle" />
+      <Sign x={420} y={278} text={signed ? 'Charter signed' : `${kept} of 4 clauses on the table`} anchor="middle" />
 
       <Hit
         x={700}
