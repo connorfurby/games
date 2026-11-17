@@ -744,12 +744,38 @@
     font-size: var(--t-md);
     font-weight: 600;
   }
+  .e2-rewardpair .e2-rewardpair__blurb {
+    margin-top: 0.15rem;
+    font: 400 var(--t-xs) / 1.35 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  /* "See all rewards": a real control with an edge, not a bare line of text. */
   .e2-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-height: 2.5rem;
+    padding: 0 var(--s-3);
+    border: 1px solid var(--ge-line-strong);
+    border-radius: var(--r-md);
     cursor: pointer;
     font-size: var(--t-sm);
     font-weight: 600;
     color: var(--ge-ink);
-    padding: var(--s-2) 0;
+    list-style: none;
+  }
+  .e2-summary::-webkit-details-marker {
+    display: none;
+  }
+  .e2-summary::before {
+    content: '▸';
+    transition: transform var(--dur-fast, 0.15s);
+  }
+  details[open] > .e2-summary::before {
+    transform: rotate(90deg);
+  }
+  details[open] > .e2-summary {
+    margin-bottom: var(--s-2);
   }
   /* The doctrine tree gets the whole width and a real height on the page. */
   .pf-desk--doctrine .st-view {

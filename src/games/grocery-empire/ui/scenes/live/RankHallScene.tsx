@@ -59,7 +59,7 @@ export function RankHallScene() {
         <g transform="translate(152 30)">
           <rect width="196" height="58" rx="8" fill="#121820" stroke="#d9a441" strokeOpacity="0.5" />
           <text x="12" y="22" className="rm-sign" style={{ fontSize: 11, opacity: 0.75 }}>
-            {next ? `Next · Empire ${next.level}` : 'Every reward claimed'}
+            {next ? `Next · rank ${next.level}` : 'Every reward claimed'}
           </text>
           <text x="12" y="42" className="rm-sign" style={{ fontSize: 14, fontWeight: 700 }}>
             {next ? (next.name.length > 22 ? `${next.name.slice(0, 21)}…` : next.name) : 'Well done'}
@@ -119,7 +119,7 @@ export function RankHallScene() {
       {/* Next reward plaque */}
       <Hit x={246} y={146} w={280} h={64} label={next ? `Next: ${next.name}` : 'All rewards'} menu="empire">
         <rect x="246" y="146" width="280" height="64" rx="8" fill="#121820" stroke="#d9a441" strokeOpacity="0.55" />
-        <Sign x={260} y={170} text={next ? `Next · Empire ${next.level}` : 'Hall complete'} />
+        <Sign x={260} y={170} text={next ? `Next · rank ${next.level}` : 'Hall complete'} />
         <Sign
           x={260}
           y={192}

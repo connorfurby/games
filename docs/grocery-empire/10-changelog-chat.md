@@ -45,6 +45,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Performance (production build, Era 7): 86% idle unthrottled; one ~55 ms long task in 6 s at 4× CPU throttle. Nothing to fix.
 - Build room chips: Building, Level, Facing, Upkeep ($/min or none). Billboard and Build rooms show numbers only on phones (their band was a bad crop).
 - Next goal hints are short directions in Hub → Page → Section form ("Store → Floor → Regulars.") so they fit the bar without an ellipsis; full text on hover.
+- Empire rewards: last/next reward now say what they do (blurb) and use "rank" consistently; "See all rewards" and the Museum dust shop are real disclosure buttons with an edge.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

@@ -160,11 +160,13 @@ export function EmpireBoard() {
               <dl className="e2-rewardpair">
                 <div title={last?.blurb}>
                   <dt>Last reward</dt>
-                  <dd>{last ? `${last.name} · Empire ${last.level}` : 'None yet'}</dd>
+                  <dd>{last ? `${last.name} · rank ${last.level}` : 'None yet'}</dd>
+                  {last?.blurb ? <dd className="e2-rewardpair__blurb">{last.blurb}</dd> : null}
                 </div>
                 <div title={next?.blurb}>
                   <dt>Next reward</dt>
-                  <dd>{next ? `${next.name} · Empire ${next.level}` : 'You have them all'}</dd>
+                  <dd>{next ? `${next.name} · rank ${next.level}` : 'You have them all'}</dd>
+                  {next?.blurb ? <dd className="e2-rewardpair__blurb">{next.blurb}</dd> : null}
                 </div>
               </dl>
               <details>

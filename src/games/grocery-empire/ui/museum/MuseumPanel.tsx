@@ -249,7 +249,7 @@ export function MuseumPanel() {
         )}
 
         <details className="mu-shop">
-          <summary>Dust shop: buy a chest with duplicates’ dust</summary>
+          <summary className="e2-summary">Dust shop: buy a chest with duplicates’ dust</summary>
           <div className="mu-shop__row">
             <label className="mu-shop__lean">
               <span>Lean toward</span>
