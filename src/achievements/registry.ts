@@ -170,7 +170,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // Politics (s.politics)
   { id: 'lobby-hire', name: 'Lobby Retainer', blurb: 'Hire a lobbyist.', tier: 'bronze', tokens: 1, test: (s) => s.politics.lobby >= 1 },
-  { id: 'lobby-3', name: 'Zoning Friends', blurb: 'Hire lobby three times.', tier: 'silver', tokens: 2, test: (s) => s.politics.lobby >= 3, progress: (s) => Math.min(3, s.politics.lobby), progressMax: 3 },
+  { id: 'lobby-3', name: 'Zoning Friends', blurb: 'Hire three lobbyists.', tier: 'silver', tokens: 2, test: (s) => s.politics.lobby >= 3, progress: (s) => Math.min(3, s.politics.lobby), progressMax: 3 },
   { id: 'acquire-1', name: 'Neighbor Buy', blurb: 'Acquire a region once.', tier: 'silver', tokens: 2, test: (s) => s.politics.acquisitions >= 1 },
   { id: 'leave-region', name: 'Packed Brand', blurb: 'Leave the region for the globe.', tier: 'gold', tokens: 5, test: (s) => s.politics.leftRegion },
 

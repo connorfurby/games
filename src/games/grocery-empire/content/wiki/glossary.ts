@@ -77,7 +77,7 @@ export const GLOSSARY: GlossEntry[] = [
     era: 0,
     icon: 'wholesale',
     short: 'The walking price of a crate. Buy on the dips.',
-    more: 'Under ~$0.85 is a good early buy. Each crate is one aisle.',
+    more: 'Restock on the Floor tells you when crate prices are low. Each crate is one aisle.',
     see: 'faq-shelf-mix',
   },
   {
@@ -283,7 +283,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'currency',
     era: 4,
     icon: 'lane',
-    short: 'Ticked by wet lanes and the Control Tower; spends like late-game cash.',
+    short: 'Earned by fuelled routes and the Control Tower; spend it like late-game cash.',
     see: 'late-detail',
   },
   {
@@ -301,7 +301,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'currency',
     era: 5,
     icon: 'fleet',
-    short: 'Earned in the optional drift war. Raises how many Charter points you can hold.',
+    short: 'Earned by holding off Off-Brand. Raises how many Charter points you can hold.',
     see: 'walk-e45',
   },
   {
@@ -318,7 +318,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'verb',
     era: 7,
     icon: 'planets',
-    short: 'The first two filings per layer are practice. Only credited filings open eras.',
+    short: 'Your first two tries at each puzzle are practice. Only counted tries move the story on.',
     see: 'late-worlds',
   },
   {

@@ -347,7 +347,7 @@ export function EmpireSections({
               onAutoClose()
             }}
           >
-            Release Autonomous
+            Hand over the chain
           </Button>
         )}
       </Sheet>

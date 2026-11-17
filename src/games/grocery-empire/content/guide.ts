@@ -127,7 +127,7 @@ PRICE
   Do not chase max margin while the shelf is empty.
 
 WHOLESALE
-  Index walks. Buys under ~$0.85 are wins early. One crate at a time is fine.
+  Crate prices move. Restock tells you when they are low. One crate at a time is fine.
   Floor Stock chips pick the aisle (CAN / HSE / PRD…).
 
 RENT
@@ -164,7 +164,7 @@ STAFF · SHIFT BOARD
 
 INVOICE BOOK · PLANOGRAM
   Pay invoices on time (Suppliers / Books). Practice the flagship planogram twice,
-  then file ≥0.72 for credit before the side yard.
+  then file at 72% or better for credit before the side yard.
 
 LAND
   Survey memo → Land menu → Side Yard when regulars, invoices, Open days, and planogram clear.
@@ -187,7 +187,7 @@ CHECKPOINTS
 
 STORES
   Flagship seeds automatically. Open Store 2+ from Land when cash allows.
-  Split Attention shares. Neglected stores drift (spoil / shrink / inspection heat).
+  Split Attention between stores. A store you never visit slowly slips (more spoilage, theft and inspections).
   Policies: Local (traffic), Standard, Premium (richer tickets).
 
 DEPOT
@@ -196,7 +196,7 @@ DEPOT
 CAPITAL
   Incorporate when expansion cash is the bottleneck (cash + Reputation).
   Board meetings: resolve them; neglect taxes Reputation slowly.
-  Debt covenant blocks vanity expansion when leverage is high — repay / buffer.
+  If you owe too much, the bank blocks new stores until you pay some back.
 
 INVEST BOOK
   Trading Desk memo. Park cash. Mid after engine L2. High only with calm debt.
@@ -217,12 +217,12 @@ GATE OUT — AUTONOMOUS
     topic: 'walk',
     blurb: 'Plants, tanks, the cold bonus, leaving the region.',
     body: `GOAL
-  Keep cold surplus positive while draining county yield to zero, then leave.
+  Keep cold supply ahead of demand while you use up the region’s supply, then leave.
 
 COLD
-  Cold Plant Permit stamps Era 3. Plants add supply and drain yield. Tanks buffer.
+  Cold Plant Permit stamps Era 3. Plants add cold supply and use up the region’s supply. Tanks keep you going in a power dip.
   Surplus = plant supply (+quadratic later) + tanks − demand.
-  Brownout floors freshness at 25% and pauses Momentum — delay, not doom.
+  A power dip drops freshness to 25% and pauses the cold bonus: a delay, not a disaster.
 
 MOMENTUM
   After tanks. Compounds while freshness ≥ 100%. Crash → auto-shed newest plant.
@@ -231,10 +231,10 @@ MOMENTUM
 POLITICS
   Lobby Retainer → Political Capital (leaky). Lobbyists trickle it back.
   Acquisition Desk buys neighbors (cash + PC). Heat rises; fines are soft-capped.
-  Leave the Region when yield empty and Capital ≥ 15 — Era 4 gate.
+  Leave the region once its supply is used up and you have 15 Capital. That opens Era 4.
 
 CHECKPOINTS
-  □ Plant + tank online · Momentum stamped
+  □ Plant + tank online · cold bonus running
   □ Quadratic only when ready to leave
   □ Leave Region stamped`,
   },
@@ -246,7 +246,7 @@ CHECKPOINTS
     blurb: 'Routes, fuel, barges and Off-Brand.',
     body: `ERA 4 — LOGISTICS
   Fuel buffer before vanity lanes. Dry lanes idle; they do not brick.
-  Control Tower + wet lanes tick Control. Franchises buy footprint but hit Brand.
+  The Control Tower and fuelled routes earn Control. Franchises grow fast but wear on Brand.
 
 ERA 5 — FLEET
   Seed Barge Berth. First launch costs cash + Read; later barges cash only.
@@ -579,7 +579,7 @@ WHEN TO BOOK
 2. Buy marketing early, then stop.
 3. Archives before Analysts.
 4. Hoard the era’s true sink (Archives → Read → cold reserve → Charter).
-5. Prefer not to brown out after Momentum — crash is delay.
+5. Try not to let the power dip once the cold bonus is running; a dip only delays you.
 6. Use recovery rails freely.
 7. Buy upgrades/ventures steadily when memos are gated.
 8. Spend Reputation; do not museum it.`,
@@ -631,7 +631,7 @@ SHIFT BOARD (Staff)
   cold wants opening and closing shifts; barges want the middle shift.
 
 FLAGSHIP PLANOGRAM (Floor)
-  Practice twice, then credit ≥0.72. Chain/globe refiles after new aisles.
+  Practise twice, then file at 72% or better. Redo it after new aisles open.
 
 INVOICE BOOK (Suppliers / Books)
   Due timers, early-pay discount, late fees that hit stars. Lot Survey and leave care.
@@ -688,8 +688,8 @@ SEE ALSO  Eight depth systems.`,
     topic: 'choices',
     blurb: 'Your weekly flyer is how you answer Penny and FreshWay.',
     body: `Deep pulls Penny in: she locks your aisles sooner. Soft lets FreshWay spoil your produce faster.
-Mid keeps the peace. The stance lasts only while the week runs; finished weeks still count toward the cold
-permit whatever the stance. Print deep when you can afford a lock, soft when your cooler is signed.
+Mid keeps the peace. The choice lasts only while the week runs; finished weeks still count toward the cold
+permit whatever you chose. Print deep when you can afford a lock, soft when your cooler is signed.
 SEE ALSO  Era 2 systems detail · Flyer Desk.`,
   },
   {
@@ -700,7 +700,7 @@ SEE ALSO  Era 2 systems detail · Flyer Desk.`,
     blurb: 'Each run is filed one way. The choices never stack.',
     body: `Clean counts as a clean run right away (you need these for the barge berth). For inspection starts an
 inspection; pass it in time and it counts as an inspection instead. Fast spends the route for a quick burst of
-cash, counts as neither, and leaves the route open to MegaMart. The button note under each stance says why it is blocked.
+cash, counts as neither, and leaves the route open to MegaMart. The note under each choice says why it is blocked.
 SEE ALSO  Era 4–6 systems detail · Dispatch.`,
   },
   {
@@ -709,8 +709,8 @@ SEE ALSO  Era 4–6 systems detail · Dispatch.`,
     era: 12,
     topic: 'choices',
     blurb: 'Sign one before the Last Aisle. It reshapes your multipliers.',
-    body: `Standard: network ×1.25, but you can only use the standard on puzzles and scores stay at 0.72.
-Boutique: no network multiplier, puzzle scores may reach 1, excess over 0.72 scales that layer only (cap ×1.5).
+    body: `Standard: network ×1.25, but you can only use the ready-made answer on puzzles and scores stay at 72%.
+Boutique: no network bonus, puzzle scores may reach 100%, and anything over 72% boosts that puzzle’s bonus (up to ×1.5).
 Co-op: ventures ×1.12, network ×0.92. The fork sits on your Next Goal until you sign.
 SEE ALSO  Eras 7–12 · Worlds puzzles (charter → Last Aisle).`,
   },
@@ -762,17 +762,17 @@ AUTONOMOUS
     blurb: 'Cooler Log, cold math, and politics pressure.',
     body: `COOLER LOG
   Temp checks on a timer. Plant Operator on the current shift auto-signs.
-  Leave Region wants signed logs + blast/tunnel + bills — not yield alone.
+  Leaving the region needs signed logs, a blast freezer and tunnel, and bills, not just used-up supply.
 
 SURPLUS
-  Plants (+quadratic) + tanks − demand. Negative → brownout floor + Momentum pause.
+  Supply is plants plus tanks minus demand. Below zero, the power dips and the cold bonus pauses.
 
 AUTO-SHED
   Dumps newest plant. Tanks stay. Rebuild deliberately.
 
 POLITICAL CAPITAL
   Leaky. Lobbyists refill. Acquisitions spend cash+PC and raise monopoly heat.
-  Leave Region is the map-expansion button when yield is empty.`,
+  Leaving the region opens the bigger map once its supply is used up.`,
   },
   {
     id: 'late-detail',
@@ -804,18 +804,18 @@ ENDINGS
     topic: 'late',
     blurb: 'Practice filings, climate/settlement/haul, seating, rehearsal.',
     body: `PRACTICE THEN CREDIT
-  First two filings per layer are practice — they stock but do not open the next era.
-  Standard (~0.72) is the slow gate; clever (~0.85) is the fast gate.
+  Your first two tries at each puzzle are practice: they count for stock but do not open the next era.
+  The safe answer (about 72%) is the slow way through; a clever one (about 85%) is the fast way.
 
 ERA LOOPS
   Serve climate neighbors on stocked worlds (Era 8). Settle each credited stop (Era 9).
-  Season chore arms a yield haul — bring it in before the season turns (Era 10).
+  Locking a bed for the season gives a harvest; bring it in before the season ends (Era 10).
   Each credited phrase posts its habit: that agent is locked to it (off their own job) until the watch resolves (Era 11).
   Seat each kept clause, then wait the gap (Era 12).
 
 CHARTER → LAST AISLE
   Keep four clauses (serial seating). Concord puts each clause you seat to a hearing (3 sessions); a Minutes Clerk can amend one grudge away.
-  Sign Standard, Boutique or Co-op. Finish list practice, rehearse at a 0.85 mean (a miss scratches a line), then Accept — Reject is unchanged.`,
+  Sign Standard, Boutique or Co-op. Finish list practice, practise to an 85% average (a miss crosses out a line), then Accept — Reject is unchanged.`,
   },
   {
     id: 'late-worlds-guests',

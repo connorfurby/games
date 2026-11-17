@@ -131,7 +131,7 @@ export function PoliticsPanel() {
           {p.lobby === 0 && p.capital <= 0 ? (
             <EmptyState
               title="No capital yet"
-              body={`Retain ${council ? 'a whip' : 'a lobbyist'} in the tray to start earning political capital.`}
+              body={`Hire ${council ? 'a whip' : 'a lobbyist'} with the button above to start earning Political Capital.`}
             />
           ) : (
             <p className="lh-note">

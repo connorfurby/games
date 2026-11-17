@@ -218,7 +218,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e2-autonomous',
     era: 2,
-    label: 'Release Autonomous fulfillment',
+    label: 'Hand over the chain (Autonomous)',
     test: (s) => s.autonomous,
   },
   {

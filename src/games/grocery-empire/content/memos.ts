@@ -863,7 +863,7 @@ export const MEMOS: MemoDef[] = [
       enableMomentum(s)
       queueTutorial(s, 'momentum')
     },
-    done: 'Momentum Clause filed. Babysit surplus.',
+    done: 'Momentum Clause signed. Keep supply ahead of demand.',
   },
   {
     id: 'quadratic-plants',
@@ -976,7 +976,7 @@ export const MEMOS: MemoDef[] = [
     cost: c(150_000_000, 4000, 30),
     visible: (s) => had(s, 'ocean-lane') || s.fleet.lanes >= 1,
     run: (s) => unlockMenu(s, 'logistics'),
-    done: 'Franchise kit printed. Brand will drift — it regenerates.',
+    done: 'Franchise kit printed. Franchises wear on Brand a little; it heals.',
   },
   {
     id: 'fuel-buffer',

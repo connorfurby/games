@@ -33,7 +33,7 @@ export const LATE_MEMOS: LateMemoStub[] = [
   // Era 5 — seed barges
   { id: 'barge-berth', name: 'Seed Barge Berth', era: 5, voice: 'A dock that points at the dark. Crates become barges; shelves become orbits.', effect: 'Unlock Fleet / Charter.', unlock: 'Orbital annex' },
   { id: 'charter-opener', name: 'Charter Opener', era: 5, voice: 'Shell, replication, survey, transit. Allocate carefully — every point is a doctrine.', effect: 'Charter point budget.', unlock: 'Berth built' },
-  { id: 'guardian-shell', name: 'Guardian Shell', era: 5, voice: 'Cheap. One-time. Keeps the last barge alive when the drift war gets teeth.', effect: 'Emergency shell floor before extinction.', unlock: 'Fleet under pressure' },
+  { id: 'guardian-shell', name: 'Guardian Shell', era: 5, voice: 'Cheap. One-time. Keeps the last barge alive when Off-Brand gets serious.', effect: 'A one-time shield for your last barge.', unlock: 'Fleet under pressure' },
   { id: 'elliptic-hull', name: 'Elliptic Hull', era: 5, voice: 'Less shell, more replication, then survey. Geometry is a stocking plan.', effect: 'Hull efficiency memo.', unlock: 'Charter mid' },
   { id: 'reboot-fleet', name: 'Reboot Fleet', era: 5, voice: 'Refund Charter. Respec. No shame. The void forgives bad first drafts.', effect: 'Respec Charter points.', unlock: 'Fleet launched' },
   { id: 'off-brand-war', name: 'Off-Brand Contact', era: 5, voice: 'Someone else is stocking the void with your fonts. Legacy is the score out here.', effect: 'Start drift war; Legacy currency.', unlock: 'Biomass contested' },

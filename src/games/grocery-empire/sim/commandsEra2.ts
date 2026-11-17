@@ -318,7 +318,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
   },
   setAutonomousHabit: {
     can: (s, cmd) => {
-      if (!s.autonomous) return no('Release Autonomous first.')
+      if (!s.autonomous) return no('Hand over the chain first (Empire).')
       const h = cmd.habit
       if (h !== 'balanced' && h !== 'price' && h !== 'attention' && h !== 'collect') {
         return no('Unknown habit.')

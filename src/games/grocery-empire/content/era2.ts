@@ -226,7 +226,7 @@ export const ERA2_MEMOS: MemoDef[] = [
     id: 'autonomous-brief',
     name: 'Autonomous Brief',
     voice: 'When Read, depot, and spent Reputation line up, release the floor.',
-    effect: 'Unlocks Release Autonomous (Era 2 gate out).',
+    effect: 'Lets you hand over the chain, which ends Era 2.',
     era: 2,
     cost: c(20_000, 5000, 120),
     visible: (s) => s.era >= 2 && s.depot && s.read >= 20,
