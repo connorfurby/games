@@ -110,7 +110,7 @@ export function LaneScene() {
       {lanes <= 0 ? (
         <g>
           <Sign x={80} y={150} text="Dry dock — no ocean lanes yet" />
-          <Sign x={80} y={174} text="Open a lane to start the fleet →" small />
+          <Sign x={80} y={174} text="Open a route below to start the fleet" small />
         </g>
       ) : null}
     </RoomScene>

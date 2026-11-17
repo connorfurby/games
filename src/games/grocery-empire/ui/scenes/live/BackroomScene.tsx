@@ -7,7 +7,7 @@ import { Blink, Conveyor, CrateStack } from './primitives'
 
 /** Backroom room: stock counts on crates, capacity wall meter, bonded cage, inbound belt. */
 export function BackroomScene() {
-  const { state: s } = useGame()
+  const { state: s, reducedMotion } = useGame()
   const total = sumQty(s.backroom)
   const cap = Math.max(1, backroomCap(s))
   const fill = Math.min(1, total / cap)
@@ -32,7 +32,7 @@ export function BackroomScene() {
       <Hit x={36} y={60} w={280} h={160} label="Inbound belt" menu="suppliers" coachId="suppliers-autorestock">
         <Sign x={48} y={78} text="Inbound" />
         <Conveyor x={48} y={ROOM_GROUND - 40} w={260} fill={inbound > 0 ? Math.min(1, 0.3 + inbound * 0.2) : 0.15} />
-        <Sign x={48} y={ROOM_GROUND + 8} text={inbound > 0 ? `${inbound} truck${inbound === 1 ? '' : 's'} · tap to order` : 'No trucks · order stock'} small />
+        <Sign x={48} y={ROOM_GROUND + 8} text={inbound > 0 ? `${inbound} truck${inbound === 1 ? '' : 's'} on the way` : 'No trucks on the way'} small />
       </Hit>
 
       <Hit x={340} y={70} w={280} h={150} label="Backroom stock" coachId="backroom-categories">
@@ -44,6 +44,14 @@ export function BackroomScene() {
         <Sign x={350} y={130} text={`${qty(total)} units · ${Math.round(fill * 100)}% of cap`} small />
         <Person x={520} y={ROOM_GROUND - 10} tint="#d9a441" delay={0.2} working={total > 0} scale={1.05} />
       </Hit>
+
+      {/* While trucks come in, a stocker carries crates from the belt to the piles. */}
+      {inbound > 0 && !reducedMotion ? (
+        <g className="rm-carry" aria-hidden>
+          <Person x={150} y={ROOM_GROUND - 10} tint="#b8956a" working={false} />
+          <rect x={141} y={ROOM_GROUND - 33} width="18" height="13" rx="2" fill="#a0784c" stroke="#5a4028" />
+        </g>
+      ) : null}
 
       {bondedOn ? (
         <Hit x={700} y={70} w={220} h={150} label="Bonded cage" coachId="backroom-fifo">
@@ -63,7 +71,7 @@ export function BackroomScene() {
       {total <= 0 && inbound <= 0 ? (
         <g>
           <Sign x={60} y={200} text="Backroom empty — order a truck" />
-          <Sign x={60} y={220} text="Crates land here before Unpack →" small />
+          <Sign x={60} y={220} text="Crates from Suppliers land here before the shelf" small />
         </g>
       ) : null}
     </RoomScene>

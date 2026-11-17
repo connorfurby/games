@@ -411,4 +411,22 @@
       display: none;
     }
   }
+
+  /* A stocker shuttles crates belt → piles and walks back. */
+  .rm-carry {
+    animation: rm-carry 6s ease-in-out infinite;
+  }
+  @keyframes rm-carry {
+    0%, 8% { transform: translateX(0); }
+    45%, 55% { transform: translateX(240px); }
+    92%, 100% { transform: translateX(0); }
+  }
+  html.ge-reduced-motion .rm-carry {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rm-carry {
+      animation: none;
+    }
+  }
 }

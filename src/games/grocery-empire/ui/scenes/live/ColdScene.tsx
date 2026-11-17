@@ -153,7 +153,7 @@ export function ColdScene() {
       {plants <= 0 && tanks <= 0 ? (
         <g>
           <Sign x={48} y={200} text="Cold line dark — buy a plant, then tanks" />
-          <Sign x={48} y={220} text="Tap plants to start the buffer →" small />
+          <Sign x={48} y={220} text="Buy a cooling plant below to start the buffer" small />
         </g>
       ) : null}
     </RoomScene>
