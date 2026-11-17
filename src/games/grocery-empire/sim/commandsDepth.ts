@@ -74,7 +74,7 @@ function fileFlagship(s: GameState, slots: string[]) {
   s.depth.flagship.filings += 1
   if (s.depth.flagship.practiceLeft > 0) {
     s.depth.flagship.practiceLeft -= 1
-    log(s, `Flagship planogram practice (${score.toFixed(2)}) — ${s.depth.flagship.practiceLeft} left.`, 'info')
+    log(s, `Flagship planogram practice (${Math.round(score * 100)}%) — ${s.depth.flagship.practiceLeft} left.`, 'info')
     return
   }
   if (score >= DEPTH.flagshipSlow) {
@@ -84,14 +84,14 @@ function fileFlagship(s: GameState, slots: string[]) {
     }
     if (s.categories.import) {
       s.depth.flagship.globeCredited = true
-      log(s, `Flagship planogram filed at ${score.toFixed(2)} — globe layout credited.`, 'good')
+      log(s, `Flagship planogram filed at ${Math.round(score * 100)}% — globe layout credited.`, 'good')
     } else if (s.categories.deli && s.categories.bakery) {
-      log(s, `Flagship planogram filed at ${score.toFixed(2)} — chain layout credited.`, 'good')
+      log(s, `Flagship planogram filed at ${Math.round(score * 100)}% — chain layout credited.`, 'good')
     } else {
-      log(s, `Flagship planogram filed at ${score.toFixed(2)}.`, 'good')
+      log(s, `Flagship planogram filed at ${Math.round(score * 100)}%.`, 'good')
     }
   } else {
-    log(s, `Flagship planogram scored ${score.toFixed(2)} — need ≥${DEPTH.flagshipSlow}.`, 'warn')
+    log(s, `Flagship planogram scored ${Math.round(score * 100)}% — need ${Math.round(DEPTH.flagshipSlow * 100)}% or better.`, 'warn')
   }
 }
 

@@ -25,6 +25,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Late game: the Worlds hub no longer shows a season-minutes badge that read like an unread count; Signal's mast is a lattice radio tower (the old pole looked like a gallows); Greenhouse labels sit on a dark plate and empty beds are dashed outlines so they read on the pale spring sky; Exchange says "No convoys yet: plan a route"; Last Aisle purpose matches the five-line list.
 - Tablet (820 px): hub sub-tabs share the row evenly (`flex: 1 1 0; min-width: max-content`) so six tabs fit instead of wrapping five-plus-one; segmented pickers wrap instead of hiding options behind a hidden scroll; desks are size containers and stack label-over-control under 26rem. Crawls t9 (tablet, 121 screens) and p9 (phone, 125 screens): 0 errors, 0 overflow, 0 shifts.
 - Late rooms: captions moved off the floor line into the ground band.
+- Notices: about 35 sim log lines rewritten in plain words (power dip, investments restarted, you owe too much, visited a store, harvest, strategy learned); puzzle scores in notices read as percentages; money stays in dollars.
 - Phone crawl p8: 123 screens, 0 errors, 0 overflow, 0 shifts, no new dead buttons; low-contrast hits down from 14 to 2.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

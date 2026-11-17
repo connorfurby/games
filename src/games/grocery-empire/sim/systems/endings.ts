@@ -155,7 +155,7 @@ export function rejectEnding(s: GameState) {
   s.cold.momentumOn = false
   s.compute.attention = 0
   s.paused = true
-  log(s, 'Reject complete. Silence. Last Ration plaque filed.', 'era')
+  log(s, 'You chose Reject. The universe goes quiet. The Last Ration plaque is yours.', 'era')
 }
 
 /** Slow reject disassembly flavour if somehow mid-reject (noop when already done). */

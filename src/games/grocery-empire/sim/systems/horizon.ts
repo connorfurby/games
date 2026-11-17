@@ -865,7 +865,7 @@ export function launchProbe(s: GameState): string | null {
     h.endlessPlanets += 1
     log(s, `Probe away. ${def.name} answers.`, 'era')
     if (h.endlessPlanets % 10 === 0) {
-      log(s, `${h.endlessPlanets} worlds past the named eight. The layer thins. There is no era 13.`, 'story')
+      log(s, `${h.endlessPlanets} worlds past the named eight. Each new one adds a little less. There is no chapter 13.`, 'story')
     }
     if (h.list && h.endlessPlanets > 0 && h.endlessPlanets % endlessMutateEvery(s) === 0) {
       mutateEndlessList(s)
@@ -919,7 +919,7 @@ export function setPlanogram(s: GameState, planetId: string, slots: readonly str
   run.slots = next
   run.score = lockScore(s, scorePlanogram(def, next, run.banTag))
   run.stocked = true
-  log(s, `${def.name} stocked at ${run.score.toFixed(2)}.`, 'good')
+  log(s, `${def.name} stocked at ${Math.round(run.score * 100)}%.`, 'good')
   markDeptStaffed(s, 'survey')
   maybeOpenEras(s)
   return null
@@ -950,11 +950,11 @@ export function fileStandardPlanogram(s: GameState, planetId: string): string | 
   })
   markStandardFile(s)
   if (credited) {
-    log(s, `${def.name} filed the standard at ${run.score.toFixed(2)}.`, 'good')
+    log(s, `${def.name} filed the standard at ${Math.round(run.score * 100)}%.`, 'good')
   } else if (run.gateCredited) {
-    log(s, `${def.name} refiled at ${run.score.toFixed(2)}.`, 'info')
+    log(s, `${def.name} refiled at ${Math.round(run.score * 100)}%.`, 'info')
   } else {
-    log(s, `${def.name} practice shelf at ${run.score.toFixed(2)}.`, 'info')
+    log(s, `${def.name} practice shelf at ${Math.round(run.score * 100)}%.`, 'info')
   }
   markDeptStaffed(s, 'survey')
   maybeOpenEras(s)
@@ -1117,7 +1117,7 @@ export function setConvoy(
       h.circuits.push(row)
     }
   }
-  log(s, `Convoy filed at ${score.toFixed(2)} (${stopKind}).`, 'good')
+  log(s, `Convoy filed at ${Math.round(score * 100)}% (${stopKind}).`, 'good')
   markDeptStaffed(s, 'exchange')
   maybeOpenEras(s)
   return null
@@ -1214,7 +1214,7 @@ export function fileStandardConvoy(s: GameState, spec: ConvoySpec = {}): string 
   })
   markStandardFile(s)
   if (credited) {
-    log(s, `Circuit filed the standard at ${score.toFixed(2)}.`, 'good')
+    log(s, `Circuit filed the standard at ${Math.round(score * 100)}%.`, 'good')
     const eta =
       HORIZON.settlementEtaSec *
       (1 - Math.min(0.35, upgradeEffect(s, 'settlement-pad'))) *
@@ -1224,9 +1224,9 @@ export function fileStandardConvoy(s: GameState, spec: ConvoySpec = {}): string 
       h.pendingStop = { index: h.circuits.indexOf(stored), kind: stored.stopKind }
     }
   } else if (stored.gateCredited) {
-    log(s, `Circuit refiled at ${score.toFixed(2)}.`, 'info')
+    log(s, `Circuit refiled at ${Math.round(score * 100)}%.`, 'info')
   } else {
-    log(s, `Circuit practice convoy at ${score.toFixed(2)}.`, 'info')
+    log(s, `Circuit practice convoy at ${Math.round(score * 100)}%.`, 'info')
   }
   if (h.circuits.length === 1) say(s, 'hz-first-circuit', 'hz-first-circuit-clerk', 'hz-maris-fonts')
   markDeptStaffed(s, 'exchange')
@@ -1438,7 +1438,7 @@ export function fileStandardCross(s: GameState, index?: number): string | null {
   if (credited) {
     h.weakYears += 1
     h.seasonChore = null
-    log(s, 'Filed a weak-year standard cross.', 'good')
+    log(s, 'Planted the safe cross. This season will be a weak year.', 'good')
   } else {
     log(s, 'Practice cross — does not count as a weak year yet.', 'info')
   }
@@ -1646,13 +1646,13 @@ export function fileStandardPhrase(s: GameState): string | null {
   clearPhrase(s, score, false)
   markDeptStaffed(s, 'signal')
   if (credited) {
-    log(s, `Phrase filed the standard at ${score.toFixed(2)}.`, 'good')
+    log(s, `Phrase filed the standard at ${Math.round(score * 100)}%.`, 'good')
     // Habit watch starts now and posts the phrase habit; desk gap applies after the watch.
     startHabitWatch(s, phrase.habit ?? 'price')
     // Undo desk gap until watch completes — serial watch then gap.
     if (s.depth) s.depth.lastStandardFileAt = 0
   } else {
-    log(s, `Phrase practice at ${score.toFixed(2)}.`, 'info')
+    log(s, `Phrase practice at ${Math.round(score * 100)}%.`, 'info')
   }
   maybeOpenEras(s)
   return null
@@ -2061,9 +2061,9 @@ export function fileStandardList(s: GameState): string | null {
   const credited = creditPracticeFiling(s, 'list')
   markStandardFile(s)
   if (credited) {
-    log(s, `The list files at ${h.listScore.toFixed(2)}.`, 'good')
+    log(s, `The list files at ${Math.round(h.listScore * 100)}%.`, 'good')
   } else {
-    log(s, `List practice at ${h.listScore.toFixed(2)}.`, 'info')
+    log(s, `List practice at ${Math.round(h.listScore * 100)}%.`, 'info')
   }
   return null
 }
@@ -2304,7 +2304,7 @@ export function doSeasonChore(s: GameState, chore: string): string | null {
   const haul =
     HORIZON.yieldHaulSec * (1 - Math.min(0.35, upgradeEffect(s, 'yield-haul-pad')))
   s.horizon.haulUntil = Math.max(s.horizon.haulUntil, s.time + haul)
-  log(s, `Season chore: ${chore}. Yield haul armed.`, 'good')
+  log(s, `Season chore: ${chore}. A harvest is ready to bring in.`, 'good')
   return null
 }
 
@@ -2377,7 +2377,7 @@ export function clearHorizonRival(s: GameState, kind: string): string | null {
     const planet = findPlanet(s, d.driftLockPlanet ?? '')
     if (planet) planet.lockedSku = null
     d.driftLockPlanet = null
-    log(s, 'Drift lock cleared.', 'good')
+    log(s, 'The locked item is back on sale.', 'good')
   } else if (kind === 'keelmark') {
     d.stolenBay = -1
     d.stolenBayCircuit = -1

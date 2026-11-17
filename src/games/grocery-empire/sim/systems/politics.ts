@@ -8,7 +8,7 @@ import { plantCountOf } from './cold'
 export function openPolitics(s: GameState) {
   if (s.politics.capital <= 0) s.politics.capital = POLITICS.capitalStart
   unlockMenu(s, 'politics')
-  log(s, 'Lobby retainer signed. Political Capital is a leaky wallet.', 'memo')
+  log(s, 'Lobbyist hired. Political Capital slowly drains, so spend it.', 'memo')
 }
 
 export function canHireLobby(s: GameState): string | null {

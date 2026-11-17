@@ -217,7 +217,7 @@ export function tickSeasons(s: GameState, dt: number) {
     if (h.haulUntil > 0) {
       h.weakYears += 1
       h.haulUntil = 0
-      log(s, 'Yield haul missed — weak year.', 'warn')
+      log(s, 'The harvest was missed. This season is a weak year.', 'warn')
     }
     h.seasonT -= HORIZON.seasonSec
     h.season = ((h.season + 1) % 4) as SeasonIndex

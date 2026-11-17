@@ -385,7 +385,7 @@ export function tickCold(s: GameState, dt: number) {
       s.cold.brownouts += 1
       if (s.time - s.cold.lastBrownoutLogAt >= COLD.brownoutLogCooldown) {
         s.cold.lastBrownoutLogAt = s.time
-        log(s, 'Brownout: freshness floored at 25%. Momentum paused. Auto-shed engaged.', 'warn')
+        log(s, 'Power dip: freshness dropped to 25% and your cold bonus paused. A plant was switched off to cope.', 'warn')
       }
     }
     freshness = Math.max(COLD.freshnessFloor, freshness)
@@ -394,7 +394,7 @@ export function tickCold(s: GameState, dt: number) {
     restoreOfflinePlant(s)
     if (s.cold.browned && ratio >= 1) {
       s.cold.browned = false
-      log(s, 'Cold line recovered. Freshness climbing; Momentum may resume.', 'good')
+      log(s, 'Power is back. Freshness is climbing and your cold bonus can resume.', 'good')
     }
     if (s.cold.momentumOn && freshness >= 1) {
       s.cold.momentum = Math.min(
@@ -423,7 +423,7 @@ export function tickCold(s: GameState, dt: number) {
     const drain = COLD.yieldDrainPerBlast * blasts * mul * policyMul * dt
     s.cold.yieldLeft = Math.max(0, s.cold.yieldLeft - drain)
     if (s.cold.yieldLeft <= 0) {
-      log(s, 'County yield emptied. Leave the Region is on the table.', 'era')
+      log(s, 'The region’s supply is used up. You can now leave the region from Politics.', 'era')
     }
   }
 
@@ -452,10 +452,10 @@ export function tickCold(s: GameState, dt: number) {
 export function enableMomentum(s: GameState) {
   s.cold.momentumOn = true
   unlockMenu(s, 'cold')
-  log(s, 'Momentum Clause active. Hold freshness ≥100% to compound.', 'memo')
+  log(s, 'Momentum Clause active. Keep food fully fresh to grow your cold bonus.', 'memo')
 }
 
 export function enableQuadratic(s: GameState) {
   s.cold.quadratic = true
-  log(s, 'County Emptying: every blast counts twice. Yield will vanish fast.', 'memo')
+  log(s, 'County Emptying: each blast freezer uses supply twice as fast.', 'memo')
 }

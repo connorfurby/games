@@ -49,7 +49,7 @@ export function tickWholesale(s: GameState, dt: number) {
   // Dip Bell: one chime per dip, at most every two minutes.
   if (dipBellLevel(s) > 0 && wholesaleDipping(s) && s.time - (s.acc.lastDipLogAt ?? -1e9) > 120) {
     s.acc.lastDipLogAt = s.time
-    log(s, `Dip bell: wholesale index ${w.index.toFixed(2)} is under its average. Good time to order.`, 'info')
+    log(s, 'Crate prices just dipped. Good time to order.', 'info')
   }
 }
 

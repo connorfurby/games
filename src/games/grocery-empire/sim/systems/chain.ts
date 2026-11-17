@@ -40,7 +40,7 @@ export function checkFlyerBandLock(s: GameState, tip: number) {
   const max = tip * flyerBandMaxMul(f.discount)
   if (s.price > max + 1e-6) {
     f.bandHeld = false
-    log(s, 'Flyer band broken — this week will not credit.', 'warn')
+    log(s, 'The flyer was changed mid-week, so this week will not count.', 'warn')
   }
 }
 
@@ -432,7 +432,7 @@ export function walkStore(s: GameState, id: string, attCost = 40): string | null
       log(s, `${defected.name} came back after the walk.`, 'good')
     }
   }
-  log(s, `Walked ${st.name}. Drift cleared.`, 'good')
+  log(s, `Visited ${st.name}. It is back on track.`, 'good')
   return null
 }
 

@@ -206,7 +206,7 @@ function resolveArrivedTrips(s: GameState) {
     const barge = s.fleet.bargeList.find((b) => b.id === trip.bargeId)
     if (!pocket || pocket.left <= 0) {
       trip.status = 'wasted'
-      log(s, `Hauler trip wasted — pocket gone.`, 'warn')
+      log(s, `Hauler came back empty: that pocket was already cleared.`, 'warn')
       continue
     }
     if (trip.ration !== pocket.ration) {
@@ -304,7 +304,7 @@ export function openLane(s: GameState, route: string) {
   s.fleet.lanes = s.fleet.laneList.length
   // Dispatch Board: manifests are assigned via setManifest (no auto-match).
   unlockMenu(s, 'logistics')
-  log(s, `Ocean lane ${LANE_ROUTE_BY_ID[route]?.name ?? route} chartered. Set a manifest.`, 'good')
+  log(s, `Ocean lane ${LANE_ROUTE_BY_ID[route]?.name ?? route} opened. Now file a manifest for it.`, 'good')
 }
 
 export function canBuyFuel(s: GameState): string | null {
@@ -344,7 +344,7 @@ export function openFranchise(s: GameState) {
   s.fleet.franchiseList.push(entry)
   s.fleet.franchises = s.fleet.franchiseList.length
   s.brand = clamp(s.brand - LOGISTICS.franchiseBrandHit, 0.05, 1)
-  log(s, `Franchise ${name} signed. Brand drifts unless sealed.`, 'warn')
+  log(s, `Franchise ${name} signed. It will slowly wear on your Brand unless you seal it.`, 'warn')
 }
 
 export function canWinBackFranchise(s: GameState, franchiseId: string): string | null {
@@ -489,7 +489,7 @@ export function setManifest(s: GameState, laneId: string, mix: string, stance: M
     d.examLaneId = null
     d.examMix = null
     d.examUntil = 0
-    log(s, `Manifest set: ${mix} on ${lane?.route ?? laneId} (mismatch — dry pay).`, 'info')
+    log(s, `Manifest set: ${mix} on ${lane?.route ?? laneId} (doesn’t match the route, so it pays less).`, 'info')
     return
   }
   // One filing, one stance. Re-filing a lane drops any exam hold it was holding.
@@ -815,7 +815,7 @@ export function applyGuardianPreset(s: GameState) {
     s.fleet.barges = FLEET.bargeSoftFloor
   }
   s.fleet.guardianUsed = true
-  log(s, 'Guardian preset locked in. Last barge protected while biomass remains.', 'recovery')
+  log(s, 'Guardian is on. Your last barge is protected.', 'recovery')
 }
 
 export function canRebootFleet(s: GameState): string | null {
@@ -842,7 +842,7 @@ export function startDriftWar(s: GameState) {
   s.fleet.warOn = true
   if (!s.depth.driftWar) s.depth.driftWar = { step: 0 }
   if (s.depth.driftWar.step < 1) s.depth.driftWar.step = 1
-  log(s, 'Off-Brand contact. Drift war started. Legacy is on the table.', 'era')
+  log(s, 'Off-Brand has found you and started copying your stores. Legacy is now your score.', 'era')
 }
 
 export function pocketsCleared(s: GameState): number {
@@ -1149,7 +1149,7 @@ export function tickFleet(s: GameState, dt: number) {
       }
       if (bestV > 0 && chance(s, 0.01 * dt * warStep)) {
         s.brand = clamp(s.brand - 0.01, 0.05, 1)
-        log(s, `Halo copies your ${best} doctrine.`, 'warn')
+        log(s, `Halo copies your ${best} strategy.`, 'warn')
       }
     }
     if (chance(s, (FLEET.warBargeLossChance / resist) * dt * 60 * stepMul)) {
@@ -1160,7 +1160,7 @@ export function tickFleet(s: GameState, dt: number) {
           s.fleet.bargeList.length,
         )
         s.fleet.legacy = Math.max(0, round2(s.fleet.legacy - FLEET.warLegacyLossOnHit))
-        log(s, `Drift hit. Barges ${s.fleet.barges}. Legacy nicked.`, 'warn')
+        log(s, `Off-Brand struck. ${s.fleet.barges} barges left; Legacy took a small hit.`, 'warn')
         if (s.fleet.barges <= FLEET.bargeSoftFloor + 1 && !s.fleet.guardianUsed) {
           log(s, 'Fleet under pressure — Guardian preset available.', 'recovery')
         }

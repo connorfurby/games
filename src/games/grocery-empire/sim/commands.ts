@@ -469,7 +469,7 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
   if (firstOrder) {
     log(s, 'Truck inbound. Pay the invoice when you can — early pays discount.', 'story')
   } else {
-    log(s, `Invoice #${invId} filed for $${amount.toFixed(2)} (due in ${DEPTH.invoiceDueSec}s).`, 'info')
+    log(s, `Invoice #${invId} for $${amount.toFixed(2)}, due in ${DEPTH.invoiceDueSec}s. Pay it in Suppliers.`, 'info')
   }
   const room = backroomCap(s) - sumQty(s.backroom)
   if (room < qty * 0.25) {
@@ -1060,7 +1060,7 @@ const coreHandlers = {
         walkStore(s, st.id)
         walked += 1
       }
-      if (walked < drifting.length) log(s, `Walked ${walked} of ${drifting.length} drifting stores; out of Attention.`, 'info')
+      if (walked < drifting.length) log(s, `Visited ${walked} of ${drifting.length} stores before your Attention ran out.`, 'info')
     },
   },
   priceWar: {

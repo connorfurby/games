@@ -104,7 +104,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.board.expandDiscount < 1) s.board.expandDiscount = 1
       s.stats.storesOpened += 1
       unlockMenu(s, 'land')
-      log(s, `${name} opened. Split Attention or accept drift.`, 'era')
+      log(s, `${name} opened. Give it some Attention or it will slowly lose shoppers.`, 'era')
     },
   },
   setPolicy: {
@@ -171,7 +171,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
         s.invest.balance > s.invest.peak * (1 - INVEST.circuitDrop)
       ) {
         s.invest.circuitBreaker = false
-        log(s, 'Circuit breaker reset after deposit.', 'good')
+        log(s, 'Investments restarted after your deposit.', 'good')
       }
     },
   },
@@ -189,7 +189,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.invest.circuitBreaker) {
         s.invest.circuitBreaker = false
         s.invest.peak = s.invest.balance
-        log(s, 'Circuit breaker cleared on withdraw. Peak reset.', 'info')
+        log(s, 'Investments restarted after your withdrawal.', 'info')
       }
     },
   },
@@ -211,7 +211,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       if (s.invest.circuitBreaker && s.invest.risk === 'low') {
         s.invest.circuitBreaker = false
         s.invest.peak = Math.max(s.invest.peak, s.invest.balance)
-        log(s, 'Risk cut to Low — circuit breaker reset.', 'good')
+        log(s, 'Risk lowered to Low. Investments restarted.', 'good')
       }
     },
   },
@@ -225,7 +225,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       s.invest.circuitBreaker = false
       s.invest.peak = Math.max(s.invest.balance, s.invest.peak * 0.85)
       s.invest.risk = 'low'
-      log(s, 'Circuit breaker manually reset. Risk forced to Low.', 'info')
+      log(s, 'Investments restarted at Low risk.', 'info')
     },
   },
   buyInvestEngine: {
@@ -263,7 +263,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       s.stats.tournamentsRun += 1
       s.compute.nextTournamentAt = s.time + CAPITAL.tournamentCooldownSec
       unlockMenu(s, 'strategy')
-      log(s, `Tournament complete. +${payout} Read.`, 'good')
+      log(s, `Tournament over. +${payout} Read.`, 'good')
     },
   },
   buyDoctrine: {
@@ -285,7 +285,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       s.read -= cost
       s.doctrines[cmd.id] = 1
       s.stats.doctrinesBought += 1
-      log(s, `Doctrine learned: ${DOCTRINE_BY_ID[cmd.id].name}.`, 'memo')
+      log(s, `Strategy learned: ${DOCTRINE_BY_ID[cmd.id].name}.`, 'memo')
     },
   },
   buildDepot: {

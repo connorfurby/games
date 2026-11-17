@@ -180,7 +180,7 @@ export function tickCapital(s: GameState, dt: number) {
   tickAutonomous(s, dt)
 
   if (debtCovenantBreached(s) && s.time % 90 < dt) {
-    log(s, 'Debt covenant: leverage is high. Expansion and High-risk book moves are blocked until repaid.', 'warn')
+    log(s, 'You owe too much. New stores and High-risk investing are blocked until you pay some back.', 'warn')
   }
 }
 

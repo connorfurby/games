@@ -203,7 +203,7 @@ export function haulYield(s: GameState): string | null {
   const h = s.horizon
   h.haulsDone = (h.haulsDone ?? 0) + 1
   h.haulUntil = 0
-  log(s, `Yield hauled ${h.haulsDone}/${HORIZON.yieldHaulNeed}.`, 'good')
+  log(s, `Harvest brought in (${h.haulsDone}/${HORIZON.yieldHaulNeed}).`, 'good')
   maybeOpenEras(s)
   return null
 }
@@ -242,7 +242,7 @@ export function seatClause(s: GameState): string | null {
     HORIZON.clauseSeatingGapSec * (1 - Math.min(0.35, upgradeEffect(s, 'clause-seat-pad')))
   h.seatingGapUntil = s.time + gap
   const name = clause ? (CLAUSE_BY_ID[clause]?.name ?? clause) : 'Clause'
-  log(s, `${name} seated ${h.seatingsDone}/${HORIZON.clauseSeatingNeed}.`, 'good')
+  log(s, `${name} made final (${h.seatingsDone}/${HORIZON.clauseSeatingNeed}).`, 'good')
   // Concord asks about what you seat.
   if (hearingSessionOpen(s)) {
     const target = nextHearingClause(s)
@@ -317,7 +317,7 @@ export function rehearseAccept(s: GameState): string | null {
   const gap =
     HORIZON.acceptRehearsalSec * (1 - Math.min(0.35, upgradeEffect(s, 'accept-rehearsal-pad')))
   h.acceptRehearsalUntil = s.time + gap
-  log(s, 'Accept rehearsal filed — desk gap before Accept.', 'good')
+  log(s, 'Practice run done. Take a moment before you Accept.', 'good')
   return null
 }
 
