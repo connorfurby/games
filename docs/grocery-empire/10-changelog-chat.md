@@ -64,6 +64,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Marketing: the weekly flyer explains its one rule (keep shelf price at or below the flyer price) and the Deep / Mid / Soft trade-off in words; Produce Lead and cooler-log notices plain.
 - Suppliers / Backroom: Restock priority has one home (Backroom) instead of appearing on both pages; with only Express available the supplier shows as plain text, not a one-option picker; the Backroom room shows numbers only on phones.
 - Kit: a `SegmentedControl` whose only possible option is already chosen renders as plain text (`.gk-seg-static`) instead of a lone toggle, everywhere. Phone crawl p11: 121 screens, 0 errors / overflow / shifts.
+- Invest: one name, **Savings**, for the passbook (card, sheet, advisor, lesson, glossary); the duplicate status-chip row under the room is gone (the room already shows those numbers). Books room: "More money streams appear later".
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

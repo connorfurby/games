@@ -101,7 +101,7 @@ export function LedgerScene() {
           })}
         </g>
       ) : (
-        <Sign x={720} y={120} text="More pots open later" small />
+        <Sign x={720} y={120} text="More money streams appear later" small />
       )}
     </RoomScene>
   )

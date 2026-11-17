@@ -16,7 +16,7 @@ import type { GameState, InvestRisk } from '../../sim/state'
 import { useGame } from '../GameContext'
 import { money } from '../format'
 import { Button, Card, DataTable, Disclosure, Meter, Sheet } from '../kit'
-import { StatusChip, type VerbTrayProps } from '../play'
+import type { VerbTrayProps } from '../play'
 import type { Column } from '../kit'
 import { TickerScene } from '../scenes/live/TickerScene'
 import { HubCallout, LateHubShell, Rows } from './LateHubShell'
@@ -119,22 +119,6 @@ export function InvestPanel() {
     },
   ]
 
-  const kpiChips = (
-    <div className="lh-chips" data-coach-id="invest-kpis">
-      <StatusChip tone="idle" title="Slow, safe interest inside the cap">
-        Passbook {money(bal, numberFormat)}
-      </StatusChip>
-      <StatusChip tone="idle" title="Projected from the yielding balance">
-        Interest {money(perHour, numberFormat)}/hr
-      </StatusChip>
-      {book.unlocked ? <StatusChip tone="idle">Risk book {money(book.balance, numberFormat)}</StatusChip> : null}
-      {s.era >= 7 ? (
-        <StatusChip tone="idle" title="Instrument lots across all positions">
-          Lots held {totalLots}
-        </StatusChip>
-      ) : null}
-    </div>
-  )
 
   // Primary verb: the advisor's deposit / withdraw when it has one, otherwise open the passbook sheet.
   const depositCheck = can(s, { type: 'depositPassbook', amount: depositSuggest })
@@ -172,7 +156,7 @@ export function InvestPanel() {
             <Sheet
         open
         onClose={() => {}}
-        title="Passbook · deposit and withdraw"
+        title="Savings · deposit and withdraw"
         reducedMotion={reducedMotion}
       >
         <div className="lh-stack">
@@ -226,30 +210,28 @@ export function InvestPanel() {
       scene={<TickerScene />}
       tray={tray}
     >
-      {kpiChips}
-
       {wantDeposit || wantWithdraw ? (
         <HubCallout
           coachId="invest-advisor"
           tone="ready"
-          title={wantDeposit ? 'Surplus is idle' : 'Passbook is full'}
+          title={wantDeposit ? 'Spare cash is sitting idle' : 'Savings are full'}
         >
           {wantDeposit
             ? `Park ${money(depositSuggest, numberFormat)} and keep ${money(reserve, numberFormat)} for bills.`
-            : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from the passbook.`}
+            : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from savings.`}
         </HubCallout>
       ) : null}
       <div className="lh-callout" data-coach-id="invest-passbook">
         <div className="lh-callout__copy">
-          <h3>Passbook {money(bal, numberFormat)}</h3>
+          <h3>Savings {money(bal, numberFormat)}</h3>
           <p>
-            {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · cap {money(pbCap, numberFormat)}
+            {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · holds up to {money(pbCap, numberFormat)}
           </p>
         </div>
       </div>
       {outgrown ? (
         <p className="lh-note" role="note">
-          <strong>Small change now.</strong> A full passbook earns about {money(pbCap * rate, numberFormat)}/s against{' '}
+          <strong>Small change now.</strong> Full savings earn about {money(pbCap * rate, numberFormat)}/s against{' '}
           {money(s.rates.revenuePerSec, numberFormat)}/s of sales. The cap grows with Empire rank; it matters again
           early in a Rebrand.
         </p>

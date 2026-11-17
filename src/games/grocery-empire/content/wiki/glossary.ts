@@ -47,7 +47,7 @@ export const GLOSSARY: GlossEntry[] = [
     era: 0,
     icon: 'cash',
     short: 'Fuel. Rent, wages, crates, builds, upgrades and memos spend it.',
-    more: 'Parked cash only earns inside the Passbook cap — surplus above it sits idle.',
+    more: 'Savings only earn up to their limit; cash above it earns nothing.',
     see: 'sys-invest',
   },
   {

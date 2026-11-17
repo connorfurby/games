@@ -595,7 +595,7 @@ export const TUTORIALS: TutorialDef[] = [
   },
   {
     id: 'passbook',
-    name: 'Passbook',
+    name: 'Savings',
     era: 1,
     steps: [
       {
