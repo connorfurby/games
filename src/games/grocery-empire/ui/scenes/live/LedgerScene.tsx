@@ -63,7 +63,7 @@ export function LedgerScene() {
 
       <Hit x={500} y={84} w={120} h={100} label="Burn — Staff" menu="staff">
         <rect x="500" y="84" width="120" height="100" rx="6" fill="#0f1317" stroke="#d9665b" />
-        <Sign x={560} y={118} text="Burn" anchor="middle" />
+        <Sign x={560} y={118} text="Costs" anchor="middle" />
         <Sign x={560} y={142} text={rate(burn)} small anchor="middle" />
         <Sign x={560} y={164} text="→ Staff" small anchor="middle" />
       </Hit>

@@ -71,7 +71,7 @@ export function TickerScene() {
           <Sign
             x={280}
             y={172}
-            text={book > 0 ? 'Instruments open in Era 7.' : 'Park cash in the book first.'}
+            text={book > 0 ? 'More ways to invest open in Era 7.' : 'Put cash in the investment book first.'}
             small
           />
         </g>
