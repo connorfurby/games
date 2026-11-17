@@ -266,6 +266,10 @@
   .pf__body > * {
     margin-block: 0;
   }
+  /* A room with only desks has an empty body: don't let it add a gap of its own. */
+  .pf__body:empty {
+    display: none;
+  }
 
   .pf-form {
     display: flex;
@@ -674,7 +678,7 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
     gap: var(--s-4);
     align-items: start;
-    margin-top: var(--s-4);
+    margin-top: var(--s-2);
   }
   .pf-desk {
     container-type: inline-size;
