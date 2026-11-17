@@ -39,7 +39,7 @@ const RAW: Omit<AtlasEra, 'title' | 'epigraph'>[] = [
     plate: 'counter',
     band: 'store',
     focus: 'One shelf, one price. Learn the loop: crates in, Unpack, sell, pay rent.',
-    door: ['Feature cans', 'Serve regulars', 'Ring three Market Bells', 'Staff the Open shift', 'Star Board ≥ 3.5', 'Clear the layaway slips'],
+    door: ['Feature cans', 'Serve regulars', 'Buy on three price dips', 'Staff the opening shift', 'Star Board ≥ 3.5', 'Clear the layaway slips'],
     opens: ['floor', 'backroom', 'suppliers'],
     article: 'walk-e0',
   },

@@ -138,7 +138,7 @@ MEMOS TO PRIORITIZE
   chalkboard / flyers lightly, then categories and the Back-Office Desk.
 
 EXIT TO ERA 1
-  Feature cans · satisfy regulars · three Market Bell dips · staff Open (or 800+ baskets)
+  Feature cans · satisfy regulars · buy on three price dips · staff the opening shift (or 800+ baskets)
   · Star Board ≥ 3.5. You do not “beat” Era 0; you outgrow it.`,
   },
   {

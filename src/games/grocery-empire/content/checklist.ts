@@ -58,7 +58,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e0-market-bells',
     era: 0,
-    label: 'Ring the Market Bell three times',
+    label: 'Buy on three price dips',
     test: (s) => (s.depth?.marketBellDips ?? 0) >= DEPTH.marketBellNeed || s.era >= 1,
   },
   {

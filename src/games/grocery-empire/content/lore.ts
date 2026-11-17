@@ -7,7 +7,7 @@ export const ERA_STORY: Record<
 > = {
   0: {
     title: 'The Counter',
-    line: 'Era 0 — feature cans, serve regulars, ring three Market Bells, staff Open. Stars sit on the Next-goal chip.',
+    line: 'Era 0 — feature cans, serve regulars, buy on three price dips, staff the opening shift. Your next step always sits in Next goal at the top.',
     epigraph: 'Every empire begins as a shelf someone kept stocked.',
   },
   1: {

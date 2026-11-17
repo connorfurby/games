@@ -623,6 +623,24 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
   const readGate = !!deskGate && /\bRead\b/.test(deskGate) && !!s.menus.strategy
 
   const filterOn = readyOnly || q.trim().length > 0
+  const showFilters = filterOn || visible.length > 6
+  const anyStanding = FORK_IDS.some((fork) => {
+    const pair = FORK_PAIR[fork]
+    if (!pair) return false
+    return pair.some((id) => {
+      if (s.memoSeen?.[id]) return true
+      try {
+        return !!MEMO_BY_ID[id]?.visible(s)
+      } catch {
+        return false
+      }
+    })
+  })
+  const memoTabs: { value: 'desk' | 'standing' | 'filed'; label: string }[] = [
+    { value: 'desk', label: `Desk ${visible.length}` },
+    ...(anyStanding ? [{ value: 'standing' as const, label: 'Standing' }] : []),
+    ...(filedCount > 0 ? [{ value: 'filed' as const, label: `Filed ${filedCount}` }] : []),
+  ]
 
   const room = (
     <div className="wc-memo-room">
@@ -816,13 +834,17 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
             </>
           ) : undefined,
           secondaries: [
-            {
-              key: 'jump',
-              label: 'Jump to ready',
-              fact: readyCount > 0 ? `${readyCount} on desk` : 'none yet',
-              disabled: readyCount === 0,
-              onClick: jumpAffordable,
-            },
+            ...(visible.length > 4
+              ? [
+                  {
+                    key: 'jump',
+                    label: 'Jump to ready',
+                    fact: readyCount > 0 ? `${readyCount} on desk` : 'none yet',
+                    disabled: readyCount === 0,
+                    onClick: jumpAffordable,
+                  },
+                ]
+              : []),
             ...(s.compute?.unlocked
               ? [
                   {
@@ -836,16 +858,9 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
           ],
         }}
       >
-        <SegmentedControl
-          aria-label="Memo desk"
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: 'desk', label: `Desk ${visible.length}` },
-            { value: 'standing', label: 'Standing' },
-            { value: 'filed', label: `Filed ${filedCount}` },
-          ]}
-        />
+        {memoTabs.length > 1 ? (
+          <SegmentedControl aria-label="Memo desk" value={tab} onChange={setTab} options={memoTabs} />
+        ) : null}
 
         {tab === 'filed' ? <FiledList s={s} /> : null}
 
@@ -964,7 +979,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
           </>
         ) : null}
 
-        {tab === 'desk' ? (
+        {tab === 'desk' && showFilters ? (
           <div className="wc-filters" role="search">
             <input
               type="search"

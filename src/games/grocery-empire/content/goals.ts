@@ -114,8 +114,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'market-bell',
     era: 0,
-    title: 'Ring the Market Bell thrice',
-    hint: 'Order on three wholesale dips — not just one.',
+    title: 'Buy on three price dips',
+    hint: 'In Restock, buy a crate when the price is marked low. Do it three times.',
     done: (s) => (s.depth?.marketBellDips ?? 0) >= DEPTH.marketBellNeed,
     progress: (s) => frac(s.depth?.marketBellDips ?? 0, DEPTH.marketBellNeed),
     action: () => ({ type: 'buyWholesale' }),

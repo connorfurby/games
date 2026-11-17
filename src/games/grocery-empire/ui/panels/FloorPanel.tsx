@@ -21,6 +21,7 @@ import {
   up,
   varietyMul,
   climateBanPullMul,
+  wholesaleIsDip,
 } from '../../sim/formulas'
 import { sumQty } from '../../sim/helpers'
 import { useGame } from '../GameContext'
@@ -61,6 +62,8 @@ function FloorPanelInner() {
       : unlockedCats[0] || 'cans'
   ) as CategoryId
   const wholesaleCost = crateCost(s, orderCat, s.supplier)
+  const dip = wholesaleIsDip(s)
+  const dipsLeft = Math.max(0, DEPTH.marketBellNeed - (s.depth?.marketBellDips ?? 0))
   const starterCrate = can(s, { type: 'callStarterCrate' })
   const orderName = CATEGORIES[orderCat]?.name ?? orderCat
 
@@ -311,6 +314,14 @@ function FloorPanelInner() {
               />
             </Field>
           ) : null}
+          <p className={dip ? 'fp-note fp-note--good' : 'fp-note'}>
+            {dip
+              ? 'Price is low right now: a good time to buy.'
+              : s.wholesale.index > 1.08
+                ? 'Price is high right now. Buy only what the shelf needs.'
+                : 'Price is normal. It dips from time to time; buying on a dip saves money.'}
+            {dipsLeft > 0 && dip ? ` (${DEPTH.marketBellNeed - dipsLeft + 1} of ${DEPTH.marketBellNeed} for your goal)` : ''}
+          </p>
           {eff != null ? <p className="fp-note">{orderName} keeps ~{Math.round(eff / 60)}m on the shelf.</p> : null}
           <div className="fp-row">
             <Button
@@ -324,11 +335,10 @@ function FloorPanelInner() {
             >
               Buy {orderName}
             </Button>
-            {starterCrate.ok || tight ? (
+            {starterCrate.ok ? (
               <Button
                 tone="free"
-                disabled={!starterCrate.ok}
-                title={starterCrate.ok ? 'Free cans crate' : (starterCrate.reason ?? 'Not eligible')}
+                title="Free cans crate"
                 onClick={() => dispatch({ type: 'callStarterCrate' })}
               >
                 Starter crate

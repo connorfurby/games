@@ -234,6 +234,10 @@
     line-height: var(--t-xs-lh);
     color: var(--ge-ink-muted);
   }
+  .fp-note--good {
+    color: var(--ge-good, #7fd18b);
+    font-weight: 600;
+  }
   .fp-link {
     appearance: none;
     padding: 0;

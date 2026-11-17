@@ -1312,3 +1312,9 @@ export function maxAffordableUpgrades(s: GameState, id: string, hardCap = 50) {
 export function empireXpToNext(level: number) {
   return Math.floor(EMPIRE.levelBase * Math.pow(EMPIRE.levelGrowth, level - 1))
 }
+
+/** True when a wholesale order right now counts as a price dip (the Era 0 goal). */
+export function wholesaleIsDip(s: GameState): boolean {
+  const tip = Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index
+  return s.wholesale.index <= tip * DEPTH.marketBellIndex
+}

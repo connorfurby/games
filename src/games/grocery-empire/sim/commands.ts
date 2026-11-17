@@ -63,6 +63,7 @@ import {
   up,
   upgradeBulkCost,
   upgradeRankCap,
+  wholesaleIsDip,
 } from './formulas'
 import {
   addBatch,
@@ -443,8 +444,7 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
   if (s.wholesale.index < 0.85) s.stats.ordersBelow85 += 1
   s.wholesale.drift = Math.min(1.35, s.wholesale.drift + WHOLESALE.buyBump * crates)
   s.wholesale.idleSec = 0
-  const tip = Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index
-  if (s.wholesale.index <= tip * DEPTH.marketBellIndex) {
+  if (wholesaleIsDip(s)) {
     s.depth.marketBellDipAt = s.time
     s.depth.marketBellDips += 1
   }
