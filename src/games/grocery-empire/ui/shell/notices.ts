@@ -23,13 +23,28 @@ export function pushNotice(text: string, kind: Notice['kind'] = 'info', now = Da
   // The same line twice in a row within 5 s is one notice.
   if (last && last.text === text && now - last.at < 5000) return
   list = [{ id: ++seq, text, at: now, kind }, ...list].slice(0, MAX)
-  sfx.notice()
+  // Blocked actions already knock; only good news and notes ding.
+  if (kind !== 'blocked') sfx.notice()
   for (const s of subs) s()
 }
 
 export function clearNotices() {
   list = []
   for (const s of subs) s()
+}
+
+/** Highest id the player has seen in the Notices tab. */
+let seenId = 0
+
+export function markNoticesSeen() {
+  if (seenId === seq) return
+  seenId = seq
+  for (const s of subs) s()
+}
+
+export function useUnreadNotices(): number {
+  const l = useNotices()
+  return l.filter((n) => n.id > seenId).length
 }
 
 export function notices(): readonly Notice[] {

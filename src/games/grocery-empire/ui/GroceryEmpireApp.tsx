@@ -1,3 +1,6 @@
+import { exportScenePng } from './scene/exportPng'
+import { completedWings } from '../sim/museum'
+import { WING_BY_ID } from '../content/relics'
 import { createPortal } from 'react-dom'
 import './design/layers.css'
 import './design/tokens.css'
@@ -170,6 +173,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   }, [menu])
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([])
   const [photoMode, setPhotoMode] = useState(false)
+  const photoFrame = useRef<HTMLDivElement>(null)
   const [sceneOpen, setSceneOpen] = useScenePref(menu)
   const [inboxOpen, setInboxOpenRaw] = useState(false)
   const setInboxOpen = (v: boolean | ((p: boolean) => boolean)) =>
@@ -493,6 +497,11 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   pushToastRef.current = pushToast
   useEffect(() => onToastRequest((text) => pushToastRef.current(text, 2400)), [])
   const museum = useMuseum()
+  const wingsKey = completedWings(museum).join(',')
+  const photoPennants = useMemo(
+    () => (wingsKey ? wingsKey.split(',').map((id) => WING_BY_ID[id as keyof typeof WING_BY_ID]?.hue ?? 40) : []),
+    [wingsKey],
+  )
 
   // Stable identity so the GameContext value only rebuilds when the sim (or a UI field) changes.
   const dispatch = useCallback((cmd: Command) => {
@@ -888,14 +897,28 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
             {photoMode && overlayRoot()
               ? createPortal(
               <div className="g2-photo" role="dialog" aria-label="Photo mode">
-                <div className="g2-photo__frame">
-                  <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} />
+                <div className="g2-photo__frame" ref={photoFrame}>
+                  <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} pennants={photoPennants} />
                 </div>
                 <p className="g2-photo__caption">
                   <strong>{storeDisplayName(state)}</strong>
                   <span>{ERA_STORY[state.era]?.title ?? `Era ${state.era}`}</span>
                 </p>
                 <div className="g2-photo__acts">
+                  <Button
+                    tone="primary"
+                    onClick={() => {
+                      if (!photoFrame.current) return
+                      sfx.click()
+                      void exportScenePng(
+                        photoFrame.current,
+                        { title: storeDisplayName(state), sub: ERA_STORY[state.era]?.title ?? `Era ${state.era}` },
+                        `${storeDisplayName(state).replace(/[^\w-]+/g, '-').toLowerCase() || 'my-store'}.png`,
+                      )
+                    }}
+                  >
+                    Save picture
+                  </Button>
                   <Button tone="secondary" onClick={() => setPhotoMode(false)}>
                     Done
                   </Button>

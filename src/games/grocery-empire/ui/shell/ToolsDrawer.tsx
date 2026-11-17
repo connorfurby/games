@@ -3,6 +3,7 @@ import { isDevSave } from '../../sim/saveKey'
 import { DevModePanel } from '../components/DevModePanel'
 import { MoreSections, type MoreSection } from '../panels/MorePanel'
 import { NoticesPanel } from './NoticesPanel'
+import { useUnreadNotices } from './notices'
 import { InGameWiki } from '../wiki/InGameWiki'
 import type { MenuId } from '../../content/menus'
 
@@ -40,6 +41,7 @@ export function ToolsDrawer({
 }) {
   const inDev = isDevSave()
   const tabs = TABS.filter((t) => t.id !== 'dev' || inDev)
+  const unread = useUnreadNotices()
   const wanted = FOLDED[tab] ?? tab
   const active = tabs.some((t) => t.id === wanted) ? wanted : tabs[0]!.id
 
@@ -81,6 +83,7 @@ export function ToolsDrawer({
               onClick={() => onTab(t.id)}
             >
               {t.label}
+              {t.id === 'notices' && unread > 0 && active !== 'notices' ? <span className="g2-tools__dot">{unread}</span> : null}
             </button>
           ))}
         </div>
