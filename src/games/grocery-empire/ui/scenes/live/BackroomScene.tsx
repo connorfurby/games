@@ -20,6 +20,7 @@ export function BackroomScene() {
   return (
     <RoomScene
       label={`Backroom, ${qty(total)} of ${qty(cap)} units stocked, ${inbound} trucks inbound`}
+      phoneChipsOnly
       chips={[
         { label: 'Stock', value: `${qty(total)}/${qty(cap)}` },
         { label: 'Fill', value: `${Math.round(fill * 100)}%` },

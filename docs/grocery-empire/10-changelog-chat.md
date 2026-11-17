@@ -62,6 +62,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Text re-scan after the sweep: last stragglers fixed (fast-run fuel reason, loyalty level, matching-policy perk, Politics seat and Capital notes, Empire pair note). Remaining hits are flavour names or ordinary words.
 - Rivals: room chips read Your stores / Rival chains / Bought out; the price war row names its target and says what it does ("$78.75K · closes 2 of their stores").
 - Marketing: the weekly flyer explains its one rule (keep shelf price at or below the flyer price) and the Deep / Mid / Soft trade-off in words; Produce Lead and cooler-log notices plain.
+- Suppliers / Backroom: Restock priority has one home (Backroom) instead of appearing on both pages; with only Express available the supplier shows as plain text, not a one-option picker; the Backroom room shows numbers only on phones.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

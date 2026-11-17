@@ -15,7 +15,6 @@ import { sumQty } from '../../sim/helpers'
 import { canCoopOrder, coopCrateCost } from '../../sim/systems/late'
 import { useGame } from '../GameContext'
 import { clock, money, qty } from '../format'
-import { MixPriority } from '../components/MixPriority'
 import { MENUS } from '../../content/menus'
 import { FailReason, Field, FieldSet, PlayFrame } from '../play'
 import { Badge, Button, Meter, SegmentedControl, Sheet, Toggle, Tooltip } from '../kit'
@@ -319,6 +318,9 @@ export function SuppliersPanel() {
             label="Supplier"
             note={hasB ? 'Budget is cheaper, slower and sometimes short.' : 'Budget unlocks with the Second Wholesaler memo.'}
           >
+            {!hasB ? (
+              <p className="pf-field__static">Express · {money(expressCost, numberFormat)}</p>
+            ) : (
             <SegmentedControl
               aria-label="Supplier"
               value={supplier === 'b' ? 'b' : 'a'}
@@ -333,6 +335,7 @@ export function SuppliersPanel() {
                 },
               ]}
             />
+            )}
             {coopOn ? (
               <Button
                 tone="secondary"
@@ -397,8 +400,7 @@ export function SuppliersPanel() {
             )
           : null}
 
-
-        <MixPriority coachId="floor-mix" compact />
+        {/* Restock priority lives on Backroom, where unpacking happens; one home, no duplicate desk. */}
       </PlayFrame>
 
     </section>
