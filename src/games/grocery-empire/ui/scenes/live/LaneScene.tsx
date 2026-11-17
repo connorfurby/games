@@ -23,8 +23,8 @@ export function LaneScene() {
       chips={[
         { label: 'Lanes', value: `${wet}/${lanes}`, neg: lanes > 0 && s.fuel <= 0 },
         { label: 'Fuel', value: `${fuelGal} gal`, rate: `${Math.round(fuelFrac * 100)}%`, neg: fuelFrac < 0.25 },
-        { label: 'Circuits', value: String(circuits) },
-        { label: 'Keel', value: String(keel) },
+        ...(s.era >= 8 ? [{ label: 'Circuits', value: String(circuits) }] : []),
+        ...(s.horizon?.keel?.bought ? [{ label: 'Convoys', value: String(keel) }] : []),
       ]}
       skyTop="#12202c"
       skyBottom="#1d3446"

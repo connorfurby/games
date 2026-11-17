@@ -74,9 +74,9 @@ export function LogisticsPanel() {
     },
     {
       id: 'exam',
-      label: 'Exam-ready',
+      label: 'For inspection',
       fact: () =>
-        `Opens the exam hold · swear it · ${s.depth?.dispatch?.examsHeld ?? 0}/${DEPTH.examHoldNeed} · not a clean`,
+        `Starts an inspection; pass it in time · ${s.depth?.dispatch?.examsHeld ?? 0}/${DEPTH.examHoldNeed} · does not count as clean`,
     },
     {
       id: 'fast',
@@ -165,8 +165,8 @@ export function LogisticsPanel() {
       >
         <div className="p6-stack">
           <p className="p6-copy">
-            Clean runs {clean} of {DEPTH.cleanManifestsNeed} · exams held {s.depth?.dispatch?.examsHeld ?? 0} of{' '}
-            {DEPTH.examHoldNeed}. Each run you file is clean, exam-ready or fast — pick one.
+            Clean runs {clean} of {DEPTH.cleanManifestsNeed} · inspections passed {s.depth?.dispatch?.examsHeld ?? 0} of{' '}
+            {DEPTH.examHoldNeed}. File each run as clean, for inspection, or fast.
           </p>
           {manifestBoard}
         </div>
@@ -218,12 +218,12 @@ export function LogisticsPanel() {
         tray={{
           primary: examFocus
             ? {
-                label: `Swear exam · ${(s.depth?.dispatch?.examsHeld ?? 0)}/${DEPTH.examHoldNeed}`,
+                label: `Pass inspection · ${(s.depth?.dispatch?.examsHeld ?? 0)}/${DEPTH.examHoldNeed}`,
                 tone: 'free',
                 size: 'lg',
                 coachId: 'logistics-exam',
                 disabled: !exam.ok,
-                title: exam.ok ? 'Swear the exam hold — free.' : exam.reason,
+                title: exam.ok ? 'Pass the waiting inspection. Free.' : exam.reason,
                 onClick: () => dispatch({ type: 'swearExam' }),
               }
             : {

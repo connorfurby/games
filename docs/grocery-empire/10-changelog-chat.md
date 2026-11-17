@@ -15,6 +15,8 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Museum (phone): chest reveal now portals to the game root and covers the money bar; page title and gallery come first, stats move under Chests; duplicate "Active perks" stat removed.
 - Awards: the save-picture button only appears once you pick awards (was a dead button).
 - Era 2–6 tour steps and goal hints rewritten in plain words (no drift war, covenants, Orbit on Mid, Swear exam holds, yield, Momentum jargon in guidance). Goal titles renamed: Pass route inspections, Redo the shelf layout after Import, Staff the middle shift, Hold the line, Staff produce and cold.
+- Logistics: "exam hold / swear exam / exam-ready" is now **inspection** (For inspection, Pass inspection). Circuits and Convoys chips only appear once those features exist. HUD alert says "A store needs a visit". Fleet tip rewritten.
+- Phone crawl p8: 123 screens, 0 errors, 0 overflow, 0 shifts, no new dead buttons; low-contrast hits down from 14 to 2.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**
 

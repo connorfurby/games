@@ -274,7 +274,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'verb',
     era: 4,
     icon: 'logistics',
-    short: 'A lane filing on the Dispatch Board: clean, exam-ready or fast — one stance each.',
+    short: 'A run you file on Dispatch: clean, for inspection, or fast. Pick one each time.',
     see: 'choice-manifest',
   },
   {

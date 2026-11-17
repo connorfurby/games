@@ -416,7 +416,7 @@ export function laneLeftOpen(s: GameState, lane: LaneEntry): boolean {
 
 const STANCE_LABEL: Record<ManifestStance, string> = {
   clean: 'clean',
-  exam: 'exam-ready',
+  exam: 'for inspection',
   fast: 'fast',
 }
 
@@ -558,7 +558,7 @@ export function tickExamHold(s: GameState) {
   const d = s.depth.dispatch
   if (!d.examLaneId || d.examUntil <= 0) return
   if (s.time < d.examUntil) return
-  log(s, 'Exam hold slipped — cycle wasted (cleans kept).', 'warn')
+  log(s, 'Inspection window missed. Your clean runs still count.', 'warn')
   d.examLaneId = null
   d.examMix = null
   d.examUntil = 0
@@ -566,10 +566,10 @@ export function tickExamHold(s: GameState) {
 
 export function canSwearExam(s: GameState): string | null {
   const d = s.depth?.dispatch
-  if (!d?.examLaneId || !d.examMix) return 'No exam hold on the board — file a lane exam-ready first.'
-  if (s.time > d.examUntil) return 'Exam hold expired.'
+  if (!d?.examLaneId || !d.examMix) return 'No inspection waiting. File a run for inspection first.'
+  if (s.time > d.examUntil) return 'The inspection window closed.'
   if (!examCycleReady(s)) {
-    return `Dispatch cycle still cooling — ${waitLabel(examCycleLeft(s))}.`
+    return `Next inspection in ${waitLabel(examCycleLeft(s))}.`
   }
   return null
 }

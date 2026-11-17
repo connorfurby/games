@@ -77,7 +77,7 @@ const RAW: Omit<AtlasEra, 'title' | 'epigraph'>[] = [
     plate: 'fleet',
     band: 'globe',
     focus: 'Ocean lanes, fuel, franchises and the Dispatch Board.',
-    door: ['Clean manifests', 'Sworn exams (exam holds)', 'Logistics staffed', 'Win back a defection', 'Open the barge berth'],
+    door: ['Clean manifests', 'Passed inspections', 'Logistics staffed', 'Win back a defection', 'Open the barge berth'],
     opens: ['logistics'],
     pressure: 'MegaMart snipes any lane you leave open.',
     article: 'walk-e45',

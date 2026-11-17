@@ -56,7 +56,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'fleet',
-    text: 'Charter points shape barges. Guardians appear under pressure. Orbit is just a taller backroom.',
+    text: 'Charter points shape each barge. If a barge gets into trouble, a one-time Guardian shield can save it.',
     when: (s) => !!s.menus.fleet || (s.fleet?.barges ?? 0) > 0,
   },
   {

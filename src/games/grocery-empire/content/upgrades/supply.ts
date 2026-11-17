@@ -62,7 +62,7 @@ export const SUPPLY_UPGRADES: UpgradeDef[] = [
     id: 'exam-hold-pad',
     tree: 'logistics',
     name: 'Exam Hold Pad',
-    per: '−8% exam hold window wait',
+    per: '−8% wait between inspections',
     blurb: 'A stamp pad at Dispatch. The swear lands sooner.',
     max: 5,
     base: 800,

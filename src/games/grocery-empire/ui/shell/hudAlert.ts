@@ -24,7 +24,7 @@ export function computeHudAlert(s: GameState): HudAlert | null {
     return { text: 'The board is waiting on an agenda', menu: 'books', tone: 'danger', kind: 'board' }
   }
   if (s.era >= 2 && s.stores.some((st) => (st.drift ?? 0) >= 0.55)) {
-    return { text: 'A store is drifting — walk it', menu: 'land', tone: 'warn', kind: 'drift' }
+    return { text: 'A store needs a visit', menu: 'land', tone: 'warn', kind: 'drift' }
   }
   if (s.era >= 1 && s.stats.sold > 0) {
     const b = salesBottleneck(s)

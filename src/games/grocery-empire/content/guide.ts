@@ -698,9 +698,9 @@ SEE ALSO  Era 2 systems detail · Flyer Desk.`,
     era: 4,
     topic: 'choices',
     blurb: 'One filing is one stance. They never stack.',
-    body: `Clean credits a clean manifest now (the barge gate). Exam opens the exam hold; swear it to credit an
-exam instead. Fast spends the lane for a quick burst of cash, credits neither, and leaves the lane open to
-MegaMart. The button note under each stance says why it is blocked.
+    body: `Clean counts as a clean run right away (you need these for the barge berth). For inspection starts an
+inspection; pass it in time and it counts as an inspection instead. Fast spends the route for a quick burst of
+cash, counts as neither, and leaves the route open to MegaMart. The button note under each stance says why it is blocked.
 SEE ALSO  Era 4–6 systems detail · Dispatch.`,
   },
   {
@@ -781,7 +781,8 @@ POLITICAL CAPITAL
     topic: 'late',
     blurb: 'Dispatch, Pocket Ops, endings.',
     body: `DISPATCH BOARD
-  Match wet cargo, then swear the exam hold before it slips. Clean manifests + exams gate the berth.
+  Match the cargo to a fuelled route, then pass the inspection before it closes. Clean runs and passed
+  inspections open the barge berth.
   MegaMart snipes unassigned lanes.
 
 LANES / FUEL / CONTROL
