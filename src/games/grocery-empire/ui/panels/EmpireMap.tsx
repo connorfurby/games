@@ -278,9 +278,6 @@ export function EmpireMap() {
   } as const satisfies Record<Pin['kind'], MenuId>
   const targetMenu: MenuId = worldZoom ? 'planets' : MENU_FOR_PIN[sel.kind]
   const targetOpen = targetMenu === 'floor' || !!s.menus[targetMenu]
-  const viewIdx = open.findIndex((v) => v.id === view.id)
-  const zoomOut = viewIdx > 0 ? open[viewIdx - 1] : null
-  const zoomIn = viewIdx >= 0 && viewIdx < open.length - 1 ? open[viewIdx + 1] : null
 
   const tray: VerbTrayProps = {
     primary: {
@@ -293,8 +290,7 @@ export function EmpireMap() {
     },
     failReason: targetOpen ? undefined : `${MENUS[targetMenu].name} is not open yet.`,
     secondaries: [
-      ...(zoomOut ? [{ key: 'out', label: 'Zoom out', fact: zoomOut.label, onClick: () => setViewId(zoomOut.id) }] : []),
-      ...(zoomIn ? [{ key: 'in', label: 'Zoom in', fact: zoomIn.label, onClick: () => setViewId(zoomIn.id) }] : []),
+      // Zoom lives in the ring picker under the map; no duplicate buttons here.
       ...(phone ? [{ key: 'details', label: 'Details', fact: info.title, onClick: () => setDetailOpen(true) }] : []),
     ],
   }

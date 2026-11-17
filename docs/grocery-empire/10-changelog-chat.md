@@ -19,6 +19,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Era 7–12 goal hints and the stretch tours (weather, rivals, invoices, planogram, cooler log, manifest, hauler, hearing) rewritten plainly; puzzle scores read as percentages (72%, 85%) instead of 0.72 / 0.85. Goals renamed: Serve a picky guest, Settle a stop with a cost, Make a clause final, Fill the list, Practise the list.
 - Every puzzle score on screen (Planets, Exchange, Convoy, Last Aisle, Floor planogram, map pins, wiki, lore, atlas, checklist) now shows as a percentage via `pct()`. "Planet layer", "Worlds layers" and the Exchange "Keel" chip are reworded; an unset route reads Open instead of a dash.
 - Desktop mid-game pass: Politics shows a county hall (bills, lobbyists, capital, region supply gauge) until the Council exists in Era 7, instead of 14 empty council seats; scrutiny gauge no longer prints its value twice; `Gauge` label is optional. Fleet charter drydock draws one labelled row per axis (no overlapping names; Brand Seal reads Brand); pier labels no longer sit on the barges. Logistics lanes say fuelled / no fuel instead of wet / dry. Phone HUD keeps cents under $100.
+- Map: removed the Zoom in / Zoom out tray buttons that duplicated the ring picker. Marketing room chips read Celebrity and Price war.
 - Phone crawl p8: 123 screens, 0 errors, 0 overflow, 0 shifts, no new dead buttons; low-contrast hits down from 14 to 2.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

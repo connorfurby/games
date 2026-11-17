@@ -45,8 +45,8 @@ export function BillboardScene() {
       }${air.length ? `, broadcasting to ${air.join(' and ')}` : ''}${wire ? ', wire ad running' : ''}`}
       chips={[
         { label: 'Ads', value: `Lv ${ads}` },
-        { label: 'Celeb', value: celebrity ? clock(celebLeft) : '—' },
-        { label: 'War', value: war ? clock(warLeft) : 'off', neg: war },
+        { label: 'Celebrity', value: celebrity ? clock(celebLeft) : '—' },
+        { label: 'Price war', value: war ? clock(warLeft) : 'off', neg: war },
         s.era >= 7
           ? { label: 'On air', value: air.length ? String(air.length) : '0' }
           : s.era >= 2
