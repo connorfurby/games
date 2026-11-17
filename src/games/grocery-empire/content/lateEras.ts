@@ -88,7 +88,7 @@ export const DOCTRINES = [
   { id: 'ad-pulse', name: 'Ad Pulse', blurb: 'Short campaigns score in AutoTourney.' },
   { id: 'cold-guard', name: 'Cold Guard', blurb: 'Freshness buffer scores late Era 3+.' },
   { id: 'lane-thrift', name: 'Lane Thrift', blurb: 'Fuel efficiency in globe tournaments.' },
-  { id: 'shell-bias', name: 'Shell Bias', blurb: 'Charter shell weight in drift fights.' },
+  { id: 'shell-bias', name: 'Shell Bias', blurb: 'How much your barge hulls count in fights with Off-Brand.' },
   { id: 'survey-sweep', name: 'Survey Sweep', blurb: 'Survey axes pay Read.' },
   { id: 'quiet-books', name: 'Quiet Books', blurb: 'Low-risk invest still ticks Read slowly.' },
 ] as const

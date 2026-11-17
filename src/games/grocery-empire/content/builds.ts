@@ -297,7 +297,7 @@ export const BUILD_VARIANTS: BuildVariantDef[] = [
     track: 'production',
     minTier: 2,
     name: 'Row crops',
-    blurb: 'Steady produce trickle — safer yield.',
+    blurb: 'A steady trickle of produce that uses supply more gently.',
     safe: true,
     effect: { stat: 'backroom', mul: 1.1 },
   },

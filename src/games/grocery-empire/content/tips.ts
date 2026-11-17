@@ -26,7 +26,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'first-wholesale',
-    text: 'A crate you order takes a moment to arrive in the backroom. Wholesale prices drift, so buy when they dip, then unpack.',
+    text: 'A crate you order takes a moment to arrive in the backroom. Crate prices move up and down, so buy when they dip, then unpack.',
     when: (s) => s.stats.ordersPlaced >= 1,
   },
   {

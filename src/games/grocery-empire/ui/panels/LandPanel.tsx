@@ -102,7 +102,7 @@ function LandExpansionCard({
       <div className="ge-card__meta">
         <div className="ge-card__meta-row">
           <span>{have ? 'Status' : 'Price'}</span>
-          <strong className="ld-deed__value">{have ? '✓ Deed filed' : money(cost, numberFormat)}</strong>
+          <strong className="ld-deed__value">{have ? '✓ Bought' : money(cost, numberFormat)}</strong>
         </div>
       </div>
       {have ? null : (
@@ -222,10 +222,10 @@ function ChainRoster({
                 <span className="ld-meter">
                   <span style={{ transform: `scaleX(${Math.min(1, drift)})` }} />
                 </span>
-                <span>{Math.round(drift * 100)}% drift</span>
+                <span>{Math.round(drift * 100)}% slipping</span>
               </div>
               <label className="ld-row__att" title={`Fair share is ${Math.round(fair * 100)}%.`}>
-                <span>Attn {Math.round(st.attentionShare * 100)}%</span>
+                <span>Attention {Math.round(st.attentionShare * 100)}%</span>
                 <input
                   className="ge-range"
                   type="range"
@@ -258,15 +258,15 @@ function ChainRoster({
                   size="sm"
                   tone={drift >= CHAIN.driftWarn ? 'primary' : 'secondary'}
                   data-suggest-id={`walk-${st.id}`}
-                  title="Spend 40 Attention to clear drift."
+                  title="Spend 40 Attention to put this store back on track."
                   onClick={() => dispatch({ type: 'walkStore', storeId: st.id })}
                 >
-                  Walk the floor
+                  Visit
                 </Button>}
                 {trainBlock ? null : <Button
                   size="sm"
                   tone="secondary"
-                  title={`Spend ${trainStoreCost(st)} Attention for store XP.`}
+                  title={`Spend ${trainStoreCost(st)} Attention to level up this store.`}
                   onClick={() => dispatch({ type: 'trainStore', storeId: st.id })}
                 >
                   Train staff
@@ -480,10 +480,10 @@ export function LandPanel() {
         {s.stores.length > 1 ? (
           <p className="ge-muted" data-coach-id="land-drift-why">
             {driftShopperLoss(s) > 0.005
-              ? `Drift is costing you ${(driftShopperLoss(s) * 100).toFixed(1)}% of your shoppers. `
+              ? `Stores that need a visit are costing you ${(driftShopperLoss(s) * 100).toFixed(1)}% of your shoppers. `
               : 'Your stores are tidy. '}
-            Every store drifts over time; one short of Attention drifts faster and a trained one drifts slower. Walk the
-            floor to clear it.
+            Every store slowly slips; one short of Attention slips faster and a trained one slower. Visit a store to put it
+            back on track.
           </p>
         ) : null}
         <section className="ge-empire-block" aria-label="Expansions">
@@ -545,7 +545,7 @@ export function LandPanel() {
                         <div className="ge-card__meta">
                           <div className="ge-card__meta-row">
                             <span>Status</span>
-                            <strong className="ld-deed__value">✓ Deed filed</strong>
+                            <strong className="ld-deed__value">✓ Bought</strong>
                           </div>
                         </div>
                       </article>

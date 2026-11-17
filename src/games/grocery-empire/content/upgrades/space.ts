@@ -171,7 +171,7 @@ export const SPACE_UPGRADES: UpgradeDef[] = [
     tree: 'space',
     name: 'Purser Books',
     per: 'More Control from work',
-    blurb: 'Every wet lane leaves a receipt.',
+    blurb: 'Every fuelled route leaves a receipt.',
     max: 8,
     base: 2e7,
     growth: 1.5,

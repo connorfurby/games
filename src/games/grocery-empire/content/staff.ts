@@ -229,7 +229,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   dispatcher: {
     id: 'dispatcher',
     name: 'Dispatcher',
-    blurb: 'Keeps manifests honest. Fuel lasts longer on wet lanes.',
+    blurb: 'Keeps manifests honest. Fuel lasts longer on fuelled routes.',
     hireBase: 80_000,
     hireGrowth: 1.4,
     wagePerMin: 120,
@@ -239,7 +239,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   franchiseLiaison: {
     id: 'franchiseLiaison',
     name: 'Franchise Liaison',
-    blurb: 'Walks partner doors. Slows brand drift and wins back defectors.',
+    blurb: 'Visits partner stores. Slows Brand loss and wins back franchises that want to leave.',
     hireBase: 95_000,
     hireGrowth: 1.42,
     wagePerMin: 140,
@@ -279,7 +279,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   hullTech: {
     id: 'hullTech',
     name: 'Hull Tech',
-    blurb: 'Softens drift hits. Shell and brand-seal lean on them.',
+    blurb: 'Softens Off-Brand’s hits. Hulls and the Brand Seal lean on them.',
     hireBase: 3_000_000,
     hireGrowth: 1.48,
     wagePerMin: 4_500,

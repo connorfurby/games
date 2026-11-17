@@ -31,7 +31,7 @@ export function LandStreet({
             type="button"
             role="listitem"
             className={`ld-lot${i === 0 ? ' is-flag' : ''}${drifting ? ' is-drift' : ''}`}
-            title={`${st.name} · ${st.policy} · ${Math.round((st.drift ?? 0) * 100)}% drift`}
+            title={`${st.name} · ${st.policy} · ${Math.round((st.drift ?? 0) * 100)}% slipping`}
             onClick={() => onPick(st.id)}
           >
             <svg viewBox={`0 0 72 ${h + 16}`} className="ld-lot__svg">

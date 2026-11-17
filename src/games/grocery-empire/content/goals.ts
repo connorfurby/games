@@ -1244,7 +1244,7 @@ export const GOALS: GoalDef[] = [
   {
     id: 'yield-hauls',
     era: 9,
-    title: 'Haul the yield',
+    title: 'Bring in the harvest',
     hint: 'Locking a bed gives you a harvest. Bring it in before the season ends.',
     done: (s) => (s.horizon?.haulsDone ?? 0) >= HORIZON.yieldHaulNeed,
     progress: (s) => frac(s.horizon?.haulsDone ?? 0, HORIZON.yieldHaulNeed),

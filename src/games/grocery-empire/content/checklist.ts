@@ -256,7 +256,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e3-momentum',
     era: 3,
-    label: 'See auto-shed or hold Momentum ≥100% for 10 min',
+    label: 'Keep food fully fresh for 10 minutes, or ride out a power dip',
     test: (s) => s.cold.autoSheds >= 1 || s.cold.momentumHoldSec >= 600 || s.cold.momentum > 1.05,
   },
   {
@@ -268,7 +268,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e3-yield',
     era: 3,
-    label: 'Empty regional yield',
+    label: 'Use up the region’s supply',
     test: (s) => s.cold.yieldLeft <= 0 && s.cold.plants + s.cold.tanks > 0,
   },
   {
@@ -356,7 +356,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e4-franchise',
     era: 4,
-    label: 'Open a franchise (Brand will drift)',
+    label: 'Open a franchise (it wears on Brand)',
     test: (s) => s.fleet.franchises >= 1 || (s.memos['franchise-kit'] ?? 0) > 0,
   },
   {
@@ -426,13 +426,13 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e5-drift-war',
     era: 5,
-    label: 'Meet Off-Brand in a drift war',
+    label: 'Meet Off-Brand',
     test: (s) => s.fleet.warOn || s.fleet.legacy > 0 || (s.memos['off-brand-war'] ?? 0) > 0,
   },
   {
     id: 'e5-drift-hold',
     era: 5,
-    label: 'Hold the drift war',
+    label: 'Hold off Off-Brand',
     test: (s) => (s.depth?.driftWar?.step ?? 0) >= 3,
   },
   {
@@ -444,7 +444,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e5-guardian',
     era: 5,
-    label: 'Use Guardian preset or win a drift battle',
+    label: 'Use Guardian or beat Off-Brand back once',
     test: (s) => s.fleet.guardianUsed || (s.fleet.warOn && s.fleet.legacy > 0) || s.fleet.biomass <= 0,
   },
 

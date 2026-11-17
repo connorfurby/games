@@ -57,7 +57,7 @@ export const DEPARTMENTS: DepartmentDef[] = [
       {
         id: 'patrol',
         name: 'Patrol',
-        blurb: 'Managers walk doors — slower drift.',
+        blurb: 'Managers visit stores, so they slip more slowly.',
         pullMul: 1,
         ageMul: 1,
       },
@@ -88,7 +88,7 @@ export const DEPARTMENTS: DepartmentDef[] = [
       {
         id: 'blast',
         name: 'Blast',
-        blurb: 'Push throughput — faster yield drain when blasting.',
+        blurb: 'Push output: blast freezers use up supply faster.',
         pullMul: 1.05,
         ageMul: 1,
       },
@@ -129,7 +129,7 @@ export const DEPARTMENTS: DepartmentDef[] = [
       {
         id: 'hold-orbit',
         name: 'Hold',
-        blurb: 'Steady orbit — slower drift pressure.',
+        blurb: 'Steady orbit: Off-Brand presses more slowly.',
         pullMul: 1,
         ageMul: 1,
       },

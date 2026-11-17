@@ -215,7 +215,7 @@ GATE OUT — AUTONOMOUS
     title: 'Walkthrough · Era 3 · Cold Chain',
     era: 3,
     topic: 'walk',
-    blurb: 'Plants, tanks, Momentum, leave region.',
+    blurb: 'Plants, tanks, the cold bonus, leaving the region.',
     body: `GOAL
   Keep cold surplus positive while draining county yield to zero, then leave.
 
@@ -243,7 +243,7 @@ CHECKPOINTS
     title: 'Walkthrough · Era 4–5 · Globe & Charter',
     era: 4,
     topic: 'walk',
-    blurb: 'Lanes, fuel, barges, drift.',
+    blurb: 'Routes, fuel, barges and Off-Brand.',
     body: `ERA 4 — LOGISTICS
   Fuel buffer before vanity lanes. Dry lanes idle; they do not brick.
   Control Tower + wet lanes tick Control. Franchises buy footprint but hit Brand.
@@ -683,10 +683,10 @@ SEE ALSO  Eight depth systems.`,
   },
   {
     id: 'choice-flyer',
-    title: 'Flyer stance: deep, mid, soft',
+    title: 'Flyer discounts: deep, mid, soft',
     era: 2,
     topic: 'choices',
-    blurb: 'Your weekly flyer is a stance against Penny and FreshWay.',
+    blurb: 'Your weekly flyer is how you answer Penny and FreshWay.',
     body: `Deep pulls Penny in: she locks your aisles sooner. Soft lets FreshWay spoil your produce faster.
 Mid keeps the peace. The stance lasts only while the week runs; finished weeks still count toward the cold
 permit whatever the stance. Print deep when you can afford a lock, soft when your cooler is signed.
@@ -694,10 +694,10 @@ SEE ALSO  Era 2 systems detail · Flyer Desk.`,
   },
   {
     id: 'choice-manifest',
-    title: 'Manifest stance: clean, exam, fast',
+    title: 'Filing a run: clean, for inspection, fast',
     era: 4,
     topic: 'choices',
-    blurb: 'One filing is one stance. They never stack.',
+    blurb: 'Each run is filed one way. The choices never stack.',
     body: `Clean counts as a clean run right away (you need these for the barge berth). For inspection starts an
 inspection; pass it in time and it counts as an inspection instead. Fast spends the route for a quick burst of
 cash, counts as neither, and leaves the route open to MegaMart. The button note under each stance says why it is blocked.

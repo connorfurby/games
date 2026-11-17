@@ -32,7 +32,7 @@ export const CONTRACTS: ContractDef[] = [
     name: 'Port Broker',
     era: 4,
     cat: 'import',
-    blurb: 'Cheap import bulk — shorts in bad weather; wants a wet Spice Route lane.',
+    blurb: 'Cheap imported bulk. Sends less in bad weather; needs a fuelled Spice Route.',
     unlockCash: 2_500_000,
   },
 ]

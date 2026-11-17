@@ -244,8 +244,8 @@ export const FEATS: Record<string, { text: string; vague: string; test: (s: Game
   owl: { vague: 'Open the store when everyone else is asleep.', text: 'Play between midnight and 4 a.m. (your local time).', test: (s) => !s.paused && new Date().getHours() < 4 },
   rot: { vague: 'An exhibition nobody wanted.', text: 'Collect 10 spoilage exhibits in one run.', test: (s) => (s.museum?.exhibits?.length ?? 0) >= 10 },
   doors: { vague: 'Every door you are allowed to open.', text: 'Own 12 stores.', test: (s) => s.stores.length >= 12 },
-  attend: { vague: 'A big chain where nobody feels forgotten.', text: 'Have 8+ stores with no store above 5% drift.', test: (s) => s.stores.length >= 8 && s.stores.every((st) => (st.drift ?? 0) < 0.05) },
-  neglect: { vague: 'Forget someone completely.', text: 'Let a store reach 100% drift.', test: (s) => s.stores.some((st) => (st.drift ?? 0) >= 1) },
+  attend: { vague: 'A big chain where nobody feels forgotten.', text: 'Have 8+ stores with none more than 5% slipping.', test: (s) => s.stores.length >= 8 && s.stores.every((st) => (st.drift ?? 0) < 0.05) },
+  neglect: { vague: 'Forget someone completely.', text: 'Let a store slip all the way to 100%.', test: (s) => s.stores.some((st) => (st.drift ?? 0) >= 1) },
   facing: {
     vague: 'Glass or counter — you chose the face of the store.',
     text: 'Pick a build facing on any track.',

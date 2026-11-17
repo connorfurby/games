@@ -23,7 +23,7 @@ export const RECEIPT_POEM_DEFS: readonly ReceiptPoem[] = [
   { era: 1, text: 'Rain on the awning is the only ad that never invoices.' },
   // Era 2 · chain
   { era: 2, text: 'Empire is a word cashiers invent when the till gets heavy.' },
-  { era: 2, text: 'Drift is what a brand does when nobody walks the aisle.' },
+  { era: 2, text: 'A brand slips when nobody walks the aisle.' },
   { era: 2, text: 'A second door is a second apology waiting to happen.' },
   { era: 2, text: 'The board meets. The cans do not care. The cans are right.' },
   // Era 3 · cold & state
