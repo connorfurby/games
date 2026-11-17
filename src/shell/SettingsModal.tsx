@@ -162,8 +162,8 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
             <p className="app-modal__kicker">Shelf</p>
             <h2 id={titleId}>Settings</h2>
           </div>
-          <button type="button" className="app-modal__close" onClick={onClose} aria-label="Close settings">
-            Esc
+          <button type="button" className="app-modal__close" onClick={onClose} aria-label="Close settings" title="Close (Esc)">
+            Close
           </button>
         </header>
 
@@ -182,7 +182,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 <option value="full">Full</option>
               </select>
               <small className="muted">
-                Named = short labels on HUD, Shelf, and crowded chips. Full still shows in Books detail and tooltips.
+                Named shows short numbers like 1.2M where space is tight. Full numbers still show in Books and tooltips.
               </small>
             </label>
             <label className="settings-field">

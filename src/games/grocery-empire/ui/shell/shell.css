@@ -1166,7 +1166,8 @@
     }
 
     /* With a tour card on screen, awards drop in under the money row instead of over the card. */
-    .g2-root:has(.ge-coach) .g2-toasts {
+    .g2-root:has(.ge-coach) .g2-toasts,
+    body:has(.ge-modal, .app-modal) .g2-root .g2-toasts {
       top: calc(env(safe-area-inset-top) + 8.5rem);
       bottom: auto;
     }

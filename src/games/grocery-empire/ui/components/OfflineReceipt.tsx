@@ -55,13 +55,13 @@ export function OfflineReceiptModal({
           {headline(receipt)}
         </h3>
         <p className="ge-muted">
-          {Math.floor(receipt.cappedSeconds / 60)} min simulated
-          {receipt.seconds > receipt.cappedSeconds ? ' (capped at 8h)' : ''}
+          {awayLabel(receipt.seconds)}
+          {receipt.seconds > receipt.cappedSeconds ? '. The store keeps going for up to 8 hours.' : '.'}
         </p>
         <div className="ge-receipt-lines">
           <Line left="Sold" right={qty(receipt.sold)} />
           <Line left="Revenue" right={money(receipt.revenue)} />
-          <Line left="Spoiled" right={qty(receipt.spoiled)} muted />
+          {receipt.spoiled > 0 ? <Line left="Spoiled" right={qty(receipt.spoiled)} muted /> : null}
           <Line left="Wages" right={money(-receipt.wages)} muted />
           <Line left="Rent" right={money(-receipt.rent)} muted />
           {receipt.ventures > 0 ? <Line left="Ventures" right={money(receipt.ventures)} /> : null}
@@ -79,7 +79,7 @@ export function OfflineReceiptModal({
           </Btn>
           {nudge && onNudge && followUp?.channel !== nudge.menu ? (
             <Btn
-              tone="ghost"
+              tone="secondary"
               title={nudge.hint}
               onClick={() => {
                 onDismiss()
@@ -91,7 +91,7 @@ export function OfflineReceiptModal({
           ) : null}
           {followUp && onFollowUp ? (
             <Btn
-              tone="ghost"
+              tone="secondary"
               title={followUp.blurb}
               onClick={() => {
                 onDismiss()
@@ -105,4 +105,13 @@ export function OfflineReceiptModal({
       </motion.div>
     </div>
   )
+}
+
+/** "You were away 8 hours" / "25 minutes": plain time, no simulation talk. */
+function awayLabel(sec: number): string {
+  const min = Math.max(1, Math.round(sec / 60))
+  if (min < 60) return `You were away ${min} minute${min === 1 ? '' : 's'}`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return `You were away ${h} hour${h === 1 ? '' : 's'}${m ? ` ${m} min` : ''}`
 }
