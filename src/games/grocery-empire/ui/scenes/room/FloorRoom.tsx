@@ -58,9 +58,9 @@ export function FloorRoom() {
   // Short, scene-sized hint: always fits, no ellipsis. Demand is the healthy state, so it stays quiet.
   const bnLabel =
     bn.kind === 'shelf'
-      ? back > 0 ? 'Shelf empty — tap Unload' : null
+      ? back > 0 ? 'Shelf empty — tap Unpack' : null
       : bn.kind === 'unpack'
-        ? 'Shelf draining — tap Unload'
+        ? 'Shelf draining — tap Unpack'
         : bn.kind === 'checkout'
           ? 'Line at the till — hire a cashier'
           : null
@@ -90,7 +90,7 @@ export function FloorRoom() {
           stroke="var(--sc-tomato, #ff5a43)"
           strokeOpacity="0.45"
         />
-        <Sign x={40} y={98} text="Unload" />
+        <Sign x={40} y={98} text="Unpack" />
         <Badge x={40} y={108} text={`${qty(back)}/${qty(backCap)}`} w={72} />
         {[0, 1, 2].map((i) => (
           <rect

@@ -49,7 +49,7 @@ export interface TutorialDef {
   steps: TutorialStep[]
 }
 
-/** Eras 7–12: open the panel, file the standard, read the score. */
+/** Eras 7–12: meet the panel, try the standard, check the score. */
 function horizonTour(
   id: string,
   name: string,
@@ -285,7 +285,7 @@ export const TUTORIALS: TutorialDef[] = [
         legacyId: 'price',
         silence: { tips: ['first-price'] },
         title: 'Your shelf price',
-        body: 'Open Price, then nudge the stepper. Start near $1.50. Stock climbing → lower. Selling out → raise or Unpack.',
+        body: 'Set your price with − and + in Shelf price below. Start near $1.50. Stock piling up → go lower. Selling out → go higher, or Unpack more.',
         recovery: 'A bad price only bleeds cash — nudge it.',
         action: { type: 'setPrice', params: { delta: -0.05 } },
         doneWhen: { kind: 'stat', key: 'priceChanges', min: 1 },
@@ -298,7 +298,7 @@ export const TUTORIALS: TutorialDef[] = [
         legacyId: 'wholesale',
         silence: { tips: ['first-wholesale'], lines: ['first-wholesale'] },
         title: 'Buy more stock',
-        body: 'Open Restock and buy a crate. Truck → backroom → Unpack again. Dips under ~$0.85 are wins.',
+        body: 'In Restock below, buy a crate. A truck brings it to the backroom, then you Unpack it onto the shelf. Prices under about $0.85 are a bargain.',
         recovery: 'Overpaying only burns cash.',
         action: { type: 'buyWholesale', params: { qty: 1 } },
         doneWhen: { kind: 'stat', key: 'ordersPlaced', min: 1 },
@@ -1255,7 +1255,7 @@ export const TUTORIALS: TutorialDef[] = [
         id: 'stretch-regulars-spot',
         coachId: 'floor-unpack',
         title: 'Serve a regular',
-        body: 'Neighbors visit when cans are featured and the shelf is stocked. Open Facing · regulars on Floor and Serve when one waits.',
+        body: 'Neighbours visit when cans are featured and the shelf is stocked. When one is waiting, the big Floor button says Serve.',
         recovery: 'Missed visits only slow the star board — restock and try again.',
         action: { type: 'openMenu', params: { menu: 'floor' } },
         doneWhen: { kind: 'always' },
@@ -1264,14 +1264,14 @@ export const TUTORIALS: TutorialDef[] = [
   },
   {
     id: 'stretch-shifts',
-    name: 'Shift Board',
+    name: 'Shifts',
     era: 0,
     steps: [
       {
         id: 'stretch-shifts-spot',
         coachId: 'staff-hire-clerk',
         title: 'Staff the Open shift',
-        body: 'Hire a clerk, then open the Shift Board on Staff and put them on Open. That unlocks Open days toward the yard.',
+        body: 'Hire a clerk, then in Shifts & hours on Staff, put them on Opening. Each covered opening counts toward the yard.',
         recovery: 'An empty Open shift only pauses day credit — hire and assign when you can.',
         action: { type: 'openMenu', params: { menu: 'staff' } },
         doneWhen: { kind: 'always' },

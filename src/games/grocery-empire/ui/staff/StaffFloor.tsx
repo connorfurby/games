@@ -292,7 +292,7 @@ export function StaffFloor({
 
             {/* Unload */}
             <rect x="8" y="10" width="118" height="96" rx="6" fill="#0a0e14" stroke="#ff5a43" strokeOpacity="0.4" />
-            <Sign x={18} y={30} text="Unload" />
+            <Sign x={18} y={30} text="Unpack" />
             <Badge x={18} y={38} text={clerks > clerkSlots ? `${clerks} clerks` : `${clerks}/${clerkSlots} clerks`} w={96} />
             {[0, 1, 2].map((i) => (
               <rect
@@ -392,7 +392,7 @@ export function StaffFloor({
         {/* Stations sit on one row under the HUD: header line, then the fixture. */}
         <g>
           <rect x="24" y="66" width="200" height="96" rx="8" fill="#0a0e14" stroke="#ff5a43" strokeOpacity="0.35" />
-          <Sign x={36} y={88} text="Unload" />
+          <Sign x={36} y={88} text="Unpack" />
           <Badge x={140} y={74} text={clerks > clerkSlots ? `${clerks} clerks` : `${clerks}/${clerkSlots} clerks`} w={76} />
           {[0, 1, 2, 3].map((i) => (
             <rect

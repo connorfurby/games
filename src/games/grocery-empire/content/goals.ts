@@ -105,8 +105,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'feature-cans',
     era: 0,
-    title: 'Feature a can facing',
-    hint: 'Pick Tomatoes, Beans, or Soup on the Floor.',
+    title: 'Choose which cans to feature',
+    hint: 'In Regulars on the Floor, pick Tomatoes, Beans or Soup. Featured cans bring neighbours in.',
     done: (s) => !!s.depth?.facings?.cans,
     progress: (s) => (s.depth?.facings?.cans ? 1 : 0),
     action: () => ({ type: 'setFacing', cat: 'cans', facingId: 'tomatoes' }),
@@ -608,7 +608,7 @@ export const GOALS: GoalDef[] = [
     id: 'cold-leads-board',
     era: 3,
     title: 'Staff Fresh + Cold on the board',
-    hint: 'Put Produce Lead and Plant Operator on the Shift Board once.',
+    hint: 'Put a Produce Lead and a Plant Operator on a shift once (Staff → Shifts & hours).',
     done: (s) => !!s.depth?.leadsOnBoard?.fresh && !!s.depth?.leadsOnBoard?.cold,
     progress: (s) =>
       (s.depth?.leadsOnBoard?.fresh ? 0.5 : 0) + (s.depth?.leadsOnBoard?.cold ? 0.5 : 0),
@@ -1028,7 +1028,7 @@ export const GOALS: GoalDef[] = [
     id: 'survey-on-shift',
     era: 7,
     title: 'Put Survey on a shift',
-    hint: 'Assign a Surveyor or Planogram Clerk to the Shift Board once.',
+    hint: 'Put a Surveyor or Planogram Clerk on a shift once (Staff → Shifts & hours).',
     done: (s) => s.era > 7 || !!s.depth?.surveyShiftOnce,
     progress: (s) => (s.depth?.surveyShiftOnce ? 1 : 0.3),
     cash: () => 0,

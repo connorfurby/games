@@ -34,57 +34,57 @@ function clauseHint(act: Command | null, fallback: string): string {
     case 'unpack':
       return 'Unpack a crate onto the shelf.'
     case 'setFacing':
-      return 'Feature a can facing on the Floor.'
+      return 'Pick which cans to feature in Regulars on the Floor.'
     case 'buyWholesale':
-      return 'Order on a wholesale dip.'
+      return 'Buy a crate while wholesale prices are low.'
     case 'serveRegular':
-      return 'Serve the layaway before patience runs out.'
+      return 'A regular is waiting: serve them before they give up.'
     case 'dockCheckIn':
-      return 'Stamp the dock with a receiver on shift.'
+      return 'Check in a truck at the dock with a receiver on shift.'
     case 'hire':
-      return 'Hire staff for the Open shift.'
+      return 'Hire someone to cover the opening shift.'
     case 'assignShift':
-      return 'Put someone on the Open shift.'
+      return 'Put someone on the opening shift (Staff → Shifts & hours).'
     case 'buyMemo':
-      return fallback.includes(',') ? `File the next memo on the desk.` : fallback
+      return fallback.includes(',') ? `Buy the next memo in Memos.` : fallback
     case 'buyBuild':
-      return 'Buy the next build on the site.'
+      return 'Buy the next building in Build.'
     case 'openStore':
-      return 'Open the next door on Land.'
+      return 'Open your next store on Land.'
     case 'buyPlant':
-      return 'Build the next cold plant.'
+      return 'Build the next cooling plant in Cold.'
     case 'signCoolerLog':
       return 'Sign the cooler log.'
     case 'setManifest':
     case 'setManifestStance':
-      return 'Lock a matching manifest.'
+      return 'File a manifest that matches the run.'
     case 'openLane':
-      return 'Open a logistics lane.'
+      return 'Open a new route in Logistics.'
     case 'dispatchHauler':
-      return 'Send a Hauler on a Pocket Ops trip.'
+      return 'Send a hauler out from Fleet.'
     case 'launchBarge':
       return 'Launch the next barge.'
     case 'printFlyerWeek':
-      return 'Print a flyer week.'
+      return 'Print this week’s flyer in Marketing.'
     case 'fileFlagshipPlanogram':
     case 'fileStandardPlanogram':
-      return 'File the flagship planogram.'
+      return 'File the planogram in Regulars on the Floor.'
     case 'toggleClause':
       return 'Keep the next charter clause.'
     case 'setCharter':
-      return 'Sign the charter fork.'
+      return 'Choose which charter to sign.'
     case 'answerHearing':
-      return 'Answer the hearing on the clause you seated.'
+      return 'Answer the hearing on the clause you kept.'
     case 'fileStandardPhrase':
-      return 'File a phrase to post its habit.'
+      return 'Send a phrase so an agent can take it on.'
     case 'setAgentHabit':
-      return 'Put an agent on the posted habit.'
+      return 'Give an agent that phrase’s habit.'
     case 'seatClause':
-      return 'Seat this clause once the seal dries.'
+      return 'Keep this clause once the seal dries.'
     case 'rehearseAccept':
-      return 'Rehearse the list. A miss scratches a line.'
+      return 'Practise the list. A miss crosses out a line.'
     case 'fileStandardList':
-      return 'File the list.'
+      return 'Fill the list.'
     default:
       return fallback.includes(',') ? fallback.split(',')[0]!.trim() + '.' : fallback
   }

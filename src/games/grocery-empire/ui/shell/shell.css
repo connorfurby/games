@@ -1163,6 +1163,12 @@
       display: none;
     }
 
+    /* With a tour card on screen, awards drop in under the money row instead of over the card. */
+    .g2-root:has(.ge-coach) .g2-toasts {
+      top: calc(env(safe-area-inset-top) + 8.5rem);
+      bottom: auto;
+    }
+
     /* Coach lives in the palette and Menu → Wiki on phones; the HUD keeps room for the money. */
     .g2-hud__controls .g2-icon-btn--coach {
       display: none;

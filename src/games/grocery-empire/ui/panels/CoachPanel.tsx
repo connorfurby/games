@@ -32,7 +32,7 @@ function stretchTourForGoal(s: GameState): DoctorPick | null {
   if (!act) return null
   const map: Record<string, DoctorPick> = {
     serveRegular: { tourId: 'stretch-regulars', why: 'A regular is waiting — Serve them on Floor.' },
-    setFacing: { tourId: 'stretch-regulars', why: 'Feature a can facing so neighbors keep visiting.' },
+    setFacing: { tourId: 'stretch-regulars', why: 'Feature some cans so neighbours keep visiting.' },
     assignShift: { tourId: 'stretch-shifts', why: 'Put someone on the Open shift.' },
     hire: { tourId: 'stretch-shifts', why: 'Hire staff, then staff the Open shift.' },
     payInvoice: { tourId: 'stretch-invoices', why: 'Settle wholesale invoices before they age.' },
