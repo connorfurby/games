@@ -654,11 +654,11 @@
 
   /* ── Tabs / SegmentedControl ────────────────────────────────── */
   .gk-tabs,
+  /* Options wrap onto a second line rather than hiding off the edge. */
   .gk-seg {
     display: flex;
+    flex-wrap: wrap;
     max-width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
   .gk-tabs {
     gap: var(--s-1);

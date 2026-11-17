@@ -818,7 +818,9 @@
   }
 
   .g2-root .g2-hubhead .g2-subtab {
-    flex: 1 1 7rem;
+    /* Share the row evenly; only wrap when the words truly do not fit. */
+    flex: 1 1 0;
+    min-width: max-content;
     justify-content: center;
     border: 1px solid transparent;
     border-radius: 9px;

@@ -278,6 +278,12 @@
     align-items: center;
     gap: var(--s-1) var(--s-3);
   }
+  /* Narrow desks (two-up on tablets): label sits above its control. */
+  @container (max-width: 26rem) {
+    .pf-field {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
   .pf-field__label {
     font: 600 var(--t-xs) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
     color: var(--ge-ink-muted);
@@ -636,6 +642,7 @@
     margin-top: var(--s-4);
   }
   .pf-desk {
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
     gap: var(--s-3);
