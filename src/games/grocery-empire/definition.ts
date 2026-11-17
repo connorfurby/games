@@ -4,7 +4,7 @@ import { GroceryEmpireApp } from './ui/GroceryEmpireApp'
 export const groceryEmpireDefinition: GameDefinition = {
   id: 'grocery-empire',
   title: 'Grocery Empire',
-  tagline: 'From one unpack button to a universe of rations.',
+  tagline: 'Start with one counter. See how far it goes.',
   accent: '#c45c3e',
   coverKey: 'grocery',
   status: 'playable',

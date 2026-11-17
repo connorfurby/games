@@ -636,7 +636,7 @@ FLAGSHIP PLANOGRAM (Floor)
 INVOICE BOOK (Suppliers / Books)
   Due timers, early-pay discount, late fees that hit stars. Lot Survey and leave care.
 
-STAR BOARD (HUD chip)
+STAR BOARD (top bar chip)
   1.0–5.0 next to Next-goal. Soft-caps demand and franchise loyalty; freezes in ration week.
 
 FLYER DESK (Marketing)

@@ -227,7 +227,7 @@ export function NewsPage() {
                   <span>{list.length}</span>
                 </h3>
                 {list.length === 0 ? (
-                  <p className="nw-empty">Nothing filed for this band yet.</p>
+                  <p className="nw-empty">Nothing here yet.</p>
                 ) : (
                   <ol>
                     {list.map((a) => (
@@ -250,7 +250,7 @@ export function NewsPage() {
 
               <section className="nw-box">
                 <h3>At the counter</h3>
-                <p>Your run is where you left it. The wiki explains anything new in this edition.</p>
+                <p>Your run is where you left it.</p>
                 <div className="nw-box__acts">
                   <LinkButton to="/play/grocery-empire" tone="free" size="sm">
                     Play

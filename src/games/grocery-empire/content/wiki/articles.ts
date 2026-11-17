@@ -77,7 +77,7 @@ const RICH: Record<string, { blocks: WikiBlock[]; blurb?: string; title?: string
           'Stamp the memos that open the next department.',
         ],
       },
-      { type: 'figure', fig: 'bottleneck', caption: 'Sales are capped by the narrowest of these four. The HUD tells you which one is lit.' },
+      { type: 'figure', fig: 'bottleneck', caption: 'Sales are capped by the narrowest of these four. The top bar tells you which one is lit.' },
       {
         type: 'callout',
         tone: 'tip',
@@ -89,17 +89,17 @@ const RICH: Record<string, { blocks: WikiBlock[]; blurb?: string; title?: string
   },
   'start-controls': {
     title: 'Reading the screen',
-    blurb: 'HUD, Next Goal, hubs, drawers and the keys that save clicks.',
+    blurb: 'Top bar, Next Goal, hubs, drawers and the keys that save clicks.',
     blocks: [
       {
         type: 'p',
-        text: 'The play screen has four parts: the HUD along the top, the Next Goal bar, the hubs (each hub holds a few departments) and two drawers that slide in from the right.',
+        text: 'The play screen has four parts: the top bar along the top, the Next Goal bar, the hubs (each hub holds a few departments) and two drawers that slide in from the right.',
       },
       { type: 'h', text: 'Top of the screen' },
       {
         type: 'defs',
         items: [
-          { term: 'HUD', def: 'Cash and its net rate, baskets, the era title, pause and speed, and Undo.' },
+          { term: 'Top bar', def: 'Cash and its net rate, baskets, the era title, pause and speed, and Undo.' },
           { term: 'Next Goal', def: 'The one step that moves you toward the next era. Its button takes you there.' },
           { term: 'Star chip', def: 'Your Star Board rating, sitting beside Next Goal.' },
           { term: 'Memos (M)', def: 'The memos drawer and the ledger of what just happened.' },
@@ -111,7 +111,7 @@ const RICH: Record<string, { blocks: WikiBlock[]; blurb?: string; title?: string
       { type: 'figure', fig: 'hub-map', caption: 'Seven hubs. Each shows only the departments you have unlocked, so Era 0 is a single hub.' },
       {
         type: 'p',
-        text: 'Every department page has the same shape: one sentence of purpose, a room you can tap, and a verb tray at the bottom with the main action. On a phone the bottom bar holds Store, Supply, Team, Money and a Hubs sheet for the rest.',
+        text: 'Every department page has the same shape: one sentence of purpose, a room you can tap, and an action bar at the bottom with the main action. On a phone the bottom bar holds Store, Supply, Team, Money and a Hubs sheet for the rest.',
       },
       { type: 'h', text: 'Button colours' },
       {

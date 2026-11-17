@@ -309,7 +309,7 @@ function ArticleView({ nav, go, articles, maxEra, renderOpenMenu, renderPlayLess
       <div className="wk-sealed">
         <Icon name="help" size={28} />
         <h2>Sealed until Era {a.era}</h2>
-        <p>This page talks about things your save has not reached. Turn on spoilers below to read it anyway.</p>
+        <p>This page is about something you have not reached yet. Turn on spoilers below to read it anyway.</p>
       </div>
     )
   }
@@ -452,7 +452,7 @@ function TopicView({ nav, go, articles }: ViewProps) {
           <p>{t?.about}</p>
         </div>
       </header>
-      {list.length ? <ArticleList list={list} go={go} /> : <p className="wk-empty">Nothing open here yet at your era.</p>}
+      {list.length ? <ArticleList list={list} go={go} /> : <p className="wk-empty">Nothing to read here yet.</p>}
     </div>
   )
 }
@@ -587,7 +587,7 @@ function LessonsView({ nav, go, maxEra, lessonsDone, renderPlayLesson, playEra }
               <h2>Sealed</h2>
               <span className="wk-track__count">{n} lessons</span>
             </header>
-            <p className="wk-track__sealed">These open as your save reaches each era — or show spoilers below.</p>
+            <p className="wk-track__sealed">These open as you reach each era, or turn on spoilers below.</p>
           </section>
         )
       })()}
@@ -661,7 +661,7 @@ function AtlasCard({ e, open, here, go, renderOpenMenu }: { e: AtlasEra; open: b
           </div>
         ) : (
           <div className="wk-era__body">
-            <p className="wk-era__focus">Sealed. Reach this era — or show spoilers — to read what waits here.</p>
+            <p className="wk-era__focus">Sealed until you reach this era, or turn on spoilers.</p>
           </div>
         )}
       </div>
@@ -681,7 +681,7 @@ function AtlasView({ nav, go, maxEra, playEra, renderOpenMenu }: ViewProps) {
         </span>
         <div>
           <h1>Era atlas</h1>
-          <p>Thirteen eras, from a counter to the last aisle. Each card lists the door out — the things the game actually checks.</p>
+          <p>Thirteen eras, from a counter to the last aisle. Each card lists what it takes to move on.</p>
         </div>
       </header>
       <EraRibbon current={playEra} maxOpen={maxEra} onPick={(era) => go({ view: 'atlas', id: String(era) })} />
@@ -782,13 +782,13 @@ function HubsView({ renderOpenMenu, maxEra }: ViewProps) {
         </span>
         <div>
           <h1>Hubs & departments</h1>
-          <p>Where every department lives. A hub only shows the departments you have unlocked.</p>
+          <p>Where every department lives. You only see the rooms you have opened.</p>
         </div>
       </header>
       <HubMap />
       <div className="sd-section-head">
         <h2>Departments</h2>
-        <p>One sentence each — the same sentence the game shows on the page.</p>
+        <p>What each room is for.</p>
       </div>
       <ul className="wk-menus">
         {MENU_IDS.filter((m) => m !== 'more' && m !== 'coach' && unlocked.has(m)).map((m) => (

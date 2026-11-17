@@ -1650,6 +1650,74 @@ button.primary {
   border-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
+.ng {
+  width: min(30rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ink, #efe9dc) 22%, transparent);
+  background: var(--bg-2, #16201e);
+  color: var(--ink, #efe9dc);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+  display: grid;
+  gap: 0.75rem;
+}
+.ng__title {
+  margin: 0;
+  font: 400 1.5rem / 1.15 var(--font-display, serif);
+}
+.ng__lede {
+  margin: 0;
+  font: 400 0.875rem / 1.45 var(--font-ui, system-ui, sans-serif);
+  color: var(--muted, #a9b3ad);
+}
+.ng__choices {
+  display: grid;
+  gap: 0.5rem;
+}
+.ng__choice {
+  appearance: none;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ink, #efe9dc) 22%, transparent);
+  background: color-mix(in srgb, var(--ink, #efe9dc) 4%, transparent);
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.ng__choice strong {
+  font: 700 0.9375rem / 1.3 var(--font-ui, system-ui, sans-serif);
+}
+.ng__choice span {
+  font: 400 0.8125rem / 1.45 var(--font-ui, system-ui, sans-serif);
+  color: var(--muted, #a9b3ad);
+}
+.ng__choice:hover {
+  border-color: color-mix(in srgb, var(--ink, #efe9dc) 45%, transparent);
+}
+.ng__choice:focus-visible {
+  outline: 2px solid var(--accent, #f2c14e);
+  outline-offset: 2px;
+}
+.ng__choice.is-on {
+  border-color: var(--accent, #f2c14e);
+  background: color-mix(in srgb, var(--accent, #f2c14e) 10%, transparent);
+}
+.ng__choice--danger.is-on {
+  border-color: var(--danger, #d9665b);
+  background: color-mix(in srgb, var(--danger, #d9665b) 10%, transparent);
+}
+.ng__acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .settings-reset {
   display: grid;
   gap: 0.35rem;

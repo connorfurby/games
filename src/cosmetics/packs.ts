@@ -55,7 +55,7 @@ export const TEXTURE_PACKS: TexturePack[] = [
   {
     id: 'receipt-classic',
     name: 'After Hours',
-    blurb: 'The 2.0 default: freezer-case night, receipt-paper ink, shelf-tag yellow.',
+    blurb: 'The house look: freezer-case night, receipt-paper ink, shelf-tag yellow.',
     unlock: 'default',
     tokenCost: 0,
     vars: {

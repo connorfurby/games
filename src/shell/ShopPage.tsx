@@ -223,7 +223,7 @@ export function ShopPage() {
   const TABS: { id: Tab; label: string; where: string }[] = [
     { id: 'packs', label: 'Packs', where: 'The whole game: paper, ink, light and type.' },
     { id: 'ledger', label: 'Ledger skins', where: 'The Ledger drawer and the Books room.' },
-    { id: 'unpack', label: 'Unpack FX', where: 'The Floor’s Unpack button, in the room and the verb tray.' },
+    { id: 'unpack', label: 'Unpack FX', where: 'The Unpack button on the Floor.' },
     { id: 'ornaments', label: 'Ornaments', where: 'The home shelf and the Fleet harbor pier. Wear several at once.' },
     { id: 'bundles', label: 'Bundles', where: 'Several pieces for less than their parts.' },
   ]
@@ -234,9 +234,9 @@ export function ShopPage() {
       <div className="sd-page sp">
         <header className="sp-hero">
           <div>
-            <p className="sd-eyebrow sd-eyebrow--tag">Shelf tokens · presentation only</p>
+            <p className="sd-eyebrow sd-eyebrow--tag">Shelf tokens · looks only</p>
             <h1 className="sd-title">Dress the counter.</h1>
-            <p className="sd-lede">Packs change the paper and the light — never the math of a basket. Earn tokens from Awards and the daily stamp.</p>
+            <p className="sd-lede">Packs change how the game looks, never how it plays. Earn tokens from Awards and the daily stamp.</p>
           </div>
           <div className="sp-wallet">
             <span className="sp-wallet__coin" aria-hidden>

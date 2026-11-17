@@ -139,5 +139,5 @@ export const PANEL_LORE: Partial<Record<MenuId, string>> = {
   charter: 'Keep four. Clear Concord’s hearing docket, then stamp.',
   lastaisle: 'The list is pinned to this save. Departments you staffed make lines kinder.',
   coach: 'Every spotlight can play again. Skip when the counter already makes sense.',
-  more: 'Settings, cosmetics, guide, daily corner — the meta shelf beside the sim.',
+  more: 'Settings, looks, the guide and today’s corner.',
 }

@@ -37,7 +37,7 @@ export const GLOSSARY: GlossEntry[] = [
     era: 0,
     icon: 'baskets',
     short: 'Every checkout is one basket. It is the only progress score.',
-    more: 'Reputation and Empire rank both climb from baskets. The HUD shows the rate.',
+    more: 'Reputation and Empire rank both climb from baskets. The top bar shows the rate.',
     see: 'start-what',
   },
   {

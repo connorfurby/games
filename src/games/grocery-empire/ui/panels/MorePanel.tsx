@@ -14,6 +14,8 @@ import {
 import { localDayKey } from '@/shell/dailyStamp'
 import { openHotkeyMap } from '@/shell/AppMenu'
 import { useMeta } from '@/shell/MetaContext'
+import { NewGameDialog } from '@/shell/NewGameDialog'
+import { useMuseum } from '../museum/store'
 import { SaveSlots } from '@/shell/SaveSlots'
 import { SettingsModal } from '@/shell/SettingsModal'
 import { PLAYER_CHECKLIST } from '../../content/checklist'
@@ -63,6 +65,8 @@ export function MoreSections({ only }: { only?: MoreSection }) {
     return { visible, done, total: visible.length }
   }, [tick, s])
 
+  const [newGameOpen, setNewGameOpen] = useState(false)
+  const museumNow = useMuseum()
   const newGame = () => {
     if (inDev) {
       setConfirm({
@@ -74,17 +78,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
       })
       return
     }
-    setConfirm({
-      title: 'Start a new game?',
-      body: 'Wipe this Grocery Empire save and start over from Era 0.',
-      confirmLabel: 'New Game',
-      tone: 'danger',
-      onConfirm: () => {
-        deactivateDailyChallenge()
-        clearDailyPending()
-        engine.newGame()
-      },
-    })
+    setNewGameOpen(true)
   }
 
   const startDaily = () => {
@@ -103,7 +97,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
     if (hasSave) {
       setConfirm({
         title: "Start Today's corner?",
-        body: 'Your current save will be copied to slot 3, then replaced with a fresh seeded Era-0 run.',
+        body: 'Your current run is copied to save slot 3 first, then today’s run starts from the first counter.',
         confirmLabel: 'Start corner',
         tone: 'danger',
         onConfirm: run,
@@ -237,6 +231,14 @@ export function MoreSections({ only }: { only?: MoreSection }) {
             <Btn tone="ghost" onClick={startDaily} title={`Seed ${todaysChallenge().seed}`}>
               Today&apos;s corner
             </Btn>
+            <NewGameDialog
+              open={newGameOpen}
+              onClose={() => setNewGameOpen(false)}
+              onStarted={() => setNewGameOpen(false)}
+              relics={Object.keys(museumNow.relics ?? {}).length}
+              awards={Object.keys(meta.achievements).length}
+              tokens={meta.shelfTokens}
+            />
             <Btn tone="danger" coachId="new-game" onClick={newGame}>
               {inDev ? 'Reset sandbox' : 'New Game'}
             </Btn>

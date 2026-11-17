@@ -11,17 +11,18 @@ import { LESSON_COUNT, nextLesson } from '@/games/grocery-empire/content/wiki/le
 import { Button, LinkButton } from '@/games/grocery-empire/ui/kit'
 import { qty } from '@/games/grocery-empire/ui/format'
 import { engine } from '@/games/grocery-empire/sim/engine'
-import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
+
 import { loadGame } from '@/shared/save'
 import {
-  clearDailyPending,
-  deactivateDailyChallenge,
   hasPrimaryGrocerySave,
   loadDailyChallenge,
   prepareDailyChallengeStart,
   todaysChallenge,
 } from './dailyChallenge'
 import { dailyTheme, localDayKey, streakWeek } from './dailyStamp'
+import { NewGameDialog } from './NewGameDialog'
+import { ShellConfirm } from './SaveSlots'
+import { museumStore } from '@/games/grocery-empire/ui/museum/store'
 import { useMeta } from './MetaContext'
 import { ShellFrame } from './ShellFrame'
 import './home.css'
@@ -122,17 +123,20 @@ export function Shelf() {
   const lesson = nextLesson(era ?? 0, save?.tutorials?.done ?? {})
   const lessonsDone = Object.values(save?.tutorials?.done ?? {}).filter(Boolean).length
   const awards = Object.keys(meta.achievements).length
+  const relicCount = Object.keys(museumStore.get().relics ?? {}).length
   const pack = TEXTURE_PACKS.find((p) => p.id === meta.equippedPack) ?? TEXTURE_PACKS[0]
   const affordablePacks = TEXTURE_PACKS.filter((p) => !meta.unlockedPacks.includes(p.id) && p.tokenCost <= meta.shelfTokens).length
 
+  const [newGameOpen, setNewGameOpen] = useState(false)
+  const [dailyAsk, setDailyAsk] = useState(false)
   const newGame = () => {
-    if (save && !window.confirm('Start a new Grocery Empire? This wipes the current local save.')) return
-    deactivateDailyChallenge()
-    clearDailyPending()
-    setActiveSaveId(PRIMARY_SAVE_ID)
-    // Wipe disk AND the live engine singleton (clearGameSave alone is not enough).
-    engine.newGame()
-    nav(`/play/${game.id}`)
+    if (!save && relicCount === 0 && awards === 0) {
+      // Nothing to lose and nothing to keep: just start.
+      engine.newGame()
+      nav(`/play/${game.id}`)
+      return
+    }
+    setNewGameOpen(true)
   }
 
   const today = localDayKey()
@@ -141,15 +145,14 @@ export function Shelf() {
   const dailyActive = !!dailyBlob?.active && dailyBlob.day === today
   const bestToday = meta.dailyChallengeBest?.day === today ? meta.dailyChallengeBest : null
 
+  const beginDaily = () => {
+    prepareDailyChallengeStart({ stashToSlot3: hasPrimaryGrocerySave() })
+    nav(`/play/${game.id}`)
+  }
   const startDaily = () => {
     if (!playable) return
-    const hasSave = hasPrimaryGrocerySave()
-    if (hasSave) {
-      const ok = window.confirm("Start Today's corner? Your current save will be copied to slot 3, then replaced with a fresh seeded Era-0 run.")
-      if (!ok) return
-    }
-    prepareDailyChallengeStart({ stashToSlot3: hasSave })
-    nav(`/play/${game.id}`)
+    if (hasPrimaryGrocerySave()) setDailyAsk(true)
+    else beginDaily()
   }
 
   const cover = game.id === 'grocery-empire' ? GE_COVER : null
@@ -158,6 +161,27 @@ export function Shelf() {
 
   return (
     <ShellFrame variant="overlay" title="Home">
+      <NewGameDialog
+        open={newGameOpen}
+        onClose={() => setNewGameOpen(false)}
+        onStarted={() => nav(`/play/${game.id}`)}
+        relics={relicCount}
+        awards={awards}
+        tokens={meta.shelfTokens}
+      />
+      <ShellConfirm
+        spec={
+          dailyAsk
+            ? {
+                title: "Start today's corner?",
+                body: 'Your current run is copied to save slot 3 first, then today’s run starts from the first counter.',
+                confirmLabel: 'Start today’s corner',
+                onConfirm: beginDaily,
+              }
+            : null
+        }
+        onClose={() => setDailyAsk(false)}
+      />
       <div className="hm" style={{ ['--hm-accent' as string]: game.accent }}>
         <section className="hm-stage" style={cover ? { ['--hm-cover' as string]: `url(${cover})` } : undefined}>
           <div className="hm-stage__bg" aria-hidden />
@@ -182,7 +206,7 @@ export function Shelf() {
                     <Button tone="free" size="lg" className="hm-play" onClick={continuePlay}>
                       {save ? 'Continue' : 'Start'}
                     </Button>
-                    <Button tone="secondary" size="lg" onClick={startDaily} title={save ? `Seed ${dailyToday.seed} · parks this run in slot 3` : `Seed ${dailyToday.seed}`}>
+                    <Button tone="secondary" size="lg" onClick={startDaily} title={save ? 'A fresh start shared by everyone today. Your run is kept in save slot 3.' : 'A fresh start shared by everyone today.'}>
                       Today&apos;s corner
                     </Button>
                     {save ? (
@@ -225,7 +249,7 @@ export function Shelf() {
                     </div>
                   ) : (
                     <p className="hm-first">
-                      A neighbourhood shelf, one price and a stack of crates. About an hour to the corner store; forty to the last aisle.
+                      A neighbourhood shelf, one price and a stack of crates. See how far one counter can go.
                     </p>
                   )}
                   <div className="hm-daily" aria-label="Today's corner">
@@ -249,12 +273,12 @@ export function Shelf() {
                     </ol>
                   </div>
                   <p className="hm-note">
-                    Today&apos;s corner is a seeded Era-0 run{save ? ' — it parks your current run in slot 3.' : '.'}
-                    {dailyActive ? ` Seed ${dailyBlob?.seed ?? dailyToday.seed} is running${bestToday ? `, best ${qty(bestToday.baskets, 'named')} baskets` : ''}.` : bestToday ? ` Today's best: ${qty(bestToday.baskets, 'named')} baskets.` : ''}
+                    Today&apos;s corner is the same fresh start for everyone, new each day.{save ? ' Your current run waits safely in save slot 3.' : ''}
+                    {dailyActive ? ' You are playing it now.' : ''}
                   </p>
                 </>
               ) : (
-                <p className="hm-first">This spine is empty for now. Check back later.</p>
+                <p className="hm-first">This game is not ready yet. Check back later.</p>
               )}
             </motion.div>
 

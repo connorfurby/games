@@ -2,17 +2,17 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/games/grocery-empire/ui/kit'
 import { Link } from 'react-router-dom'
 import type { NumberFormat } from '@/shared/bn'
-import { clearGameSave, deserializeState, exportSave, importSave, loadGame, loadMeta } from '@/shared/save'
+import { deserializeState, exportSave, importSave, loadGame, loadMeta } from '@/shared/save'
 import { DEFAULT_META, type MetaSave } from '@/shared/types'
 import { GAME_VERSION } from '@/games/grocery-empire/content/news'
 import { engine } from '@/games/grocery-empire/sim/engine'
 import { migrate } from '@/games/grocery-empire/sim/migrate'
-import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
-import { clearDailyPending, deactivateDailyChallenge } from './dailyChallenge'
+
+
 import { useMeta } from './MetaContext'
 import { playPurchaseFx } from '@/shared/audio'
-import { museumStore } from '@/games/grocery-empire/ui/museum/store'
-import { describeScope, normalizeScope, RESET_EVERYTHING, resetMeta, type ResetScope } from './resetData'
+import { applyReset } from './applyReset'
+import { describeScope, normalizeScope, RESET_EVERYTHING, type ResetScope } from './resetData'
 import { SaveSlots, ShellConfirm } from './SaveSlots'
 
 interface GroceryPlayGlance {
@@ -142,15 +142,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
       setMsg('Tick at least one thing to reset.')
       return
     }
-    if (chosen.run) {
-      deactivateDailyChallenge()
-      clearDailyPending()
-      setActiveSaveId(PRIMARY_SAVE_ID)
-      engine.newGame()
-    }
-    if (chosen.slots) for (const slot of [1, 2, 3]) clearGameSave(`${PRIMARY_SAVE_ID}-slot-${slot}`)
-    if (chosen.museum) museumStore.reset()
-    replaceMeta(resetMeta(meta, chosen))
+    applyReset(chosen, meta, replaceMeta)
     setResetDraft('')
     setMsg(`Reset: ${describeScope(chosen)}. Reloading…`)
     window.location.assign('/')
@@ -337,7 +329,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
 
           <section className="settings-block settings-block--wide">
             <h3>Saves</h3>
-            <p className="muted settings-hint">Autosave is always on. Slots are manual copies.</p>
+            <p className="muted settings-hint">Your game saves itself. Slots are extra copies you make by hand.</p>
             <SaveSlots
               variant="shell"
               reducedMotion={meta.settings.reducedMotion}

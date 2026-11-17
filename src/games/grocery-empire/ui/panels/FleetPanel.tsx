@@ -310,12 +310,12 @@ export function FleetPanel() {
             <section className="p6-stack" aria-label="The ration">
               <p className="ge-muted">
                 {s.endingChoice === 'continue'
-                  ? 'Continued into the Worlds hub. The counter stays.'
+                  ? 'Continued into Worlds. The counter stays.'
                   : s.endingChoice === 'accept'
                     ? 'Accepted — rebuilt like a Rebrand under a hungry universe.'
                     : s.endingChoice === 'reject'
-                      ? 'Rejected. Unseal opens the Worlds hub without wiping the save.'
-                      : 'The ration — biomass cleared. Continue keeps the save; Accept rebuilds like a Rebrand; Reject pauses.'}
+                      ? 'Rejected. Unseal opens Worlds and keeps everything you have.'
+                      : 'The ration — biomass cleared. Continue keeps your store; Accept starts over like a Rebrand; Reject pauses.'}
               </p>
               {s.depth?.stewardId == null
                 ? stewardCandidates.slice(0, 3).map((m) => {
@@ -342,7 +342,7 @@ export function FleetPanel() {
                 onClick={() =>
                   setConfirm({
                     title: 'Continue past the ration?',
-                    body: 'Same save. Era 7 opens. Cash, fleet, and cold stay. The Worlds hub unlocks.',
+                    body: 'Era 7 opens. Cash, fleet and cold stay. Worlds unlocks.',
                     confirmLabel: 'Continue',
                     onConfirm: () => dispatch({ type: 'continueHorizon' }),
                   })
@@ -385,7 +385,7 @@ export function FleetPanel() {
               {s.endingChoice === 'reject' ? (
                 <ActionRow
                   label="Unseal"
-                  fact="Open the Worlds hub"
+                  fact="Open Worlds"
                   data-coach-id="ending-unseal"
                   disabled={!unsealCheck.ok}
                   title={!unsealCheck.ok ? unsealCheck.reason : undefined}

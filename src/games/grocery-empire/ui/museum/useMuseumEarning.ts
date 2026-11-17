@@ -39,7 +39,7 @@ export function useMuseumEarning(toast: (text: string) => void) {
               ? `${res.feats.length} Oddities found: ${res.feats.map((r) => r.name).slice(0, 2).join(', ')}…`
               : null
         notes = [
-          ...(res.unlockedNow ? ['The Relic Museum is open: see the Museum hub.'] : []),
+          ...(res.unlockedNow ? ['The Relic Museum is open. Find it under Museum.'] : []),
           ...(chestNote ? [chestNote] : []),
           ...(featNote ? [featNote] : []),
         ].slice(0, 1)

@@ -225,7 +225,7 @@ export function BuildPanel() {
                       if (!track) return
                       void confirm({
                         title: `Hibernate ${current?.name}?`,
-                        body: 'Partial refund. Effects park until you rebuild the tier. The bot never does this.',
+                        body: 'Partial refund. Its effects stop until you build the tier again.',
                         confirmLabel: 'Hibernate',
                         tone: 'danger',
                       }).then((ok) => {
