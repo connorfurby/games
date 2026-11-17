@@ -980,7 +980,7 @@ export const GOALS: GoalDef[] = [
     id: 'probe-yard-memo',
     era: 7,
     title: 'Sign the Probe Yard',
-    hint: 'Buy Probe Yard on the memo desk before the first throw.',
+    hint: 'Buy the Probe Yard memo before your first launch.',
     done: (s) => (s.memos['probe-yard'] ?? 0) > 0 || (s.horizon?.planets.length ?? 0) >= 1,
     progress: (s) => ((s.memos['probe-yard'] ?? 0) > 0 ? 1 : 0),
     cash: () => 0,
@@ -1000,7 +1000,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-broadcast',
     era: 7,
     title: 'Air a climate',
-    hint: 'Marketing › Broadcast. Stock a world first, then put its climate on the air.',
+    hint: 'Stock a world first, then put its climate on air from Marketing → Broadcast.',
     done: (s) =>
       s.era > 7 || Object.values(s.late?.broadcasts ?? {}).some((n) => (n ?? 0) > 0),
     progress: (s) => (Object.values(s.late?.broadcasts ?? {}).some((n) => (n ?? 0) > 0) ? 1 : 0),
@@ -1014,7 +1014,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-franchise',
     era: 7,
     title: 'Franchise a world',
-    hint: 'Stock a world, then put your name over an outpost door.',
+    hint: 'Stock a world, then open an outpost there under your name.',
     done: (s) => s.era > 7 || (s.late?.planetFranchises ?? 0) >= 1,
     progress: (s) => ((s.late?.planetFranchises ?? 0) >= 1 ? 1 : stockedCount(s) >= 1 ? 0.5 : 0),
     cash: () => 0,
@@ -1042,8 +1042,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'climate-guest-facing',
     era: 7,
-    title: 'Serve a guest against your facing',
-    hint: 'A climate guest bans your strongest facing until the shift turns. Serve anyway, or swap the facing.',
+    title: 'Serve a picky guest',
+    hint: 'Some guests refuse your featured item until the shift ends. Serve them anyway, or feature something else.',
     done: (s) => s.era > 7 || (s.horizon?.climateServed ?? 0) >= 1,
     progress: (s) => ((s.horizon?.climateServed ?? 0) >= 1 ? 1 : stockedCount(s) >= 1 ? 0.5 : 0),
     cash: () => 0,
@@ -1057,7 +1057,7 @@ export const GOALS: GoalDef[] = [
     id: 'climate-neighbors',
     era: 7,
     title: 'Serve climate neighbors',
-    hint: 'Stock a world, then serve its climate neighbor on a cooldown.',
+    hint: 'Stock a world, then serve its neighbours when they visit.',
     done: (s) => (s.horizon?.climateServed ?? 0) >= HORIZON.climateServeNeed,
     progress: (s) => frac(s.horizon?.climateServed ?? 0, HORIZON.climateServeNeed),
     action: () => ({ type: 'serveClimateNeighbor' }),
@@ -1066,7 +1066,7 @@ export const GOALS: GoalDef[] = [
     id: 'four-worlds',
     era: 7,
     title: 'Open the exchange',
-    hint: 'Climate neighbors + practice shelves. Fast: 4 at 0.85. Slow: 8 credited at 0.72.',
+    hint: 'Serve neighbours and practise shelf puzzles. Quick way: 4 puzzles at 85%. Slow way: 8 puzzles at 72%.',
     done: (s) => s.era >= 8,
     progress: (s) => {
       const prac = s.depth?.practice?.planogram
@@ -1116,7 +1116,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-circuit',
     era: 8,
     title: 'File a circuit',
-    hint: 'One route at the standard score (~0.72).',
+    hint: 'Solve one route puzzle at 72% or better.',
     done: (s) => (s.horizon?.circuits.some((c) => c.score >= 0.72) ?? false),
     progress: (s) => (s.horizon?.circuits.length ? Math.min(1, (s.horizon.circuits[0]?.score ?? 0) / 0.72) : 0),
     cash: () => 0,
@@ -1126,7 +1126,7 @@ export const GOALS: GoalDef[] = [
     id: 'bonded-unpack',
     era: 8,
     title: 'Unpack a bonded crate',
-    hint: 'Pick dry, chill, or fragile from the bonded cage.',
+    hint: 'In the Backroom, pick a dry, chilled or fragile crate from the bonded cage and unpack it.',
     done: (s) => s.era > 8 || (s.late?.unpacked ?? 0) >= 1,
     progress: (s) => ((s.late?.unpacked ?? 0) >= 1 ? 1 : Math.min(0.9, (s.bonded?.crates ?? 0))),
     cash: () => 0,
@@ -1136,7 +1136,7 @@ export const GOALS: GoalDef[] = [
     id: 'wire-ad-goal',
     era: 10,
     title: 'Run a wire ad',
-    hint: 'Spend signal on Marketing › Wire ad once a relay is lit.',
+    hint: 'Once a relay is lit, spend signal on a wire ad in Marketing.',
     done: (s) => s.era > 10 || (s.late?.wireAdsUntil ?? 0) > 0,
     progress: (s) => ((s.late?.wireAdsUntil ?? 0) > 0 ? 1 : (s.horizon?.relays ?? 0) >= 1 ? 0.5 : 0),
     cash: () => 0,
@@ -1146,8 +1146,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'settle-stop-tax',
     era: 8,
-    title: 'Accept a stop’s tax',
-    hint: 'Settling locks the stop’s spoil, tariff, or delay onto that circuit for as long as it stands.',
+    title: 'Settle a stop with a cost',
+    hint: 'Settling a stop adds its cost (spoilage, a tariff or a delay) to that route for good.',
     done: (s) => s.era > 8 || (s.horizon?.settlements ?? 0) >= 1,
     progress: (s) => ((s.horizon?.settlements ?? 0) >= 1 ? 1 : (s.horizon?.settlementUntil ?? 0) > 0 ? 0.5 : 0),
     cash: () => 0,
@@ -1157,7 +1157,7 @@ export const GOALS: GoalDef[] = [
     id: 'stop-settlements',
     era: 8,
     title: 'Settle the stops',
-    hint: 'After each credited circuit, wait the ETA then settle the stop.',
+    hint: 'After a route counts, wait for it to arrive, then settle the stop.',
     done: (s) => (s.horizon?.settlements ?? 0) >= HORIZON.settlementNeed,
     progress: (s) => frac(s.horizon?.settlements ?? 0, HORIZON.settlementNeed),
     action: () => ({ type: 'settleStop' }),
@@ -1166,7 +1166,7 @@ export const GOALS: GoalDef[] = [
     id: 'three-circuits',
     era: 8,
     title: 'Open cultivars',
-    hint: 'Settlements + practice convoys. Fast: 3 at 0.85 with a Stevedore. Slow: credited at 0.72.',
+    hint: 'Settle stops and practise convoys. Quick way: 3 at 85% with a Stevedore on shift. Slow way: routes at 72%.',
     done: (s) => s.era >= 9,
     progress: (s) => {
       const prac = s.depth?.practice?.convoy
@@ -1187,7 +1187,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-planting',
     era: 9,
     title: 'Plant a cross',
-    hint: 'One bed with a child. Standard cross is a weak year.',
+    hint: 'Cross two plants in a bed to grow a new one. Taking the safe default gives a weak year.',
     done: (s) => s.horizon?.plots.some((p) => p.child.length > 0) ?? false,
     progress: (s) => (s.horizon?.plots.some((p) => p.child.length > 0) ? 1 : 0),
     cash: () => 0,
@@ -1197,7 +1197,7 @@ export const GOALS: GoalDef[] = [
     id: 'season-chore',
     era: 9,
     title: 'Lock a season bed',
-    hint: 'The chore locks the bed until the season turns — no clever cross. Skipping it is a weak year.',
+    hint: 'Lock a bed for the season. It cannot be crossed until the season ends; skipping it gives a weak year.',
     done: (s) =>
       s.era > 9 ||
       !!s.horizon?.bedLockedChore ||
@@ -1225,7 +1225,7 @@ export const GOALS: GoalDef[] = [
     id: 'cryo-treaty-goal',
     era: 9,
     title: 'Sign a Cryo Treaty',
-    hint: 'Cold › Cryo Treaty. Plants stay warm while the seal holds.',
+    hint: 'Sign it in Cold. Your plants keep running while the treaty holds.',
     done: (s) => s.era > 9 || (s.late?.cryoImmuneUntil ?? 0) > 0,
     progress: (s) => ((s.late?.cryoImmuneUntil ?? 0) > 0 ? 1 : 0),
     cash: () => 0,
@@ -1235,7 +1235,7 @@ export const GOALS: GoalDef[] = [
     id: 'council-seat',
     era: 9,
     title: 'Seat the Council',
-    hint: 'Buy a first seat from Politics. Seats pay the network and draw scrutiny.',
+    hint: 'Buy your first Council seat in Politics. Seats pay out but draw attention from rivals.',
     done: (s) => s.era > 9 || (s.politics?.acquisitions ?? 0) >= 1,
     progress: (s) => ((s.politics?.acquisitions ?? 0) >= 1 ? 1 : 0),
     cash: () => 0,
@@ -1245,7 +1245,7 @@ export const GOALS: GoalDef[] = [
     id: 'yield-hauls',
     era: 9,
     title: 'Haul the yield',
-    hint: 'Season chore arms a haul — bring it in before the season turns.',
+    hint: 'Locking a bed gives you a harvest. Bring it in before the season ends.',
     done: (s) => (s.horizon?.haulsDone ?? 0) >= HORIZON.yieldHaulNeed,
     progress: (s) => frac(s.horizon?.haulsDone ?? 0, HORIZON.yieldHaulNeed),
     action: (s) => {
@@ -1258,7 +1258,7 @@ export const GOALS: GoalDef[] = [
     id: 'full-year',
     era: 9,
     title: 'Open the signal',
-    hint: 'Yield hauls + named cultivar ≥ 0.85, or 4 seasons and 2 weak years.',
+    hint: 'Bring in harvests and grow a named plant at 85%, or play 4 seasons with 2 weak years.',
     done: (s) => s.era >= 10,
     progress: (s) => {
       const named = Math.min(1, (s.horizon?.namedBest ?? 0) / 0.85)
@@ -1283,7 +1283,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-phrase',
     era: 10,
     title: 'File a phrase',
-    hint: 'Standard is 3/4 (~0.72). Grammar binds neighbours.',
+    hint: 'Solve a phrase puzzle. 3 of 4 right (72%) is enough.',
     done: (s) => (s.horizon?.phrasesCleared ?? 0) >= 1,
     progress: (s) => ((s.horizon?.phrasesCleared ?? 0) >= 1 ? 1 : 0),
     cash: () => 0,
@@ -1293,7 +1293,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-instrument',
     era: 10,
     title: 'File an instrument',
-    hint: 'Invest › Planet Bonds. Cash becomes survey, slowly.',
+    hint: 'Buy Planet Bonds in Invest. They slowly turn cash into survey points.',
     done: (s) =>
       s.era > 10 || Object.values(s.late?.instruments ?? {}).some((n) => n > 0),
     progress: (s) => (Object.values(s.late?.instruments ?? {}).some((n) => n > 0) ? 1 : 0),
@@ -1304,7 +1304,7 @@ export const GOALS: GoalDef[] = [
     id: 'habit-watches',
     era: 10,
     title: 'Post the habit',
-    hint: 'Filing a phrase posts its habit. Keep that agent on it until the watch resolves.',
+    hint: 'Each phrase you send gives an agent a habit. Keep that agent on it until the watch ends.',
     done: (s) => (s.horizon?.watchedPhrases ?? 0) >= HORIZON.habitWatchNeed,
     progress: (s) => frac(s.horizon?.watchedPhrases ?? 0, HORIZON.habitWatchNeed),
     counts: (s) => phraseCounts(s),
@@ -1314,7 +1314,7 @@ export const GOALS: GoalDef[] = [
     id: 'first-agent',
     era: 10,
     title: 'Open the charter',
-    hint: 'Habit watches + phrases. Fast: perfect + habit. Slow: credited phrases, relay, agent.',
+    hint: 'Finish habit watches and phrases. Quick way: one perfect phrase with its habit. Slow way: several phrases, a relay and an agent.',
     done: (s) => s.era >= 11,
     progress: (s) => {
       const credited = s.depth?.practice?.phrase.credited ?? 0
@@ -1351,7 +1351,7 @@ export const GOALS: GoalDef[] = [
     id: 'three-clauses',
     era: 11,
     title: 'Keep four clauses',
-    hint: 'Keep 4. Some grudges cancel; some stack. Read the pair.',
+    hint: 'Keep four clauses. Some clash and cancel out; some add up. Read each pair.',
     done: (s) => (s.horizon?.clauses.length ?? 0) >= 4,
     progress: (s) => Math.min(1, (s.horizon?.clauses.length ?? 0) / 4),
     cash: () => 0,
@@ -1367,7 +1367,7 @@ export const GOALS: GoalDef[] = [
     id: 'answer-hearing',
     era: 11,
     title: 'Answer the hearings',
-    hint: 'Concord files 2–3 rival clauses over sessions — answer each before you sign.',
+    hint: 'Concord brings 2–3 rival clauses over time. Answer each one before you sign.',
     done: (s) => {
       const h = s.depth?.hearing
       if (!h) return s.era > 11 || !!s.depth?.hearingAnswered
@@ -1394,8 +1394,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'clause-seatings',
     era: 11,
-    title: 'Seat this clause',
-    hint: 'Keep a clause, wait out the seal, then seat it. Concord hears what you seat.',
+    title: 'Make a clause final',
+    hint: 'Keep a clause, wait for its seal to dry, then make it final. Concord reacts to what you keep.',
     done: (s) => (s.horizon?.seatingsDone ?? 0) >= HORIZON.clauseSeatingNeed,
     progress: (s) => frac(s.horizon?.seatingsDone ?? 0, HORIZON.clauseSeatingNeed),
     counts: (s) => seatingCounts(s),
@@ -1412,7 +1412,7 @@ export const GOALS: GoalDef[] = [
     id: 'charter-signed',
     era: 11,
     title: 'Sign the charter',
-    hint: 'Choose a charter. Hearings, the charter and four clauses open the Last Aisle.',
+    hint: 'Choose a charter. The hearings, the charter and four clauses open the Last Aisle.',
     done: (s) => s.era >= 12,
     progress: (s) =>
       (s.horizon?.charter ? 0.35 : 0) +
@@ -1466,8 +1466,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'last-list',
     era: 12,
-    title: 'File the list',
-    hint: 'Standard mean ~0.75. Accept wants 0.85 after rehearsal.',
+    title: 'Fill the list',
+    hint: 'Fill the list. The safe default scores about 75%; accepting needs 85% after practice.',
     done: (s) => (s.horizon?.listScore ?? 0) >= 0.75,
     progress: (s) => Math.min(1, (s.horizon?.listScore ?? 0) / 0.75),
     cash: () => 0,
@@ -1477,8 +1477,8 @@ export const GOALS: GoalDef[] = [
   {
     id: 'accept-rehearsal',
     era: 12,
-    title: 'Rehearse the list',
-    hint: 'Practice the Accept at a 0.85 mean. A miss scratches a line to refill.',
+    title: 'Practise the list',
+    hint: 'Practise until you average 85%. A miss crosses out a line you have to refill.',
     counts: (s) => listCounts(s),
     done: (s) =>
       !!s.horizon?.acceptRehearsal && (s.horizon?.acceptRehearsalUntil ?? 0) <= s.time,
@@ -1498,7 +1498,7 @@ export const GOALS: GoalDef[] = [
     id: 'franchise-every-world',
     era: 12,
     title: 'Franchise every world',
-    hint: 'One outpost per stocked world. The store outlives the list.',
+    hint: 'Open an outpost on every world you stock.',
     done: (s) => stockedCount(s) >= 1 && (s.late?.planetFranchises ?? 0) >= stockedCount(s),
     progress: (s) => Math.min(1, (s.late?.planetFranchises ?? 0) / Math.max(1, stockedCount(s))),
     cash: () => 0,
@@ -1508,7 +1508,7 @@ export const GOALS: GoalDef[] = [
     id: 'horizon-ending',
     era: 12,
     title: 'Answer the list',
-    hint: 'Rehearse, then Accept the standing order — or refuse it twice.',
+    hint: 'Practise, then accept the standing order, or refuse it twice.',
     done: (s) => s.horizon?.ending != null,
     progress: (s) =>
       s.horizon?.ending

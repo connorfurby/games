@@ -160,8 +160,8 @@ describe('charter hearing targets the seated clause', () => {
   it('eras 10–12 goals name the verb, with filing counts underneath', () => {
     const titles = Object.fromEntries(GOALS.map((g) => [g.id, g.title]))
     expect(titles['habit-watches']).toBe('Post the habit')
-    expect(titles['clause-seatings']).toBe('Seat this clause')
-    expect(titles['accept-rehearsal']).toBe('Rehearse the list')
+    expect(titles['clause-seatings']).toBe('Make a clause final')
+    expect(titles['accept-rehearsal']).toBe('Practise the list')
     const s = charterDesk()
     for (const id of ['habit-watches', 'clause-seatings', 'accept-rehearsal']) {
       expect(GOALS.find((g) => g.id === id)!.counts?.(s)).toMatch(/\d+\/\d/)
