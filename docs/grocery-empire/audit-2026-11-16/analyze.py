@@ -37,3 +37,7 @@ rb=collections.Counter()
 for x in r:
   for k,v in x['rawBtn'].items(): rb[k]+=1
 print('raw button classes (screens):', rb.most_common(25))
+
+sh=[(x['stage'][:5],x['menu'],x.get('shifts')) for x in r if x.get('shifts')]
+print('layout shifts:',len(sh),'screens')
+for s in sh[:25]: print('  ',s)

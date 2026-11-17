@@ -34,6 +34,8 @@
 | New game keeps relics and achievements with no say | **Done.** New game asks: keep my collection, or start completely fresh. One reset path (`applyReset`). |
 | Cleaner, clearer, more animated | **Ongoing.** Motion pass 1 shipped; ghost buttons have edges; chips, forms and steppers unified. |
 
+**Crawl after this pass (246 screens, Eras 0–7 at 1440 and 390):** 0 console errors, 0 overflow, 0 text under 11 px, 0 low-contrast labels, **0 layout shifts** (the crawler now re-measures the top bar, tabs, room and action buttons after 2.6 s of play; `audit-2026-11-16/audit.cjs`).
+
 **P7 status:** P7-01 storefront banner + purchase reaction ✅ · P7-02 era chapter with store and run numbers ✅ · P7-03 regulars sheet ✅ · P7-04 named daily + week strip ✅ (no rule-changing modifier yet) · P7-06 sound mixer, purchase and era cues ✅ (no per-era ambience yet) · P7-08 name your store ✅. **Not started:** P7-05 photo mode polish, P7-07 collections cosmetics, P7-09 endless framing, P7-10 high-contrast pack.
 
 **P4-F status:** done for Suppliers, Floor restock, Backroom dump, Upgrades and Memos filters; no panel uses a bare chip row as a picker. Still to sweep: sheets inside late-era panels (Horizon, Worlds, Ventures).

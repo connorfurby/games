@@ -72,7 +72,11 @@ const STAGES = process.env.ONE ? ['Era 2 · Chain'] : ['Era 0 · Mid counter','E
         const pageH = document.querySelector('.g2-main, main')?.scrollHeight ?? 0
         return { docOverflow: document.documentElement.scrollWidth > vw + 1, overflow: [...new Set(overflow)].slice(0, 8), small: small.slice(0, 10), smallN: small.length, lowc: lowc.slice(0, 10), lowcN: lowc.length, tiny, tinyEx, clipped: clipped.slice(0, 8), rawBtn, fontSizes: Object.keys(fonts).length, pageH }
       })
-      results.push({ stage, menu: m, file, errs: [...new Set(errs)].slice(0, 5), ...data })
+      // Layout-shift check (design law 13): key controls must not move while the game just runs.
+      const boxes = () => p.evaluate(() => Object.fromEntries(['.g2-hud', '.g2-subtabs', '.pf__head', '.rm, .sf', '.pf__primary', '.pf__secondaries'].map((sel) => { const el = document.querySelector(sel); if (!el) return [sel, null]; const r = el.getBoundingClientRect(); const sc = document.querySelector('.g2-main')?.scrollTop ?? 0; return [sel, [Math.round(r.top + sc), Math.round(r.height)]] })))
+      const b0 = await boxes(); await p.waitForTimeout(2600); const b1 = await boxes()
+      const shifts = Object.keys(b0).filter((k) => b0[k] && b1[k] && (Math.abs(b0[k][0] - b1[k][0]) > 2 || Math.abs(b0[k][1] - b1[k][1]) > 2)).map((k) => `${k} ${b0[k]} -> ${b1[k]}`)
+      results.push({ stage, menu: m, file, errs: [...new Set(errs)].slice(0, 5), shifts, ...data })
     }
     fs.writeFileSync(`${out}/results.json`, JSON.stringify(results, null, 1))
   }

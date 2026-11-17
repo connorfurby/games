@@ -11,47 +11,47 @@ export interface TipDef {
 export const TIPS: TipDef[] = [
   {
     id: 'first-unpack',
-    text: 'Unpack is free: backroom → shelf. Shoppers only buy the shelf. Wholesale is the bill that fills the backroom again.',
+    text: 'Unpack is free. It moves crates from the backroom onto the shelf, and shoppers only buy what is on the shelf. Buying more crates is what costs money.',
     when: (s) => s.stats.unpackedManual >= 1,
   },
   {
     id: 'first-basket',
-    text: 'That top-left number is baskets — the neighborhood’s memory of you. Cash beside it pays rent and trucks.',
+    text: 'Baskets, next to your cash, count every sale you have ever made. Cash pays the bills; baskets are how far the store has come.',
     when: (s) => s.baskets >= 1,
   },
   {
     id: 'first-price',
-    text: 'Shelf price is what shoppers pay. Stock climbing → nudge down. Selling out → raise or unpack harder. Ads come much later.',
+    text: 'Price is what shoppers pay. If the shelf stays full, lower it a little. If you keep selling out, raise it or unpack faster.',
     when: (s) => s.stats.priceChanges >= 1,
   },
   {
     id: 'first-wholesale',
-    text: 'Trucks land in the backroom after a short delay. Buy the walking dips (under ~$0.85 is a win). Then Unpack again.',
+    text: 'A crate you order takes a moment to arrive in the backroom. Wholesale prices drift, so buy when they dip, then unpack.',
     when: (s) => s.stats.ordersPlaced >= 1,
   },
   {
     id: 'first-memo',
-    text: 'Memos are the story spine — each one is a door with a voice. Affordable ones breathe; buy when the next chapter matters.',
+    text: 'Memos unlock new parts of the store and move the story along. One you can afford is worth a look.',
     when: (s) => s.stats.memosDone >= 1,
   },
   {
     id: 'first-staff',
-    text: 'A clerk unpacks while you watch price and wholesale. Keep wages under the till’s pulse.',
+    text: 'A clerk unpacks for you, so you can watch the price and order crates. Just make sure the store earns more than you pay in wages.',
     when: (s) => s.staff.length >= 1,
   },
   {
     id: 'produce',
-    text: 'Produce spoils on a clock. Oldest crate first. A stocker and a cooler turn panic into rotation.',
+    text: 'Produce goes bad if it sits. Sell the oldest crates first; a stocker and a cooler make that easy.',
     when: (s) => !!s.categories.produce,
   },
   {
     id: 'attention',
-    text: 'The back office fills with Attention. Spend Reputation on Archives before Analysts until the next memo fits.',
+    text: 'The back office builds up Attention over time. Early on, Archives are a better use of Reputation than Analysts.',
     when: (s) => s.compute.unlocked,
   },
   {
     id: 'cold',
-    text: 'Cold plants buy time for perishables. Brownouts pause Momentum; the floor at 25% is a bruise, not an ending.',
+    text: 'Cold plants keep fresh food good for longer. If the power dips, things slow down for a while but nothing is lost.',
     when: (s) => !!s.menus.cold || (s.cold?.plants ?? 0) > 0,
   },
   {
@@ -61,47 +61,47 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'recovery',
-    text: 'When the week tightens, mentor crates and emergency trucks buy you another morning. The door stays open.',
+    text: 'If money gets tight, a free starter crate or an emergency truck will get you going again. You cannot get stuck.',
     when: (s) => s.stats.helperCrates + s.stats.bailouts + s.stats.emergencyDeliveries >= 1,
   },
   {
     id: 'ventures',
-    text: 'Ventures drip beside the main heartbeat. Collect when the jar fills — side doors feed the till quietly.',
+    text: 'Ventures earn a little on the side. Each one fills a jar; collect it when it is full.',
     when: (s) => !!s.menus.ventures,
   },
   {
     id: 'upgrades',
-    text: 'Upgrades = cash trees. Empire = basket rank that unlocks deeper Upgrade levels, then trait points. Different tabs, different currencies.',
+    text: 'Upgrades cost cash. Empire rank comes from baskets sold, and a higher rank lets you take upgrades further.',
     when: (s) => !!s.menus.upgrades,
   },
   {
     id: 'empire-vs-upgrades',
-    text: 'Empire rank comes from baskets. Upgrade ranks come from cash. Trait points on Empire are a third spend — never confuse them with Upgrade trees.',
+    text: 'Empire rank comes from baskets. Upgrades cost cash. Trait points, on the Empire page, are a separate thing to spend.',
     when: (s) => !!s.menus.empire && s.empire.level >= 2,
   },
   {
     id: 'scanner',
-    text: 'Scanner Array dumps Attention with wobble. Click for joy — never required for progress.',
+    text: 'The Scanner Array gives a burst of Attention when you click it. It is a bonus; you never need it to move on.',
     when: (s) => !!s.compute.scanner,
   },
   {
     id: 'e2-depot',
-    text: 'Build the depot before store five. Without it, extra doors eat Attention and under-deliver demand.',
+    text: 'Build the depot before your fifth store. Without it, extra stores take Attention and bring in fewer shoppers than they should.',
     when: (s) => s.era >= 2 && s.stores.length >= 2 && !s.depot,
   },
   {
     id: 'e2-attention',
-    text: 'Attention is the cost of every extra key. Walk drifted stores; even shares beat vanity focus.',
+    text: 'Every store you open needs a share of your Attention. Visit a store that is slipping, and spread Attention evenly rather than piling it on one.',
     when: (s) => s.era >= 2 && s.stores.length >= 2,
   },
   {
     id: 'e2-board',
-    text: 'Board meetings want a pick — Expand, Dividend, Shelf R&D, or Cut hours. Ignoring nicks Rep and Brand.',
+    text: 'At a board meeting, pick one: Expand, Dividend, Shelf R&D or Cut hours. Skipping the choice costs a little Reputation and Brand.',
     when: (s) => s.incorporated,
   },
   {
     id: 'e2-book',
-    text: 'The investment book ticks inside a cap. Mid needs Engine L2; High needs L4. Park surplus, spend the rest.',
+    text: 'Investments earn steadily up to a limit. Medium risk needs Engine level 2 and High needs level 4. Invest what you do not need right now.',
     when: (s) => s.invest.unlocked,
   },
   {
@@ -111,7 +111,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e4-lanes',
-    text: 'Ocean lanes burn fuel for Control and cash. Dry tanks idle — never brick.',
+    text: 'Ocean lanes burn fuel and pay back in Control and cash. If the fuel runs out the lane just waits; nothing breaks.',
     when: (s) => s.era >= 4 || (s.fleet?.lanes ?? 0) > 0,
   },
   {
@@ -136,7 +136,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-policy',
-    text: 'Store policy is one voice per door: Local pulls traffic, Premium pulls tickets. Standard is the safe default.',
+    text: 'Each store has one policy. Local brings more shoppers, Premium makes each basket worth more, and Standard is the safe middle.',
     when: (s) => s.era >= 2 && s.stores.length >= 2,
   },
   {
@@ -151,7 +151,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-read',
-    text: 'Read is strategy currency: spend Attention on a Tournament, then buy doctrines. Cash never buys Read.',
+    text: 'Read is what Strategy runs on. Spend Attention on a Tournament to earn it, then buy doctrines with it. Cash cannot buy Read.',
     when: (s) => s.read >= 1,
   },
   {
@@ -161,7 +161,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-rival',
-    text: 'Rival pressure is mild and always answerable: Marketing shows the verb and the price. It also fades on its own.',
+    text: 'A rival only takes a few shoppers, and Marketing always shows how to answer and what it costs. It also fades by itself.',
     when: (s) => s.events?.rival?.kind != null,
   },
   {
@@ -181,7 +181,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e3-brownout',
-    text: 'Brownout floors freshness at 25% and pauses Momentum. Add tanks or shed demand — it is a delay, not a fail.',
+    text: 'In a brownout, freshness drops to 25% and Momentum pauses. Add tanks or run fewer plants; it is a setback, not a loss.',
     when: (s) => (s.cold?.brownouts ?? 0) >= 1,
   },
   {
@@ -191,7 +191,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e4-fuel',
-    text: 'Fuel is the lane bill. Dry lanes idle without bricking; keep a buffer before adding another.',
+    text: 'Lanes run on fuel. A lane with no fuel just waits, so keep some spare before you add another.',
     when: (s) => s.era >= 4 && s.fuel < 20,
   },
   {
@@ -226,7 +226,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e6-hungry',
-    text: 'Hungry laws are optional mutators for the next universe. Two at most — pick the pair you can live with.',
+    text: 'Hungry laws are optional rules that make the next universe harder. You can take up to two, so pick a pair you can live with.',
     when: (s) => s.era >= 6 && (s.prestigeCarry?.universeIndex ?? 0) >= 1,
   },
   {
@@ -288,7 +288,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'weather-dense',
-    text: 'The Wx chip on the Floor is always on: rain pulls cans, heat pulls dairy, cold ages produce. Read it before you restock.',
+    text: 'The weather shows on the Floor: rain sells cans, heat sells dairy, and cold makes produce age faster. Check it before you restock.',
     when: (s) => s.era >= 1 && s.stats.weatherDays >= 2,
   },
   {

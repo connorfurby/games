@@ -1353,8 +1353,8 @@
     transform: translateY(-50%);
     z-index: 2;
     max-width: min(26rem, calc(100vw - 2 * var(--s-3)));
-    min-height: 26px;
-    padding: 0.2rem 0.7rem;
+    min-height: 30px;
+    padding: 0.25rem 0.75rem;
     font-size: var(--t-xs);
     white-space: nowrap;
     overflow: hidden;
