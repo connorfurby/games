@@ -12,6 +12,8 @@ UI and shell only. No sim or balance changes.
 - **No shifting (design law 13):** the HUD alert is one element (`.g2-alert--hang`) absolutely placed on the HUD's bottom edge; `.pf__primary` reserves its reason line; `PanelHelp` picks its tip once per room visit, never times out on screen, and files itself on leaving after 8 s on screen.
 - **Phone portrait rooms:** Fleet (`TALL` layout in `FleetHarborScene`) and Staff (`StaffFloor` phone branch) join Floor.
 - **Reset:** `shell/resetData.ts` (`ResetScope`, `resetMeta`, `normalizeScope`, `describeScope`) + `museumStore.reset()`. Settings → Reset lets the player tick run, save slots, museum, shop and tokens, achievements. Achievements imply shop. Settings are never touched.
+- **Storefront banner (P7-01, first half):** `StoreScene` takes `band` (crops the sky, keeps the street; `BAND` slice in the view box). `SceneStrip` now always renders on the Store hub: a 6.75 rem banner by default (5.25 rem on phones, hidden on short landscape), `Expand`/`Shrink` for the full scene. The hub-head "Show storefront" button is gone.
+- **Form language (P4-F):** Floor restock aisle and Backroom dump aisle are `Field` + `SegmentedControl`; the Upgrades "Can buy" and Memos "Ready only" filters are labelled switches (`.pf-switch`). No panel uses `Chip` as a picker any more.
 - **Tests:** `npm test` 383 passed (`resetData.test.ts`); e2e 17/17 (`reset.spec.ts` new).
 
 ## X. 1.0 Phases 1–3 + first hour — one look, every size, one voice (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **1.0**

@@ -1375,4 +1375,30 @@
   .pf__primary {
     min-height: calc(52px + var(--t-xs-lh, 1rem) + var(--s-1));
   }
+
+  /* Storefront banner: a short living strip over the Store hub. Fixed height, so tabs never jump. */
+  .g2-scenewrap--band .sc-scene {
+    height: 6.75rem;
+  }
+  .g2-scenewrap {
+    margin-bottom: var(--s-3);
+  }
+  .g2-scenewrap__hide {
+    min-height: 28px;
+    padding: 0.15rem 0.6rem;
+    font-size: var(--t-xs);
+  }
+  @media (max-width: 720px) {
+    .g2-scenewrap--band .sc-scene {
+      height: 5.25rem;
+    }
+    .g2-scenewrap {
+      margin-bottom: var(--s-2);
+    }
+  }
+  @media (max-height: 500px) {
+    .g2-scenewrap--band {
+      display: none;
+    }
+  }
 }

@@ -23,7 +23,7 @@ import { officeRebalanceCost } from '../../sim/systems/office'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money, qty } from '../format'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { Button, Chip, Disclosure, EmptyState, Meter, SegmentedControl, useConfirm } from '../kit'
+import { Button, Disclosure, EmptyState, Meter, SegmentedControl, useConfirm, Toggle } from '../kit'
 import { Icon } from '../icons/Icon'
 import { PlayFrame, StatusChip } from '../play'
 import './waveC.css'
@@ -972,9 +972,10 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
               onChange={(e) => setQ(e.target.value)}
               aria-label="Search memos"
             />
-            <Chip selected={readyOnly} onClick={() => setReadyOnly((v) => !v)}>
-              Ready only
-            </Chip>
+            <label className="pf-switch">
+              <Toggle checked={readyOnly} onChange={setReadyOnly} aria-label="Ready only" />
+              <span>Ready only</span>
+            </label>
           </div>
         ) : null}
 

@@ -826,17 +826,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                       {MENUS[menu].name}
                     </p>
                   ) : null}
-                  {hub === 'store' && !sceneOpen && !photoMode ? (
-                    <Button
-                      size="sm"
-                      className="g2-hubhead__scene"
-                      aria-expanded={false}
-                      title="Show the storefront above this room"
-                      onClick={() => setSceneOpen(true)}
-                    >
-                      Show storefront
-                    </Button>
-                  ) : null}
                 </div>
                 {hubMenus(hub).length > 1 ? (
                   <div className="g2-subtabs" role="tablist" aria-label={HUB_BY_ID[hub].name}>

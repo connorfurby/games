@@ -382,7 +382,13 @@ function Queue({ n, doorX }: { n: number; doorX: number }) {
 interface View {
   x0: number
   w: number
+  /** Top of the visible slice and its height. The banner crops the sky and keeps the street. */
+  y0: number
+  h: number
 }
+
+/** The banner's slice: from just above the tallest facade to just under the kerb. */
+const BAND = { y0: 84, h: 146 }
 
 /** One tower on the far horizon (a chain store you own). */
 function Tower({ i, x, tierLights }: { i: number; x: number; tierLights: number }) {
@@ -947,7 +953,7 @@ function SceneInner({
   return (
     <svg
       className="sc-svg"
-      viewBox={`${view.x0} 0 ${view.w} ${H}`}
+      viewBox={`${view.x0} ${view.y0} ${view.w} ${view.h}`}
       preserveAspectRatio="xMidYMax meet"
       role="img"
       aria-label={`${FACADE[tier]!.name}. ${chainStores} other stores. Selling ${sold.toFixed(1)} baskets a second.`}
@@ -1105,11 +1111,12 @@ const Memo = memo(
     view: View
     reducedMotion: boolean
   }) => <SceneInner s={s} museumOpen={museumOpen} view={view} reducedMotion={reducedMotion} />,
-  (a, b) => a.k === b.k && a.view.w === b.view.w && a.view.x0 === b.view.x0,
+  (a, b) => a.k === b.k && a.view.w === b.view.w && a.view.x0 === b.view.x0 && a.view.h === b.view.h,
 )
 
 /** Visible slice of the 1200-wide world: wider containers see more sky and street. */
-function useView(ref: React.RefObject<HTMLDivElement | null>, center: number): View {
+function useView(ref: React.RefObject<HTMLDivElement | null>, center: number, band: boolean): View {
+  const span = band ? BAND.h : H
   const [w, setW] = useState(W)
   useEffect(() => {
     const el = ref.current
@@ -1118,13 +1125,14 @@ function useView(ref: React.RefObject<HTMLDivElement | null>, center: number): V
       const r = el.getBoundingClientRect()
       if (r.height <= 0) return
       // Phones frame the flagship tightly; wide screens see more of the street.
-      const want = Math.max(620, Math.round(((r.width / r.height) * H) / 20) * 20)
+      const want = Math.max(band ? 360 : 620, Math.round(((r.width / r.height) * span) / 20) * 20)
       setW(want)
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [ref])
-  return w >= W ? { x0: -(w - W) / 2, w } : { x0: center - w / 2, w }
+  }, [ref, band, span])
+  const y0 = band ? BAND.y0 : 0
+  return w >= W ? { x0: -(w - W) / 2, w, y0, h: span } : { x0: center - w / 2, w, y0, h: span }
 }
 
 interface Coin {
@@ -1172,7 +1180,7 @@ function SceneLive({ s, reducedMotion, view }: { s: GameState; reducedMotion: bo
   return (
     <svg
       className="sc-live"
-      viewBox={`${view.x0} 0 ${view.w} ${H}`}
+      viewBox={`${view.x0} ${view.y0} ${view.w} ${view.h}`}
       preserveAspectRatio="xMidYMax meet"
       aria-hidden
     >
@@ -1233,20 +1241,23 @@ export function StoreScene({
   state,
   museumOpen = false,
   reducedMotion = false,
+  band = false,
 }: {
   state: GameState
   museumOpen?: boolean
   reducedMotion?: boolean
+  /** Short banner: crops the sky and keeps the street, so the store stays large. */
+  band?: boolean
 }) {
   const dark = darkness(dayPhase(state))
   const ref = useRef<HTMLDivElement>(null)
   const L = layoutOf(state)
-  const view = useView(ref, L.x + L.f.w / 2 - 40)
+  const view = useView(ref, L.x + L.f.w / 2 - 40, band)
   const live = !reducedMotion && !state.paused
   return (
     <div
       ref={ref}
-      className={`sc-scene${dark > 0.55 ? ' is-night' : ''}${live ? ' is-live' : ''}${state.paused ? ' is-paused' : ''}`.trim()}
+      className={`sc-scene${band ? ' sc-scene--band' : ''}${dark > 0.55 ? ' is-night' : ''}${live ? ' is-live' : ''}${state.paused ? ' is-paused' : ''}`.trim()}
     >
       <Memo
         s={state}

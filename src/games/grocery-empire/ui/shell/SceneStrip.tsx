@@ -45,10 +45,15 @@ export function useScenePref(menu: MenuId): [boolean, (v: boolean) => void] {
       /* private mode: the choice just won't outlive this render */
     }
   }
+  // Unchosen: full scene on panels with no room of their own, banner elsewhere.
   return [pref ?? !OWN_SCENE.has(menu), set]
 }
 
-/** The storefront banner. Collapsed, it renders nothing: the hub head carries the toggle. */
+/**
+ * The storefront. By default it is a short living banner over the Store hub: every build,
+ * hire and era shows up on the street. Expanded, it is the full scene with sky and skyline.
+ * The banner keeps its height in both the "Floor" and its sibling tabs, so nothing jumps.
+ */
 export function SceneStrip({
   state,
   museumOpen,
@@ -62,18 +67,17 @@ export function SceneStrip({
   expanded: boolean
   onToggle: (v: boolean) => void
 }) {
-  if (!expanded) return null
   return (
-    <div className="g2-scenewrap">
-      <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} />
+    <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}`}>
+      <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} band={!expanded} />
       <button
         type="button"
         className="g2-scenebar__btn g2-scenewrap__hide"
-        onClick={() => onToggle(false)}
-        aria-expanded
-        title="Collapse the storefront"
+        onClick={() => onToggle(!expanded)}
+        aria-expanded={expanded}
+        title={expanded ? 'Shrink the storefront to a banner' : 'Show the whole street'}
       >
-        Hide
+        {expanded ? 'Shrink' : 'Expand'}
       </button>
     </div>
   )

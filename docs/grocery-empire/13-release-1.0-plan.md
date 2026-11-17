@@ -26,6 +26,10 @@
 | No UI that shifts the layout | **Done:** Go link gone; alert pill hangs from the HUD edge; the reason line under a primary verb keeps its row; tips are picked when a room opens and leave only on Got it. **Law 13 (new):** nothing may appear or disappear in normal play in a way that moves another control. Crawler check to add in P11. | §2 law 13, P11 |
 | Reset must cover shop tokens, museum and achievements | **Done.** Settings → Reset has five tick boxes (run, slots, museum, shop and tokens, achievements). Achievements always take the shop with them so tokens cannot be paid twice. | P6 |
 
+**P4-F status:** done for Suppliers, Floor restock, Backroom dump, Upgrades and Memos filters; no panel uses a bare chip row as a picker. Still to sweep: sheets inside late-era panels (Horizon, Worlds, Ventures).
+
+**P7-01 status:** the storefront is back on screen as a banner over the Store hub (it already reflected builds, eras, weather, queue, rivals). Still to do: a visible reaction at the moment of purchase, and the same banner on the Home run card.
+
 **P4-F — one form language (new, M).** Every picker in every panel uses `Field` + `SegmentedControl`/`Stepper`/`Toggle` inside a `FieldSet`. Remaining ad-hoc pickers to convert: Floor (3 `Chip` rows), Backroom, Memos, Upgrades board, `p6-choice` cards in Cold/Logistics/Politics/Strategy. No bare `Chip` rows as radio groups; no control without a label.
 
 ---
