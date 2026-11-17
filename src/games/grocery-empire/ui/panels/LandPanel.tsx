@@ -309,14 +309,13 @@ function OutpostRoster() {
         </ol>
       )}
       <div className="ge-chip-row">
-        <Button
-          tone={charter.ok ? 'primary' : 'ghost'}
-          disabled={!charter.ok}
-          title={charter.ok ? 'Put the name over the next outpost door.' : charter.reason}
-          onClick={() => dispatch({ type: 'openPlanetFranchise' })}
-        >
-          Charter an outpost
-        </Button>
+        {charter.ok ? (
+          <Button tone="primary" title="Put the name over the next outpost door." onClick={() => dispatch({ type: 'openPlanetFranchise' })}>
+            Charter an outpost
+          </Button>
+        ) : (
+          <p className="ge-muted">Charter an outpost: {charter.reason}</p>
+        )}
       </div>
     </section>
   )

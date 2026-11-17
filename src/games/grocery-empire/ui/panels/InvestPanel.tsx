@@ -374,15 +374,21 @@ export function InvestPanel() {
                   state={state}
                   header={<strong title={inst.blurb}>{inst.name}</strong>}
                   footer={
-                    <Button
-                      size="sm"
-                      tone={check.ok ? 'primary' : 'ghost'}
-                      disabled={!check.ok}
-                      title={!check.ok ? check.reason : inst.blurb}
-                      onClick={() => dispatch({ type: 'buyInstrument', id: inst.id })}
-                    >
-                      {!open ? `Era ${inst.era}` : lots >= lotCap ? 'Full' : `Buy · ${money(cost, numberFormat)}`}
-                    </Button>
+                    check.ok ? (
+                      <Button
+                        size="sm"
+                        tone="primary"
+                        title={inst.blurb}
+                        cost={money(cost, numberFormat)}
+                        onClick={() => dispatch({ type: 'buyInstrument', id: inst.id })}
+                      >
+                        Buy a lot
+                      </Button>
+                    ) : (
+                      <span className="lh-note">
+                        {!open ? `Opens in Era ${inst.era}` : lots >= lotCap ? 'Full' : `${money(cost, numberFormat)} · ${check.reason}`}
+                      </span>
+                    )
                   }
                 >
                   <p className="lh-note">

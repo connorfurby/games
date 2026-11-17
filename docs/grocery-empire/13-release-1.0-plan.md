@@ -122,6 +122,22 @@ python3 docs/grocery-empire/audit-2026-11-16/analyze.py desk   # (paths inside t
 20. z-index values scattered (0–999) despite `--z-*` tokens.
 21. 36 panels; `MemosPanel` 1,018 lines, several 500–600 line panels — hard to keep consistent.
 
+### Owner feedback, 2026-11-17 (binding)
+
+| Ask | Status |
+| --- | --- |
+| "Unpack is behind demand" is untrue and truncated | **Done.** Only shown when the shelf is under half full; short hint, never truncated. |
+| Side popouts have too little content | **Done.** Desks: a room's tools sit on the page (§2 law 14). |
+| Invoices and layaway slips are hard to find and pay | **Done.** Invoices desk on Suppliers with a Pay button each; full book links to it. Regulars desk explains slips with meters. |
+| Empire shows "of 160", does not fit | **Done.** Rank only, centred. |
+| Doctrine board hidden in a tiny popout | **Done.** Full-width Doctrines desk; "Spend N trait points" leads there. |
+| Menu tabs clip | **Done.** Equal-width tab track under a "Menu" title. |
+| Buttons that cannot be clicked yet should not exist | **Done** in the kit (`ActionRow`, tray, pickers, chips) and swept per panel. Unaffordable prices stay as price buttons. |
+| More music and sound variety | **Done.** Sectioned scores with motifs, two new moods, seven new cues wired to real moments. Not ear-checked. |
+| Staff room looks messy | **Done.** Rebuilt layout, slimmer people. |
+| Hire board / Shifts hidden behind small buttons | **Done.** Hire, Crew, Department rules and Shifts are desks. |
+| Scene areas glow and bounce but do nothing | **Done.** `Hit` is inert unless it acts. |
+
 ---
 
 ## 2. Design laws for 1.0 (apply to every task)
@@ -139,6 +155,8 @@ python3 docs/grocery-empire/audit-2026-11-16/analyze.py desk   # (paths inside t
 11. **Spoiler-safe chrome.** No era > current mentioned outside the wiki with spoilers on.
 12. **Numbers read as words where it helps.** "Cash $2.84K · +$17/s" not "+$17.34/s" mid-HUD on phones; full precision in tooltips/Books.
 13. **Nothing shifts.** In normal play, nothing may appear or disappear in a way that moves another control. Reserve the row or hang the newcomer over an edge. (Owner rule, 2026-11-16.)
+14. **Desks, not openers.** A room's tools are laid out on the page. No small secondary that opens a side sheet with a few controls. (Owner rule, 2026-11-17.)
+15. **No dead buttons.** A control that cannot be used yet is text with its reason, not a greyed button. Prices may stay. (Owner rule, 2026-11-17.)
 
 ---
 

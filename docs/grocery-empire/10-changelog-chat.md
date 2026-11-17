@@ -2,6 +2,30 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AB. 1.0 third feedback pass — desks, no dead buttons, music (2026-11-17, on `main`) · SAVE **37** (unchanged)
+
+No state or balance changes; pacing untouched. Owner asks: thin side sheets are pointless, small bottom buttons hide big actions, invoices/slips/doctrines are hard to find, buttons that cannot be pressed should not exist, scene zones that glow and bounce but do nothing, Staff room looks messy, menu tabs clip, more music and sound variety.
+
+- **Desks replace opener+sheet pairs.** `PlayFrame desks={…}` (also on `HubStage`, `ScreenPanel`, `LateHubShell`). A kit `Sheet` inside the desk area renders in place as a titled card (`.pf-desk`, `--wide` spans the row) via `kit/desk.ts` `DeskInline`; `deskHidden` hides a card until it applies. Sheets nested inside a desk are real sheets again. `scrollToDesk(cls)` brings a desk into view. Converted: Floor (Regulars, Shelf price, Restock, Off-world bay), Staff (Hire, Crew, Department rules, Shifts & hours), Empire (Doctrines full width, Autonomous, Rebrand, Hungry laws), Suppliers (Invoices with a Pay button per invoice, Dock check-in, Auto-restock; price lock moved into the order form), Marketing, Logistics, Cold, Build, Charter, Fleet, Invest. Item-detail sheets (rival dossier, strategy detail, map node, museum) stay sheets. When converting, point the old opener at `scrollToDesk`, then remove openers the desk makes redundant.
+- **No dead buttons.** `ActionRow disabled` renders an info line with the reason (`.pf-row--info`, `.pf-row__why`); usable rows end in a verb pill. `VerbTray` drops disabled secondaries and accepts `primary: null` (no tray when there is nothing to do). `SegmentedControl`/`Tabs` leave out disabled options (the current one always shows). Disabled `Chip` is a plain tag. Panel sweeps: Politics petitions, Map zoom levels, Invest deposit/withdraw/risk/instruments, Land walk/train/charter, Fleet charter, Books incorporate, Cold plants/treaty, Staff policies, Dock check-in aisles. Crawler (`audit.cjs`) now lists visible disabled buttons per screen; remaining ones are prices (relic dust, venture costs) and stepper bounds.
+- **Room zones.** `Hit` is tappable only when it does something (an action, another panel, or a real control on the page to scroll to); otherwise it renders as art (`.rm-art`). Fake prompts drawn into scenes ("Tap bay to place an order →", "Dock check-in →", the Doctrine badge) are gone.
+- **Floor hint is truthful.** `salesBottleneck` only calls unpack the limit when the shelf is under half full; labels are short. The room shows a calm amber pill that never truncates.
+- **Empire ring** shows just the rank, centred; the duplicate Rank chip is gone. Reward facts are text, not disabled rows. "Spend N trait points" is the primary when points are waiting.
+- **Staff room rebuilt:** chips on their own row, stations aligned, crew lined up under the station they work with "+N" overflow. Room `Person` is slimmer (legs, torso, hair) everywhere.
+- **Menu drawer:** "Menu" title + close, then an equal-width tab track that always fits (Dev, Game, Guide, Notices, Settings, Saves).
+- **Music:** scores play A A B A with a recurring motif, era lead voices (pluck/bell/soft), arpeggio and shaker where they fit, and an occasional key lift. New `harbor` (Eras 5–6) and `night` (22:00–05:00 player clock) moods; `moodForEra(era, hour)`.
+- **Sound:** new cues `toggle`, `coin`, `truck`, `hire`, `goal`, `rank`, `notice`; repeated cues vary in pitch; the till walks a little tune. `fx/useSoundDirector` plays hire/rank/memo/delivery/sale from state diffs (quiet on loads and big jumps). Toggles and notices make their own sound.
+- **Copy:** full aisle names in pickers; plain wording for routes, dispatch, upkeep, cooler log, plants, shifts, invoices, doctrines ("Refund all points"), restock priority.
+- **Tests:** `npm test` 409 passed; e2e 20/20. Crawls at 1440 and 390: 0 console errors, 0 overflow, 0 layout shifts.
+
+## AA. 1.0 second pass, continued — awards wall, music, photo mode (2026-11-16, on `main`) · SAVE **37** (unchanged)
+
+- **Awards wall** (`shell/AchievementsPage` + `awards.css`, `achievements/groups.ts`): awards grouped on shelves with plaques, progress and a hall total.
+- **Sound set + music** (`shared/audio.ts`): `sfx` cues (click, open, blocked, unpack, sale, purchase, unlock, chest, era, award), generative score per era, Settings → Sound (volume, music + level, room tone). Wakes on first gesture.
+- **Photo mode** on the storefront banner; **High contrast** setting (`html.a11y-contrast`).
+- **One title per screen:** hub title is sr-only; the storefront banner sits on every hub and carries the dialogue slot.
+- **Menu** folded to fewer tabs (Game holds run, progress and leave).
+
 ## Z. 1.0 features and second feedback pass (2026-11-16, on `main`) · SAVE **37** · GAME_VERSION **1.0**
 
 One new save field (`storeName`, display only). No balance changes; pacing untouched.
