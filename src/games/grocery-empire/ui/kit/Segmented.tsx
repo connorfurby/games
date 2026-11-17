@@ -63,8 +63,10 @@ function Segments<V extends string>({
       onKeyDown={onKey}
       aria-label={rest['aria-label']}
     >
-      {shown.map((o) => {
+      {shown.map((o, i) => {
         const on = o.value === value
+        // Roving focus: the chosen option takes Tab; with nothing chosen yet, the first one does.
+        const tabbable = on || (i === 0 && !shown.some((x) => x.value === value))
         return (
           <button
             key={o.value}
@@ -72,7 +74,7 @@ function Segments<V extends string>({
             role={isTabs ? 'tab' : 'radio'}
             aria-selected={isTabs ? on : undefined}
             aria-checked={isTabs ? undefined : on}
-            tabIndex={on ? 0 : -1}
+            tabIndex={tabbable ? 0 : -1}
             title={o.title}
             className={cx('gk-seg__item', on && 'is-on')}
             onClick={() => onChange(o.value)}

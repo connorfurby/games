@@ -127,9 +127,10 @@ export function Hud({
             className={`g2-icon-btn${s.paused ? ' is-on' : ''}`}
             onClick={() => dispatch({ type: 'setPaused', paused: !s.paused })}
             title={s.paused ? 'Resume (Space)' : 'Pause (Space)'}
+            aria-label="Pause"
             aria-pressed={s.paused}
           >
-            {s.paused ? '▶' : '❚❚'}
+            <span aria-hidden>{s.paused ? '▶' : '❚❚'}</span>
           </button>
           {speeds.map((sp) => (
             <button
