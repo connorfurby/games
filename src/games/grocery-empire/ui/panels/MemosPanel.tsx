@@ -202,7 +202,7 @@ function ColdChainGraph({ s }: { s: GS }) {
     { id: 'reach-in', label: 'Reach-in', done: cold >= 1, how: 'Cooler Permit memo, then Build → Cold' },
     { id: 'dairy', label: 'Dairy', done: !!s.categories.dairy, how: 'Dairy Case memo' },
     { id: 'walk-in', label: 'Walk-in', done: cold >= 2, how: 'Build → Cold tier 2' },
-    { id: 'meat', label: 'Meat', done: !!s.categories.meat, how: 'Butcher Block memo (needs Att)' },
+    { id: 'meat', label: 'Meat', done: !!s.categories.meat, how: 'Butcher Block memo (needs Attention)' },
   ]
   const next = nodes.find((n) => !n.done)
   return (
@@ -670,7 +670,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
                 </div>
               ) : null}
               <div data-coach-id="compute-reputation">
-                <span>Rep</span>
+                <span>Reputation</span>
                 <strong>{s.compute.reputation}</strong>
               </div>
             </div>
@@ -707,7 +707,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
                       ? `${archivesWarn} Hiring an Analyst now mostly wastes the Reputation.`
                       : 'Spend 1 Reputation to fill Attention faster.',
                     detail: `Cap stays ${qty(attCap)}.`,
-                    confirmLabel: archivesWarn ? 'Hire anyway · 1 Rep' : 'Hire · 1 Rep',
+                    confirmLabel: archivesWarn ? 'Hire anyway · 1 Reputation' : 'Hire · 1 Reputation',
                     onConfirm: () => dispatch({ type: 'buyAnalyst' }),
                   })
                 }
@@ -723,7 +723,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
                     title: 'Open Archive',
                     body: 'Spend 1 Reputation to raise the Attention ceiling.',
                     detail: `Cap becomes ${qty(nextCap)}.`,
-                    confirmLabel: 'Open · 1 Rep',
+                    confirmLabel: 'Open · 1 Reputation',
                     onConfirm: () => dispatch({ type: 'buyArchive' }),
                   })
                 }}

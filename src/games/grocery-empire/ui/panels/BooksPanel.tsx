@@ -326,7 +326,7 @@ function BooksPanelInner() {
           ) : null}
           <Rows
             rows={[
-              { label: 'Rep ETA', value: etaLabel(repEta), title: `Next +1 @ ${qty(s.compute.nextRepAt)} baskets` },
+              { label: 'Next Reputation', value: etaLabel(repEta), title: `+1 Reputation at ${qty(s.compute.nextRepAt)} baskets` },
               ...(s.arrears > 0.005
                 ? [
                     {

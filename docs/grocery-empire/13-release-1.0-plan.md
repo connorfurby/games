@@ -26,6 +26,16 @@
 | No UI that shifts the layout | **Done:** Go link gone; alert pill hangs from the HUD edge; the reason line under a primary verb keeps its row; tips are picked when a room opens and leave only on Got it. **Law 13 (new):** nothing may appear or disappear in normal play in a way that moves another control. Crawler check to add in P11. | §2 law 13, P11 |
 | Reset must cover shop tokens, museum and achievements | **Done.** Settings → Reset has five tick boxes (run, slots, museum, shop and tokens, achievements). Achievements always take the shop with them so tokens cannot be paid twice. | P6 |
 
+### Owner feedback, 2026-11-16 late (binding)
+
+| Ask | Status |
+| --- | --- |
+| Copy reads like it was written for the build, not the player | **First pass done** (purpose lines, Home, news, hotkeys, shop, wiki, settings, abbreviations). **Open:** tips, tutorials, memos and late-era panel bodies still need a line-by-line read (P3-07). |
+| New game keeps relics and achievements with no say | **Done.** New game asks: keep my collection, or start completely fresh. One reset path (`applyReset`). |
+| Cleaner, clearer, more animated | **Ongoing.** Motion pass 1 shipped; ghost buttons have edges; chips, forms and steppers unified. |
+
+**P7 status:** P7-01 storefront banner + purchase reaction ✅ · P7-02 era chapter with store and run numbers ✅ · P7-03 regulars sheet ✅ · P7-04 named daily + week strip ✅ (no rule-changing modifier yet) · P7-06 sound mixer, purchase and era cues ✅ (no per-era ambience yet) · P7-08 name your store ✅. **Not started:** P7-05 photo mode polish, P7-07 collections cosmetics, P7-09 endless framing, P7-10 high-contrast pack.
+
 **P4-F status:** done for Suppliers, Floor restock, Backroom dump, Upgrades and Memos filters; no panel uses a bare chip row as a picker. Still to sweep: sheets inside late-era panels (Horizon, Worlds, Ventures).
 
 **P7-01 status:** the storefront is back on screen as a banner over the Store hub (it already reflected builds, eras, weather, queue, rivals). Still to do: a visible reaction at the moment of purchase, and the same banner on the Home run card.

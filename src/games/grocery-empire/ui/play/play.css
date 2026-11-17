@@ -465,3 +465,136 @@
     }
   }
 }
+
+/*
+ * 1.0 motion pass. Everything here moves with opacity and transform only, so nothing
+ * changes the layout (design law 13), and all of it stops under reduced motion.
+ */
+@layer motion {
+  /* A room arrives: its parts rise in, one after another. */
+  @keyframes pf-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .pf > * {
+    animation: pf-rise 260ms var(--ease-out, ease-out) both;
+  }
+  .pf > *:nth-child(2) {
+    animation-delay: 35ms;
+  }
+  .pf > *:nth-child(3) {
+    animation-delay: 70ms;
+  }
+  .pf > *:nth-child(4) {
+    animation-delay: 105ms;
+  }
+  .pf > *:nth-child(n + 5) {
+    animation-delay: 140ms;
+  }
+  /* The sticky verb must not carry a transform after it lands, or it stops sticking. */
+  .pf > .pf__primary,
+  .pf > .pf__tray {
+    animation-name: pf-fade;
+  }
+  @keyframes pf-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Secondary actions and cards lift a hair under the pointer. */
+  .pf__secondaries .gk-btn,
+  .mu-wingcard,
+  .rg-card,
+  .pf-form,
+  .ge-card {
+    transition:
+      transform 120ms var(--ease-out, ease-out),
+      border-color 120ms var(--ease-out, ease-out),
+      box-shadow 120ms var(--ease-out, ease-out),
+      background-color 120ms var(--ease-out, ease-out);
+  }
+  @media (hover: hover) {
+    .pf__secondaries .gk-btn:hover:not(:disabled),
+    .mu-wingcard:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-2);
+    }
+  }
+  .pf__secondaries .gk-btn:active:not(:disabled),
+  .mu-wingcard:active {
+    transform: translateY(1px) scale(0.99);
+  }
+
+  /* The main button breathes once when it becomes available. */
+  @keyframes pf-ready {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 0%, transparent);
+    }
+    40% {
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--ge-tag, #f2c14e) 35%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 12px transparent;
+    }
+  }
+  .pf__primary .gk-btn:not(:disabled):not(.is-short) {
+    animation: pf-ready 700ms var(--ease-out, ease-out) 1;
+  }
+
+  /* A tip slides in from the side it will leave by. */
+  @keyframes pf-tip-in {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .pf-help {
+    animation: pf-tip-in 280ms var(--ease-out, ease-out) 180ms both;
+  }
+
+  /* Numbers on phone room chips tick over instead of snapping. */
+  .rm-chips__value {
+    transition: color 200ms var(--ease-out, ease-out);
+  }
+
+  /* Segmented choices and switches glide. */
+  .gk-seg__item,
+  .pf-switch .gk-toggle__track,
+  .pf__help {
+    transition:
+      color 120ms var(--ease-out, ease-out),
+      background-color 120ms var(--ease-out, ease-out),
+      border-color 120ms var(--ease-out, ease-out),
+      transform 120ms var(--ease-out, ease-out);
+  }
+  .pf__help:active {
+    transform: scale(0.92);
+  }
+
+  html.ge-reduced-motion .pf > *,
+  html.ge-reduced-motion .pf-help,
+  html.ge-reduced-motion .pf__primary .gk-btn {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pf > *,
+    .pf-help,
+    .pf__primary .gk-btn {
+      animation: none;
+    }
+  }
+}

@@ -170,7 +170,7 @@ export function ExchangePanel() {
         settleCheck,
         taxLine
           ? `Settle ${pendingCircuit ? named(pendingCircuit.stop) : 'the middle stop'}. Accepts ${taxLine}.`
-          : 'Settle the middle stop after the ETA. Free.',
+          : 'Settle the middle stop once it arrives. Free.',
       ),
       onClick: () => dispatch({ type: 'settleStop' }),
     }

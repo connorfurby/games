@@ -27,8 +27,8 @@ export function StrategyHallScene() {
       chips={[
         { label: 'Read', value: qty(readBank, 'named') },
         { label: 'Next', value: `${nextCost} Read` },
-        { label: 'Tourny', value: coolLeft > 0 ? `${coolLeft}s` : `+${payout}`, neg: coolLeft > 0 && !tournyReady },
-        { label: 'Att', value: `${Math.floor(s.compute.attention)}/${Math.floor(attCap)}` },
+        { label: 'Tournament', value: coolLeft > 0 ? `${coolLeft}s` : `+${payout}`, neg: coolLeft > 0 && !tournyReady },
+        { label: 'Attention', value: `${Math.floor(s.compute.attention)}/${Math.floor(attCap)}` },
       ]}
       skyTop="var(--sc-night-top)"
       skyBottom="var(--sc-night-bottom)"
@@ -52,7 +52,7 @@ export function StrategyHallScene() {
       {/* Attention meter column */}
       <g transform="translate(200 58)">
         <rect width="56" height="150" rx="6" fill="#121820" stroke="#3a4458" />
-        <Sign x={28} y={18} text="Att" small anchor="middle" />
+        <Sign x={28} y={18} text="Attention" small anchor="middle" />
         <rect x="16" y="28" width="24" height="100" rx="4" fill="#1e2836" />
         <rect
           x="16"

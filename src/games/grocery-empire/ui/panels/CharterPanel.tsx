@@ -140,7 +140,7 @@ export function CharterPanel() {
       size: 'lg',
       coachId: 'charter-seat',
       disabled: !seatCheck.ok,
-      title: gateTitle(seatCheck, 'Seat the kept clause after the seal ETA. Concord hears what you seat. Free.'),
+      title: gateTitle(seatCheck, 'Seat the kept clause once the seal is ready. Concord hears what you seat. Free.'),
       onClick: () => dispatch({ type: 'seatClause' }),
     }
     goalFail = seatCheck.ok ? undefined : seatCheck.reason

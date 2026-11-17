@@ -48,7 +48,7 @@ export function StrategyPanel() {
             label:
               coolLeft > 0
                 ? `Cooling · ${coolLeft}s`
-                : `Run tournament · −${CAPITAL.tournamentAttention} Att · +${payout} Read`,
+                : `Run tournament · −${CAPITAL.tournamentAttention} Attention · +${payout} Read`,
             tone: tournyCheck.ok ? 'free' : 'primary',
             size: 'lg',
             coachId: 'strategy-tournament',

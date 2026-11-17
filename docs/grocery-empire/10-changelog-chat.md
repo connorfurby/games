@@ -2,6 +2,23 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## Z. 1.0 features and second feedback pass (2026-11-16, on `main`) · SAVE **37** · GAME_VERSION **1.0**
+
+One new save field (`storeName`, display only). No balance changes; pacing untouched.
+
+- **SAVE 37 — `storeName`.** Default `''` in `createInitialState`; `migrate` reads it through `cleanStoreName` (one line, trimmed, ≤ 22 chars). Command `setStoreName`. `storeDisplayName(s)` is what the sign, HUD brand and chapter card print. UI: Name / Rename button on the storefront banner → `shell/StoreNameDialog`.
+- **Storefront:** banner reacts to growth (`storeGrowth` in `SceneStrip`: era, build tiers, stores, staff) with a ring and one overlaid line. `ChapterCard` shows the store band and four run numbers and plays the era sting.
+- **Collection vs run (owner ask).** A *run* is the campaign save. The *collection* is the Museum (`grocery-museum`), awards and shop (site `meta`); it outlives runs on purpose. Every start-over path now goes through `shell/applyReset.ts`. **New game** (Home and Menu → Run) opens `shell/NewGameDialog`: *Keep my collection* or *Start completely fresh* (run + slots + museum + awards + shop). Nothing is pre-selected. `window.confirm` is gone from Home.
+- **Sound:** `shared/audio.ts` has a mixer (`setAudioMix`: muted, volume, ambience) fed from `settings.volume` / `settings.ambience` (new, defaulted). Every `Button` with a `cost` plays the purchase cue. Settings has a Sound block. Still silent by default.
+- **Notices:** `shell/notices.ts` keeps the last 40 toasts of the visit; Menu → Notices (`NoticesPanel`).
+- **Regulars:** Floor → Regulars (`panels/RegularsSheet`), from `depth.regulars.seen`. No new state.
+- **Daily:** `dailyTheme(seed)` names the day (flavour only); `streakWeek` drives a Monday–Sunday strip on Home.
+- **Buttons:** ghost `Button`s have a hairline edge everywhere. Design rule: no bare clickable words.
+- **Motion:** `play.css` `@layer motion` — rooms rise in, secondaries and cards lift, the primary pulses once when it becomes available, tips slide in. Opacity/transform only; all off under reduced motion.
+- **Copy (owner ask): write for players, not for the build.** Room purpose lines (`content/menus.ts`), tagline, launch article, hotkey list and shop/wiki/settings text were rewritten. Do not put pacing claims ("about an hour to…"), seeds, slot mechanics, "sim", "HUD", "verb tray", "hub" jargon or version talk in player-facing text. Spell out Attention, Reputation, Tournament.
+- **Fixes:** negative-width rects in narrow storefront views; notices hidden behind an open dialog.
+- **Tests:** `npm test` 404 passed; e2e 20/20 (`store-name`, `new-game` new).
+
 ## Y. 1.0 owner feedback pass — overlays, forms, no shifting, scoped reset (2026-11-16) · SAVE **36** (unchanged)
 
 UI and shell only. No sim or balance changes.

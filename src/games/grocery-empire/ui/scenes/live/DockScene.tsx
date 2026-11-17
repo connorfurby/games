@@ -24,7 +24,7 @@ export function DockScene() {
         { label: 'Trucks', value: String(orders.length) },
         { label: 'Backroom', value: qty(back) },
         {
-          label: 'Next ETA',
+          label: 'Next truck',
           value: orders.length ? clock(Math.min(...orders.map((o) => o.eta))) : '—',
         },
       ]}
