@@ -1,3 +1,4 @@
+import { driftShopperLoss } from '../../sim/systems/chain'
 import { useState } from 'react'
 import { MENUS } from '../../content/menus'
 import { STORE_TRAIT_BY_ID, isPlaceTraitId, policyMatchesTrait } from '../../content/depth'
@@ -21,7 +22,7 @@ import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Button, EmptyState } from '../kit'
-import { StatusChip, type VerbSecondary, type VerbTrayProps } from '../play'
+import { type VerbSecondary, type VerbTrayProps } from '../play'
 import { OutpostStreetScene } from '../scenes/live/OutpostStreetScene'
 import { EarlyLandStreet, LandStreet } from '../land/LandStreet'
 
@@ -452,8 +453,6 @@ export function LandPanel() {
       ]
     : []
 
-  const filed = Object.values(owned).filter(Boolean).length
-  const hotInfo = hotTraitInfo(s)
 
   return (
     <section className="ge-panel">
@@ -478,30 +477,19 @@ export function LandPanel() {
           secondaries,
         }}
       >
-        <StatusChip tone="idle" title="Deeds filed">
-          Filed {filed}
-        </StatusChip>
-        {s.era >= 2 && hotInfo ? (
-          <StatusChip
-            tone={hotInfo.matchedDoors > 0 ? 'ready' : 'warn'}
-            title="A block event pulls one neighborhood trait. Set a door policy that matches it."
-          >
-            Hot trait · {hotInfo.traitName} · match {hotPolicyLabels(hotInfo.policies)} · {hotInfo.matchedDoors}/
-            {s.stores.length} doors
-          </StatusChip>
+        {s.stores.length > 1 ? (
+          <p className="ge-muted" data-coach-id="land-drift-why">
+            {driftShopperLoss(s) > 0.005
+              ? `Drift is costing you ${(driftShopperLoss(s) * 100).toFixed(1)}% of your shoppers. `
+              : 'Your stores are tidy. '}
+            Every store drifts over time; one short of Attention drifts faster and a trained one drifts slower. Walk the
+            floor to clear it.
+          </p>
         ) : null}
         <section className="ge-empire-block" aria-label="Expansions">
-          {(s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time) ||
-          (s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed ? (
+          {(s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed && !(s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time) ? (
             <p className="ge-muted" data-coach-id="land-hot-trait" style={{ marginBottom: '0.55rem' }}>
-              {s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time
-                ? `Hot trait live — match a door policy to ${
-                    s.depth.blockEvent.traitBias
-                      ? STORE_TRAIT_BY_ID[s.depth.blockEvent.traitBias as keyof typeof STORE_TRAIT_BY_ID]?.name ??
-                        s.depth.blockEvent.traitBias
-                      : 'the rush'
-                  } (${hotInfo ? hotPolicyLabels(hotInfo.policies) : 'matching policy'}) before the window ends.`
-                : `Hot-trait walks ${s.depth?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed} toward the cold permit.`}
+              Walks during a block event: {s.depth?.hotTraitWalks ?? 0} of {DEPTH.hotTraitWalkNeed} (needed for the cold permit).
             </p>
           ) : null}
           <header className="ge-empire-block__head">

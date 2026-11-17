@@ -290,12 +290,7 @@ export function chainDemandMul(s: GameState): number {
   const countMul = 1 + countBonus * 0.15
   const depotMul = s.depot ? CHAIN.depotDemandMul : 1
   // Drift (0..1) softens demand when a store hasn't been walked.
-  let driftPenalty = 0
-  for (const st of s.stores) {
-    const d = Math.max(0, Math.min(1, st.drift ?? 0))
-    driftPenalty += d
-  }
-  const driftMul = 1 - Math.min(0.2, (driftPenalty / Math.max(1, n)) * 0.25)
+  const driftMul = 1 - driftShopperLoss(s, n)
   return avg * countMul * depotMul * driftMul
 }
 
@@ -497,4 +492,11 @@ export function setStorePolicy(s: GameState, id: string, policy: StorePolicy) {
   st.policy = policy
   log(s, `${st.name} policy → ${policy}.`, 'info')
   maybeCreditHotTraitWalk(s)
+}
+
+/** Share of shoppers lost to drift across the chain (0 to 0.2). One source for the sim and the Land page. */
+export function driftShopperLoss(s: GameState, n: number = s.stores.length): number {
+  let driftPenalty = 0
+  for (const st of s.stores) driftPenalty += Math.max(0, Math.min(1, st.drift ?? 0))
+  return Math.min(0.2, (driftPenalty / Math.max(1, n)) * 0.25)
 }
