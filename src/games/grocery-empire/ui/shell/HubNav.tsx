@@ -2,7 +2,6 @@ import { LayoutGroup, motion } from 'motion/react'
 import { useState, type ReactNode } from 'react'
 import { doctrinesAtEra } from '../../content/era2'
 import { MENUS, type MenuId } from '../../content/menus'
-import { HORIZON } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import type { GameState } from '../../sim/state'
 import { Icon } from '../icons/Icon'
@@ -64,7 +63,6 @@ export function HubNav({
   const collapse = phone && !state.tutorials.active
 
   const unlocked = (h: HubDef): MenuId[] => h.menus.filter((id) => !!state.menus[id])
-  const seasonMin = Math.max(0, Math.ceil((HORIZON.seasonSec - (state.horizon?.seasonT ?? 0)) / 60))
 
   // Cheap readiness checks, once per render, only for hubs the player has open.
   const readyHubs = new Set<HubId>()
@@ -79,22 +77,13 @@ export function HubNav({
         </span>
       )
     }
-    if (h.id === 'worlds' && state.era >= 9) {
-      return (
-        <>
-          <span className="g2-hub__badge" aria-label={`Season ends in ${seasonMin} min`} title={`Season · ${seasonMin}m`}>
-            {seasonMin}m
-          </span>
-          {readyHubs.has('worlds') ? <span className="g2-hub__dot" aria-label="A filing is ready" /> : null}
-        </>
-      )
-    }
+    // The season clock lives on the Cultivars page; a minutes badge here read like an unread count.
     if (readyHubs.has(h.id)) {
       return (
         <span
           className="g2-hub__dot"
-          aria-label={h.id === 'empire' ? 'A doctrine is affordable' : 'A filing is ready'}
-          title={h.id === 'empire' ? 'A doctrine is affordable' : 'A filing is ready'}
+          aria-label={h.id === 'empire' ? 'A strategy is affordable' : 'A filing is ready'}
+          title={h.id === 'empire' ? 'A strategy is affordable' : 'A filing is ready'}
         />
       )
     }

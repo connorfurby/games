@@ -70,7 +70,7 @@ export function ExchangeScene({
             </g>
           )
         })}
-        {hulls === 0 ? <Sign x={480} y={210} text="Keel is quiet — open a circuit" anchor="middle" /> : null}
+        {hulls === 0 ? <Sign x={480} y={210} text="No convoys yet: plan a route" anchor="middle" /> : null}
       </Hit>
       <Person x={900} y={230} tint="#c45a3c" name="Maris" scale={0.85} working={hulls > 0} />
     </RoomScene>

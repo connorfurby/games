@@ -22,6 +22,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Map: removed the Zoom in / Zoom out tray buttons that duplicated the ring picker. Marketing room chips read Celebrity and Price war.
 - Rooms: the number row now paints after the art (and ignores taps), so billboard bulbs and similar art never cover the chips. Cold tanks no longer repeat the shared fill % under every tank.
 - Tip deck: about 30 tips rewritten in plain words (no wet/dry lanes, doctrines with teeth, drift, Momentum, county yield, files the silence).
+- Late game: the Worlds hub no longer shows a season-minutes badge that read like an unread count; Signal's mast is a lattice radio tower (the old pole looked like a gallows); Greenhouse labels sit on a dark plate and empty beds are dashed outlines so they read on the pale spring sky; Exchange says "No convoys yet: plan a route"; Last Aisle purpose matches the five-line list.
 - Phone crawl p8: 123 screens, 0 errors, 0 overflow, 0 shifts, no new dead buttons; low-contrast hits down from 14 to 2.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

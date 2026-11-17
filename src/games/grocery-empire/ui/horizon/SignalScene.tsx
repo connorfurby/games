@@ -32,8 +32,17 @@ export function SignalScene({
       floor="#241e33"
       height={280}
     >
-      <rect x="120" y="56" width="5" height="140" fill="#efe9dc" />
-      <path d="M125 62 H210" stroke="#efe9dc" strokeWidth="2.5" />
+      {/* Radio mast: lattice tower, lit tip, waves heading for the marks. */}
+      <g stroke="#cfc6e8" strokeWidth="2" fill="none" strokeLinejoin="round">
+        <path d="M104 196 L122 60 L140 196" />
+        <path d="M108 166 L136 166 M111 136 L133 136 M114 106 L130 106 M117 80 L127 80" />
+        <path d="M108 166 L133 136 L111 136 L130 106 L114 106 L127 80" opacity="0.6" />
+      </g>
+      <circle cx="122" cy="56" r="5" fill="#f2c14e" />
+      <g stroke="#f2c14e" strokeWidth="2" fill="none" opacity="0.7" strokeLinecap="round">
+        <path d="M136 46 Q146 56 136 66" />
+        <path d="M146 38 Q162 56 146 74" opacity="0.6" />
+      </g>
       <path d="M230 120 H880" stroke="#8d84c4" strokeWidth="2" strokeDasharray="6 8" opacity="0.7" />
 
       <Hit

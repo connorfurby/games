@@ -193,7 +193,7 @@ export const MENUS: Record<MenuId, MenuDef> = {
     id: 'lastaisle',
     name: 'Last Aisle',
     glyph: 'LA',
-    purpose: 'Fill eight lists. The better they match, the better the ending.',
+    purpose: 'Fill the five lines of Ivo’s list. The better they match, the better the ending.',
   },
   coach: {
     id: 'coach',

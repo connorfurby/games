@@ -35,7 +35,7 @@ export function GreenhouseScene({
       label={`${name}. Season ${Math.round(frac * 100)} percent through. ${shown.length} beds.`}
       chips={[
         { label: 'Season', value: name },
-        { label: 'Turn', value: `${Math.round(frac * 100)}%` },
+        { label: 'Progress', value: `${Math.round(frac * 100)}%` },
         { label: 'Beds', value: `${planted}/${shown.length || 0}` },
         ...(seed != null ? [{ label: 'Seed', value: seed < 10 ? seed.toFixed(1) : String(Math.floor(seed)) }] : []),
       ]}
@@ -46,9 +46,11 @@ export function GreenhouseScene({
       height={240}
     >
       {/* Season dial under the chips, then the glasshouse roof over the beds. */}
+      {/* Dark plate so the label reads on every season sky, pale spring included. */}
+      <rect x="26" y="58" width="320" height="38" rx="6" fill="#1c1916" opacity="0.7" />
       <Sign x={36} y={74} text={`${name} · ${Math.round(frac * 100)}% through`} small />
-      <rect x="36" y="80" width="300" height="6" rx="3" fill="#1c1916" opacity="0.25" />
-      <rect x="36" y="80" width={300 * frac} height="6" rx="3" fill="#1c1916" opacity="0.7" />
+      <rect x="36" y="82" width="300" height="6" rx="3" fill="#efe9dc" opacity="0.25" />
+      <rect x="36" y="82" width={300 * frac} height="6" rx="3" fill="#efe9dc" opacity="0.85" />
       <path d="M70 118 L480 92 L890 118" fill="none" stroke="#1c1916" strokeOpacity="0.3" strokeWidth="2" />
       <path d="M70 118 V172 M890 118 V172" stroke="#1c1916" strokeOpacity="0.2" strokeWidth="2" />
 
@@ -67,7 +69,16 @@ export function GreenhouseScene({
           const w = Math.max(36, gap - 16)
           return (
             <g key={i} transform={`translate(${x} 122)`}>
-              <rect width={w} height="52" rx="4" fill={filled ? '#3f6b3a' : '#efe9dc'} opacity={filled ? 1 : 0.55} />
+              <rect
+                width={w}
+                height="52"
+                rx="4"
+                fill={filled ? '#3f6b3a' : '#1c1916'}
+                opacity={filled ? 1 : 0.55}
+                stroke={filled ? undefined : '#efe9dc'}
+                strokeOpacity="0.5"
+                strokeDasharray={filled ? undefined : '5 4'}
+              />
               {filled ? (
                 <path
                   d={`M${w / 2} 40 C${w / 2} 22 ${w - 6} 18 ${w / 2} 8 C6 18 ${w / 2} 22 ${w / 2} 40 Z`}
