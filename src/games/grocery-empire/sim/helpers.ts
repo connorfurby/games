@@ -2,7 +2,7 @@ import type { CategoryId } from '../content/categories'
 import { DIALOGUE_BY_ID } from '../content/dialogue'
 import { ERA_STORY, MENU_LORE } from '../content/lore'
 import { MENU_IDS, type MenuId } from '../content/menus'
-import { TUTORIAL_BY_ID, type TutorialStep } from '../content/tutorials'
+import { OPENING_LEGACY_IDS, TUTORIAL_BY_ID, type TutorialStep } from '../content/tutorials'
 import { DEPTH } from './balance'
 import type { Batch, GameState, LedgerKind } from './state'
 
@@ -167,6 +167,25 @@ function armBaseline(s: GameState, id: string, stepIndex: number): Record<string
   return baseline
 }
 
+/** Mark tip / dialogue ids this step already taught so they never reappear. */
+export function silenceTutorialStep(s: GameState, step: TutorialStep | undefined) {
+  if (!step) return
+  if (step.legacyId) s.tutorials.done[step.legacyId] = true
+  for (const id of step.silence?.tips ?? []) s.tipsSeen[id] = true
+  for (const id of step.silence?.lines ?? []) {
+    s.seenLines[id] = true
+    s.dialogueQueue = s.dialogueQueue.filter((x) => x !== id)
+  }
+}
+
+/** Skip / finish the opening tour: every legacy spine tour counts as done. */
+export function finishOpeningLegacy(s: GameState) {
+  for (const id of OPENING_LEGACY_IDS) s.tutorials.done[id] = true
+  const opening = TUTORIAL_BY_ID.opening
+  if (!opening) return
+  for (const step of opening.steps) silenceTutorialStep(s, step)
+}
+
 export function beginTutorial(s: GameState, id: string) {
   if (!TUTORIAL_BY_ID[id]) return
   s.tutorials.active = {
@@ -181,9 +200,12 @@ export function advanceTutorialStep(s: GameState) {
   const t = s.tutorials.active
   if (!t) return
   const def = TUTORIAL_BY_ID[t.id]
+  const step = def?.steps[t.step]
+  silenceTutorialStep(s, step)
   const next = t.step + 1
   if (!def || next >= def.steps.length) {
     s.tutorials.done[t.id] = true
+    if (t.id === 'opening') finishOpeningLegacy(s)
     s.tutorials.active = null
     s.tutorials.calmUntil = s.time + TUTORIAL_CALM_SEC
     if (def) log(s, `Lesson closed: ${def.name}. The aisle keeps the habit.`, 'story')

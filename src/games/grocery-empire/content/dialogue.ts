@@ -46,25 +46,28 @@ function menuLine(id: MenuId): DialogueLine | null {
   }
 }
 
-/** Post-intro teaching beats — before coach spotlight feels less sudden. */
+/**
+ * Legacy post-intro strip beats. Kept for speaker lookup / DevMode skip.
+ * Facts now live on the `opening` coach tour — these never auto-queue.
+ */
 const OPENING: DialogueLine[] = [
   {
     id: 'open-shelf',
     speaker: 'clerk',
     text: 'Shelf is what shoppers buy. Backroom is crates waiting. Unpack moves stock onto the shelf — free.',
-    when: (s) => s.introSeen,
+    when: () => false,
   },
   {
     id: 'open-baskets',
     speaker: 'clerk',
     text: 'Baskets (big number, top-left) are how the block remembers you. Cash beside them pays rent and trucks.',
-    when: (s) => s.introSeen && !!s.seenLines['open-shelf'],
+    when: () => false,
   },
   {
     id: 'open-unpack-only',
     speaker: 'operations',
     text: 'For now: Unpack. Coach will spotlight price and wholesale after you have stock moving. Skip anytime.',
-    when: (s) => s.introSeen && !!s.seenLines['open-baskets'],
+    when: () => false,
   },
 ]
 

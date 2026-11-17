@@ -19,6 +19,20 @@ export interface TutorialStep {
   id: string
   /** Matches data-coach-id in UI. */
   coachId: string
+  /**
+   * When this node is in the DOM (e.g. a Sheet control), the spotlight follows it
+   * instead of coachId. Used so Price / Restock teach the real control.
+   */
+  followCoachId?: string
+  /**
+   * `act` soft-pauses and veils the store; `look` leaves the floor clickable.
+   * Default `act`.
+   */
+  present?: 'act' | 'look'
+  /** Mark this catalog tour done when the step completes (opening → unpack, …). */
+  legacyId?: string
+  /** Whisper tips / dialogue lines this step already taught — never re-queue them. */
+  silence?: { tips?: string[]; lines?: string[] }
   title: string
   /** 2–4 short sentences. */
   body: string
@@ -230,8 +244,67 @@ const HORIZON_TOURS: TutorialDef[] = [
   ),
 ]
 
+/** Legacy Era 0 spine tours folded into `opening` — kept for Coach catalog replay. */
+export const OPENING_LEGACY_IDS = ['unpack', 'baskets', 'price', 'wholesale'] as const
+
 export const TUTORIALS: TutorialDef[] = [
   // ── Era 0 ────────────────────────────────────────────────────────────────
+  {
+    id: 'opening',
+    name: 'Opening',
+    era: 0,
+    steps: [
+      {
+        id: 'opening-unpack',
+        coachId: 'floor-unpack',
+        present: 'act',
+        legacyId: 'unpack',
+        silence: { tips: ['first-unpack'], lines: ['first-unpack'] },
+        title: 'Unpack onto the shelf',
+        body: 'Shelf is what shoppers buy. Backroom is crates waiting. Press Unpack — free — to move stock onto the shelf.',
+        recovery: 'Empty shelf = no sales.',
+        action: { type: 'unpack', params: { n: 1 } },
+        doneWhen: { kind: 'stat', key: 'unpackedManual', min: 1 },
+      },
+      {
+        id: 'opening-baskets',
+        coachId: 'floor-baskets',
+        present: 'look',
+        legacyId: 'baskets',
+        silence: { tips: ['first-basket'], lines: ['first-sale'] },
+        title: 'Baskets are the score',
+        body: 'Baskets (top-left) are how the block remembers you. Cash beside them pays rent and trucks.',
+        recovery: 'Slow sales only delay the next memo.',
+        doneWhen: { kind: 'stat', key: 'sold', min: 1 },
+      },
+      {
+        id: 'opening-price',
+        coachId: 'floor-price',
+        followCoachId: 'floor-price-step',
+        present: 'act',
+        legacyId: 'price',
+        silence: { tips: ['first-price'] },
+        title: 'Your shelf price',
+        body: 'Open Price, then nudge the stepper. Start near $1.50. Stock climbing → lower. Selling out → raise or Unpack.',
+        recovery: 'A bad price only bleeds cash — nudge it.',
+        action: { type: 'setPrice', params: { delta: -0.05 } },
+        doneWhen: { kind: 'stat', key: 'priceChanges', min: 1 },
+      },
+      {
+        id: 'opening-restock',
+        coachId: 'floor-wholesale',
+        followCoachId: 'floor-wholesale-buy',
+        present: 'act',
+        legacyId: 'wholesale',
+        silence: { tips: ['first-wholesale'], lines: ['first-wholesale'] },
+        title: 'Buy more stock',
+        body: 'Open Restock and buy a crate. Truck → backroom → Unpack again. Dips under ~$0.85 are wins.',
+        recovery: 'Overpaying only burns cash.',
+        action: { type: 'buyWholesale', params: { qty: 1 } },
+        doneWhen: { kind: 'stat', key: 'ordersPlaced', min: 1 },
+      },
+    ],
+  },
   {
     id: 'unpack',
     name: 'Unpack',
@@ -272,6 +345,7 @@ export const TUTORIALS: TutorialDef[] = [
       {
         id: 'price-spot',
         coachId: 'floor-price',
+        followCoachId: 'floor-price-step',
         title: 'Your shelf price',
         body: 'Start near $1.50. Stock climbing → lower. Selling out → raise or Unpack.',
         recovery: 'A bad price only bleeds cash — nudge it.',
@@ -288,6 +362,7 @@ export const TUTORIALS: TutorialDef[] = [
       {
         id: 'wholesale-spot',
         coachId: 'floor-wholesale',
+        followCoachId: 'floor-wholesale-buy',
         title: 'Buy more stock',
         body: 'Buy a crate → truck → backroom → Unpack. Dips under ~$0.85 are wins.',
         recovery: 'Overpaying only burns cash.',

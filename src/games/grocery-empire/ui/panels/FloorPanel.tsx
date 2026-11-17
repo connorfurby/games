@@ -251,15 +251,17 @@ function FloorPanelInner() {
         }
       >
         <div className="fp-card__stack">
-          <Stepper
-            label="shelf price"
-            value={Number(s.price.toFixed(2))}
-            step={0.1}
-            min={PRICE.min}
-            max={PRICE.max}
-            format={(v) => money(v, numberFormat)}
-            onChange={(v) => nudge(v - s.price)}
-          />
+          <div data-coach-id="floor-price-step">
+            <Stepper
+              label="shelf price"
+              value={Number(s.price.toFixed(2))}
+              step={0.1}
+              min={PRICE.min}
+              max={PRICE.max}
+              format={(v) => money(v, numberFormat)}
+              onChange={(v) => nudge(v - s.price)}
+            />
+          </div>
           {orderDef ? (
             <Meter
               tone={marginTone}
@@ -321,6 +323,7 @@ function FloorPanelInner() {
             <Button
               tone="primary"
               feedback
+              coachId="floor-wholesale-buy"
               affordable={s.cash >= wholesaleCost}
               cost={money(wholesaleCost, numberFormat)}
               title={`Buy one ${orderName} crate`}

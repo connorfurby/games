@@ -78,11 +78,8 @@ export const EARLY_TIP_IDS = [
   'first-staff',
 ] as const
 
-/** Era 0–1 spoken strip lines (seenLines) that replay on NG+. */
+/** Era 0–1 spoken strip lines (seenLines) that replay on NG+. Openers stay marked — coach owns that lesson. */
 export const EARLY_LINE_IDS = [
-  'open-shelf',
-  'open-baskets',
-  'open-unpack-only',
   'first-unpack',
   'first-sale',
   'first-wholesale',

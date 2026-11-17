@@ -69,13 +69,14 @@ import {
   advanceTutorialStep,
   beginTutorial,
   clamp,
+  finishOpeningLegacy,
   isMenuId,
   log,
-  queueDialogue,
   queueTutorial,
   replayTutorial,
   round2,
   setEra,
+  skipOpeningDialogue,
   sumQty,
   unlockMenu,
 } from './helpers'
@@ -1597,8 +1598,9 @@ const coreHandlers = {
       s.introSeen = true
       s.paused = false
       log(s, 'The counter is yours. Unpack puts stock on the shelf. Baskets are the score; cash pays the bills.', 'story')
-      log(s, 'Story speaks along the bottom first. Coach spotlights controls after.', 'story')
-      queueDialogue(s, 'open-shelf')
+      // Opening strip facts live on the coach card — mark them seen so they never fight the tour.
+      skipOpeningDialogue(s)
+      if (!s.tutorials.done['opening'] && !s.tutorials.active) beginTutorial(s, 'opening')
     },
   },
   setAutoRestock: {
@@ -1656,6 +1658,7 @@ const coreHandlers = {
     run: (s) => {
       const id = s.tutorials.active!.id
       s.tutorials.done[id] = true
+      if (id === 'opening') finishOpeningLegacy(s)
       s.tutorials.active = null
       s.tutorials.calmUntil = s.time + 10
     },

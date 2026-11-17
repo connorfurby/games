@@ -299,6 +299,7 @@ describe('Grocery Empire 2.0 smoke', () => {
     s.board.lastResolvedAt = 1
     s.tipsSeen['first-unpack'] = true
     s.tipsSeen['e2-depot'] = true
+    s.tutorials.done['opening'] = true
     s.seenLines['open-shelf'] = true
     s.seenLines['first-sale'] = true
     s.seenLines['depot-online'] = true
@@ -306,7 +307,9 @@ describe('Grocery Empire 2.0 smoke', () => {
     expect(run(s, { type: 'acceptEnding' }).ok).toBe(true)
     expect(s.tipsSeen['first-unpack']).toBeUndefined()
     expect(s.tipsSeen['e2-depot']).toBe(true)
-    expect(s.seenLines['open-shelf']).toBeUndefined()
+    // Opening strip ids stay marked — coach owns that lesson and they never auto-queue.
+    expect(s.seenLines['open-shelf']).toBe(true)
+    expect(s.tutorials.done['opening']).toBeUndefined()
     expect(s.seenLines['first-sale']).toBeUndefined()
     expect(s.seenLines['depot-online']).toBe(true)
     // Accept now rebuilds like a Rebrand: the queue starts over, so the early line is gone.

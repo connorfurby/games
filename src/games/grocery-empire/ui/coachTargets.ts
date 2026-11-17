@@ -12,7 +12,9 @@ import { HUBS, MENU_COACH, hubOf } from './shell/hubs'
 export const COACH_TARGETS: Record<string, string | null> = {
   'floor-unpack': 'floor',
   'floor-price': 'floor',
+  'floor-price-step': 'floor',
   'floor-wholesale': 'floor',
+  'floor-wholesale-buy': 'floor',
   'floor-layaway': 'floor',
   'floor-serve-regular': 'floor',
   'floor-baskets': null,

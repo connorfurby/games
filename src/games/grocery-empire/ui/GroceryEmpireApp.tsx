@@ -25,6 +25,7 @@ import { useMeta } from '@/shell/MetaContext'
 import { MENUS, MENU_IDS, type MenuId } from '../content/menus'
 import { MEMOS } from '../content/memos'
 import { DIALOGUE_BY_ID } from '../content/dialogue'
+import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { can } from '../sim/commands'
 import { pendingTip } from '../content/tips'
 import { PRICE } from '../sim/balance'
@@ -48,7 +49,6 @@ import { Hud } from './shell/Hud'
 import { useStable } from './useStable'
 import { isDevSave } from '../sim/saveKey'
 import { ToolsDrawer, type ToolsTab } from './shell/ToolsDrawer'
-import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { HUBS, HUB_BY_ID, MENU_COACH, hubOf, type HubId } from './shell/hubs'
 import { StoreScene } from './scene/StoreScene'
 import { SceneStrip } from './shell/SceneStrip'
@@ -298,15 +298,26 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       engine.setSoftPauseMul(0)
       return
     }
+    const active = engine.getState().tutorials.active
+    const stepPresent =
+      active != null
+        ? (TUTORIAL_BY_ID[active.id]?.steps[active.step]?.present ?? 'act')
+        : null
     const soft =
-      softPauseTutorialsRef.current && engine.getState().tutorials.active ? 0.25 : 1
+      softPauseTutorialsRef.current && active && stepPresent === 'act' ? 0.25 : 1
     engine.setSoftPauseMul(soft)
   }
 
-  // Soft-pause: intro / photo / Esc-hold freeze; coach soft-pauses (plan O1 / R).
+  // Soft-pause: intro / photo / Esc-hold freeze; act-coach soft-pauses (look steps run full speed).
   useEffect(() => {
     restoreSoftPauseMul()
-  }, [meta.settings.softPauseTutorials, state.tutorials.active, state.introSeen, photoMode])
+  }, [
+    meta.settings.softPauseTutorials,
+    state.tutorials.active,
+    state.tutorials.active?.step,
+    state.introSeen,
+    photoMode,
+  ])
 
   useEffect(() => {
     if (devMode) return
@@ -446,8 +457,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
         return
       }
       const live = engine.getState()
+      const active = live.tutorials.active
+      const stepPresent =
+        active != null
+          ? (TUTORIAL_BY_ID[active.id]?.steps[active.step]?.present ?? 'act')
+          : null
       const soft =
-        softPauseTutorialsRef.current && live.tutorials.active ? 0.25 : 1
+        softPauseTutorialsRef.current && active && stepPresent === 'act' ? 0.25 : 1
       engine.setSoftPauseMul(soft)
     }
 

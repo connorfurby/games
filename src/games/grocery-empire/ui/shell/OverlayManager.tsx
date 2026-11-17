@@ -123,7 +123,7 @@ export function OverlayManager({
 
       {clear && !chapterEra && state.tutorials.active ? <CoachOverlay active={state.tutorials.active} /> : null}
 
-      {tip && clear && !chapterEra && !showDialogue ? (
+      {tip && clear && !chapterEra && !showDialogue && !state.tutorials.active ? (
         <div className="ge-tip-whisper g2-whisper" role="status" aria-live="polite">
           <p className="ge-tip-whisper__text">{tip.text}</p>
           <Btn tone="ghost" onClick={() => dispatch({ type: 'dismissTip', id: tip.id })}>

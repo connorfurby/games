@@ -80,30 +80,21 @@ function sumBackroomKinds(s: GameState) {
 
 /** Queue real TUTORIALS ids when features appear — teach before / as the player acts. */
 function tickTutorialQueue(s: GameState) {
-  // Hold the coach until the opening cutscene + strip teaching finish.
+  // Hold the coach until the opening cutscene finishes.
   if (!s.introSeen) return
-  if (!s.seenLines['open-unpack-only']) return
 
-  // Era 0 spine — one lesson at a time; baskets before wholesale so the score lands first.
-  queueTutorial(s, 'unpack')
-  if (s.tutorials.done['unpack'] || s.stats.unpackedManual >= 1) {
-    queueTutorial(s, 'baskets')
-  }
-  if (s.tutorials.done['baskets'] || s.stats.sold >= 1) {
-    queueTutorial(s, 'price')
-  }
-  if (s.tutorials.done['price'] || s.stats.priceChanges >= 1) {
-    queueTutorial(s, 'wholesale')
-  }
-  if (
-    s.tutorials.done['wholesale'] ||
-    s.stats.ordersPlaced >= 1 ||
-    (s.time >= 90 && s.tutorials.done['price'])
-  ) {
-    queueTutorial(s, 'rent')
-  }
-  if (s.tutorials.done['rent'] || s.stats.rentPaid >= 1 || s.baskets >= 5) {
-    queueTutorial(s, 'meta-shelf')
+  // One continuous Era 0 lesson. Legacy unpack/baskets/price/wholesale stay in the catalog.
+  const legacyDone =
+    !!s.tutorials.done['unpack'] ||
+    !!s.tutorials.done['baskets'] ||
+    !!s.tutorials.done['price'] ||
+    !!s.tutorials.done['wholesale']
+  if (s.tutorials.done['opening']) {
+    /* already taught */
+  } else if (legacyDone) {
+    s.tutorials.done['opening'] = true
+  } else {
+    queueTutorial(s, 'opening')
   }
 
   // Era 1 / unlock gates — ids must match TUTORIALS

@@ -51,8 +51,8 @@ describe('live cash and tours', () => {
   it('does not auto-close a menu tour just because the tab is unlocked', () => {
     const s = createInitialState(5)
     s.introSeen = true
-    s.seenLines['open-unpack-only'] = true
-    for (const id of ['unpack', 'baskets', 'price', 'wholesale', 'rent', 'meta-shelf']) {
+    s.tutorials.done['opening'] = true
+    for (const id of ['unpack', 'baskets', 'price', 'wholesale']) {
       s.tutorials.done[id] = true
     }
     s.menus.staff = true

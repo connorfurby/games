@@ -2383,7 +2383,14 @@
 }
 
 .ge-coach {
+  /* Above kit sheet scrim (--z-scrim: 50) so Price / Restock lessons stay clickable. */
+  z-index: 56;
   place-items: end center;
+  pointer-events: none;
+}
+
+.ge-coach--look {
+  /* Look notes never block the floor. */
   pointer-events: none;
 }
 
@@ -4019,7 +4026,7 @@
 /* Four veils leave a real click-through hole over the spotlight target. */
 .ge-coach__veil {
   position: fixed;
-  z-index: 41;
+  z-index: 57;
   pointer-events: auto;
   background: rgba(8, 6, 4, 0.62);
 }
@@ -4049,7 +4056,7 @@
   border-radius: 4px;
   outline: 2px solid var(--ge-accent);
   pointer-events: none;
-  z-index: 41;
+  z-index: 57;
   animation: ge-coach-pulse 1.6s ease-in-out infinite;
 }
 
@@ -4073,9 +4080,11 @@
 
 .ge-coach__card {
   position: relative;
-  z-index: 42;
+  z-index: 58;
   pointer-events: auto;
   width: min(440px, 94vw);
+  max-height: min(50vh, 320px);
+  overflow: auto;
   margin-bottom: 1.5rem;
   background:
     linear-gradient(

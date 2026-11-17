@@ -2,6 +2,13 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## W. Fluid opening lesson (2026-11-16) · SAVE unchanged · GAME_VERSION **40.1**
+
+- One continuous Era 0 `opening` tour after the intro (Unpack → Baskets look-note → Price → Restock). Legacy unpack/baskets/price/wholesale stay in the Coach catalog; rent and meta-shelf leave the auto-queue.
+- Opening strip dialogue no longer auto-queues; finishIntro marks openers seen and starts the tour immediately. Whisper tips and SuggestTip stay muted while any coach is active; first-action tips/lines are silenced as each step completes.
+- Coach spotlight: measure once then track (no per-tick scroll jump); card docks above VerbTray holes; follows `floor-price-step` / `floor-wholesale-buy` into sheets; z-index above sheet scrim; look steps and missing targets do not full-block the screen. Soft-pause only on `act` steps.
+- Tests: `openingLesson.test.ts`, `coachPlacement.test.ts`; docs 09-ui + news 40.1.
+
 ## V. 40.1 — front door, Ops Wiki, Bulletin, one button system (2026-11-16) · SAVE **36** (unchanged) · GAME_VERSION **40.1**
 
 Presentation and shell only. No sim, balance or save changes; pacing untouched.
