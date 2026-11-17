@@ -1,7 +1,8 @@
 import { motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { plateSrc, type PlateId, type SpeakerId } from '../../art/cast'
+import { playCelebrateFx } from '@/shared/audio'
 import { CHAPTERS } from '../chapters'
 import { useGame } from '../GameContext'
 import { clock, money, qty } from '../format'
@@ -42,6 +43,10 @@ export function ChapterCard({
   const last = beatIdx >= beats.length - 1
   const plate = plateSrc(def.plate)
   const { state: s, numberFormat } = useGame()
+  // The era sting: once, when the chapter opens (silent unless sound is on).
+  useEffect(() => {
+    playCelebrateFx(undefined, 'large')
+  }, [era])
 
   const next = () => {
     if (last) onAccept()

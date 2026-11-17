@@ -5,6 +5,27 @@
 
 let ctx: AudioContext | null = null
 
+/**
+ * The mixer. The shell sets it from the player's settings; cues that are not handed a
+ * `muted` flag read it from here. Volume scales every cue and the ambience bed.
+ */
+const mix = { muted: true, volume: 0.6, ambience: true }
+
+export function setAudioMix(next: { muted?: boolean; volume?: number; ambience?: boolean }) {
+  if (typeof next.muted === 'boolean') mix.muted = next.muted
+  if (typeof next.volume === 'number' && Number.isFinite(next.volume)) mix.volume = Math.max(0, Math.min(1, next.volume))
+  if (typeof next.ambience === 'boolean') mix.ambience = next.ambience
+}
+
+export function audioMix(): Readonly<typeof mix> {
+  return mix
+}
+
+/** Loudness of a cue after the master volume (0.6 is the reference level). */
+function level(gain: number): number {
+  return gain * (mix.volume / 0.6)
+}
+
 function context(): AudioContext | null {
   if (typeof window === 'undefined') return null
   try {
@@ -33,7 +54,7 @@ export function playBeep(opts?: { muted?: boolean; freq?: number; ms?: number; g
     const g = ac.createGain()
     osc.type = 'triangle'
     osc.frequency.value = opts.freq ?? 880
-    g.gain.value = opts.gain ?? 0.03
+    g.gain.value = Math.max(0.0002, level(opts.gain ?? 0.03))
     osc.connect(g)
     g.connect(ac.destination)
     const now = ac.currentTime
@@ -66,14 +87,14 @@ export function playSaleFx(muted: boolean) {
 }
 
 /** Short low-high "ka-ching" when something is bought. */
-export function playPurchaseFx(muted: boolean) {
+export function playPurchaseFx(muted: boolean = mix.muted) {
   if (muted) return
   playBeep({ muted: false, freq: 520, ms: 50, gain: 0.025 })
   window.setTimeout(() => playBeep({ muted: false, freq: 780, ms: 70, gain: 0.02 }), 55)
 }
 
 /** Rising three-note chime when a menu / upgrade / feature unlocks. */
-export function playUnlockFx(muted: boolean) {
+export function playUnlockFx(muted: boolean = mix.muted) {
   if (muted) return
   playBeep({ muted: false, freq: 523, ms: 70, gain: 0.03 })
   window.setTimeout(() => playBeep({ muted: false, freq: 659, ms: 70, gain: 0.028 }), 80)
@@ -81,7 +102,7 @@ export function playUnlockFx(muted: boolean) {
 }
 
 /** Milestone sting: small = one note, medium = two, large = a short arpeggio. */
-export function playCelebrateFx(muted: boolean, kind: 'small' | 'medium' | 'large' = 'medium') {
+export function playCelebrateFx(muted: boolean = mix.muted, kind: 'small' | 'medium' | 'large' = 'medium') {
   if (muted) return
   const notes = kind === 'small' ? [880] : kind === 'medium' ? [660, 990] : [523, 659, 784, 1047]
   notes.forEach((freq, i) => {
@@ -118,7 +139,7 @@ export function stopPackAmbience() {
 export function startPackAmbience(opts: { muted: boolean; packId?: string }) {
   try {
     stopPackAmbience()
-    if (opts.muted !== false) return
+    if (opts.muted !== false || !mix.ambience) return
     const ac = context()
     if (!ac) return
     if (ac.state === 'suspended') void ac.resume()
@@ -127,7 +148,7 @@ export function startPackAmbience(opts: { muted: boolean; packId?: string }) {
     for (let i = 0; i < pid.length; i++) h = (h * 31 + pid.charCodeAt(i)) | 0
     h = Math.abs(h)
     const g = ac.createGain()
-    g.gain.value = 0.01
+    g.gain.value = level(0.01)
     g.connect(ac.destination)
     const stops: Array<() => void> = []
     if (h % 2 === 0) {

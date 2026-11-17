@@ -53,6 +53,7 @@ import { HubNav } from './shell/HubNav'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
 import { onInboxRequest, onWikiRequest } from './shell/uiBus'
+import { pushNotice } from './shell/notices'
 import { setWikiLanding } from './wiki/wikiLanding'
 import { computeHudAlert } from './shell/hudAlert'
 import { onToastRequest, performUndo } from './shell/undoAction'
@@ -373,6 +374,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     return onAchievementToast((message) => {
       const id = Date.now() + Math.random()
       setToasts((t) => [...t.slice(-4), { id, text: message }])
+      pushNotice(message, 'reward')
       window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200)
       playAchievementFanfare(meta.settings.muted)
     })
@@ -431,6 +433,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     // One guidance channel: mute ambient toasts while a coach tour is live.
     if (engine.getState().tutorials.active) return
     const id = Date.now() + Math.random()
+    pushNotice(text, 'info')
     setToasts((t) => {
       const last = t[t.length - 1]
       if (last && last.text === text) return t
@@ -452,6 +455,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       if (engine.getState().tutorials.active) return
       const id = Date.now() + Math.random()
       const text = check.reason
+      pushNotice(text, 'blocked')
       setToasts((t) => {
         const last = t[t.length - 1]
         if (last && last.text === text) return t

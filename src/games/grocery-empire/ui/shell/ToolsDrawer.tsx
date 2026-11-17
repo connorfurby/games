@@ -2,14 +2,16 @@ import { motion } from 'motion/react'
 import { isDevSave } from '../../sim/saveKey'
 import { DevModePanel } from '../components/DevModePanel'
 import { MoreSections, type MoreSection } from '../panels/MorePanel'
+import { NoticesPanel } from './NoticesPanel'
 import { InGameWiki } from '../wiki/InGameWiki'
 import type { MenuId } from '../../content/menus'
 
-export type ToolsTab = 'dev' | 'wiki' | MoreSection
+export type ToolsTab = 'dev' | 'wiki' | 'notices' | MoreSection
 
 const TABS: { id: ToolsTab; label: string }[] = [
   { id: 'dev', label: 'Dev' },
   { id: 'wiki', label: 'Wiki' },
+  { id: 'notices', label: 'Notices' },
   { id: 'run', label: 'Run' },
   { id: 'settings', label: 'Settings' },
   { id: 'saves', label: 'Saves' },
@@ -83,6 +85,8 @@ export function ToolsDrawer({
           <DevModePanel />
         ) : active === 'wiki' ? (
           <InGameWiki onOpenMenu={onOpenMenu} onPlayLesson={onPlayLesson} />
+        ) : active === 'notices' ? (
+          <NoticesPanel />
         ) : (
           <MoreSections only={active as MoreSection} />
         )}

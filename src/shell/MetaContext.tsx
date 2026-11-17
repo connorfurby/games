@@ -18,7 +18,7 @@ import {
   applyPack,
   applyUnpackFx,
 } from '@/cosmetics/packs'
-import { startPackAmbience, stopPackAmbience } from '@/shared/audio'
+import { setAudioMix, startPackAmbience, stopPackAmbience } from '@/shared/audio'
 import { loadMeta, saveMeta } from '@/shared/save'
 import { DEFAULT_META, DEFAULT_SETTINGS, type MetaSave, type PlayerSettings } from '@/shared/types'
 import { applyDailyStamp as stampMeta } from './dailyStamp'
@@ -167,13 +167,16 @@ export function MetaProvider({ children }: { children: ReactNode }) {
   // Optional pack ambience: mute-default, never auto-unmute; restart on pack change while unmuted.
   useEffect(() => {
     const muted = meta.settings.muted !== false
-    if (muted) {
+    const volume = typeof meta.settings.volume === 'number' ? meta.settings.volume : DEFAULT_SETTINGS.volume
+    const ambience = meta.settings.ambience !== false
+    setAudioMix({ muted, volume, ambience })
+    if (muted || !ambience) {
       stopPackAmbience()
       return
     }
     startPackAmbience({ muted: false, packId: meta.equippedPack })
     return () => stopPackAmbience()
-  }, [meta.settings.muted, meta.equippedPack])
+  }, [meta.settings.muted, meta.settings.volume, meta.settings.ambience, meta.equippedPack])
 
   const setMeta = useCallback((fn: (m: MetaSave) => MetaSave) => {
     setMetaState((prev) => {

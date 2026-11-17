@@ -1,3 +1,4 @@
+import { playPurchaseFx } from '@/shared/audio'
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type PointerEvent, type ReactNode } from 'react'
 import '../fx/fx.css'
 import { centerOf, spawnFx } from '../fx/bus'
@@ -103,6 +104,8 @@ export function Button({
   }
 
   const purchaseFeedback = () => {
+    // Anything with a price makes the same soft ka-ching (silent unless sound is on).
+    if (cost != null) playPurchaseFx()
     if (!feedback || reduced) return
     const now = performance.now()
     if (now - lastFx.current < FEEDBACK_GAP_MS) return

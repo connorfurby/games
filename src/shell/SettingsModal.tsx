@@ -10,6 +10,7 @@ import { migrate } from '@/games/grocery-empire/sim/migrate'
 import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
 import { clearDailyPending, deactivateDailyChallenge } from './dailyChallenge'
 import { useMeta } from './MetaContext'
+import { playPurchaseFx } from '@/shared/audio'
 import { museumStore } from '@/games/grocery-empire/ui/museum/store'
 import { describeScope, normalizeScope, RESET_EVERYTHING, resetMeta, type ResetScope } from './resetData'
 import { SaveSlots, ShellConfirm } from './SaveSlots'
@@ -238,14 +239,46 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               />
               Colorblind accent set
             </label>
+          </section>
+
+          <section className="settings-block">
+            <h3>Sound</h3>
             <label className="settings-check">
               <input
                 type="checkbox"
-                checked={meta.settings.muted}
-                onChange={(e) => updateSettings({ muted: e.target.checked })}
+                checked={!meta.settings.muted}
+                onChange={(e) => {
+                  updateSettings({ muted: !e.target.checked })
+                  if (e.target.checked) window.setTimeout(() => playPurchaseFx(false), 60)
+                }}
               />
-              Mute sound
+              Sound on
             </label>
+            <label className="settings-field">
+              <span>Volume · {Math.round((meta.settings.volume ?? 0.6) * 100)}%</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                disabled={meta.settings.muted}
+                value={Math.round((meta.settings.volume ?? 0.6) * 100)}
+                onChange={(e) => updateSettings({ volume: Number(e.target.value) / 100 })}
+                onPointerUp={() => playPurchaseFx(meta.settings.muted)}
+                onKeyUp={() => playPurchaseFx(meta.settings.muted)}
+                aria-label="Volume"
+              />
+            </label>
+            <label className="settings-check">
+              <input
+                type="checkbox"
+                checked={meta.settings.ambience !== false}
+                disabled={meta.settings.muted}
+                onChange={(e) => updateSettings({ ambience: e.target.checked })}
+              />
+              Room tone under play
+            </label>
+            <p className="settings-hint">Till chime, crate thunk, purchase and era stings. Off by default.</p>
           </section>
 
           <section className="settings-block">

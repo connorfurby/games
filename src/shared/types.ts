@@ -52,6 +52,10 @@ export interface PlayerSettings {
   animationDensity: 'full' | 'tasteful' | 'minimal'
   /** When true (default), optional WebAudio helpers no-op. */
   muted: boolean
+  /** Master volume 0–1 for every cue and the ambience bed. */
+  volume: number
+  /** Quiet room tone under play (only when sound is on). */
+  ambience: boolean
   showSpoilers: boolean
   rememberTutorials: boolean
   softPauseTutorials: boolean
@@ -71,6 +75,8 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
   reducedMotion: false,
   animationDensity: 'tasteful',
   muted: true,
+  volume: 0.6,
+  ambience: true,
   showSpoilers: false,
   rememberTutorials: true,
   softPauseTutorials: true,

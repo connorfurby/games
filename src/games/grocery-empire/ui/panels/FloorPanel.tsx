@@ -2,6 +2,7 @@ import { valueMul } from '../../sim/systems/network'
 import { memo, useState } from 'react'
 import { useMeta } from '@/shell/MetaContext'
 import { playUnpackFx } from '@/shared/audio'
+import { RegularsSheet } from './RegularsSheet'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
 import { FACING_BY_ID, facingsFor, REGULAR_BY_ID, type RegularDef } from '../../content/depth'
 import { DEPTH, HORIZON, INSPECTION, PRICE } from '../../sim/balance'
@@ -94,6 +95,8 @@ function FloorPanelInner() {
   const restockCheck = can(s, lateCmd({ type: 'restockOffworld' }))
   const regularId = s.depth?.regulars?.activeId
   const regularDef = regularId ? REGULAR_BY_ID[regularId] : null
+  const regularsMet = Object.values(s.depth?.regulars?.seen ?? {}).filter((n) => n > 0).length
+  const [regularsOpen, setRegularsOpen] = useState(false)
   const serveCheck = can(s, { type: 'serveRegular' })
   const serveOk = serveCheck.ok
   const layaway = !!s.depth?.regulars?.layaway
@@ -108,6 +111,8 @@ function FloorPanelInner() {
 
   const sheets = (
     <>
+      <RegularsSheet open={regularsOpen} onClose={() => setRegularsOpen(false)} />
+
       <Sheet
         open={desk === 'facing'}
         onClose={() => setDesk(null)}
@@ -439,6 +444,9 @@ function FloorPanelInner() {
                     onClick: () => dispatch({ type: 'focusRegular', which: 'waiting' }),
                   },
                 ]
+              : []),
+            ...(!waitingDef && s.era < 7 && regularsMet > 0
+              ? [{ key: 'regulars', label: 'Regulars', fact: `${regularsMet} met`, onClick: () => setRegularsOpen(true) }]
               : []),
             { key: 'facing', label: 'Facing', onClick: () => setDesk('facing') },
             { key: 'price', label: 'Price', coachId: 'floor-price', onClick: () => setDesk('price') },
