@@ -60,6 +60,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Build: the building choice is a **Style** (Facing already means featured cans on the Floor); levels instead of tiers; "N of 6 building types"; Sell top level; Hibernate is "Close for now" with a plain confirm.
 - Logistics: Dispatch rows show the route's name and cargo ("Spice Route · carries Household · not filed yet") instead of raw ids like `spice-route → import`; the page, room and guidance say **routes** (Route 1, Routes 4/4, Open route); flavour names like Lane Boss stay.
 - Text re-scan after the sweep: last stragglers fixed (fast-run fuel reason, loyalty level, matching-policy perk, Politics seat and Capital notes, Empire pair note). Remaining hits are flavour names or ordinary words.
+- Rivals: room chips read Your stores / Rival chains / Bought out; the price war row names its target and says what it does ("$78.75K · closes 2 of their stores").
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

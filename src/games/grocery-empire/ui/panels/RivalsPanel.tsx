@@ -243,8 +243,8 @@ export function RivalsPanel() {
                 ? [
                     {
                       key: 'war',
-                      label: 'Start a price war',
-                      fact: money(priceWarCost(s, activeRival.id), numberFormat),
+                      label: `Price war on ${activeRival.name.split(' ')[0]}`,
+                      fact: `${money(priceWarCost(s, activeRival.id), numberFormat)} · closes ${Math.min(RIVAL_CHAINS.warStoresClosed, (activeSt?.stores ?? 1) - 1)} of their stores`,
                       disabled: !activeWar.ok,
                       title: activeWar.ok ? undefined : activeWar.reason,
                       onClick: () => dispatch({ type: 'priceWar', id: activeRival.id }),

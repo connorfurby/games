@@ -25,9 +25,9 @@ export function RivalStreetScene() {
         keel && !keel.bought && keel.convoys > 0 ? `, ${keel.convoys} Keel convoys` : ''
       }`}
       chips={[
-        { label: 'Yours', value: String(ourStores) },
-        { label: 'Chains', value: String(independent.length) },
-        { label: 'Open', value: String(open.length) },
+        { label: 'Your stores', value: String(ourStores) },
+        { label: 'Rival chains', value: String(independent.length) },
+        { label: 'Bought out', value: String(open.length - independent.length) },
         ...(keel
           ? [
               {
