@@ -302,6 +302,17 @@ export function MoreSections({ only }: { only?: MoreSection }) {
                 <option value="true">1× · 2× · 4× · 8×</option>
               </select>
             </label>
+            <label className="ge-more-field">
+              <span>Text size</span>
+              <select
+                value={meta.settings.textSize ?? 'normal'}
+                onChange={(e) => updateSettings({ textSize: e.target.value as 'normal' | 'large' | 'larger' })}
+              >
+                <option value="normal">Normal</option>
+                <option value="large">Large</option>
+                <option value="larger">Larger</option>
+              </select>
+            </label>
             <label className="ge-check">
               <input
                 type="checkbox"

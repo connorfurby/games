@@ -72,6 +72,8 @@ export interface PlayerSettings {
   colorblind: boolean
   /** Brighter text, stronger edges and no see-through surfaces. */
   highContrast: boolean
+  /** Scales every screen's text and controls together (root font size). */
+  textSize?: 'normal' | 'large' | 'larger'
   /** Next-buy tip strip + rail mark (on by default). */
   suggestNext: boolean
 }
@@ -94,6 +96,7 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
   pinnedMenu: null,
   colorblind: false,
   highContrast: false,
+  textSize: 'normal',
   suggestNext: true,
 }
 

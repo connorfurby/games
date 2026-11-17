@@ -147,6 +147,10 @@ export function MetaProvider({ children }: { children: ReactNode }) {
     root.classList.toggle('a11y-colorblind', !!meta.settings.colorblind)
     root.classList.toggle('a11y-contrast', !!meta.settings.highContrast)
     root.classList.toggle('ge-reduced-motion', !!meta.settings.reducedMotion)
+    // Everything is sized in rem, so the root size scales text and controls together.
+    const size = meta.settings.textSize ?? 'normal'
+    root.style.fontSize = size === 'larger' ? '125%' : size === 'large' ? '112.5%' : ''
+    root.dataset.textSize = size
     // Colorblind must win over pack inline vars (applyPack sets --accent etc. as styles).
     if (meta.settings.colorblind) {
       root.style.setProperty('--accent', '#0072b2')
@@ -163,6 +167,7 @@ export function MetaProvider({ children }: { children: ReactNode }) {
     meta.settings.colorblind,
     meta.settings.highContrast,
     meta.settings.reducedMotion,
+    meta.settings.textSize,
     meta.equippedPack,
   ])
 

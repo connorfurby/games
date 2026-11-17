@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Button } from '@/games/grocery-empire/ui/kit'
+import { Button, SegmentedControl } from '@/games/grocery-empire/ui/kit'
 import { Link } from 'react-router-dom'
 import type { NumberFormat } from '@/shared/bn'
 import { deserializeState, exportSave, importSave, loadGame, loadMeta } from '@/shared/save'
@@ -239,6 +239,19 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               />
               High contrast
             </label>
+            <div className="settings-field">
+              <span>Text size</span>
+              <SegmentedControl
+                aria-label="Text size"
+                value={meta.settings.textSize ?? 'normal'}
+                onChange={(v) => updateSettings({ textSize: v })}
+                options={[
+                  { value: 'normal', label: 'Normal' },
+                  { value: 'large', label: 'Large' },
+                  { value: 'larger', label: 'Larger' },
+                ]}
+              />
+            </div>
           </section>
 
           <section className="settings-block">

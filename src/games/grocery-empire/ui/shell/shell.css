@@ -1864,3 +1864,19 @@
     vertical-align: 1px;
   }
 }
+
+@layer shell {
+  /*
+   * Text size scales the page through the root font size. The money bar and the hub bar are
+   * fixed frame chrome sized for the screen, so they counter-scale back to normal and never
+   * overlap their own numbers.
+   */
+  html[data-text-size='large'] .g2-root .g2-hud,
+  html[data-text-size='large'] .g2-root .g2-hubs {
+    zoom: 0.8889;
+  }
+  html[data-text-size='larger'] .g2-root .g2-hud,
+  html[data-text-size='larger'] .g2-root .g2-hubs {
+    zoom: 0.8;
+  }
+}
