@@ -38,6 +38,7 @@ export function UpgradesHallScene({
 
   return (
     <RoomScene
+      phoneChipsOnly
       label={`Upgrades hall. ${trees.length} trees · ${totalRanks} ranks · ${totalReady} ready.`}
       className="uh"
       chips={[

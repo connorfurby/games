@@ -237,6 +237,7 @@
 
   .wc-up-room__line {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--s-2);
@@ -244,6 +245,7 @@
   }
 
   .wc-up-room__blurb {
+    flex: 1 1 14rem;
     min-width: 0;
     font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
     color: var(--ge-ink-muted);

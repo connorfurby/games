@@ -27,6 +27,7 @@ export function LedgerScene() {
 
   return (
     <RoomScene
+      phoneChipsOnly
       label={`Books ledger, net ${rate(net)}, sales ${rate(store)}, burn ${rate(burn)}, ${pips.length} horizon currencies`}
       chips={[
         { label: 'Net', value: rate(net), neg: !rising },

@@ -3,6 +3,7 @@ import { empireXpToNext } from '../../../sim/formulas'
 import { useGame } from '../../GameContext'
 import { useTween } from '../../fx'
 import { qty } from '../../format'
+import { usePhone } from '../../kit/hooks'
 import { Badge, Hit, Person, RoomScene, Sign } from '../room'
 
 /** Empire rank hall: XP ring, last/next reward plaques, trait lectern, a hung banner. */
@@ -19,6 +20,60 @@ export function RankHallScene() {
   const points = s.empire.points
   const c = 2 * Math.PI * 48
   const ring = Math.max(0.02, fill)
+  const phone = usePhone()
+
+  // Phone: a portrait hall with the ring, the rank and what comes next, all readable.
+  if (phone) {
+    const chips = [
+      { label: 'XP', value: `${Math.round(fill * 100)}%` },
+      { label: 'Points', value: String(points), rate: points > 0 ? 'spend' : undefined },
+      next ? { label: 'Next', value: `${xpLeftLabel} XP` } : { label: 'Next', value: 'Done' },
+    ]
+    return (
+      <RoomScene
+        label={`Empire rank ${lv}. ${points} trait points. ${next ? `Next ${next.name}` : 'All rewards claimed'}.`}
+        chips={chips}
+        skyTop="var(--sc-night-top)"
+        skyBottom="var(--sc-night-bottom)"
+        portrait={{ w: 360, h: 170 }}
+      >
+        <circle cx="76" cy="86" r="58" fill="#0f131a" stroke="#3a4458" strokeWidth="2" />
+        <circle cx="76" cy="86" r="50" fill="none" stroke="#3d4a62" strokeWidth="9" />
+        <circle
+          cx="76"
+          cy="86"
+          r="50"
+          fill="none"
+          stroke="#d9a441"
+          strokeWidth="9"
+          strokeDasharray={`${2 * Math.PI * 50 * ring} ${2 * Math.PI * 50}`}
+          transform="rotate(-90 76 86)"
+          strokeLinecap="round"
+        />
+        <text x="76" y="72" textAnchor="middle" className="rm-sign" style={{ fontSize: 12 }}>
+          Rank
+        </text>
+        <text x="76" y="104" textAnchor="middle" className="rm-sign" style={{ fontSize: 34, fontWeight: 700 }}>
+          {lv}
+        </text>
+        <g transform="translate(152 30)">
+          <rect width="196" height="58" rx="8" fill="#121820" stroke="#d9a441" strokeOpacity="0.5" />
+          <text x="12" y="22" className="rm-sign" style={{ fontSize: 11, opacity: 0.75 }}>
+            {next ? `Next · Empire ${next.level}` : 'Every reward claimed'}
+          </text>
+          <text x="12" y="42" className="rm-sign" style={{ fontSize: 14, fontWeight: 700 }}>
+            {next ? (next.name.length > 22 ? `${next.name.slice(0, 21)}…` : next.name) : 'Well done'}
+          </text>
+        </g>
+        <g transform="translate(152 98)">
+          <rect width="196" height="44" rx="8" fill="#121820" stroke={points > 0 ? '#7fbf7a' : '#3a4458'} />
+          <text x="12" y="27" className="rm-sign" style={{ fontSize: 13, fontWeight: 600 }}>
+            {points > 0 ? `${points} trait point${points > 1 ? 's' : ''} to spend` : 'One trait point per rank'}
+          </text>
+        </g>
+      </RoomScene>
+    )
+  }
 
   return (
     <RoomScene
