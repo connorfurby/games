@@ -29,6 +29,7 @@ export function VenturesStreet() {
   return (
     <RoomScene
       label={`Ventures street, ${open.length} tills open, ${rate(totalIncome)}`}
+      phoneChipsOnly
       chips={[
         { label: 'Open', value: String(open.length) },
         { label: 'Income', value: rate(totalIncome) },

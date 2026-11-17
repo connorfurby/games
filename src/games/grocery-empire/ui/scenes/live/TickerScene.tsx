@@ -1,7 +1,7 @@
 import { INSTRUMENTS } from '../../../content/instruments'
 import { instrumentLots, instrumentYieldPerSec } from '../../../sim/systems/lateHubs'
 import { useGame } from '../../GameContext'
-import { rate } from '../../format'
+import { money, rate } from '../../format'
 import { Badge, Hit, Person, RoomScene, Sign } from '../room'
 import { Blink, CrateStack, TickerTape } from './primitives'
 
@@ -14,19 +14,24 @@ export function TickerScene() {
   const book = s.invest?.balance ?? 0
   const tape =
     open.length === 0
-      ? 'PASSBOOK FLAT · BOOK QUIET'
+      ? 'SAVINGS AND INVESTMENTS'
       : open
-          .map((i) => `${i.name} ${instrumentLots(s, i.id)}L ${rate(instrumentYieldPerSec(s, i.id))}`)
+          .map((i) => `${i.name} ×${instrumentLots(s, i.id)} ${rate(instrumentYieldPerSec(s, i.id))}`)
           .join(' · ')
 
   return (
     <RoomScene
       label={`Trading floor, ${held} instrument lots held`}
+      phoneChipsOnly
       chips={[
-        { label: 'Lots', value: String(held) },
-        { label: 'Yield/s', value: rate(yieldTotal) },
-        { label: 'Book', value: book > 0 ? 'open' : '—' },
-        { label: 'Pads', value: String(open.length) },
+        { label: 'Savings', value: money(s.passbook?.balance ?? 0) },
+        { label: 'Invested', value: money(book) },
+        ...(open.length > 0
+          ? [
+              { label: 'Holdings', value: String(held) },
+              { label: 'Returns', value: rate(yieldTotal) },
+            ]
+          : []),
       ]}
       skyTop="#141b22"
       skyBottom="#252d36"

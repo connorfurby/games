@@ -151,6 +151,15 @@
   }
   .pf__primary .gk-btn .gk-btn__label {
     gap: var(--s-2);
+    /* Long verbs wrap to a second line instead of running off both edges. */
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .pf__primary .gk-btn {
+    padding-block: var(--s-2);
   }
   .pf__primary .ge-unpack__amt {
     padding: 2px var(--s-2);
@@ -443,11 +452,37 @@
     color: var(--ge-danger, #d9665b);
   }
 
+  /* In-line "go there" actions inside a reason line: a real pill with an edge, never bare underlined text. */
   .pf-chip__link {
-    all: unset;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    min-height: 2rem;
+    margin: 0.15rem 0 0.15rem 0.35rem;
+    padding: 0 0.7rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    color: inherit;
+    font: 600 var(--t-xs) / 1 var(--ge-font-ui, system-ui, sans-serif);
     cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    vertical-align: middle;
+  }
+  .pf-chip__link::after {
+    content: '→';
+  }
+  .pf-chip__link:hover {
+    background: color-mix(in srgb, currentColor 18%, transparent);
+  }
+  .pf-chip__link:focus-visible {
+    outline: 2px solid var(--ge-accent);
+    outline-offset: 2px;
+  }
+  @media (pointer: coarse) {
+    .pf-chip__link {
+      min-height: 2.5rem;
+    }
   }
 }
 
@@ -729,6 +764,8 @@
     gap: var(--s-2);
   }
   .st-owned__chip {
+    min-height: 2.25rem;
+    padding-inline: 0.75rem;
     cursor: pointer;
     font: 600 var(--t-xs) / 1.2 var(--g2-ui);
     color: var(--ge-ink);

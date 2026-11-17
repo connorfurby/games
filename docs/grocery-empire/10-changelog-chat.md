@@ -30,6 +30,16 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - HUD: Undo is invisible (slot kept, so nothing shifts) until there is something to undo, instead of sitting there greyed out.
 - Phone crawl p8: 123 screens, 0 errors, 0 overflow, 0 shifts, no new dead buttons; low-contrast hits down from 14 to 2.
 
+## AF. Audit 3 — taps, wraps and rooms (2026-11-17, on `main`) · SAVE **38** (unchanged)
+
+- Inline "go there" links (`.pf-chip__link`) are now bordered pills with an arrow, 32 px tall (40 px on touch), not underlined text.
+- Owned-strategy chips are 36 px tall.
+- Map: a tap that misses every pin picks the nearest pin within ~28 px (`snapToNearestPin` in BlockMap), so phone pins are usable.
+- Long primary verbs wrap to two lines instead of running off both edges (Strategy's tournament button on phones).
+- Rooms that only cropped badly on phones show their numbers only: Council, Ventures street, Invest.
+- Invest room chips: Savings, Invested, then Holdings / Returns once instruments exist (was Lots / Yield/s / Book / Pads at zero).
+- Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
+
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**
 
 - **Daily twist (SAVE 38).** `GameState.dailyRule: DailyRuleId | null` (default null; migrate keeps only known ids). `balance.ts` `DAILY_RULES` / `DAILY_RULE_ORDER`: eight rules, each one upside and one downside on demand, crate cost, truck time or wages. `formulas.dailyMod(s, key)` multiplies `demandPerSec`, `crateCost`, `deliveryTime`, `wagesPerSec`; 1 in every normal run, so pacing is untouched. Command `setDailyRule` only before the first sale and only once. Starting Today's corner sets the rule from the seed (`content/dailyRules.dailyRuleForSeed`, same pick as the theme name). Floor shows "Today: …" with one plain line; the Menu daily section and confirm say which twist. Tests `sim/dailyRule.test.ts`.

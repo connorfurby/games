@@ -80,6 +80,7 @@ export function CouncilScene() {
       ]}
       skyTop="#1a1d28"
       skyBottom="#2b2f3c"
+      phoneChipsOnly
     >
       {Array.from({ length: SLOTS }, (_, i) => {
         const a = Math.PI * (0.08 + (0.84 * i) / (SLOTS - 1))

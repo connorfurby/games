@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react'
+import type { KeyboardEvent, MouseEvent } from 'react'
 import type { RivalId } from '../../content/rivals'
 import { RIVALS } from '../../content/rivals'
 import type { GameState } from '../../sim/state'
@@ -68,6 +68,28 @@ function hit(h: Hit) {
       }
     },
   }
+}
+
+/**
+ * Forgiving taps: pins shrink with the map on a phone, so a tap that misses every pin
+ * selects the nearest one within ~28 px instead of doing nothing.
+ */
+function snapToNearestPin(e: MouseEvent<SVGSVGElement>) {
+  const target = e.target as Element
+  if (target.closest('.mp-pin')) return
+  let best: SVGGElement | null = null
+  let bestD = 28
+  for (const pin of e.currentTarget.querySelectorAll<SVGGElement>('.mp-pin')) {
+    const r = pin.getBoundingClientRect()
+    const dx = Math.max(r.left - e.clientX, 0, e.clientX - r.right)
+    const dy = Math.max(r.top - e.clientY, 0, e.clientY - r.bottom)
+    const d = Math.hypot(dx, dy)
+    if (d < bestD) {
+      bestD = d
+      best = pin
+    }
+  }
+  if (best) best.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
 }
 
 /** Bottom-center anchors along our sidewalks. Flagship owns the corner. */
@@ -180,6 +202,7 @@ export function BlockMap({
       viewBox={VIEWBOX[view]}
       role="img"
       aria-label={`City map of your empire, ${view} view`}
+      onClick={snapToNearestPin}
     >
       <defs>
         <linearGradient id="bm-sky" x1="0" y1="0" x2="0" y2="1">

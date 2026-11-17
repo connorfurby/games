@@ -42,10 +42,10 @@ export function UpgradesHallScene({
       label={`Upgrades hall. ${trees.length} trees · ${totalRanks} ranks · ${totalReady} ready.`}
       className="uh"
       chips={[
-        { label: 'Trees', value: String(trees.length) },
-        { label: 'Ranks', value: String(totalRanks) },
-        { label: 'Ready', value: String(totalReady), rate: totalReady > 0 ? 'spend' : undefined },
-        { label: TREES[activeId].name, value: `×${mastery.toFixed(1)}` },
+        { label: 'Upgrade groups', value: String(trees.length) },
+        { label: 'Levels bought', value: String(totalRanks) },
+        { label: 'Can afford', value: String(totalReady) },
+        { label: `${TREES[activeId].name} bonus`, value: `×${mastery.toFixed(1)}` },
       ]}
       skyTop="var(--sc-night-top)"
       skyBottom="var(--sc-night-bottom)"
