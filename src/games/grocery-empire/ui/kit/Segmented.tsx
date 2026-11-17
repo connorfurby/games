@@ -55,6 +55,14 @@ function Segments<V extends string>({
   const isTabs = kind === 'tabs'
   // Options that cannot be chosen yet are left out (no dead buttons); the current one always shows.
   const shown = options.filter((o) => !o.disabled || o.value === value)
+  // One option that is already chosen is not a choice: show it as plain text, not a lone toggle.
+  if (!isTabs && shown.length === 1 && shown[0].value === value) {
+    return (
+      <span className={['gk-seg-static', className].filter(Boolean).join(' ')} aria-label={(rest as { 'aria-label'?: string })['aria-label']} title={shown[0].title}>
+        {shown[0].label}
+      </span>
+    )
+  }
   return (
     <div
       ref={listRef}

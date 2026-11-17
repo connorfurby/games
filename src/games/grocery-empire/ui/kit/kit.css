@@ -1330,3 +1330,14 @@
     }
   }
 }
+
+@layer kit {
+  /* A picker with only one possible answer reads as a plain value. */
+  .gk-seg-static {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    font: 600 var(--t-sm) / 1.3 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink);
+  }
+}
