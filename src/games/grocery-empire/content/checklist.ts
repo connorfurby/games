@@ -298,7 +298,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e3-cooler-logs',
     era: 3,
-    label: 'Sign cooler logs (leave gate)',
+    label: 'Sign cooler logs (needed to leave the era)',
     test: (s) => (s.depth?.cooler?.logsSigned ?? 0) >= 6,
   },
   {
@@ -326,7 +326,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e4-clean-manifests',
     era: 4,
-    label: 'File clean manifests (barge gate)',
+    label: 'File clean manifests (needed for the barges)',
     test: (s) => (s.depth?.dispatch?.cleanManifests ?? 0) >= 5,
   },
   {
@@ -531,7 +531,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e7-puzzle-gate',
     era: 7,
-    label: 'Clear the planogram gate (practice then 0.72 / 0.85)',
+    label: 'Pass the planogram (practise, then score 0.72 or better)',
     test: (s) => s.era >= 8,
   },
 
@@ -557,7 +557,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e8-puzzle-gate',
     era: 8,
-    label: 'Clear the convoy gate',
+    label: 'Pass the convoy check',
     test: (s) => s.era >= 9,
   },
 
@@ -589,7 +589,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e9-puzzle-gate',
     era: 9,
-    label: 'Clear the cultivar gate',
+    label: 'Pass the cultivar check',
     test: (s) => s.era >= 10,
   },
 
@@ -615,7 +615,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e10-puzzle-gate',
     era: 10,
-    label: 'Clear the phrase gate',
+    label: 'Pass the phrase check',
     test: (s) => s.era >= 11,
   },
 
@@ -629,7 +629,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e11-hearing',
     era: 11,
-    label: 'Clear the Concord hearing docket',
+    label: 'Answer the Concord hearings',
     test: (s) => {
       if (s.era >= 12) return true
       const h = s.depth?.hearing
@@ -646,7 +646,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e11-sign',
     era: 11,
-    label: 'Sign the charter fork',
+    label: 'Sign a charter',
     test: (s) => !!s.horizon?.charter || s.era >= 12,
   },
 

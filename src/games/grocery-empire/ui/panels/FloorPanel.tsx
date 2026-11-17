@@ -208,21 +208,17 @@ function FloorPanelInner() {
             </Button>
           ) : null}
           {s.era >= 1 ? (
-            <Button
-              size="sm"
-              tone="ghost"
-              disabled={!can(s, { type: 'fileStandardFlagship' }).ok}
-              title={
-                s.depth?.flagship?.credited
-                  ? `Planogram credited · ${s.depth.flagship.score.toFixed(2)}`
-                  : can(s, { type: 'fileStandardFlagship' }).reason
-              }
-              onClick={() => dispatch({ type: 'fileStandardFlagship' })}
-            >
-              {s.depth?.flagship?.credited
-                ? 'Planogram filed'
-                : `Planogram · practice ${s.depth?.flagship?.practiceLeft ?? 0}`}
-            </Button>
+            s.depth?.flagship?.credited ? (
+              <p className="fp-note">Planogram filed · scored {s.depth.flagship.score.toFixed(2)}</p>
+            ) : can(s, { type: 'fileStandardFlagship' }).ok ? (
+              <Button tone="secondary" onClick={() => dispatch({ type: 'fileStandardFlagship' })}>
+                {(s.depth?.flagship?.practiceLeft ?? 0) > 0
+                  ? `Practise the planogram · ${s.depth?.flagship?.practiceLeft} left`
+                  : 'File the planogram'}
+              </Button>
+            ) : (
+              <p className="fp-note">Planogram: {can(s, { type: 'fileStandardFlagship' }).reason}</p>
+            )
           ) : null}
           {s.era >= 1 &&
           sumQty(s.backroom, 'produce') +
@@ -233,22 +229,16 @@ function FloorPanelInner() {
             sumQty(s.shelf, 'meat') >
             0 ? (
             <div className="fp-row">
-              <Button
-                size="sm"
-                tone="ghost"
-                disabled={!can(s, { type: 'morningWriteOff', mode: 'dump' }).ok}
-                onClick={() => dispatch({ type: 'morningWriteOff', mode: 'dump' })}
-              >
-                Write-off dump
-              </Button>
-              <Button
-                size="sm"
-                tone="ghost"
-                disabled={!can(s, { type: 'morningWriteOff', mode: 'discount' }).ok}
-                onClick={() => dispatch({ type: 'morningWriteOff', mode: 'discount' })}
-              >
-                Markdown
-              </Button>
+              {can(s, { type: 'morningWriteOff', mode: 'dump' }).ok ? (
+                <Button size="sm" tone="secondary" onClick={() => dispatch({ type: 'morningWriteOff', mode: 'dump' })}>
+                  Throw out old fresh stock
+                </Button>
+              ) : null}
+              {can(s, { type: 'morningWriteOff', mode: 'discount' }).ok ? (
+                <Button size="sm" tone="secondary" onClick={() => dispatch({ type: 'morningWriteOff', mode: 'discount' })}>
+                  Mark it down instead
+                </Button>
+              ) : null}
             </div>
           ) : null}
         </div>

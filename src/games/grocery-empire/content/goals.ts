@@ -1366,7 +1366,7 @@ export const GOALS: GoalDef[] = [
   {
     id: 'answer-hearing',
     era: 11,
-    title: 'Clear the hearing docket',
+    title: 'Answer the hearings',
     hint: 'Concord files 2–3 rival clauses over sessions — answer each before you sign.',
     done: (s) => {
       const h = s.depth?.hearing
@@ -1412,7 +1412,7 @@ export const GOALS: GoalDef[] = [
     id: 'charter-signed',
     era: 11,
     title: 'Sign the charter',
-    hint: 'Pick a fork. Seatings, the charter and four clauses open the Last Aisle.',
+    hint: 'Choose a charter. Hearings, the charter and four clauses open the Last Aisle.',
     done: (s) => s.era >= 12,
     progress: (s) =>
       (s.horizon?.charter ? 0.35 : 0) +

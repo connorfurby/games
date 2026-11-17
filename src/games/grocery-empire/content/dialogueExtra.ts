@@ -110,7 +110,7 @@ const MONEY_MORE: DialogueLine[] = [
   {
     id: 'arrears-deep',
     speaker: 'operations',
-    text: 'Arrears are deep. Sales pay them first; a bailout is a legal bridge, not a shame.',
+    text: 'Arrears are deep. Sales pay them first; a bailout is a bridge, not a shame.',
     when: (s) => s.arrears >= 100,
   },
   {
