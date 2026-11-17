@@ -21,7 +21,7 @@ import type { StorePolicy } from '../../sim/state'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money } from '../format'
 import { HubStage } from '../components/HubStage'
-import { Button, EmptyState } from '../kit'
+import { Button, EmptyState, SegmentedControl } from '../kit'
 import { type VerbSecondary, type VerbTrayProps } from '../play'
 import { OutpostStreetScene } from '../scenes/live/OutpostStreetScene'
 import { EarlyLandStreet, LandStreet } from '../land/LandStreet'
@@ -238,21 +238,13 @@ function ChainRoster({
                   }
                 />
               </label>
-              <div className="ld-seg" role="radiogroup" aria-label={`${st.name} policy`}>
-                {POLICIES.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={st.policy === p.id}
-                    className={st.policy === p.id ? 'is-on' : ''}
-                    title={p.tip}
-                    onClick={() => dispatch({ type: 'setPolicy', storeId: st.id, policy: p.id })}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                className="ld-seg"
+                aria-label={`${st.name} policy`}
+                value={st.policy}
+                onChange={(policy) => dispatch({ type: 'setPolicy', storeId: st.id, policy })}
+                options={POLICIES.map((p) => ({ value: p.id, label: p.label, title: p.tip }))}
+              />
               <div className="ld-row__act">
                 {walkBlock ? null : <Button
                   size="sm"

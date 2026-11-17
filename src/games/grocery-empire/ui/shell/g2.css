@@ -1356,30 +1356,8 @@
   margin: 0;
 }
 
-.ld-seg {
-  display: inline-flex;
-  border: 1px solid var(--g2-line);
-  border-radius: 999px;
-  overflow: hidden;
-}
 
-.ld-seg button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--ge-muted);
-  font: inherit;
-  font-size: var(--t-xs);
-  padding: 0.3rem 0.6rem;
-  min-height: 2rem;
-  cursor: pointer;
-}
 
-.ld-seg button.is-on {
-  background: var(--g2-tag);
-  color: #1b1408;
-  font-weight: 600;
-}
 
 .ld-row__act {
   display: flex;
@@ -1519,41 +1497,9 @@
   color: color-mix(in srgb, #fff 75%, transparent);
 }
 
-.fl-stepper {
-  display: grid;
-  grid-template-columns: 2.25rem 1fr 2.25rem;
-  border: 1px solid var(--g2-line);
-  border-radius: var(--g2-r-sm);
-  overflow: hidden;
-  background: var(--ge-bg2, rgba(0, 0, 0, 0.2));
-}
 
-.fl-stepper button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--ge-ink);
-  font-size: var(--t-lg);
-  min-height: 2.4rem;
-  cursor: pointer;
-}
 
-.fl-stepper button:hover {
-  background: var(--g2-raised);
-}
 
-.g2-root .fl-stepper .ge-price__input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  border-inline: 1px solid var(--g2-line);
-  background: transparent;
-  color: var(--ge-ink);
-  text-align: center;
-  font-family: var(--g2-display);
-  font-size: var(--t-lg);
-  font-variant-numeric: tabular-nums;
-}
 
 .fl-row {
   display: flex;
@@ -1997,28 +1943,9 @@
   color: var(--ge-muted);
 }
 
-.fv-stepper {
-  grid-template-columns: 1.9rem 2.6rem 1.9rem;
-  flex-shrink: 0;
-}
 
-.fv-stepper button {
-  min-height: 1.9rem;
-  font-size: var(--t-md);
-}
 
-.fv-stepper button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 
-.fv-stepper output {
-  display: grid;
-  place-items: center;
-  border-inline: 1px solid var(--g2-line);
-  font-variant-numeric: tabular-nums;
-  font-weight: 650;
-}
 
 @media (max-width: 900px) {
   .fv-grid {

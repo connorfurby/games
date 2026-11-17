@@ -19,7 +19,7 @@ import { money, qty } from '../format'
 import { useGame } from '../GameContext'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { PrestigeKeepSheet } from '../components/PrestigeKeepSheet'
-import { Button, EmptyState, Meter, SegmentedControl, Sheet } from '../kit'
+import { Button, EmptyState, Meter, SegmentedControl, Sheet, Stepper } from '../kit'
 import { ActionRow, FailReason, PlayFrame, StatusChip } from '../play'
 import { FleetHarborScene } from '../scenes/live'
 
@@ -106,7 +106,7 @@ export function FleetPanel() {
   const axisEffect = (id: string, lvl: number): string => {
     switch (id) {
       case 'shell':
-        return lvl > 0 ? `War losses ÷${resist.toFixed(1)}` : 'No war protection'
+        return lvl > 0 ? `Off-Brand losses ÷${resist.toFixed(1)}` : 'No protection yet'
       case 'replication':
         return lvl > 0 ? `~${repl.toFixed(repl < 10 ? 1 : 0)} free barges/min` : 'No free barges'
       case 'survey':
@@ -114,7 +114,7 @@ export function FleetPanel() {
       case 'transit':
         return `+${Math.round(lvl * 5)}% harvest`
       case 'brand-seal':
-        return lvl > 0 ? 'Brand recovers; war losses down' : 'Brand drifts with franchises'
+        return lvl > 0 ? 'Brand recovers; Off-Brand hurts less' : 'Franchises wear on Brand'
       default:
         return ''
     }
@@ -208,26 +208,14 @@ export function FleetPanel() {
                   <strong>{a.name}</strong>
                   <span>{axisEffect(a.id, lvl)}</span>
                 </div>
-                <div className="fl-stepper fv-stepper">
-                  <button
-                    type="button"
-                    disabled={!minus.ok}
-                    aria-label={`Take a point from ${a.name}`}
-                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: -1 })}
-                  >
-                    −
-                  </button>
-                  <output aria-label={`${a.name} points`}>{lvl}</output>
-                  <button
-                    type="button"
-                    disabled={!plus.ok}
-                    title={plus.ok ? undefined : plus.reason}
-                    aria-label={`Put a point in ${a.name}`}
-                    onClick={() => dispatch({ type: 'setCharterAxis', axis: a.id, delta: 1 })}
-                  >
-                    +
-                  </button>
-                </div>
+                <Stepper
+                  className="fv-stepper"
+                  label={`${a.name} points`}
+                  value={lvl}
+                  min={minus.ok ? lvl - 1 : lvl}
+                  max={plus.ok ? lvl + 1 : lvl}
+                  onChange={(v) => dispatch({ type: 'setCharterAxis', axis: a.id, delta: v > lvl ? 1 : -1 })}
+                />
               </div>
             )
           })}
@@ -236,7 +224,7 @@ export function FleetPanel() {
             <Sheet
         open
         onClose={() => {}}
-        title={`Drift war · ${f.legacy.toFixed(1)} Legacy`}
+        title={`Off-Brand · ${f.legacy.toFixed(1)} Legacy`}
         reducedMotion={reducedMotion}
       >
         <p className="ge-muted" data-coach-id="fleet-drift">
@@ -246,14 +234,13 @@ export function FleetPanel() {
         </p>
         <div className="fl-row">
           {!f.warOn && warStep === 0 ? (
-            <Button
-              tone="ghost"
-              disabled={!driftCheck.ok}
-              title={driftCheck.ok ? 'Start the Drift war' : driftCheck.reason}
-              onClick={() => dispatch({ type: 'startDriftWar' })}
-            >
-              Start the war
-            </Button>
+            driftCheck.ok ? (
+              <Button tone="ghost" title="Take on Off-Brand" onClick={() => dispatch({ type: 'startDriftWar' })}>
+                Take on Off-Brand
+              </Button>
+            ) : (
+              <p className="ge-muted">{driftCheck.reason}</p>
+            )
           ) : null}
           {warStep > 0 && warStep < 3 ? (
             <Button
@@ -342,7 +329,7 @@ export function FleetPanel() {
             onChange={(v) => setCls(v as BargeClass)}
             options={BARGE_CLASSES.map((c) => ({
               value: c,
-              label: c,
+              label: c === 'hauler' ? 'Haulers' : c === 'replicator' ? 'Replicators' : 'Arks',
               title: c === 'hauler' ? 'Runs Pocket Ops trips.' : c === 'replicator' ? 'Builds more barges.' : 'Carries the fleet.',
             }))}
           />
