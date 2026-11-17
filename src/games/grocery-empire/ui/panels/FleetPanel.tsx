@@ -160,45 +160,42 @@ export function FleetPanel() {
           />
         ) : null}
         <div className="fl-row">
-          <Button
-            tone="primary"
-            coachId="fleet-charter"
-            disabled={!charterCheck.ok}
-            title={charterCheck.ok ? 'One Charter point' : charterCheck.reason}
-            onClick={() => dispatch({ type: 'buyCharter' })}
-          >
-            +1 point · {FLEET.readPerCharterPoint} Read
-          </Button>
-          <Button
-            tone="ghost"
-            disabled={!charterCheck.ok}
-            title={charterCheck.ok ? `Up to 10 points · ${FLEET.readPerCharterPoint * 10} Read` : charterCheck.reason}
-            onClick={() => {
-              for (let i = 0; i < 10; i++) {
-                if (!can(engine.getState(), { type: 'buyCharter' }).ok) break
-                dispatch({ type: 'buyCharter' })
-              }
-            }}
-          >
-            +10
-          </Button>
-          <Button
-            tone="ghost"
-            coachId="fleet-guardian"
-            disabled={!guardianCheck.ok}
-            title={guardianCheck.ok ? 'Safe opener: Shell 5, Replication 4, Survey 1, Transit 1.' : guardianCheck.reason}
-            onClick={() => dispatch({ type: 'applyGuardian' })}
-          >
-            Safe opener
-          </Button>
-          <Button
-            tone="ghost"
-            disabled={!rebootCheck.ok}
-            title={rebootCheck.ok ? 'Refund every placed point.' : rebootCheck.reason}
-            onClick={() => dispatch({ type: 'rebootFleet' })}
-          >
-            Refund all
-          </Button>
+          {charterCheck.ok ? (
+            <>
+              <Button tone="primary" coachId="fleet-charter" title="One Charter point" onClick={() => dispatch({ type: 'buyCharter' })}>
+                Buy 1 point · {FLEET.readPerCharterPoint} Read
+              </Button>
+              <Button
+                tone="secondary"
+                title={`Up to 10 points · ${FLEET.readPerCharterPoint * 10} Read`}
+                onClick={() => {
+                  for (let i = 0; i < 10; i++) {
+                    if (!can(engine.getState(), { type: 'buyCharter' }).ok) break
+                    dispatch({ type: 'buyCharter' })
+                  }
+                }}
+              >
+                Buy up to 10
+              </Button>
+            </>
+          ) : (
+            <p className="fl-note" data-coach-id="fleet-charter">More points: {charterCheck.reason}</p>
+          )}
+          {guardianCheck.ok ? (
+            <Button
+              tone="secondary"
+              coachId="fleet-guardian"
+              title="Shell 5, Replication 4, Survey 1, Transit 1."
+              onClick={() => dispatch({ type: 'applyGuardian' })}
+            >
+              Use the safe opener
+            </Button>
+          ) : null}
+          {rebootCheck.ok ? (
+            <Button tone="secondary" title="Refund every placed point." onClick={() => dispatch({ type: 'rebootFleet' })}>
+              Refund all
+            </Button>
+          ) : null}
         </div>
         <section className="fv-axes" aria-label="Charter axes">
           {CHARTER_AXES.map((a) => {

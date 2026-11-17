@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { cx } from './hooks'
 
-/** Filter / selection chip. Becomes a toggle button when `onClick` is given. */
+/** Filter / selection chip. Becomes a toggle button when `onClick` is given and it can be used; a disabled chip is a plain tag. */
 export function Chip({
   children,
   icon,
@@ -27,7 +27,7 @@ export function Chip({
   )
   return (
     <span className={cx('gk-chip', selected && 'is-selected', disabled && 'is-disabled', className)}>
-      {onClick ? (
+      {onClick && !disabled ? (
         <button type="button" className="gk-chip__main" aria-pressed={!!selected} disabled={disabled} onClick={onClick}>
           {body}
         </button>

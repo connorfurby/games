@@ -359,16 +359,11 @@ function FloorPanelInner() {
         title={`Off-world bay · ${bay.length}`}
         reducedMotion={reducedMotion}
         footer={
-          <Button
-            tone={restockCheck.ok ? 'primary' : 'ghost'}
-            disabled={!restockCheck.ok}
-            title={!restockCheck.ok ? restockCheck.reason : 'Refill from stocked worlds'}
-            onClick={() => {
-              dispatch(lateCmd({ type: 'restockOffworld' }))
-            }}
-          >
-            Restock from worlds
-          </Button>
+          restockCheck.ok ? (
+            <Button tone="primary" onClick={() => dispatch(lateCmd({ type: 'restockOffworld' }))}>
+              Restock from worlds
+            </Button>
+          ) : undefined
         }
       >
         <div className="fp-bay">

@@ -63,24 +63,27 @@ export function ToolsDrawer({
       exit={reducedMotion ? undefined : { x: 40, opacity: 0 }}
       transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}
     >
-      <div className="g2-inbox__head">
-        <div className="g2-inbox__tabs g2-tools__tabs" role="tablist">
+      <div className="g2-inbox__head g2-tools__head">
+        <div className="g2-tools__top">
+          <h2 className="g2-tools__title">Menu</h2>
+          <button type="button" className="g2-icon-btn" onClick={onClose} title="Close (Esc)" aria-label="Close menu">
+            ✕
+          </button>
+        </div>
+        <div className="g2-tools__tabs" role="tablist" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
               role="tab"
               aria-selected={active === t.id}
-              className={`g2-subtab${active === t.id ? ' is-active' : ''}`}
+              className={`g2-tools__tab${active === t.id ? ' is-active' : ''}`}
               onClick={() => onTab(t.id)}
             >
               {t.label}
             </button>
           ))}
         </div>
-        <button type="button" className="g2-icon-btn" onClick={onClose} title="Close (Esc)">
-          ✕
-        </button>
       </div>
       <div className={`g2-inbox__body${active === 'wiki' ? ' g2-tools__wiki' : ''}`}>
         {active === 'dev' ? (

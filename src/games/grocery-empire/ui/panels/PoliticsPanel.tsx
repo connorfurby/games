@@ -148,26 +148,19 @@ export function PoliticsPanel() {
             header={
               <div className="lh-card-title">
                 <strong>Petitions</strong>
-                <span>The Council files these on your behalf. Each is a Worlds verb with its own gate.</span>
+                <span>The Council files these for you when they are possible.</span>
               </div>
             }
           >
             <div className="lh-actions">
-              {PETITIONS.map((pt) => {
-                const check = can(s, pt.cmd)
-                return (
-                  <Button
-                    key={pt.label}
-                    size="sm"
-                    tone={check.ok ? 'primary' : 'ghost'}
-                    disabled={!check.ok}
-                    title={check.ok ? pt.tip : check.reason}
-                    onClick={() => dispatch(pt.cmd)}
-                  >
-                    {pt.label}
-                  </Button>
-                )
-              })}
+              {PETITIONS.filter((pt) => can(s, pt.cmd).ok).map((pt) => (
+                <Button key={pt.label} size="sm" tone="primary" title={pt.tip} onClick={() => dispatch(pt.cmd)}>
+                  {pt.label}
+                </Button>
+              ))}
+              {PETITIONS.every((pt) => !can(s, pt.cmd).ok) ? (
+                <p className="lh-note">Nothing to petition for right now. Petitions open as your worlds grow.</p>
+              ) : null}
             </div>
           </Card>
         ) : (

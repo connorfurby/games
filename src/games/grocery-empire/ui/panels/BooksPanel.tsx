@@ -409,17 +409,17 @@ function BooksPanelInner() {
               ]}
             />
             <div className="lh-actions">
-              <Button
-                tone="primary"
-                coachId="books-incorporate"
-                disabled={!!incorporateBlocked}
-                title={incorporateBlocked ?? undefined}
-                onClick={() => dispatch({ type: 'incorporate' })}
-              >
-                {s.incorporated
-                  ? 'Incorporated'
-                  : `Incorporate · $${CAPITAL.incorporateCash} + ${CAPITAL.incorporateRep} Rep`}
-              </Button>
+              {s.incorporated ? (
+                <p className="lh-note">Incorporated.</p>
+              ) : incorporateBlocked ? (
+                <p className="lh-note" data-coach-id="books-incorporate">
+                  Incorporating costs ${CAPITAL.incorporateCash} and {CAPITAL.incorporateRep} Reputation. Not yet: {incorporateBlocked}
+                </p>
+              ) : (
+                <Button tone="primary" coachId="books-incorporate" onClick={() => dispatch({ type: 'incorporate' })}>
+                  Incorporate · ${CAPITAL.incorporateCash} + {CAPITAL.incorporateRep} Reputation
+                </Button>
+              )}
             </div>
             {s.incorporated ? (
               boardLifted ? (

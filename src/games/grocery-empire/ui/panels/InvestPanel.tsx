@@ -196,18 +196,26 @@ export function InvestPanel() {
             ]}
           />
           <div className="lh-actions">
-            <Button size="sm" tone="primary" onClick={() => deposit(0.25)} disabled={s.cash < 1}>
-              In 25%
-            </Button>
-            <Button size="sm" onClick={() => deposit(0.5)} disabled={s.cash < 1}>
-              In 50%
-            </Button>
-            <Button size="sm" onClick={() => withdraw(0.25)} disabled={bal < 1}>
-              Out 25%
-            </Button>
-            <Button size="sm" onClick={() => withdraw(1)} disabled={bal < 0.01}>
-              Out all
-            </Button>
+            {s.cash >= 1 ? (
+              <>
+                <Button size="sm" tone="primary" onClick={() => deposit(0.25)}>
+                  Deposit 25% of cash
+                </Button>
+                <Button size="sm" tone="secondary" onClick={() => deposit(0.5)}>
+                  Deposit 50%
+                </Button>
+              </>
+            ) : null}
+            {bal >= 1 ? (
+              <Button size="sm" tone="secondary" onClick={() => withdraw(0.25)}>
+                Withdraw 25%
+              </Button>
+            ) : null}
+            {bal >= 0.01 ? (
+              <Button size="sm" tone="secondary" onClick={() => withdraw(1)}>
+                Withdraw all
+              </Button>
+            ) : null}
           </div>
         </div>
       </Sheet>
@@ -282,7 +290,7 @@ export function InvestPanel() {
                 </p>
               ) : null}
               <div className="lh-actions">
-                {RISKS.map((r) => {
+                {RISKS.filter((r) => book.risk === r || can(s, { type: 'setInvestRisk', risk: r }).ok).map((r) => {
                   const check = can(s, { type: 'setInvestRisk', risk: r })
                   const gate = r === 'mid' ? INVEST.riskGate.mid : r === 'high' ? INVEST.riskGate.high : 0
                   const locked = gate > 0 && book.engineLevel < gate
@@ -306,21 +314,21 @@ export function InvestPanel() {
                 })}
               </div>
               <div className="lh-actions">
-                <Button
-                  size="sm"
-                  tone="primary"
-                  data-suggest-id="invest-book-deposit"
-                  onClick={() => depositBook(0.25)}
-                  disabled={s.cash < 1}
-                >
-                  In 25%
-                </Button>
-                <Button size="sm" onClick={() => withdrawBook(0.25)} disabled={book.balance < 1}>
-                  Out 25%
-                </Button>
-                <Button size="sm" onClick={() => withdrawBook(1)} disabled={book.balance < 0.01}>
-                  Out all
-                </Button>
+                {s.cash >= 1 ? (
+                  <Button size="sm" tone="primary" data-suggest-id="invest-book-deposit" onClick={() => depositBook(0.25)}>
+                    Deposit 25% of cash
+                  </Button>
+                ) : null}
+                {book.balance >= 1 ? (
+                  <Button size="sm" tone="secondary" onClick={() => withdrawBook(0.25)}>
+                    Withdraw 25%
+                  </Button>
+                ) : null}
+                {book.balance >= 0.01 ? (
+                  <Button size="sm" tone="secondary" onClick={() => withdrawBook(1)}>
+                    Withdraw all
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   disabled={book.engineLevel >= INVEST.maxEngine || s.cash < engineCost}

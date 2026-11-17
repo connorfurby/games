@@ -253,25 +253,23 @@ function ChainRoster({
                 ))}
               </div>
               <div className="ld-row__act">
-                <Button
+                {walkBlock ? null : <Button
                   size="sm"
                   tone={drift >= CHAIN.driftWarn ? 'primary' : 'secondary'}
                   data-suggest-id={`walk-${st.id}`}
-                  disabled={!!walkBlock}
-                  title={walkBlock ?? 'Spend 40 Attention to clear drift.'}
+                  title="Spend 40 Attention to clear drift."
                   onClick={() => dispatch({ type: 'walkStore', storeId: st.id })}
                 >
-                  Walk
-                </Button>
-                <Button
+                  Walk the floor
+                </Button>}
+                {trainBlock ? null : <Button
                   size="sm"
-                  tone="ghost"
-                  disabled={!!trainBlock}
-                  title={trainBlock ?? `Spend ${trainStoreCost(st)} Attention for store XP.`}
+                  tone="secondary"
+                  title={`Spend ${trainStoreCost(st)} Attention for store XP.`}
                   onClick={() => dispatch({ type: 'trainStore', storeId: st.id })}
                 >
-                  Train
-                </Button>
+                  Train staff
+                </Button>}
               </div>
             </li>
           )

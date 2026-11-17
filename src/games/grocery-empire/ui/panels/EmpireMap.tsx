@@ -314,8 +314,7 @@ export function EmpireMap() {
 
       <section className="ge-panel mp-stage">
         <div className="g2-subtabs mp-zoom" role="tablist" aria-label="Zoom">
-          {VIEWS.map((v) => {
-            const locked = s.era < v.era
+          {VIEWS.filter((v) => s.era >= v.era).map((v) => {
             return (
               <button
                 key={v.id}
@@ -323,8 +322,7 @@ export function EmpireMap() {
                 role="tab"
                 aria-selected={view.id === v.id}
                 className={`g2-subtab${view.id === v.id ? ' is-active' : ''}`}
-                disabled={locked}
-                title={locked ? `Opens in Era ${v.era}` : `Zoom to ${v.label}`}
+                title={`Zoom to ${v.label}`}
                 onClick={() => setViewId(v.id)}
               >
                 {v.label}

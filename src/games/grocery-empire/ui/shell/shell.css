@@ -634,21 +634,56 @@
   }
 
   /* ── Menu drawer (tools) ────────────────────────────────────────────── */
+  /* Menu drawer head: title + close on one line, then a full-width tab track that always fits. */
+  .g2-tools .g2-tools__head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-3);
+  }
+  .g2-tools__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .g2-tools__title {
+    margin: 0;
+    font-family: var(--g2-display);
+    font-size: var(--t-xl);
+    line-height: var(--t-xl-lh);
+  }
   .g2-tools__tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
+    display: grid;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
+  }
+  .g2-tools__tab {
     min-width: 0;
+    min-height: 2.25rem;
+    padding: 0.35rem 0.25rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ge-muted);
+    font: 600 clamp(var(--t-2xs), 2.9vw, var(--t-sm)) / 1.1 var(--g2-ui);
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
   }
-
-  .g2-tools .g2-inbox__head {
-    gap: 0.5rem;
+  .g2-tools__tab:hover {
+    color: var(--ge-ink);
+    background: color-mix(in srgb, var(--ge-ink) 6%, transparent);
   }
-
-  .g2-tools .g2-subtab {
-    flex-shrink: 0;
-    padding: 0.3rem 0.65rem;
-    font-size: var(--t-sm);
+  .g2-tools__tab.is-active {
+    background: var(--ge-ink);
+    color: var(--ge-bg, #12181a);
+  }
+  .g2-tools__tab:focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 1px;
   }
 
   .g2-menu-btn.is-on {

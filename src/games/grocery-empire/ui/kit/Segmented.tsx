@@ -53,6 +53,8 @@ function Segments<V extends string>({
   }
 
   const isTabs = kind === 'tabs'
+  // Options that cannot be chosen yet are left out (no dead buttons); the current one always shows.
+  const shown = options.filter((o) => !o.disabled || o.value === value)
   return (
     <div
       ref={listRef}
@@ -61,7 +63,7 @@ function Segments<V extends string>({
       onKeyDown={onKey}
       aria-label={rest['aria-label']}
     >
-      {options.map((o) => {
+      {shown.map((o) => {
         const on = o.value === value
         return (
           <button
@@ -71,7 +73,6 @@ function Segments<V extends string>({
             aria-selected={isTabs ? on : undefined}
             aria-checked={isTabs ? undefined : on}
             tabIndex={on ? 0 : -1}
-            disabled={o.disabled}
             title={o.title}
             className={cx('gk-seg__item', on && 'is-on')}
             onClick={() => onChange(o.value)}
