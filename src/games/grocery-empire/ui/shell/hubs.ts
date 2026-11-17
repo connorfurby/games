@@ -29,7 +29,7 @@ export const HUBS: HubDef[] = [
   {
     id: 'supply',
     name: 'Supply',
-    purpose: 'Buy stock and move it — trucks, cold chain, ocean lanes.',
+    purpose: 'Buy stock and move it: trucks, cold chain, sea routes.',
     icon: 'suppliers',
     menus: ['suppliers', 'cold', 'logistics'],
   },

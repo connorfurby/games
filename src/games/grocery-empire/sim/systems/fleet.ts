@@ -288,7 +288,7 @@ export function canOpenLane(s: GameState, route?: string): string | null {
   const cash = LOGISTICS.laneCash * Math.pow(LOGISTICS.laneGrowth, s.fleet.lanes)
   const ctl = LOGISTICS.laneControl * (1 + s.fleet.lanes)
   if (s.cash < cash && s.control < ctl) return `Need ${cashLabel(Math.ceil(cash))} or ${Math.ceil(ctl)} Control.`
-  if (s.fuel < LOGISTICS.laneFuel * 0.5) return 'Fuel buffer too low to launch a lane.'
+  if (s.fuel < LOGISTICS.laneFuel * 0.5) return 'Not enough fuel to open a route.'
   return null
 }
 

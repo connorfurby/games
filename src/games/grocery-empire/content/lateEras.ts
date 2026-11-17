@@ -27,7 +27,7 @@ export const LATE_MEMOS: LateMemoStub[] = [
   // Era 4 — globe
   { id: 'ocean-lane', name: 'Ocean Lane Charter', era: 4, voice: 'Fuel, weather, and a schedule that lies. Distance is just another aisle.', effect: 'Open Logistics; first freighter lane.', unlock: 'Leave region' },
   { id: 'franchise-kit', name: 'Franchise Kit', era: 4, voice: 'Partners grow faster. Brand drifts unless sealed — Off-Brand smiles with your fonts.', effect: 'Lets you open franchises. They wear on Brand a little; it heals.', unlock: 'Lane open' },
-  { id: 'fuel-buffer', name: 'Fuel Buffer Policy', era: 4, voice: 'Never launch empty. Hunger outruns optimism.', effect: '+fuel capacity; lane reliability.', unlock: 'Logistics' },
+  { id: 'fuel-buffer', name: 'Fuel Buffer Policy', era: 4, voice: 'Never launch empty. Hunger outruns optimism.', effect: 'More fuel capacity; routes run more reliably.', unlock: 'Logistics' },
   { id: 'control-tower', name: 'Control Tower', era: 4, voice: 'Someone has to say which ocean matters today. Control is a soft crown.', effect: 'Starts earning Control and lets you set route priorities.', unlock: '3 lanes' },
 
   // Era 5 — seed barges

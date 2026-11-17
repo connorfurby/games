@@ -21,7 +21,7 @@ export function LaneScene() {
         circuits ? `, ${circuits} convoys` : ''
       }`}
       chips={[
-        { label: 'Lanes', value: `${wet}/${lanes}`, neg: lanes > 0 && s.fuel <= 0 },
+        { label: 'Routes', value: `${wet}/${lanes}`, neg: lanes > 0 && s.fuel <= 0 },
         { label: 'Fuel', value: `${fuelGal} gal`, rate: `${Math.round(fuelFrac * 100)}%`, neg: fuelFrac < 0.25 },
         ...(s.era >= 8 ? [{ label: 'Circuits', value: String(circuits) }] : []),
         ...(s.horizon?.keel?.bought ? [{ label: 'Convoys', value: String(keel) }] : []),
@@ -39,11 +39,11 @@ export function LaneScene() {
             y={y - 50}
             w={780}
             h={56}
-            label={`Lane ${i + 1}`}
+            label={`Route ${i + 1}`}
             menu="logistics"
             coachId="logistics-lane"
           >
-            <Sign x={48} y={y - 36} text={`Lane ${i + 1}`} />
+            <Sign x={48} y={y - 36} text={`Route ${i + 1}`} />
             <Badge
               x={110}
               y={y - 48}

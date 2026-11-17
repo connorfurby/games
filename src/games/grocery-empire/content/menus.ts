@@ -133,7 +133,7 @@ export const MENUS: Record<MenuId, MenuDef> = {
     id: 'logistics',
     name: 'Logistics',
     glyph: 'LG',
-    purpose: 'Run supply lanes between your stores. Lanes burn fuel.',
+    purpose: 'Run supply routes between your stores. Routes use fuel.',
   },
   fleet: {
     id: 'fleet',

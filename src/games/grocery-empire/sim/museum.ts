@@ -253,7 +253,7 @@ export const FEATS: Record<string, { text: string; vague: string; test: (s: Game
   },
   brownout: { vague: 'The cold goes out, again and again.', text: 'Survive 3 cold brownouts in one run.', test: (s) => (s.cold?.brownouts ?? 0) >= 3 },
   plants: { vague: 'A lot of cold, all at once.', text: 'Run 20 cold plants at once.', test: (s) => (s.cold?.plants ?? 0) >= 20 },
-  seas: { vague: 'A lane for every sea.', text: 'Charter 7 ocean lanes.', test: (s) => (s.fleet?.lanes ?? 0) >= 7 },
+  seas: { vague: 'A lane for every sea.', text: 'Open 7 sea routes.', test: (s) => (s.fleet?.lanes ?? 0) >= 7 },
   armada: { vague: 'The sky, crowded.', text: 'Have 100 barges.', test: (s) => (s.fleet?.barges ?? 0) >= 100 },
   fullhouse: { vague: 'Nobody left to compete with.', text: 'Buy out all four rivals in one run.', test: (s) => ['penny', 'freshway', 'megamart', 'halo'].every((id) => s.rivals?.[id]?.bought) },
   peace: { vague: 'Win without fighting.', text: 'Reach Era 4 without a single price war.', test: (s) => s.era >= 4 && Object.values(s.rivals ?? {}).every((r) => (r.wars ?? 0) === 0) },

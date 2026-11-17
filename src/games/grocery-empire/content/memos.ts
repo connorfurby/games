@@ -965,7 +965,7 @@ export const MEMOS: MemoDef[] = [
       }
       queueTutorial(s, 'logistics')
     },
-    done: 'First ocean lane on the board. Keep fuel wet.',
+    done: 'First sea route on the board. Keep it fuelled.',
   },
   {
     id: 'franchise-kit',
@@ -982,7 +982,7 @@ export const MEMOS: MemoDef[] = [
     id: 'fuel-buffer',
     name: 'Fuel Buffer Policy',
     voice: 'Never launch empty.',
-    effect: '+fuel capacity; lane reliability.',
+    effect: 'More fuel capacity; routes run more reliably.',
     era: 4,
     cost: c(40_000_000, 2000),
     visible: (s) => had(s, 'ocean-lane') || !!s.menus.logistics,
@@ -1000,7 +1000,7 @@ export const MEMOS: MemoDef[] = [
       s.control = Math.max(s.control, 10)
       unlockMenu(s, 'logistics')
     },
-    done: 'Control Tower staffed. Control ticks with wet lanes.',
+    done: 'Control Tower staffed. Fuelled routes now earn Control.',
   },
   {
     id: 'barge-berth',

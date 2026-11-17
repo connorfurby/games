@@ -359,7 +359,7 @@ export const FLAVOR_MEMOS: MemoDef[] = [
   {
     id: 'lane-logbook',
     name: 'Lane Logbook',
-    voice: 'Fuel in, Control out, weather noted. Wet lanes stop surprising you.',
+    voice: 'Fuel in, Control out, weather noted. Routes stop surprising you.',
     effect: '+1 Empire XP.',
     era: 4,
     cost: c(2000, 1000),
@@ -419,7 +419,7 @@ export const FLAVOR_MEMOS: MemoDef[] = [
     run: (s) => {
       s.empire.xp = (s.empire.xp ?? 0) + 1
     },
-    done: 'Boots by the dock. Wet lanes get respect.',
+    done: 'Boots by the dock. Fuelled routes get respect.',
   },
   {
     id: 'charter-chalk',

@@ -86,8 +86,8 @@ export const CHAPTERS: Record<number, ChapterDef> = {
   ),
   4: chapter(
     4,
-    'Fuel, lanes, Control. Brand drift when nobody walks the aisle.',
-    ['Charter ocean lanes', 'Watch fuel and Control', 'Keep brand steady'],
+    'Fuel, routes, Control. Brand slips when nobody walks the aisle.',
+    ['Open sea routes', 'Watch fuel and Control', 'Keep brand steady'],
     [
       { speaker: 'lobbyist', title: 'Globe', body: 'Human retail becomes a ledger line. Control spends like cash used to.' },
       { speaker: 'guardian', body: 'Routes need fuel; without it they just wait. Brand slowly slips if you ignore it.' },

@@ -111,7 +111,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e4-lanes',
-    text: 'Ocean lanes burn fuel and pay back in Control and cash. If the fuel runs out the lane just waits; nothing breaks.',
+    text: 'Sea routes use fuel and pay back in Control and cash. If the fuel runs out the route just waits; nothing breaks.',
     when: (s) => s.era >= 4 || (s.fleet?.lanes ?? 0) > 0,
   },
   {

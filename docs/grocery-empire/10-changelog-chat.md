@@ -58,6 +58,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Spacing (P1): 340 gap/margin/padding declarations in grocery.css, g2.css, play.css and shell.css snapped to the `--s-*` scale when within 1 px (`/home/claude/tools/spacing.py`); calc() left alone. Desktop crawl d10: 0 errors / overflow / shifts, pixel diffs under 5% (live numbers and 1 px nudges). Phone floor visual baseline refreshed (it predated this round's copy). Strategy room sign: Strategy board.
 - Audit 5 (on-screen text dump of every page in six eras, searched for internal words): fixed barge gate / MegaMart snipes / Puzzle currencies gate verbs / layer log-share note / tap a node / yield per s / Momentum badge / Prestige-adjacent / Stock tier / hotter war / brownout drills / wet import lanes / Surplus and buffer signs. "Shrink" is "theft" in every description (memo and upgrade names kept).
 - Build: the building choice is a **Style** (Facing already means featured cans on the Floor); levels instead of tiers; "N of 6 building types"; Sell top level; Hibernate is "Close for now" with a plain confirm.
+- Logistics: Dispatch rows show the route's name and cargo ("Spice Route · carries Household · not filed yet") instead of raw ids like `spice-route → import`; the page, room and guidance say **routes** (Route 1, Routes 4/4, Open route); flavour names like Lane Boss stay.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

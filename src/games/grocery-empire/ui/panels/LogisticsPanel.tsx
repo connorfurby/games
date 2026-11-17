@@ -1,4 +1,5 @@
-import { LANE_ROUTES } from '../../content/depth'
+import { LANE_ROUTES, LANE_ROUTE_BY_ID } from '../../content/depth'
+import { CATEGORIES, type CategoryId } from '../../content/categories'
 import type { ManifestStance } from '../../content/depth'
 import { DEPTH } from '../../sim/balance'
 import { can } from '../../sim/commands'
@@ -92,10 +93,10 @@ export function LogisticsPanel() {
         const current = laneStance(s, lane.id)
         const open = laneLeftOpen(s, lane)
         return (
-          <section key={lane.id} className="p6-stack" aria-label={`${lane.route} manifest`}>
+          <section key={lane.id} className="p6-stack" aria-label={`${LANE_ROUTE_BY_ID[lane.route]?.name ?? lane.route} manifest`}>
             <p className="p6-copy">
-              <strong>{lane.route}</strong> → {prefer}
-              {current ? ` · filed ${current}` : ' · not filed'}
+              <strong>{LANE_ROUTE_BY_ID[lane.route]?.name ?? lane.route}</strong> · carries {CATEGORIES[prefer as CategoryId]?.name ?? prefer}
+              {current ? ` · filed ${current === 'exam' ? 'for inspection' : current}` : ' · not filed yet'}
               {open && current ? ' · open to MegaMart' : ''}
             </p>
             {STANCES.map((st) => {
@@ -119,7 +120,7 @@ export function LogisticsPanel() {
         )
       })}
       {(s.fleet.laneList ?? []).length === 0 ? (
-        <p className="ge-muted">Charter a lane first.</p>
+        <p className="ge-muted">Open a route first.</p>
       ) : null}
     </div>
   )
@@ -143,7 +144,7 @@ export function LogisticsPanel() {
                 key={r.id}
                 label={r.name}
                 fact={r.blurb}
-                trail="Open lane"
+                trail="Open route"
                 disabled={!check.ok}
                 title={check.ok ? r.blurb : check.reason}
                 onClick={() => dispatch({ type: 'openLane', route: r.id })}
@@ -152,7 +153,7 @@ export function LogisticsPanel() {
           })}
           {s.era >= 8 && jumpCheck.ok ? (
             <Button tone="secondary" onClick={() => dispatch({ type: 'jumpLane' })}>
-              Jump a lane · burn fuel for freight
+              Jump a route · spend fuel for freight
             </Button>
           ) : null}
         </div>

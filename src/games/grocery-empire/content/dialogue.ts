@@ -681,7 +681,7 @@ const DEPTH: DialogueLine[] = [
   {
     id: 'fuel-dry',
     speaker: 'guardian',
-    text: 'Fuel ran low. Lanes idle — never brick — until you refill.',
+    text: 'Fuel ran low. Routes wait until you refill; nothing breaks.',
     when: (s) => s.era >= 4 && s.fuel < 5 && (s.fleet?.lanes ?? 0) >= 1,
   },
   {
