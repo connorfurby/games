@@ -1,3 +1,5 @@
+import { VentureArt } from '../ventures/VentureArt'
+import { ventureLook, ventureTier } from '../ventures/ventureLook'
 import { useState } from 'react'
 import { MENUS } from '../../content/menus'
 import { can } from '../../sim/commands'
@@ -258,14 +260,21 @@ export function VenturesPanel() {
               state={cardState}
               className={`ge-card ge-card--venture${opened ? ' ge-card--owned' : ''}${canCollect || canOpen || canLevel ? ' is-ready' : ''}`.trim()}
               header={
-                <div className="ge-card__head">
-                  <Icon name="venture" size={20} tone="accent" />
+                <div className="ge-card__head ge-card__head--art" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8, width: '100%', flex: '1 1 auto' }}>
+                  <VentureArt
+                    {...ventureLook(def.id)}
+                    tier={ventureTier(opened, level, def.maxLevel)}
+                    level={level}
+                    maxLevel={def.maxLevel}
+                    fill={storeCap > 0 ? Math.min(1, stored / storeCap) : 0}
+                    motion={!reducedMotion}
+                  />
                   <div>
                     <strong>{def.name}</strong>
                     <p className="ge-muted">
                       {opened
                         ? `Lv ${level} / ${def.maxLevel} · ~+${Math.round(VENTURE_TRAFFIC.perOpen * 100)}% traffic`
-                        : 'Not opened'}
+                        : 'Empty lot · not opened'}
                     </p>
                   </div>
                 </div>
