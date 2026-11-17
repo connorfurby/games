@@ -156,6 +156,12 @@ const ANNEX_MENU: Record<(typeof HORIZON_ROLE_IDS)[number], string> = {
 }
 
 const FLOOR_H = 248
+const PERSON_GAP = 24
+const FLOOR_GROUPS: { id: string; x0: number; max: number; roles: RoleId[] }[] = [
+  { id: 'unload', x0: 40, max: 8, roles: ['clerk', 'receiver', 'shiftLead', 'storeManager'] },
+  { id: 'shelf', x0: 268, max: 11, roles: ['stocker', 'produceLead', 'dairyClerk', 'butcher', 'night'] },
+  { id: 'tills', x0: 580, max: 10, roles: ['cashier', 'security'] },
+]
 const ANNEX_H = 168
 const DESK_X0 = 36
 const DESK_STEP = 130
@@ -240,11 +246,18 @@ export function StaffFloor({
   const cashierSlots = STATION.cashier?.length ?? 4
   const clerks = counts.clerk ?? 0
   const cashiers = counts.cashier ?? 0
-  const overflowN = Object.values(overflow).reduce((a, n) => a + n, 0)
   const headcount = roster.length
   // One word in the HUD chip so it never truncates when the room scales down to 390 px.
   // The full sentence lives in the caption and the panel tooltip.
   const bnShort = BOTTLENECK_WORD[bottleneck] ?? (bottleneck ? bottleneck.charAt(0).toUpperCase() + bottleneck.slice(1) : '—')
+
+  // Desktop crew rows: each station gets a lane on the floor; extra heads become "+N".
+  const groups = FLOOR_GROUPS.map((g) => {
+    const all = roster.filter((m) => !isHorizonRole(m.role) && g.roles.includes(m.role))
+    return { ...g, people: all.slice(0, g.max), extra: Math.max(0, all.length - g.max) }
+  })
+  const unplaced = roster.filter((m) => !isHorizonRole(m.role) && !FLOOR_GROUPS.some((g) => g.roles.includes(m.role)))
+  if (unplaced.length) groups[1]!.extra += unplaced.length
 
   const chips: RoomHudChip[] = [
     { label: 'Crew', value: String(headcount) },
@@ -376,39 +389,38 @@ export function StaffFloor({
 
         {phone ? null : <RoomHud chips={chips} chipW={annexOn ? 148 : 170} />}
 
-        {/* Unload / clerks — tomato free station */}
+        {/* Stations sit on one row under the HUD: header line, then the fixture. */}
         <g>
-          <rect x="28" y="52" width="168" height="52" rx="6" fill="#0a0e14" stroke="#ff5a43" strokeOpacity="0.4" />
-          <Sign x={36} y={58} text="Unload" />
-          <Badge x={96} y={44} text={clerks > clerkSlots ? `${clerks} clerks` : `${clerks}/${clerkSlots} clerks`} w={108} />
-          {[0, 1, 2].map((i) => (
+          <rect x="24" y="66" width="200" height="96" rx="8" fill="#0a0e14" stroke="#ff5a43" strokeOpacity="0.35" />
+          <Sign x={36} y={88} text="Unload" />
+          <Badge x={140} y={74} text={clerks > clerkSlots ? `${clerks} clerks` : `${clerks}/${clerkSlots} clerks`} w={76} />
+          {[0, 1, 2, 3].map((i) => (
             <rect
               key={i}
-              x={36 + i * 34}
-              y={70}
-              width="28"
-              height="22"
-              rx="3"
+              x={36 + i * 44}
+              y={110}
+              width="36"
+              height="36"
+              rx="4"
               fill={i < clerks ? '#ff5a43' : '#1a1512'}
               opacity={i < clerks ? 0.85 : 1}
             />
           ))}
         </g>
 
-        {/* Shelf bays — labels inside bay so names never collide */}
         <g>
-          <Sign x={230} y={58} text="Shelf" />
-          <Badge x={280} y={44} text={`${Math.floor(totalShelf)}u`} w={52} />
+          <Sign x={256} y={88} text="Shelf" />
+          <Badge x={300} y={74} text={`${Math.floor(totalShelf)} of ${Math.floor(cap)}`} w={84} />
           {shownCats.map((c, i) => {
             const n = sumQty(shelf, c)
             const fill = Math.min(1, n / perBay)
             return (
               <ShelfBay
                 key={c}
-                x={230 + i * 46}
-                y={68}
+                x={256 + i * 46}
+                y={98}
                 w={40}
-                h={72}
+                h={64}
                 fill={fill}
                 tint={CAT_TINT[c] ?? '#c9a15a'}
                 label={CATEGORIES[c]?.short ?? c.slice(0, 3)}
@@ -418,43 +430,46 @@ export function StaffFloor({
           })}
         </g>
 
-        {/* Registers */}
         <g>
-          <Sign x={540} y={58} text="Registers" />
-          <Badge x={620} y={44} text={cashiers > cashierSlots ? `${cashiers} on tills` : `${cashiers}/${cashierSlots} tills`} w={108} />
-          <Register x={540} y={78} queue={bottleneck === 'checkout' ? Math.max(1, cashiers) : 0} />
-          <Register x={610} y={78} queue={0} />
-          {overflow.cashier ? <Badge x={680} y={78} text={`+${overflow.cashier}`} w={36} /> : null}
+          <Sign x={566} y={88} text="Registers" />
+          <Badge x={656} y={74} text={cashiers > cashierSlots ? `${cashiers} on tills` : `${cashiers}/${cashierSlots} tills`} w={80} />
+          <Register x={566} y={104} queue={bottleneck === 'checkout' ? Math.max(1, cashiers) : 0} />
+          <Register x={644} y={104} queue={0} />
         </g>
 
-        {/* Door */}
-        <g transform="translate(860 58)">
-          <rect width="70" height="120" fill="#141210" stroke="#3a322c" />
-          <rect x="22" y="36" width="26" height="48" fill="#2c201c" />
-          <Sign x={8} y={-6} text="Door" small />
+        <g transform="translate(852 66)">
+          <rect width="76" height="130" rx="3" fill="#141210" stroke="#3a322c" />
+          <rect x="24" y="44" width="28" height="52" fill="#2c201c" />
+          <Sign x={38} y={22} text="Door" small anchor="middle" />
         </g>
 
-        {overflowN > 0 ? <Badge x={780} y={44} text={`+${overflowN} overflow`} w={90} /> : null}
-
-        {/* People — no nameplates (title tooltip only) so they never cover shelf labels */}
-        {placed.map(({ m, x, y }) => {
-          const on = lit.has(m.id)
-          return (
-            <g key={m.id} transform={`translate(${x} ${y})`}>
-              <g className={`sf-person${motion && on ? ' is-live' : ''}${!on ? ' is-idle' : ''}`}>
-                <title>
-                  {m.name} · {ROLES[m.role].name} · Lv {m.level}
-                  {on ? ' · working' : ''}
-                </title>
-                <RoomPerson x={0} y={0} tint={SHIRT[m.role]} working={on} delay={(m.id % 5) * 0.2} />
+        {/* The crew stands in a tidy row under the station they work. */}
+        {groups.map((g) =>
+          g.people.map((m, i) => {
+            const on = lit.has(m.id)
+            const x = g.x0 + i * PERSON_GAP
+            return (
+              <g key={m.id} transform={`translate(${x} ${FLOOR_H - 58})`}>
+                <g className={`sf-person${motion && on ? ' is-live' : ''}${!on ? ' is-idle' : ''}`}>
+                  <title>
+                    {m.name} · {ROLES[m.role].name} · Lv {m.level}
+                    {on ? ' · working' : ''}
+                  </title>
+                  <RoomPerson x={0} y={0} tint={SHIRT[m.role]} working={on} delay={(m.id % 5) * 0.2} />
+                </g>
               </g>
-            </g>
-          )
-        })}
+            )
+          }),
+        )}
+        {groups.map((g) =>
+          g.extra > 0 ? (
+            <Badge key={`${g.id}-more`} x={g.x0 + g.max * PERSON_GAP - 10} y={FLOOR_H - 72} text={`+${g.extra}`} w={36} />
+          ) : null,
+        )}
 
         {roster.length === 0 ? (
-          <text x="480" y="170" textAnchor="middle" className="sf-empty">
-            Nobody on the clock — the {bottleneck} waits
+          <text x="480" y={FLOOR_H - 56} textAnchor="middle" className="sf-empty">
+            Nobody on the clock yet
           </text>
         ) : null}
 
@@ -466,11 +481,7 @@ export function StaffFloor({
       <figcaption>
         {roster.length === 0
           ? 'Empty payroll.'
-          : Object.entries(overflow)
-              .filter(([, n]) => n > 0)
-              .map(([role, n]) => `+${n} more ${ROLES[role as RoleId]?.name ?? role}`)
-              .join(' · ') ||
-            (annexOn && lit.size > 0
+          : (annexOn && lit.size > 0
               ? `${lit.size} at work in the annex.`
               : bottleneckLabel
                 ? `Limit: ${bottleneckLabel}`

@@ -1,5 +1,4 @@
 import { EMPIRE_REWARDS, nextEmpireReward } from '../../../content/empireRewards'
-import { EMPIRE } from '../../../sim/balance'
 import { empireXpToNext } from '../../../sim/formulas'
 import { useGame } from '../../GameContext'
 import { useTween } from '../../fx'
@@ -49,11 +48,10 @@ export function RankHallScene() {
           transform="rotate(-90 126 142)"
           strokeLinecap="round"
         />
-        <Sign x={126} y={134} text="Empire" small anchor="middle" />
-        <text x="126" y="164" textAnchor="middle" className="rm-sign" style={{ fontSize: 26, fontWeight: 700 }}>
+        <Sign x={126} y={122} text="Rank" small anchor="middle" />
+        <text x="126" y="156" textAnchor="middle" className="rm-sign" style={{ fontSize: 34, fontWeight: 700 }}>
           {lv}
         </text>
-        <Sign x={126} y={184} text={`of ${EMPIRE.maxLevel}`} small anchor="middle" />
       </Hit>
 
       {/* Last reward plaque */}
@@ -85,8 +83,7 @@ export function RankHallScene() {
           {points}
         </text>
         {points > 0 ? <circle cx="700" cy="86" r="5" fill="#7cc47f" className="rm-pulse" /> : null}
-        <Sign x={641} y={166} text={points > 0 ? 'Spend on a doctrine' : 'Earn one each rank'} small anchor="middle" />
-        <Badge x={591} y={178} text="Doctrine" w={100} />
+        <Sign x={641} y={170} text={points > 0 ? 'Spend below' : 'One per rank'} small anchor="middle" />
       </Hit>
 
       {/* Hung banner */}

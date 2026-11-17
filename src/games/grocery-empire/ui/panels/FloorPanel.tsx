@@ -62,7 +62,6 @@ function FloorPanelInner() {
   const wholesaleCost = crateCost(s, orderCat, s.supplier)
   const starterCrate = can(s, { type: 'callStarterCrate' })
   const orderName = CATEGORIES[orderCat]?.name ?? orderCat
-  const [desk, setDesk] = useState<'facing' | 'price' | 'restock' | 'bay' | null>(null)
 
   const unpack = () => {
     dispatch({ type: 'unpack' })
@@ -111,22 +110,16 @@ function FloorPanelInner() {
 
   const sheets = (
     <>
-      <RegularsSheet open={regularsOpen} onClose={() => setRegularsOpen(false)} />
 
       <Sheet
-        open={desk === 'facing'}
-        onClose={() => setDesk(null)}
-        title="Facing · regulars"
+        open
+        onClose={() => {}}
+        title="Regulars"
         reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setDesk(null)}>
-            Done
-          </Button>
-        }
       >
         <div className="fp-card__stack">
           <Toggle checked={s.depth?.open !== false} onChange={(on) => dispatch({ type: 'setOpen', open: on })}>
-            {s.depth?.open === false ? 'Closed' : 'Open'}
+            {s.depth?.open === false ? 'Store closed' : 'Store open'}
           </Toggle>
           {unlockedCats
             .filter((c) => facingsFor(c).length > 0 && (c === 'cans' || s.era >= 1))
@@ -134,19 +127,14 @@ function FloorPanelInner() {
               const options = facingsFor(c)
               const current = s.depth?.facings?.[c]
               return (
-                <div key={c} className="fp-aisles" role="group" aria-label={`${CATEGORIES[c].name} facing`}>
-                  <span className="fp-note">{CATEGORIES[c].short}</span>
-                  {options.map((f) => (
-                    <span key={f.id} title={f.blurb}>
-                      <Chip
-                        selected={current === f.id}
-                        onClick={() => dispatch({ type: 'setFacing', cat: c, facingId: f.id })}
-                      >
-                        {f.name}
-                      </Chip>
-                    </span>
-                  ))}
-                </div>
+                <Field key={c} label={`${CATEGORIES[c].name} facing`}>
+                  <SegmentedControl
+                    aria-label={`${CATEGORIES[c].name} facing`}
+                    value={current ?? ''}
+                    onChange={(id) => dispatch({ type: 'setFacing', cat: c, facingId: id })}
+                    options={options.map((f) => ({ value: f.id, label: f.name, title: f.blurb }))}
+                  />
+                </Field>
               )
             })}
           {facingBan ? (
@@ -191,12 +179,34 @@ function FloorPanelInner() {
             </div>
           ) : (
             <p className="fp-note" data-coach-id="floor-layaway">
-              Regulars {s.depth?.regularSatisfied ?? 0}
-              {s.era < 1 ? ` / ${DEPTH.era1RegularNeed}` : ''}
-              {s.era < 1 ? ` · Slips ${s.depth?.layawaySlips ?? 0}/${DEPTH.layawaySlipNeed}` : ''}
-              {featured.length ? ` · Feat ${featured.map((c) => CATEGORIES[c].short).join('+')}` : ''}
+              Nobody at the counter right now. Keep the shelf stocked and someone will drop in.
             </p>
           )}
+          {s.era < 1 ? (
+            <>
+              <Meter
+                value={s.depth?.regularSatisfied ?? 0}
+                max={DEPTH.era1RegularNeed}
+                label="Regulars served"
+                eta={`${s.depth?.regularSatisfied ?? 0} of ${DEPTH.era1RegularNeed}`}
+              />
+              <Meter
+                value={s.depth?.layawaySlips ?? 0}
+                max={DEPTH.layawaySlipNeed}
+                label="Layaway slips cleared"
+                eta={`${s.depth?.layawaySlips ?? 0} of ${DEPTH.layawaySlipNeed}`}
+              />
+              <p className="fp-note">Some regulars pay on layaway. When one is at the counter, the big button says Clear slip.</p>
+            </>
+          ) : null}
+          {featured.length ? (
+            <p className="fp-note">Featured today: {featured.map((c) => CATEGORIES[c].name).join(', ')}</p>
+          ) : null}
+          {regularsMet > 0 ? (
+            <Button tone="secondary" onClick={() => setRegularsOpen(true)}>
+              Everyone you've met · {regularsMet}
+            </Button>
+          ) : null}
           {s.era >= 1 ? (
             <Button
               size="sm"
@@ -245,15 +255,10 @@ function FloorPanelInner() {
       </Sheet>
 
       <Sheet
-        open={desk === 'price'}
-        onClose={() => setDesk(null)}
+        open
+        onClose={() => {}}
         title="Shelf price"
         reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setDesk(null)}>
-            Done
-          </Button>
-        }
       >
         <div className="fp-card__stack">
           <div data-coach-id="floor-price-step">
@@ -277,20 +282,18 @@ function FloorPanelInner() {
             />
           ) : null}
           <p className="fp-proj">
-            <span>−10¢ → {rate(demandLow)}</span>
-            <span>+10¢ → {rate(demandHigh)}</span>
+            <span>10¢ less: {rate(demandLow)} shoppers</span>
+            <span>10¢ more: {rate(demandHigh)} shoppers</span>
           </p>
           {tip != null ? (
-            <p className="fp-note">
-              Best ≈ {money(tip, numberFormat)}{' '}
+            <div className="fp-row">
+              <p className="fp-note">Best price ≈ {money(tip, numberFormat)}{Math.abs(s.price - tip) >= 0.05 ? '' : ' · you are on it'}</p>
               {Math.abs(s.price - tip) >= 0.05 ? (
-                <button type="button" className="fp-link" onClick={() => dispatch({ type: 'setPrice', price: tip })}>
-                  Match
-                </button>
-              ) : (
-                '· on target'
-              )}
-            </p>
+                <Button size="sm" tone="secondary" onClick={() => dispatch({ type: 'setPrice', price: tip })}>
+                  Use best price
+                </Button>
+              ) : null}
+            </div>
           ) : null}
           {premium >= 2 ? (
             <p className="fp-note">
@@ -301,15 +304,10 @@ function FloorPanelInner() {
       </Sheet>
 
       <Sheet
-        open={desk === 'restock'}
-        onClose={() => setDesk(null)}
+        open
+        onClose={() => {}}
         title="Restock"
         reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setDesk(null)}>
-            Done
-          </Button>
-        }
       >
         <div className="fp-card__stack">
           {unlockedCats.length > 1 ? (
@@ -355,8 +353,9 @@ function FloorPanelInner() {
       </Sheet>
 
       <Sheet
-        open={desk === 'bay'}
-        onClose={() => setDesk(null)}
+        open
+        deskHidden={s.era < 7}
+        onClose={() => {}}
         title={`Off-world bay · ${bay.length}`}
         reducedMotion={reducedMotion}
         footer={
@@ -366,7 +365,6 @@ function FloorPanelInner() {
             title={!restockCheck.ok ? restockCheck.reason : 'Refill from stocked worlds'}
             onClick={() => {
               dispatch(lateCmd({ type: 'restockOffworld' }))
-              setDesk(null)
             }}
           >
             Restock from worlds
@@ -391,6 +389,7 @@ function FloorPanelInner() {
         purpose={MENUS.floor.purpose}
         department="Floor"
         room={<FloorRoom />}
+        desks={sheets}
         tray={{
           primary: regularDef
             ? {
@@ -434,8 +433,7 @@ function FloorPanelInner() {
               ? { label: 'Order at Suppliers', onClick: () => setActiveMenu('suppliers') }
               : undefined,
           secondaries: [
-            // Tray holds 4 secondaries; past Era 7 the Bay wins, so Switch lives on the Facing sheet only.
-            ...(waitingDef && s.era < 7
+            ...(waitingDef
               ? [
                   {
                     key: 'switch',
@@ -444,15 +442,6 @@ function FloorPanelInner() {
                     onClick: () => dispatch({ type: 'focusRegular', which: 'waiting' }),
                   },
                 ]
-              : []),
-            ...(!waitingDef && s.era < 7 && regularsMet > 0
-              ? [{ key: 'regulars', label: 'Regulars', fact: `${regularsMet} met`, onClick: () => setRegularsOpen(true) }]
-              : []),
-            { key: 'facing', label: 'Facing', onClick: () => setDesk('facing') },
-            { key: 'price', label: 'Price', coachId: 'floor-price', onClick: () => setDesk('price') },
-            { key: 'restock', label: 'Restock', coachId: 'floor-wholesale', onClick: () => setDesk('restock') },
-            ...(s.era >= 7
-              ? [{ key: 'bay', label: 'Bay', fact: String(bay.length), onClick: () => setDesk('bay') }]
               : []),
           ],
         }}
@@ -482,7 +471,7 @@ function FloorPanelInner() {
           </div>
         ) : null}
       </PlayFrame>
-      {sheets}
+      <RegularsSheet open={regularsOpen} onClose={() => setRegularsOpen(false)} />
     </section>
   )
 }

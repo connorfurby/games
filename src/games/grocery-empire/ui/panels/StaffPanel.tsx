@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MENUS } from '../../content/menus'
 import { CATEGORY_IDS } from '../../content/categories'
 import {
   ROLE_IDS,
@@ -41,7 +42,7 @@ import { CardTitle } from '../components/ScreenPanel'
 import type { ExtraIcon } from '../icons/Icon'
 import { Icon } from '../icons/Icon'
 import { PlayFrame, StatusChip } from '../play'
-import { Button, Card, Chip, Disclosure, EmptyState, KeyValue, Meter, Sheet, Toggle, useConfirm } from '../kit'
+import { Button, Card, Chip, EmptyState, KeyValue, Meter, Sheet, Toggle, useConfirm } from '../kit'
 import { RolePortrait, StaffFloor } from '../staff/StaffFloor'
 
 const ROLE_ICON: Record<RoleId, ExtraIcon> = {
@@ -162,8 +163,6 @@ export function StaffPanel() {
   const pizzaReady = !!s.memos['pizza-friday'] && s.cash >= MORALE.pizzaCost
   const wages = wagesPerSec(s)
   const [readyOnly, setReadyOnly] = useState(false)
-  const [shiftSheet, setShiftSheet] = useState(false)
-  const [hireSheet, setHireSheet] = useState(false)
   const hireRoles = ROLE_IDS.filter((role) => role !== 'shiftLead')
     .filter((role) => role !== 'night' || !!s.memos['night-latch'])
     .filter((role) => !ROLES[role].era || s.era >= ROLES[role].era)
@@ -224,208 +223,44 @@ export function StaffPanel() {
   return (
     <section className="ge-panel">
       <PlayFrame
-        purpose="Hire the crew that clears your limit, then set who covers each shift."
+        purpose={MENUS.staff.purpose}
         department="Staff"
-        room={
-          <StaffFloor
-            roster={roster}
-            bottleneck={bottleneck.kind}
-            bottleneckLabel={bottleneck.label}
-            motion={!reducedMotion}
-            era={s.era}
-            working={working}
-            shelf={s.shelf}
-            shelfCapacity={shelfCap(s)}
-            wagesPerSec={wages}
-            annexStaffed={annexHeads}
-            unlockedCats={CATEGORY_IDS.filter((c) => s.categories[c])}
-          />
-        }
-        tray={{
-          primary:
-            shownRole && recommendCheck
-              ? {
-                  label: `Hire ${ROLES[shownRole].name}`,
-                  tone: 'primary',
-                  size: 'lg',
-                  disabled: !recommendCheck.ok,
-                  title: !recommendCheck.ok
-                    ? recommendCheck.reason
-                    : seatSources.length
-                      ? `Seats from ${seatSources.map((x) => `${x.label} +${x.n}`).join(', ')}`
-                      : undefined,
-                  cost: money(hireCost(s, shownRole), numberFormat),
-                  feedback: true,
-                  onClick: () => dispatch({ type: 'hire', role: shownRole }),
-                }
-              : {
-                  label: 'Hire',
-                  tone: 'primary',
-                  size: 'lg',
-                  title: seatSources.length
-                    ? `Seats from ${seatSources.map((x) => `${x.label} +${x.n}`).join(', ')}`
-                    : 'Open the hire board',
-                  onClick: () => setHireSheet(true),
-                },
-          failReason: shownRole && recommendCheck && !recommendCheck.ok ? recommendCheck.reason : undefined,
-          secondaries: [
-            {
-              key: 'shifts',
-              label: 'Shifts',
-              fact: String(s.depth?.shifts?.daysCoveredOpen ?? 0),
-              coachId: 'hours',
-              onClick: () => setShiftSheet(true),
-            },
-            {
-              key: 'hire',
-              label: 'Hire board',
-              fact: `${floorHeads}/${seats}`,
-              onClick: () => setHireSheet(true),
-            },
-          ],
-        }}
-      >
+        desks={<>
+      <Sheet open onClose={() => {}} title={`Hire · ${floorHeads} of ${seats} seats`} className="pf-desk--wide pf-desk--hire">
         <div className="p6-stack">
-          <StatusChip tone={bottleneck.kind === 'demand' ? 'ready' : 'warn'} title={bottleneck.label}>
-            Limit · {bottleneck.kind === 'demand' ? 'Shoppers' : bottleneck.kind} · wages {money(wages * 60, numberFormat)}/min
-          </StatusChip>
-          {freshBottleneck ? (
-            <StatusChip tone="warn">Fresh aisle is the shelf limit — hire a greengrocer or stocker.</StatusChip>
-          ) : null}
-
-          <StatusChip tone="idle" title="Store hours multiplier. Set it on the Shifts sheet.">
-            Hours {s.hours.toFixed(1)}× · {s.depth?.shifts?.daysCoveredOpen ?? 0} open days covered
-          </StatusChip>
-          {s.era >= 7 ? (
-            <div data-coach-id="staff-annex">
-              <StatusChip
-                tone={annexRec ? 'waiting' : 'ready'}
-                title={annexRec?.why ?? 'Every annex desk you need is staffed.'}
-              >
-                Worlds annex · {annexHeads}/{annexSeats} seats ·{' '}
-                {annexRec ? `hire ${ROLES[annexRec.role].name}` : 'desks covered'}
-              </StatusChip>
-            </div>
-          ) : null}
-        </div>
-
-        {s.era >= 1
-          ? DEPARTMENTS.filter((d) => s.era >= d.era).map((d) => {
-              const active = s.depth?.departments?.[d.id]?.policy ?? null
-              const leadCheck = engine.can({ type: 'setDeptPolicy', dept: d.id, policy: d.policies[0]?.id ?? '' })
-              return (
-                <Disclosure
-                  key={d.id}
-                  title={`${d.name} policy`}
-                  defaultOpen={d.id === 'fresh' && freshBottleneck}
-                >
-                  <div className="p6-stack" data-coach-id={`staff-policy-${d.id}`}>
-                    {!leadCheck.ok ? <p className="p6-muted">{leadCheck.reason}</p> : null}
-                    {d.policies.map((p) => {
-                      const check = engine.can({ type: 'setDeptPolicy', dept: d.id, policy: p.id })
-                      return (
-                        <div key={p.id} className="p6-row" style={{ alignItems: 'center' }}>
-                          <Button
-                            size="sm"
-                            tone={active === p.id ? 'primary' : 'ghost'}
-                            disabled={!check.ok}
-                            title={check.ok ? p.blurb : check.reason}
-                            onClick={() => dispatch({ type: 'setDeptPolicy', dept: d.id, policy: p.id })}
-                          >
-                            {p.name}
-                          </Button>
-                          <span className="p6-muted">{p.blurb}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </Disclosure>
-              )
-            })
-          : null}
-      </PlayFrame>
-      <Sheet
-        open={shiftSheet}
-        onClose={() => setShiftSheet(false)}
-        title="Shift Board"
-        reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setShiftSheet(false)}>
-            Done
-          </Button>
-        }
-      >
-        <div className="p6-stack ge-shift-cols">
-          {(['open', 'mid', 'close'] as const).map((slot) => {
-            const ids = s.depth?.shifts?.[slot] ?? []
-            const tip =
-              slot === 'open'
-                ? 'Door requirement. Unstaffed Open hurts spoil.'
-                : slot === 'mid'
-                  ? 'Eases checkout during the midday third of the shift day.'
-                  : 'Cuts night shrink while covered.'
-            return (
-              <div key={slot} className="p6-stack" title={tip}>
-                <strong style={{ textTransform: 'capitalize' }}>
-                  {slot}
-                  <span className="p6-muted"> · {tip}</span>
-                </strong>
-                <div className="p6-row">
-                  {roster.map((m) => {
-                    const on = ids.includes(m.id)
-                    return (
-                      <Chip
-                        key={`${slot}-${m.id}`}
-                        selected={on}
-                        onClick={() =>
-                          dispatch(
-                            on
-                              ? { type: 'clearShift', slot, staffId: m.id }
-                              : { type: 'assignShift', slot, staffId: m.id },
-                          )
-                        }
-                      >
-                        {m.name}
-                      </Chip>
-                    )
-                  })}
-                  {roster.length === 0 ? (
-                    <EmptyState title="Hire someone first" body="Open the hire board to staff shifts." />
-                  ) : null}
-                </div>
-              </div>
-            )
-          })}
-          <p className="p6-copy">Open days covered: {s.depth?.shifts?.daysCoveredOpen ?? 0}.</p>
-          <div className="p6-row">
-            <div className="p6-hours">
-              <label htmlFor="ge-hours">
-                Hours <strong>{s.hours.toFixed(1)}×</strong> · max {maxH.toFixed(1)}×
-              </label>
-              <input
-                id="ge-hours"
-                type="range"
-                min={HOURS.min}
-                max={maxH}
-                step={0.1}
-                value={s.hours}
-                onChange={(e) => dispatch({ type: 'setHours', hours: Number(e.target.value) })}
-              />
-            </div>
-            {s.memos['pizza-friday'] ? (
-              <Button
-                tone={pizzaReady ? 'primary' : 'secondary'}
-                coachId="order-pizza"
-                disabled={s.cash < MORALE.pizzaCost}
-                title={s.cash < MORALE.pizzaCost ? `Need ${money(MORALE.pizzaCost, numberFormat)}` : undefined}
-                cost={money(MORALE.pizzaCost, numberFormat)}
-                feedback
-                onClick={() => dispatch({ type: 'orderPizza' })}
-              >
-                Pizza
-              </Button>
-            ) : null}
+          <div className="p6-row" style={{ justifyContent: 'space-between' }}>
+            <span className="p6-copy">Each hire costs a little more than the last.</span>
+            <Toggle checked={readyOnly} onChange={setReadyOnly}>
+              Ready only
+            </Toggle>
           </div>
+          <div className="p6-grid">
+            {hireRoles.length === 0 ? (
+              <EmptyState title="Nothing affordable" body="Earn cash or free a seat, then hire." />
+            ) : (
+              hireRoles.map((role) => {
+                const hireCheck = engine.can({ type: 'hire', role })
+                return (
+                  <StaffRoleCard
+                    key={role}
+                    role={role}
+                    cost={hireCost(s, role)}
+                    n={roleCount(s, role)}
+                    canHire={hireCheck.ok}
+                    numberFormat={numberFormat}
+                    onHire={() => dispatch({ type: 'hire', role })}
+                    disabledReason={!hireCheck.ok ? hireCheck.reason : undefined}
+                    recommended={role === shownRole}
+                    crowdWarn={role === 'security' && roleCount(s, 'security') >= 2}
+                  />
+                )
+              })
+            )}
+          </div>
+        </div>
+      </Sheet>
+      <Sheet open onClose={() => {}} title={`Crew · ${roster.length}`} className="pf-desk--wide">
+        <div className="p6-stack">
           <KeyValue
             items={[
               { label: 'Unpack', value: rate(unpack), title: 'Crates moved to the shelf per second' },
@@ -434,7 +269,7 @@ export function StaffPanel() {
             ]}
           />
           {roster.length === 0 ? (
-            <p className="p6-muted">No one on the clock.</p>
+            <p className="p6-muted">Nobody on the crew yet. Hire someone above.</p>
           ) : (
             <ul className="p6-roster">
               {roster.map((m) => {
@@ -506,51 +341,171 @@ export function StaffPanel() {
           )}
         </div>
       </Sheet>
-
-      <Sheet
-        open={hireSheet}
-        onClose={() => setHireSheet(false)}
-        title="Hire"
-        reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setHireSheet(false)}>
-            Done
-          </Button>
+      <Sheet open onClose={() => {}} title="Department rules" deskHidden={s.era < 1}>
+        {DEPARTMENTS.filter((d) => s.era >= d.era).map((d) => {
+              const active = s.depth?.departments?.[d.id]?.policy ?? null
+              const leadCheck = engine.can({ type: 'setDeptPolicy', dept: d.id, policy: d.policies[0]?.id ?? '' })
+              return (
+                <div key={d.id} className="p6-stack p6-policy">
+                  <strong className="p6-shift__name">{d.name}</strong>
+                  <div className="p6-stack" data-coach-id={`staff-policy-${d.id}`}>
+                    {!leadCheck.ok ? (
+                      <p className="p6-muted">
+                        {leadCheck.reason} Then choose: {d.policies.map((p) => `${p.name} (${p.blurb.toLowerCase().replace(/\.$/, '')})`).join(' or ')}.
+                      </p>
+                    ) : null}
+                    {(leadCheck.ok ? d.policies : []).map((p) => {
+                      const check = engine.can({ type: 'setDeptPolicy', dept: d.id, policy: p.id })
+                      return (
+                        <div key={p.id} className="p6-row" style={{ alignItems: 'center' }}>
+                          <Button
+                            size="sm"
+                            tone={active === p.id ? 'primary' : 'secondary'}
+                            disabled={!check.ok}
+                            title={check.ok ? p.blurb : check.reason}
+                            onClick={() => dispatch({ type: 'setDeptPolicy', dept: d.id, policy: p.id })}
+                          >
+                            {p.name}
+                          </Button>
+                          <span className="p6-muted">{p.blurb}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })
         }
-      >
-        <div className="p6-stack">
-          <div className="p6-row" style={{ justifyContent: 'space-between' }}>
-            <span className="p6-copy">Cost scales with headcount.</span>
-            <Toggle checked={readyOnly} onChange={setReadyOnly}>
-              Ready only
-            </Toggle>
-          </div>
-          <div className="p6-grid">
-            {hireRoles.length === 0 ? (
-              <EmptyState title="Nothing affordable" body="Earn cash or free a seat, then hire." />
-            ) : (
-              hireRoles.map((role) => {
-                const hireCheck = engine.can({ type: 'hire', role })
-                return (
-                  <StaffRoleCard
-                    key={role}
-                    role={role}
-                    cost={hireCost(s, role)}
-                    n={roleCount(s, role)}
-                    canHire={hireCheck.ok}
-                    numberFormat={numberFormat}
-                    onHire={() => dispatch({ type: 'hire', role })}
-                    disabledReason={!hireCheck.ok ? hireCheck.reason : undefined}
-                    recommended={role === shownRole}
-                    crowdWarn={role === 'security' && roleCount(s, 'security') >= 2}
-                  />
-                )
-              })
-            )}
+      </Sheet>
+      <Sheet open onClose={() => {}} title="Shifts & hours" className="pf-desk--wide pf-desk--shifts">
+        <div className="p6-stack ge-shift-cols">
+          {(['open', 'mid', 'close'] as const).map((slot) => {
+            const ids = s.depth?.shifts?.[slot] ?? []
+            const tip =
+              slot === 'open'
+                ? 'Someone has to open the door, or fresh stock spoils faster.'
+                : slot === 'mid'
+                  ? 'Helps the tills through the midday rush.'
+                  : 'Cuts overnight shrink.'
+            return (
+              <div key={slot} className="p6-stack" title={tip}>
+                <strong className="p6-shift__name">{slot === 'open' ? 'Opening' : slot === 'mid' ? 'Midday' : 'Closing'}</strong>
+                <span className="p6-muted">{tip}</span>
+                <div className="p6-row">
+                  {roster.map((m) => {
+                    const on = ids.includes(m.id)
+                    return (
+                      <Chip
+                        key={`${slot}-${m.id}`}
+                        selected={on}
+                        onClick={() =>
+                          dispatch(
+                            on
+                              ? { type: 'clearShift', slot, staffId: m.id }
+                              : { type: 'assignShift', slot, staffId: m.id },
+                          )
+                        }
+                      >
+                        {m.name}
+                      </Chip>
+                    )
+                  })}
+                  {roster.length === 0 ? <p className="p6-muted">Hire someone first.</p> : null}
+                </div>
+              </div>
+            )
+          })}
+          <p className="p6-copy">Days with the opening covered: {s.depth?.shifts?.daysCoveredOpen ?? 0}</p>
+          <div className="p6-row">
+            <div className="p6-hours">
+              <label htmlFor="ge-hours">
+                Store hours <strong>{s.hours.toFixed(1)}×</strong> (up to {maxH.toFixed(1)}×) · longer hours sell more and cost more wages
+              </label>
+              <input
+                id="ge-hours"
+                type="range"
+                min={HOURS.min}
+                max={maxH}
+                step={0.1}
+                value={s.hours}
+                onChange={(e) => dispatch({ type: 'setHours', hours: Number(e.target.value) })}
+              />
+            </div>
+            {s.memos['pizza-friday'] ? (
+              <Button
+                tone={pizzaReady ? 'primary' : 'secondary'}
+                coachId="order-pizza"
+                disabled={s.cash < MORALE.pizzaCost}
+                title={s.cash < MORALE.pizzaCost ? `Need ${money(MORALE.pizzaCost, numberFormat)}` : undefined}
+                cost={money(MORALE.pizzaCost, numberFormat)}
+                feedback
+                onClick={() => dispatch({ type: 'orderPizza' })}
+              >
+                Pizza
+              </Button>
+            ) : null}
           </div>
         </div>
       </Sheet>
+</>}
+        room={
+          <StaffFloor
+            roster={roster}
+            bottleneck={bottleneck.kind}
+            bottleneckLabel={bottleneck.label}
+            motion={!reducedMotion}
+            era={s.era}
+            working={working}
+            shelf={s.shelf}
+            shelfCapacity={shelfCap(s)}
+            wagesPerSec={wages}
+            annexStaffed={annexHeads}
+            unlockedCats={CATEGORY_IDS.filter((c) => s.categories[c])}
+          />
+        }
+        tray={
+          shownRole && recommendCheck
+            ? {
+          primary: {
+                  label: `Hire ${ROLES[shownRole].name}`,
+                  tone: 'primary',
+                  size: 'lg',
+                  disabled: !recommendCheck.ok,
+                  title: !recommendCheck.ok
+                    ? recommendCheck.reason
+                    : seatSources.length
+                      ? `Seats from ${seatSources.map((x) => `${x.label} +${x.n}`).join(', ')}`
+                      : undefined,
+                  cost: money(hireCost(s, shownRole), numberFormat),
+                  feedback: true,
+                  onClick: () => dispatch({ type: 'hire', role: shownRole }),
+                },
+          failReason: !recommendCheck.ok ? recommendCheck.reason : undefined,
+              }
+            : undefined
+        }
+      >
+        {freshBottleneck || s.era >= 7 ? (
+        <div className="p6-stack">
+          {freshBottleneck ? (
+            <StatusChip tone="warn">Fresh aisle is the shelf limit — hire a greengrocer or stocker.</StatusChip>
+          ) : null}
 
+          {s.era >= 7 ? (
+            <div data-coach-id="staff-annex">
+              <StatusChip
+                tone={annexRec ? 'waiting' : 'ready'}
+                title={annexRec?.why ?? 'Every annex desk you need is staffed.'}
+              >
+                Worlds annex · {annexHeads}/{annexSeats} seats ·{' '}
+                {annexRec ? `hire ${ROLES[annexRec.role].name}` : 'desks covered'}
+              </StatusChip>
+            </div>
+          ) : null}
+        </div>
+        ) : null}
+
+      </PlayFrame>
     </section>
   )
 }

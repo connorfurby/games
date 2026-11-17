@@ -1224,19 +1224,20 @@ export function salesBottleneck(s: GameState): {
   const shelf = sumQty(s.shelf)
   const back = sumQty(s.backroom)
   let kind: SalesBottleneck = 'demand'
-  let label = 'Shoppers are the limit — ads, price, or another door.'
+  let label = 'Shoppers are the limit — ads or a better price.'
   if (shelf <= 0) {
     kind = 'shelf'
     label =
       back > 0
-        ? 'Shelf empty — Unpack from the backroom.'
-        : 'Shelf empty — buy a crate, then Unpack.'
-  } else if (unpack + 0.05 < Math.min(demand, checkout) && back > 0) {
+        ? 'Shelf empty — Unpack the backroom.'
+        : 'Shelf empty — buy a crate.'
+  } else if (unpack + 0.05 < Math.min(demand, checkout) && back > 0 && shelf < shelfCap(s) * 0.5) {
+    // Only a real limit once the shelf is draining: a full shelf with slow hands is fine.
     kind = 'unpack'
-    label = 'Unpack is behind demand — hire a clerk or Unpack yourself.'
+    label = 'Shelf is draining — Unpack or hire a clerk.'
   } else if (checkout + 0.05 < demand && shelf > 0) {
     kind = 'checkout'
-    label = 'Checkout is the line — hire cashiers or open managed stores.'
+    label = 'Line at the till — hire a cashier.'
   }
   return { kind, label, demand, checkout, unpack, shelf }
 }

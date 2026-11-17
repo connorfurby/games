@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { DeskInline } from '../kit/desk'
 import { PanelHelp, PanelHelpButton, PanelTitle } from './PanelHelp'
 import { VerbTray, type VerbTrayProps } from './VerbTray'
 import './play.css'
@@ -13,6 +14,7 @@ export function PlayFrame({
   help = true,
   room,
   tray,
+  desks,
   primarySlot,
   children,
   className = '',
@@ -29,6 +31,8 @@ export function PlayFrame({
   tray?: VerbTrayProps
   /** Escape hatch while a panel still builds its own primary row. Prefer `tray`. */
   primarySlot?: ReactNode
+  /** Desk cards under the tray: each `Sheet` in here renders in place, always visible. */
+  desks?: ReactNode
   /** Body exception: puzzle board, skill tree, map, museum gallery. */
   children?: ReactNode
   className?: string
@@ -49,6 +53,11 @@ export function PlayFrame({
       {tray ? <VerbTray {...tray} /> : null}
       {!tray && primarySlot ? <div className="pf__tray">{primarySlot}</div> : null}
       {children != null ? <div className="pf__body">{children}</div> : null}
+      {desks ? (
+        <DeskInline.Provider value={true}>
+          <div className="pf-desks">{desks}</div>
+        </DeskInline.Provider>
+      ) : null}
     </div>
   )
 }

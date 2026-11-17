@@ -608,4 +608,58 @@
       animation: none;
     }
   }
+
+  /* Desks: the tools for this room, laid out in place. No openers, no side drawer. */
+  .pf-desks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--s-4);
+    align-items: start;
+    margin-top: var(--s-4);
+  }
+  .pf-desk {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-width: 0;
+    padding: var(--s-4);
+    border: 1px solid var(--ge-line-strong);
+    border-radius: var(--r-md);
+    background: var(--ge-raised);
+  }
+  .pf-desk--wide {
+    grid-column: 1 / -1;
+  }
+  .pf-desk__title {
+    margin: 0;
+    font-family: var(--g2-display);
+    font-size: var(--t-lg);
+    line-height: var(--t-lg-lh);
+    font-weight: 700;
+  }
+  .pf-desk__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-width: 0;
+  }
+  .pf-desk__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--ge-line);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html:not(.ge-reduced-motion) .pf-desk {
+      animation: pf-desk-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    html:not(.ge-reduced-motion) .pf-desk:nth-child(2) { animation-delay: 40ms; }
+    html:not(.ge-reduced-motion) .pf-desk:nth-child(3) { animation-delay: 80ms; }
+    html:not(.ge-reduced-motion) .pf-desk:nth-child(4) { animation-delay: 120ms; }
+  }
+  @keyframes pf-desk-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
 }

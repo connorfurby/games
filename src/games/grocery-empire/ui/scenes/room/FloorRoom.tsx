@@ -53,13 +53,14 @@ export function FloorRoom() {
     ...(waitingReg ? [{ label: 'Waiting', value: waitingReg.name }] : []),
   ]
 
+  // Short, scene-sized hint: always fits, no ellipsis. Demand is the healthy state, so it stays quiet.
   const bnLabel =
     bn.kind === 'shelf'
-      ? bn.label
+      ? back > 0 ? 'Shelf empty — tap Unload' : null
       : bn.kind === 'unpack'
-        ? bn.label
+        ? 'Shelf draining — tap Unload'
         : bn.kind === 'checkout'
-          ? bn.label
+          ? 'Line at the till — hire a cashier'
           : null
 
   const label = `Floor, shelf ${qty(shelf)} of ${qty(cap)}, back ${qty(back)}, ${rate(sold)} baskets per second`
@@ -204,9 +205,9 @@ export function FloorRoom() {
         <g transform="translate(-486 120)">{registers}</g>
         {bnLabel && !(shelf <= 0 && back <= 0) ? (
           <g>
-            <rect x="8" y={PORTRAIT_H - 34} width={PORTRAIT_W - 16} height="26" rx="6" fill="#2a1814" stroke="#d9665b" />
-            <text x={PORTRAIT_W / 2} y={PORTRAIT_H - 17} textAnchor="middle" fill="#f0c4bc" fontSize="12" fontWeight="700">
-              {bnLabel.length > 44 ? `${bnLabel.slice(0, 42)}…` : bnLabel}
+            <rect x={PORTRAIT_W / 2 - 120} y={PORTRAIT_H - 34} width="240" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
+            <text x={PORTRAIT_W / 2} y={PORTRAIT_H - 17} textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
+              {bnLabel}
             </text>
           </g>
         ) : null}
@@ -247,9 +248,9 @@ export function FloorRoom() {
       {/* Bottleneck sits above the ground strip — never on the annex/ground seam */}
       {bnLabel && !(shelf <= 0 && back <= 0) ? (
         <g>
-          <rect x="190" y="214" width="460" height="26" rx="6" fill="#2a1814" stroke="#d9665b" />
-          <text x="420" y="231" textAnchor="middle" fill="#f0c4bc" fontSize="12" fontWeight="700">
-            {bnLabel.length > 52 ? `${bnLabel.slice(0, 50)}…` : bnLabel}
+          <rect x="290" y="214" width="260" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
+          <text x="420" y="231" textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
+            {bnLabel}
           </text>
         </g>
       ) : null}

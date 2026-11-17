@@ -253,8 +253,8 @@ function collectStaff(s: GameState, out: Suggestion[]) {
         title: role === 'clerk' ? 'Hire a clerk' : 'Hire a cashier',
         blurb:
           role === 'clerk'
-            ? `Unpack is behind demand · $${cost}`
-            : `Checkout is the line · $${cost}`,
+            ? `Shelf is draining · $${cost}`
+            : `Line at the till · $${cost}`,
         score: 730,
         action: { type: 'hire', role },
         cta: 'Hire',

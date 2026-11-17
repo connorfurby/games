@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { createPortal } from 'react-dom'
 import { sfx } from '@/shared/audio'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useDeskInline } from './desk'
 import { cx, useEscape, usePhone, useReducedMotion, overlayRoot } from './hooks'
 import { IconButton } from './IconButton'
 
@@ -13,13 +14,17 @@ export interface SheetProps {
   footer?: ReactNode
   reducedMotion?: boolean
   className?: string
+  /** In a desk area: hide this card (e.g. the feature is not unlocked yet). */
+  deskHidden?: boolean
 }
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 /** Bottom sheet on phones (<= 720px), right-hand drawer on desktop. */
-export function Sheet({ open, onClose, title, children, footer, reducedMotion, className }: SheetProps) {
+export function Sheet({ open: openProp, onClose, title, children, footer, reducedMotion, className, deskHidden }: SheetProps) {
+  const inline = useDeskInline()
+  const open = openProp && !inline
   const phone = usePhone()
   const reduced = useReducedMotion(reducedMotion)
   const panel = useRef<HTMLDivElement>(null)
@@ -105,6 +110,18 @@ export function Sheet({ open, onClose, title, children, footer, reducedMotion, c
       ) : null}
     </AnimatePresence>
   )
+  if (inline) {
+    if (deskHidden) return null
+    return (
+      <section className={cx('pf-desk', className)} aria-labelledby={titleId}>
+        <h3 id={titleId} className="pf-desk__title">
+          {title}
+        </h3>
+        <div className="pf-desk__body">{children}</div>
+        {footer ? <footer className="pf-desk__foot">{footer}</footer> : null}
+      </section>
+    )
+  }
   const root = overlayRoot()
   return root ? createPortal(tree, root) : tree
 }

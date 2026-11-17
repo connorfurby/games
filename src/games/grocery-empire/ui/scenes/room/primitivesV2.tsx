@@ -22,10 +22,13 @@ export function Person({
     <g transform={`translate(${x} ${y}) scale(${scale})`}>
       <g className={`rm-person${working ? ' rm-pulse' : ''}`} style={{ animationDelay: `${delay}s` }}>
         {name ? <title>{name}</title> : null}
-        <ellipse cx="0" cy="14" rx="8" ry="3.5" fill="#000" opacity="0.28" />
-        <path d="M-7 2 Q0 14 7 2 V-5 H-7 Z" fill={tint} />
-        <circle cy="-11" r="5.5" fill="#e6c2a0" />
-        {working ? <circle className="rm-pulse" cx="10" cy="-8" r="2.5" fill="#ffd98c" opacity="0.75" /> : null}
+        <ellipse cx="0" cy="14" rx="6.5" ry="2.2" fill="#000" opacity="0.3" />
+        <rect x="-4" y="3" width="3" height="11" rx="1.2" fill="#2a2f38" />
+        <rect x="1" y="3" width="3" height="11" rx="1.2" fill="#2a2f38" />
+        <rect x="-5.5" y="-8" width="11" height="13" rx="3.5" fill={tint} />
+        <circle cy="-13" r="4.6" fill="#e6c2a0" />
+        <path d="M-4.6 -14 A4.6 4.6 0 0 1 4.6 -14 Q0 -16.5 -4.6 -14 Z" fill="#3a2a20" opacity="0.85" />
+        {working ? <circle className="rm-pulse" cx="9" cy="-12" r="2.2" fill="#ffd98c" opacity="0.8" /> : null}
         {name ? (
           <text className="rm-person__name" y="26" textAnchor="middle">
             {name.length > 8 ? `${name.slice(0, 7)}…` : name}
