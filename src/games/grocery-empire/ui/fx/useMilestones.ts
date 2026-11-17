@@ -17,14 +17,29 @@ export function useMilestones(opts: { muted: boolean; enabled?: boolean }): void
   const era = useGameSelector((s) => s.era)
   const rank = useGameSelector((s) => s.empire.level)
   const chapterPending = useGameSelector((s) => s.chapterQueue.length > 0)
-  const last = useRef({ era, rank })
+  // Basket milestones: 1, 10, 100, 1,000 … (the order of magnitude of lifetime sales).
+  const soldTier = useGameSelector((s) => (s.stats.sold >= 1 ? Math.floor(Math.log10(Math.max(1, s.stats.sold))) + 1 : 0))
+  const hired = useGameSelector((s) => s.staff.length > 0)
+  const last = useRef({ era, rank, soldTier, hired })
   const mutedRef = useRef(muted)
   mutedRef.current = muted
 
   useEffect(() => {
     const prev = last.current
-    last.current = { era, rank }
+    last.current = { era, rank, soldTier, hired }
     if (!enabled) return
+
+    // The first loop deserves a beat: first basket, then 10, 100, 1,000 … and the first hire.
+    if (soldTier > prev.soldTier && soldTier - prev.soldTier === 1 && soldTier <= 7) {
+      const n = Math.pow(10, soldTier - 1)
+      celebrate('medium', undefined, {
+        text: n === 1 ? 'First basket!' : `${n.toLocaleString('en-US')} baskets`,
+        muted: mutedRef.current,
+      })
+    }
+    if (hired && !prev.hired) {
+      celebrate('medium', undefined, { text: 'First hire!', muted: mutedRef.current })
+    }
 
     if (era > prev.era) {
       // Era sign on the Floor room via data-era; celebrate when no chapter covers it.
@@ -44,5 +59,5 @@ export function useMilestones(opts: { muted: boolean; enabled?: boolean }): void
         celebrate('medium', undefined, { text: `Rank ${rank}`, muted: mutedRef.current })
       }
     }
-  }, [era, rank, chapterPending, enabled])
+  }, [era, rank, soldTier, hired, chapterPending, enabled])
 }
