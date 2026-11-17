@@ -92,7 +92,8 @@ export function ColdScene() {
                 fill="#9fd4e4"
                 opacity={0.35 + tankFill * 0.35}
               />
-              <Sign x={22} y={64} text={show ? `${Math.round(tankFill * 100)}%` : '—'} small anchor="middle" />
+              {/* The badge above already shows the shared fill; only the empty slot needs a mark. */}
+              {show ? null : <Sign x={22} y={64} text="—" small anchor="middle" />}
             </g>
           )
         })}

@@ -106,7 +106,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-brand',
-    text: 'Brand finally moves demand. Match coupons and keep celebrity honest — nicks heal slowly.',
+    text: 'Brand now changes how many shoppers come. Answer coupon wars and use celebrities carefully: Brand heals slowly.',
     when: (s) => s.era >= 2 && s.brand < 0.98,
   },
   {
@@ -116,12 +116,12 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e4-franchise',
-    text: 'Franchises buy footprint and nick Brand. Seal it with Charter brand-seal or watch the label drift.',
+    text: 'Franchises grow your reach fast but chip at your Brand. The Brand Seal in Charter protects it.',
     when: (s) => (s.fleet?.franchises ?? 0) >= 1,
   },
   {
     id: 'e6-legacy',
-    text: 'Legacy is the late score. Drift wars trade barges for plaques — Guardian keeps the last hull.',
+    text: 'Legacy is your score out here. Fights with Off-Brand cost barges but earn plaques, and Guardian always saves your last barge.',
     when: (s) => s.era >= 6 || (s.fleet?.legacy ?? 0) > 0,
   },
   {
@@ -141,12 +141,12 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-incorporate',
-    text: 'Incorporating turns expansion cash into Equity and opens board meetings. Do it when cash is the bottleneck, not before.',
+    text: 'Going public raises money and adds board meetings. Do it when cash is what holds you back, not before.',
     when: (s) => s.incorporated,
   },
   {
     id: 'e2-store-drift',
-    text: 'A drifting store spoils more and shrinks more. Walk it, or lift its Attention share, before the meter bites.',
+    text: 'A store that needs a visit loses more stock to spoilage and theft. Visit it, or give it more Attention, before it slips further.',
     when: (s) => s.stores.some((st) => st.drift >= 0.4),
   },
   {
@@ -156,7 +156,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-doctrine',
-    text: 'Doctrines are opinions with teeth. Buy in order; the later ones lean on the earlier ones.',
+    text: 'Strategies build on each other. Buy them in order.',
     when: (s) => s.stats.doctrinesBought >= 1,
   },
   {
@@ -176,17 +176,17 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-autonomous',
-    text: 'Autonomous Release zeros unspent Reputation. Spend it on the office first, then release.',
+    text: 'Handing over the chain wipes any Reputation you have not spent. Spend it in the back office first.',
     when: (s) => s.depot && s.read >= 5,
   },
   {
     id: 'e3-brownout',
-    text: 'In a brownout, freshness drops to 25% and Momentum pauses. Add tanks or run fewer plants; it is a setback, not a loss.',
+    text: 'When the power dips, freshness drops to 25% and your bonus pauses. Add tanks or run fewer plants. It is a setback, not a loss.',
     when: (s) => (s.cold?.brownouts ?? 0) >= 1,
   },
   {
     id: 'e3-capital',
-    text: 'Political Capital leaks. Lobby retainers refill it; spend it on hearings, not vanity.',
+    text: 'Political Capital slowly drains away. Lobbyists refill it; spend it on things that matter, like hearings.',
     when: (s) => (s.politics?.capital ?? 0) > 0,
   },
   {
@@ -196,12 +196,12 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e4-control',
-    text: 'Control grows with wet lanes and Control Tower. Spend it like late-game cash, not like Attention.',
+    text: 'Control grows with fuelled routes and the Control Tower. Treat it like cash, not like Attention.',
     when: (s) => s.era >= 4 && s.control >= 5,
   },
   {
     id: 'e4-brand',
-    text: 'Brand drifts when you look away. Charter brand-seal slows it; Match and honest celebrity help early.',
+    text: 'Brand slowly slips if you ignore it. The Brand Seal in Charter slows that; answering coupon wars helps early on.',
     when: (s) => s.era >= 4 && s.brand < 0.85,
   },
   {
@@ -211,17 +211,17 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e5-charter',
-    text: 'Charter points shape barges: shell, replication, survey, transit, brand-seal. Reboot refunds them — no shame.',
+    text: 'Charter points shape each barge: hull, copying, scouting, speed and brand. Reboot gives them back if you want to try another mix.',
     when: (s) => s.era >= 5 && (s.fleet?.charterPool ?? 0) > 0,
   },
   {
     id: 'e5-guardian',
-    text: 'Guardian is a one-time floor for the last barge. Use it before extinction, not after.',
+    text: 'Guardian is a one-time shield for your last barge. Use it before you lose them all, not after.',
     when: (s) => s.era >= 5 && (s.fleet?.barges ?? 0) <= 2 && (s.fleet?.launched ?? false),
   },
   {
     id: 'e6-ending',
-    text: 'Accept restarts with mild bonuses and a hungrier universe. Reject files the silence. Neither is failure.',
+    text: 'Accept starts again with small bonuses in a tougher universe. Reject ends things quietly. Neither is a failure.',
     when: (s) => s.era >= 6,
   },
   {
@@ -231,14 +231,14 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e6-biomass',
-    text: 'Biomass at zero opens the ration. Until then, replication and survey keep the barges honest.',
+    text: 'When biomass hits zero, ration week begins. Until then, copying and scouting keep the barges growing.',
     when: (s) => s.era >= 6 && (s.fleet?.biomass ?? 1) > 0,
   },
 
   // ── Content firehose: E3 cold/politics, more E4/E6, weather, chain verbs ──
   {
     id: 'e3-momentum',
-    text: 'Momentum compounds only while freshness stays at or above 1. Keep surplus positive; a brownout pauses it, never wipes it.',
+    text: 'Your cold bonus grows only while food stays fully fresh. Keep supply ahead of demand; a power dip pauses it but never wipes it.',
     when: (s) => !!s.cold?.momentumOn,
   },
   {
@@ -248,32 +248,32 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e3-yield',
-    text: 'County yield is a finite pool. Plants burn it for cash; when it runs low, the map — not another plant — is the next move.',
+    text: 'The region’s supply is limited. Plants use it up for cash; when it runs low, leaving the region is the next step, not another plant.',
     when: (s) => !!s.cold && s.cold.yieldMax > 0 && s.cold.yieldLeft <= s.cold.yieldMax * 0.6,
   },
   {
     id: 'e3-monopoly',
-    text: 'Monopoly risk climbs as you acquire. Spend Political Capital on hearings before the committee spends it for you.',
+    text: 'Buying out neighbours raises the risk of a monopoly fine. Spend Political Capital on hearings before it comes to that.',
     when: (s) => (s.politics?.monopolyRisk ?? 0) >= 0.3,
   },
   {
     id: 'e3-leave',
-    text: 'Leaving the region needs an empty county and enough Capital. It is a door out, not a penalty.',
+    text: 'Leaving the region needs its supply used up and enough Capital. It moves you forward; it is not a penalty.',
     when: (s) => !!s.cold && s.cold.yieldMax > 0 && s.cold.yieldLeft <= 0 && !s.politics?.leftRegion,
   },
   {
     id: 'e3-private-label',
-    text: 'Private label is a margin engine: your name on the line, cheaper to buy, richer to sell. It also feeds Brand.',
+    text: 'Your own label costs less to buy and sells for more. It also builds your Brand.',
     when: (s) => s.era >= 3 && !!s.categories.privateLabel,
   },
   {
     id: 'e4-clone',
-    text: 'Lookalike franchises nick Brand now and then. It is small, it regenerates, and Brand Seal makes it smaller.',
+    text: 'Copycat franchises chip at your Brand now and then. It is small, it heals, and the Brand Seal makes it smaller.',
     when: (s) => s.era >= 4 && (s.fleet?.franchises ?? 0) >= 1,
   },
   {
     id: 'e4-lane-count',
-    text: 'Each extra lane multiplies fuel burn. Three wet lanes beat six dry ones — and Control Tower rewards the wet kind.',
+    text: 'Every extra route uses more fuel. Three fuelled routes beat six empty ones, and the Control Tower only rewards fuelled ones.',
     when: (s) => (s.fleet?.lanes ?? 0) >= 3,
   },
   {
@@ -283,7 +283,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'weather-radio',
-    text: 'With the Weather Radio, the Floor shows tomorrow too. Stack the right category on the shelf one beat early.',
+    text: 'With the Weather Radio, the Floor shows tomorrow’s weather too. Stock up on what it will sell a little early.',
     when: (s) => (s.memos['weather-radio'] ?? 0) > 0,
   },
   {
@@ -293,22 +293,22 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'weather-heat-dairy',
-    text: 'Heat plus dairy is a spoil clock. Lean on Walk-ins or a stocker rotation until the wave breaks.',
+    text: 'Hot weather spoils dairy fast. Lean on walk-in coolers or a stocker until the heat passes.',
     when: (s) => s.weather?.now === 'heat' && !!s.categories.dairy,
   },
   {
     id: 'e2-walk-train',
-    text: 'Walk store clears drift; Train store spends Attention on store XP. Walk the neglected door first, train the favorite.',
+    text: 'Visiting a store stops it slipping; training a store spends Attention to level it up. Visit the neglected store first, then train your favourite.',
     when: (s) => s.era >= 2 && s.stores.length >= 2 && s.stores.some((st) => st.drift >= 0.25),
   },
   {
     id: 'e2-soft-opening',
-    text: 'Cheaper Second Key trims new-store cost. Stack it with Corner Parcel and the board’s Expand pick before opening door three.',
+    text: 'Cheaper Second Key makes new stores cheaper. Combine it with the Corner Parcel and the board’s Expand choice before your third store.',
     when: (s) => s.era >= 2 && (s.upgrades['soft-opening'] ?? 0) >= 1,
   },
   {
     id: 'e2-doctrine-read',
-    text: 'Doctrines earn Read in tournaments, and later eras spend it. Run a tournament after each doctrine to keep the pages turning.',
+    text: 'Each strategy makes tournaments pay more Read, and later chapters spend it. Run a tournament after each new strategy.',
     when: (s) => s.stats.doctrinesBought >= 2 || s.stats.tournamentsRun >= 2,
   },
   {
@@ -323,7 +323,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e5-brand-seal',
-    text: 'Brand Seal in Charter blunts Off-Brand drift. It is cheap early and costly once the war is already on.',
+    text: 'The Brand Seal in Charter protects you from Off-Brand. It is cheap early and costly once the fight has started.',
     when: (s) => s.era >= 5 && (s.fleet?.charter?.['brand-seal'] ?? 0) === 0 && (s.fleet?.franchises ?? 0) >= 1,
   },
 ]

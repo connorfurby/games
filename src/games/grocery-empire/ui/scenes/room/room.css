@@ -120,6 +120,11 @@
     max-height: none;
   }
 
+  /* The number row sits on top of the art but never eats a tap meant for it. */
+  .rm-hud {
+    pointer-events: none;
+  }
+
   .rm-hud__chip {
     fill: var(--sc-chip-fill, #0f1317);
     stroke: var(--sc-chip-stroke, #3a444e);

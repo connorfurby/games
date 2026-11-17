@@ -108,8 +108,9 @@ export function RoomScene({
             }
           >
             {showDefaultSky ? sky : null}
-            {mode === "wide" ? <RoomHud chips={chips} /> : null}
             {children}
+            {/* Numbers paint last so room art never covers them. */}
+            {mode === "wide" ? <RoomHud chips={chips} /> : null}
           </svg>
         </div>
       )}
