@@ -4,7 +4,7 @@ import type { NumberFormat } from '@/shared/bn'
 import { ERA_STORY } from '../../content/lore'
 import { MENUS, type MenuId } from '../../content/menus'
 import type { Command } from '../../sim/commands'
-import type { GameState } from '../../sim/state'
+import { storeDisplayName, type GameState } from '../../sim/state'
 import { canUndo, undoLabel, undoSecondsLeft } from '../../sim/undo'
 import { computeHudAlert } from './hudAlert'
 import { performUndo } from './undoAction'
@@ -66,7 +66,7 @@ export function Hud({
     <header className="g2-hud">
       <div className="g2-hud__brand">
         <Link to="/" className="g2-hud__home" title="Back to the shelf" data-coach-id="meta-shelf">
-          Grocery Empire
+          {storeDisplayName(s)}
         </Link>
         <span className="g2-hud__era" title={era?.epigraph}>
           {era?.title ?? `Era ${s.era}`}

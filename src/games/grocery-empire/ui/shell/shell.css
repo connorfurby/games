@@ -1401,4 +1401,63 @@
       display: none;
     }
   }
+
+  /* Store naming */
+  .g2-scenewrap__name {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 2;
+    min-height: 28px;
+    padding: 0.15rem 0.6rem;
+    font-size: var(--t-xs);
+  }
+  .g2-hud__home {
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sn-form {
+    display: grid;
+    gap: var(--s-2);
+  }
+  .sn-form__label {
+    font: 600 var(--t-xs) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .sn-form__input {
+    min-height: 44px;
+    padding: 0 var(--s-3);
+    border-radius: var(--r-md);
+    border: 1px solid var(--ge-line-strong);
+    background: var(--ge-sunken);
+    color: var(--ge-ink);
+    font: 600 var(--t-md) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+  }
+  .sn-form__input:focus-visible {
+    outline: 2px solid var(--ge-focus);
+    outline-offset: 2px;
+  }
+  .sn-form__note,
+  .sn-form__preview {
+    margin: 0;
+    font: 500 var(--t-sm) / var(--t-sm-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+  .sn-form__preview strong {
+    color: var(--ge-ink);
+    font-family: var(--g2-display, serif);
+  }
+
+  /* A dialog owns the screen: notices wait behind it. */
+  .ge-root:has(.gk-modal-root) .g2-toasts {
+    display: none;
+  }
+  @media (max-width: 720px) {
+    /* Once named, the phone banner shows the store, not a button; Expand it to rename. */
+    .g2-scenewrap--band .g2-scenewrap__name.is-named {
+      display: none;
+    }
+  }
 }

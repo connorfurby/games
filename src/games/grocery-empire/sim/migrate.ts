@@ -49,6 +49,7 @@ import {
   type OfflineReceipt,
   type PrestigeMutatorId,
   type Stats,
+  cleanStoreName,
 } from './state'
 
 const MUTATOR_IDS: readonly PrestigeMutatorId[] = [
@@ -1435,6 +1436,9 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           lastProgress: num(raw.recovery.lastProgress, 0),
         }
       }
+
+      // v37: store name (display only). Older saves simply have none yet.
+      base.storeName = cleanStoreName(raw.storeName)
 
       if (isObject(raw.tipsSeen)) {
         const seen: Record<string, true> = {}

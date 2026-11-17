@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { MenuId } from '../../content/menus'
 import type { GameState } from '../../sim/state'
+import { StoreNameDialog } from './StoreNameDialog'
 import { StoreScene } from '../scene/StoreScene'
 
 export const SCENE_KEY = 'ge-scene-expanded'
@@ -67,8 +68,18 @@ export function SceneStrip({
   expanded: boolean
   onToggle: (v: boolean) => void
 }) {
+  const [naming, setNaming] = useState(false)
   return (
     <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}`}>
+      <button
+        type="button"
+        className={`g2-scenebar__btn g2-scenewrap__name${state.storeName ? ' is-named' : ''}`}
+        onClick={() => setNaming(true)}
+        title={state.storeName ? 'Rename your store' : 'Put your own name on the sign'}
+      >
+        {state.storeName ? 'Rename' : 'Name your store'}
+      </button>
+      {naming ? <StoreNameDialog open onClose={() => setNaming(false)} /> : null}
       <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} band={!expanded} />
       <button
         type="button"

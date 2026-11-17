@@ -90,6 +90,7 @@ import type {
   StorePolicy,
   SupplierId,
 } from './state'
+import { cleanStoreName } from './state'
 import {
   buyAnalyst,
   buyArchive,
@@ -206,6 +207,7 @@ export type Command =
   | { type: 'bailout' }
   | { type: 'callStarterCrate' }
   | { type: 'dismissTip'; id: string }
+  | { type: 'setStoreName'; name: string }
   | { type: 'advanceDialogue' }
   | { type: 'finishIntro' }
   | { type: 'introBeat'; index: number }
@@ -1564,6 +1566,16 @@ const coreHandlers = {
     },
     run: (s) => {
       applyEmptyShelfHelper(s, { ignoreWait: true })
+    },
+  },
+  setStoreName: {
+    can: (s, cmd) => {
+      const name = cleanStoreName((cmd as Extract<Command, { type: 'setStoreName' }>).name)
+      if (name === s.storeName) return no('That is already the name.')
+      return ok
+    },
+    run: (s, cmd) => {
+      s.storeName = cleanStoreName((cmd as Extract<Command, { type: 'setStoreName' }>).name)
     },
   },
   dismissTip: {

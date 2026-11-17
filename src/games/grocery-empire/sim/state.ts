@@ -605,6 +605,9 @@ export interface GameState {
     lastProgress: number
   }
 
+  /** The player's name for their store. Empty until they choose one; display only. */
+  storeName: string
+
   /** Dismissed tip-whisper ids (plan Part C5 / O). */
   tipsSeen: Record<string, true>
 
@@ -1026,6 +1029,8 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
       lastProgress: 0,
     },
 
+    storeName: '',
+
     tipsSeen: {},
     seenLines: {},
     dialogueQueue: [],
@@ -1086,3 +1091,22 @@ export function emptyRateAvg(): GameState['rateAvg'] {
 }
 
 export const HISTORY_KEEP = HISTORY.keep
+
+/** Longest store name the sign can carry. */
+export const STORE_NAME_MAX = 22
+
+/** A store name as it will be stored: one line, trimmed, no control characters, capped. */
+export function cleanStoreName(raw: unknown): string {
+  if (typeof raw !== 'string') return ''
+  return raw
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, STORE_NAME_MAX)
+    .trim()
+}
+
+/** What the sign, HUD and share cards print. */
+export function storeDisplayName(s: Pick<GameState, 'storeName'>): string {
+  return s.storeName || 'Grocery Empire'
+}

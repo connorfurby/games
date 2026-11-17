@@ -558,7 +558,7 @@ function Facade({ s, x }: { s: GameState; x: number }) {
   const doorX = x + f.w * 0.66
   const awning = ['var(--sc-tomato)', 'var(--sc-receipt)']
   const stripes = Math.max(6, Math.round(f.w / 22))
-  const name = s.stores[0]?.name ?? 'Grocery Empire'
+  const name = s.storeName || (s.stores[0]?.name ?? 'Grocery Empire')
   const signCut = tier <= 1 ? 20 : 74
 
   return (
@@ -584,7 +584,15 @@ function Facade({ s, x }: { s: GameState; x: number }) {
       <rect x={x} y={top} width={f.w} height={f.h} fill="var(--sc-brick)" />
       {/* sign */}
       <rect x={x + 10} y={top + 6} width={f.w - signCut} height={24} rx={3} fill="var(--sc-sign)" />
-      <text x={x + 10 + (f.w - signCut) / 2} y={top + 23} textAnchor="middle" className="sc-sign-text">
+      <text
+        x={x + 10 + (f.w - signCut) / 2}
+        y={top + 23}
+        textAnchor="middle"
+        className="sc-sign-text"
+        // A long name narrows to fit the board instead of spilling over the brick.
+        textLength={name.length > 11 ? Math.max(40, f.w - signCut - 14) : undefined}
+        lengthAdjust="spacingAndGlyphs"
+      >
         {name}
       </text>
       {/* awning */}
@@ -1068,6 +1076,7 @@ function sceneKey(s: GameState, museumOpen: boolean, reducedMotion: boolean) {
     s.builds.storefront,
     s.stores.length,
     s.stores[0]?.name,
+    s.storeName,
     s.fleet?.franchises,
     s.fleet?.lanes,
     s.fleet?.barges,
