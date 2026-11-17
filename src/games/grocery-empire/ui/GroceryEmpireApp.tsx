@@ -15,7 +15,7 @@ import {
 } from 'react'
 import { applyAchievements } from '@/achievements/registry'
 import { onAchievementToast } from '@/achievements/toastBus'
-import { playAchievementFanfare } from '@/shared/audio'
+import { moodForEra, playAchievementFanfare, sfx, startMusic, stopMusic } from '@/shared/audio'
 import {
   consumeDailyPending,
   loadDailyChallenge,
@@ -202,6 +202,29 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     setMenu('floor')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu])
+  // Sound follows play: a tick when you change rooms, a chime when a new room opens,
+  // and a score that changes character with the era. All silent unless sound is on.
+  const firstMenu = useRef(true)
+  useEffect(() => {
+    if (firstMenu.current) {
+      firstMenu.current = false
+      return
+    }
+    sfx.click()
+  }, [menu])
+  const openRooms = Object.values(state.menus ?? {}).filter(Boolean).length
+  const roomsSeen = useRef(openRooms)
+  useEffect(() => {
+    if (openRooms > roomsSeen.current) sfx.unlock()
+    roomsSeen.current = openRooms
+  }, [openRooms])
+  useEffect(() => {
+    // Restart so a new level or a new era takes effect; the score fades in again.
+    stopMusic()
+    startMusic(moodForEra(state.era))
+  }, [state.era, meta.settings.muted, meta.settings.music, meta.settings.musicVolume, meta.settings.volume])
+  useEffect(() => () => stopMusic(), [])
+
   // A department's `?` opens the Menu drawer on its wiki page.
   const [wikiNonce, setWikiNonce] = useState(0)
   useEffect(
@@ -455,6 +478,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       if (engine.getState().tutorials.active) return
       const id = Date.now() + Math.random()
       const text = check.reason
+      sfx.blocked()
       pushNotice(text, 'blocked')
       setToasts((t) => {
         const last = t[t.length - 1]

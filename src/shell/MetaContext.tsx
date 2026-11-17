@@ -169,14 +169,20 @@ export function MetaProvider({ children }: { children: ReactNode }) {
     const muted = meta.settings.muted !== false
     const volume = typeof meta.settings.volume === 'number' ? meta.settings.volume : DEFAULT_SETTINGS.volume
     const ambience = meta.settings.ambience !== false
-    setAudioMix({ muted, volume, ambience })
+    setAudioMix({
+      muted,
+      volume,
+      ambience,
+      music: meta.settings.music !== false,
+      musicVolume: typeof meta.settings.musicVolume === 'number' ? meta.settings.musicVolume : DEFAULT_SETTINGS.musicVolume,
+    })
     if (muted || !ambience) {
       stopPackAmbience()
       return
     }
     startPackAmbience({ muted: false, packId: meta.equippedPack })
     return () => stopPackAmbience()
-  }, [meta.settings.muted, meta.settings.volume, meta.settings.ambience, meta.equippedPack])
+  }, [meta.settings.muted, meta.settings.volume, meta.settings.ambience, meta.settings.music, meta.settings.musicVolume, meta.equippedPack])
 
   const setMeta = useCallback((fn: (m: MetaSave) => MetaSave) => {
     setMetaState((prev) => {

@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { createPortal } from 'react-dom'
+import { sfx } from '@/shared/audio'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { cx, useEscape, usePhone, useReducedMotion, overlayRoot } from './hooks'
 import { IconButton } from './IconButton'
@@ -28,6 +29,7 @@ export function Sheet({ open, onClose, title, children, footer, reducedMotion, c
 
   useEffect(() => {
     if (!open) return
+    sfx.open()
     prevFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const node = panel.current
     if (!node) return

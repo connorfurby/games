@@ -1628,4 +1628,11 @@
     position: static;
     width: auto;
   }
+
+  @media (max-width: 720px) {
+    /* Phones: sound lives in the Menu to keep the top bar to five controls. */
+    .g2-hud__controls .g2-icon-btn--sound {
+      display: none;
+    }
+  }
 }

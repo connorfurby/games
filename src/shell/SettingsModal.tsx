@@ -264,13 +264,35 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
             <label className="settings-check">
               <input
                 type="checkbox"
+                checked={meta.settings.music !== false}
+                disabled={meta.settings.muted}
+                onChange={(e) => updateSettings({ music: e.target.checked })}
+              />
+              Music
+            </label>
+            <label className="settings-field">
+              <span>Music level · {Math.round((meta.settings.musicVolume ?? 0.5) * 100)}%</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                disabled={meta.settings.muted || meta.settings.music === false}
+                value={Math.round((meta.settings.musicVolume ?? 0.5) * 100)}
+                onChange={(e) => updateSettings({ musicVolume: Number(e.target.value) / 100 })}
+                aria-label="Music level"
+              />
+            </label>
+            <label className="settings-check">
+              <input
+                type="checkbox"
                 checked={meta.settings.ambience !== false}
                 disabled={meta.settings.muted}
                 onChange={(e) => updateSettings({ ambience: e.target.checked })}
               />
               Room tone under play
             </label>
-            <p className="settings-hint">Till chime, crate thunk, purchase and era stings. Off by default.</p>
+            <p className="settings-hint">Music changes with your era. Sounds: till bell, crate thunk, purchases, new rooms, chests and awards. Off until you turn it on.</p>
           </section>
 
           <section className="settings-block">

@@ -56,6 +56,10 @@ export interface PlayerSettings {
   volume: number
   /** Quiet room tone under play (only when sound is on). */
   ambience: boolean
+  /** The generative score that follows your era. */
+  music: boolean
+  /** Music level 0–1, under the master volume. */
+  musicVolume: number
   showSpoilers: boolean
   rememberTutorials: boolean
   softPauseTutorials: boolean
@@ -77,6 +81,8 @@ export const DEFAULT_SETTINGS: PlayerSettings = {
   muted: true,
   volume: 0.6,
   ambience: true,
+  music: true,
+  musicVolume: 0.5,
   showSpoilers: false,
   rememberTutorials: true,
   softPauseTutorials: true,

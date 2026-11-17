@@ -1,3 +1,4 @@
+import { sfx } from '@/shared/audio'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { RARITY_INFO, WING_BY_ID } from '../../content/relics'
@@ -89,6 +90,7 @@ export function ChestOpener({
     if (!isBulk || openedOnce.current) return
     // Strict Mode mounts twice in dev; a second pass would find the chests gone and blank the sheet.
     openedOnce.current = true
+    sfx.chest()
     const got = openAllChests(chests)
     setOpened(got)
     setBulkReady(true)

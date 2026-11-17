@@ -5,6 +5,8 @@ import { ERA_STORY } from '../../content/lore'
 import { MENUS, type MenuId } from '../../content/menus'
 import type { Command } from '../../sim/commands'
 import { storeDisplayName, type GameState } from '../../sim/state'
+import { useMeta } from '@/shell/MetaContext'
+import { sfx } from '@/shared/audio'
 import { canUndo, undoLabel, undoSecondsLeft } from '../../sim/undo'
 import { computeHudAlert } from './hudAlert'
 import { performUndo } from './undoAction'
@@ -181,6 +183,7 @@ export function Hud({
             <Icon name="coach" size={16} />
           </button>
         ) : null}
+        <SoundButton />
         <button
           type="button"
           className={`g2-icon-btn g2-menu-btn${toolsOpen ? ' is-on' : ''}`}
@@ -197,5 +200,29 @@ export function Hud({
         </button>
       </div>
     </header>
+  )
+}
+
+/** One tap to turn sound and music on or off. The mixer lives in Settings. */
+function SoundButton() {
+  const { meta, updateSettings } = useMeta()
+  const on = !meta.settings.muted
+  return (
+    <button
+      type="button"
+      className={`g2-icon-btn g2-icon-btn--sound${on ? ' is-on' : ''}`}
+      aria-pressed={on}
+      aria-label={on ? 'Sound on. Tap to mute' : 'Sound off. Tap to turn on'}
+      title={on ? 'Sound on' : 'Sound off'}
+      onClick={() => {
+        updateSettings({ muted: on })
+        if (!on) window.setTimeout(() => sfx.purchase(), 80)
+      }}
+    >
+      <svg viewBox="0 0 18 18" width="16" height="16" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 7h2.5L9 4v10l-3.5-3H3V7Z" />
+        {on ? <path d="M11.5 6.5a3.5 3.5 0 0 1 0 5M13.6 4.6a6.2 6.2 0 0 1 0 8.8" /> : <path d="m12 7 4 4m0-4-4 4" />}
+      </svg>
+    </button>
   )
 }
