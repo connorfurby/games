@@ -170,9 +170,9 @@ export const ERA2_MEMOS: MemoDef[] = [
   },
   {
     id: 'doctrine-room',
-    name: 'Doctrine Room',
+    name: 'Strategy Room',
     voice: 'Eight binders. Attention in, Read out.',
-    effect: 'Opens Strategy: doctrines and tournament.',
+    effect: 'Opens Strategy: tournaments and strategies.',
     era: 2,
     cost: c(3000, 2500, 50),
     visible: (s) => s.era >= 2 && s.compute.ideasUnlocked,
@@ -180,7 +180,7 @@ export const ERA2_MEMOS: MemoDef[] = [
       unlockMenu(s, 'strategy')
       queueTutorial(s, 'e2-tournament')
     },
-    done: 'Doctrine room unlocked. Buy in order; bank the Read.',
+    done: 'Strategy room open. Buy strategies in order and save your Read.',
   },
   {
     id: 'catering-license',

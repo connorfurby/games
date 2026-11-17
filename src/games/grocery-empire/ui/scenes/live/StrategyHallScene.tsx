@@ -24,7 +24,7 @@ export function StrategyHallScene() {
   return (
     <RoomScene
       phoneChipsOnly
-      label={`Strategy hall. ${owned} doctrines · Read bank ${readBank}.`}
+      label={`Strategy hall. ${owned} strategies · Read bank ${readBank}.`}
       chips={[
         { label: 'Read', value: qty(readBank, 'named') },
         { label: 'Next', value: `${nextCost} Read` },

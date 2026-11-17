@@ -231,7 +231,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'currency',
     era: 2,
     icon: 'strategy',
-    short: 'Earned in Strategy tournaments with Attention. Buys doctrines and, later, Charter points.',
+    short: 'Earned in Strategy tournaments with Attention. Buys strategies and, later, Charter points.',
     see: 'era2-detail',
   },
   {
@@ -266,7 +266,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'verb',
     era: 3,
     icon: 'empire',
-    short: 'Prestige: a fresh store that keeps Empire, doctrines, the Museum and Goodwill.',
+    short: 'Start a fresh store that keeps your Empire rank, strategies, Museum and Goodwill.',
   },
   {
     id: 'manifest',

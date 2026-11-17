@@ -236,7 +236,7 @@ export const PLAYER_CHECKLIST: ChecklistItem[] = [
   {
     id: 'e2-doctrine',
     era: 2,
-    label: 'Buy a doctrine',
+    label: 'Buy a strategy',
     test: (s) => s.stats.doctrinesBought >= 1,
   },
 

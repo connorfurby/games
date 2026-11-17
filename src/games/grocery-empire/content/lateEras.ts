@@ -32,7 +32,7 @@ export const LATE_MEMOS: LateMemoStub[] = [
 
   // Era 5 — seed barges
   { id: 'barge-berth', name: 'Seed Barge Berth', era: 5, voice: 'A dock that points at the dark. Crates become barges; shelves become orbits.', effect: 'Opens Fleet and the barge charter.', unlock: 'Orbital annex' },
-  { id: 'charter-opener', name: 'Charter Opener', era: 5, voice: 'Shell, replication, survey, transit. Allocate carefully — every point is a doctrine.', effect: 'More Charter points to spend.', unlock: 'Berth built' },
+  { id: 'charter-opener', name: 'Charter Opener', era: 5, voice: 'Hull, copying, scouting, speed. Spend carefully: every point counts.', effect: 'More Charter points to spend.', unlock: 'Berth built' },
   { id: 'guardian-shell', name: 'Guardian Shell', era: 5, voice: 'Cheap. One-time. Keeps the last barge alive when Off-Brand gets serious.', effect: 'A one-time shield for your last barge.', unlock: 'Fleet under pressure' },
   { id: 'elliptic-hull', name: 'Elliptic Hull', era: 5, voice: 'Less shell, more replication, then survey. Geometry is a stocking plan.', effect: 'Hull efficiency memo.', unlock: 'Charter mid' },
   { id: 'reboot-fleet', name: 'Reboot Fleet', era: 5, voice: 'Refund Charter. Respec. No shame. The void forgives bad first drafts.', effect: 'Respec Charter points.', unlock: 'Fleet launched' },

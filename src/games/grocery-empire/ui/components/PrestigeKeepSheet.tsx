@@ -51,9 +51,9 @@ export function PrestigeKeepSheet({
       </ul>
 
       <h4 className="ge-keep__head">Carry one thing across</h4>
-      <p className="ge-keep__note">One doctrine OR one facing, not both. A carried facing sleeps until you rebuild its tier.</p>
+      <p className="ge-keep__note">One strategy or one facing, not both. A carried facing sleeps until you rebuild its tier.</p>
       {empty ? (
-        <p className="ge-keep__note">No doctrine or facing yet — nothing extra to carry.</p>
+        <p className="ge-keep__note">No strategy or facing yet, so nothing extra to carry.</p>
       ) : (
         <>
           <div className="ge-keep__group" role="group" aria-label="Carry a doctrine">
@@ -85,7 +85,7 @@ export function PrestigeKeepSheet({
         </>
       )}
       <p className="ge-keep__note" aria-live="polite">
-        {carry ? `Carrying: ${carry.type === 'doctrine' ? 'doctrine' : 'facing'} chosen.` : 'Carrying nothing extra.'}
+        {carry ? `Carrying: ${carry.type === 'doctrine' ? 'strategy' : 'facing'} chosen.` : 'Carrying nothing extra.'}
       </p>
     </div>
   )

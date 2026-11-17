@@ -1437,7 +1437,7 @@ const coreHandlers = {
   respecPerks: {
     can: (s) => {
       const spent = Object.values(s.empire.perks).reduce((n, v) => n + (v ?? 0), 0)
-      if (spent <= 0) return no('No doctrines to rewrite.')
+      if (spent <= 0) return no('No strategies to change.')
       const cost = Math.ceil(PERK_RESPEC.ideas * Math.pow(PERK_RESPEC.growth, s.compute.perkRespecs ?? 0))
       if (s.compute.ideas < cost) return no(`Need ${cost} Ideas.`)
       return ok

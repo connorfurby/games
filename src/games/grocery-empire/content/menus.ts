@@ -115,7 +115,7 @@ export const MENUS: Record<MenuId, MenuDef> = {
     id: 'strategy',
     name: 'Strategy',
     glyph: 'SY',
-    purpose: 'Turn Attention into Read, then spend Read on doctrines.',
+    purpose: 'Run tournaments with Attention to earn Read, then buy strategies with it.',
   },
   cold: {
     id: 'cold',

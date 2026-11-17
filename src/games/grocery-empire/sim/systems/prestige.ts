@@ -68,18 +68,18 @@ export function canCarry(s: GameState, carry: RebrandCarry | undefined): string 
   if (carry == null) return null
   const raw = carry as unknown as Record<string, unknown>
   if (carry.type === 'doctrine') {
-    if ('track' in raw || 'variantId' in raw) return 'Carry one doctrine or one facing, not both.'
-    if (!DOCTRINE_BY_ID[carry.id] || (s.doctrines?.[carry.id] ?? 0) <= 0) return 'You do not own that doctrine.'
+    if ('track' in raw || 'variantId' in raw) return 'Carry one strategy or one facing, not both.'
+    if (!DOCTRINE_BY_ID[carry.id] || (s.doctrines?.[carry.id] ?? 0) <= 0) return 'You do not own that strategy.'
     return null
   }
   if (carry.type === 'facing') {
-    if ('id' in raw) return 'Carry one doctrine or one facing, not both.'
+    if ('id' in raw) return 'Carry one strategy or one facing, not both.'
     const def = BUILD_VARIANT_BY_ID[carry.variantId]
     if (!def || def.track !== carry.track) return 'Unknown facing.'
     if (!Object.values(s.buildVariants ?? {}).includes(carry.variantId)) return 'You have not chosen that facing.'
     return null
   }
-  return 'Carry one doctrine or one facing.'
+  return 'Carry one strategy or one facing.'
 }
 
 /** Short name for the log and the sheet. */

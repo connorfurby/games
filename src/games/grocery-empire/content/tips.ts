@@ -151,7 +151,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-read',
-    text: 'Read is what Strategy runs on. Spend Attention on a Tournament to earn it, then buy doctrines with it. Cash cannot buy Read.',
+    text: 'Read is what Strategy runs on. Spend Attention on a Tournament to earn it, then buy strategies with it. Cash cannot buy Read.',
     when: (s) => s.read >= 1,
   },
   {

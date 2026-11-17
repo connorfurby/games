@@ -52,6 +52,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Lessons and wiki: 13 lesson titles renamed (Go public, Hand over the chain, Invest spare cash, Guardian shield, Keep supply ahead, Open a route…) and their bodies rewritten; the long guide reference, glossary and memo lines lose the old jargon and decimal scores. "Release Autonomous" is "Hand over the chain" everywhere.
 - Memo effects: about 30 effect lines rewritten so they say what the memo does ("Theft −30%", "Lets you build Cold Plants", "+6 Charter points to spend") instead of flags, nodes, paths and tiers.
 - Room numbers audit: chips that only meant something while running (Celebrity, Price war, Keel & Sons, Other income) now appear only when they apply; empty values read "none ordered", "none", "not yet" instead of a dash; Cold says Spare cold / Tanks N (x% full) / Freshness; Staff says Holding back.
+- One word for one thing: the items bought on the Strategy page are **strategies** everywhere a player reads (panel, tips, memos, rebrand carry, notices, glossary). Code ids stay `doctrine`.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

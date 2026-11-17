@@ -270,11 +270,11 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
     can: (s, cmd) => {
       if (s.era < 2) return no('Need Era 2.')
       const def = DOCTRINE_BY_ID[cmd.id]
-      if (!def) return no('Unknown doctrine.')
+      if (!def) return no('Unknown strategy.')
       if (def.era && s.era < def.era) return no(`Opens in Era ${def.era}.`)
       if ((s.doctrines[cmd.id] ?? 0) > 0) return no('Already owned.')
       const owned = DOCTRINES.filter((d) => (s.doctrines[d.id] ?? 0) > 0).length
-      if (def.order > owned) return no('Unlock doctrines in order.')
+      if (def.order > owned) return no('Buy strategies in order.')
       const cost = doctrineCost(s, owned)
       if (s.read < cost) return no(`Need ${cost} Read.`)
       return ok

@@ -72,7 +72,7 @@ export const NEWS: NewsArticle[] = [
       { label: 'A museum of your run', text: 'Chests turn into relics, relics fill wings, and full wings pay small bonuses. It stays with you between runs.', band: 'meta' },
       { label: 'Help when you want it', text: 'Tap ? in any room for a short page about it. Lessons can be replayed any time.', band: 'meta', wiki: 'start-controls' },
       { label: "Today's corner", text: 'One fresh start a day, the same for everyone. Keep a streak going on the home page.', band: 'meta' },
-      { label: 'Everything on the page', text: 'Each room lays its tools out in plain view: hiring, shifts, invoices, doctrines. No hunting through little buttons, and nothing to press until it can be pressed.', band: 'meta' },
+      { label: 'Everything on the page', text: 'Each room lays its tools out in plain view: hiring, shifts, invoices, strategies. No hunting through little buttons, and nothing to press until it can be pressed.', band: 'meta' },
       { label: 'A twist every day', text: 'Today’s corner now comes with a rule of the day, like Payday or Delivery day: one thing gets easier, one gets harder.', band: 'meta' },
       { label: 'An awards wall', text: 'Awards hang on shelves by theme, with plaques for what you have done and what is still to come.', band: 'meta' },
       { label: 'Music and sound, if you like', text: 'A quiet score that changes with each era and settles down late at night, plus a till that sings while you sell. Off until you turn it on.', band: 'meta' },

@@ -71,7 +71,7 @@ export function StrategyPanel() {
                 {next ? (
                   <ActionRow
                     icon={<Icon name="doctrine" size={18} tone="accent" />}
-                    label={`Next doctrine: ${next.name}`}
+                    label={`Next strategy: ${next.name}`}
                     fact={next.blurb}
                     trail={`Buy · ${nextCost} Read`}
                     disabled={!canBuy}
@@ -80,7 +80,7 @@ export function StrategyPanel() {
                     onClick={() => dispatch({ type: 'buyDoctrine', id: next.id })}
                   />
                 ) : (
-                  <p className="ge-muted">Every doctrine this era is yours.</p>
+                  <p className="ge-muted">Every strategy this era is yours.</p>
                 )}
                 {later > 0 ? <p className="ge-muted">{later} more after this one, bought in order.</p> : null}
                 {have.length ? (
@@ -109,7 +109,7 @@ export function StrategyPanel() {
       <Sheet
         open={!!detail}
         onClose={() => setDetailId(null)}
-        title={detail?.name ?? 'Doctrine'}
+        title={detail?.name ?? 'Strategy'}
         reducedMotion={reducedMotion}
         footer={
           <Button tone="ghost" onClick={() => setDetailId(null)}>
@@ -124,7 +124,7 @@ export function StrategyPanel() {
               {(s.doctrines[detail.id] ?? 0) > 0
                 ? 'Owned — sweetens tournament payout.'
                 : detail.order > owned
-                  ? 'Locked until you buy the doctrines above.'
+                  ? 'Locked until you buy the strategies above.'
                   : `Costs ${nextCost} Read.`}
             </p>
             {(s.doctrines[detail.id] ?? 0) <= 0 && detail.order <= owned ? (
