@@ -138,6 +138,8 @@ python3 docs/grocery-empire/audit-2026-11-16/analyze.py desk   # (paths inside t
 | Hire board / Shifts hidden behind small buttons | **Done.** Hire, Crew, Department rules and Shifts are desks. |
 | Scene areas glow and bounce but do nothing | **Done.** `Hit` is inert unless it acts. |
 
+**Progress 2026-11-17 (later):** clarity pass done on every panel through Era 12; Worlds-era copy and pickers; copy read of tours/checklist/goals; era ambience; room life (shoppers, stocker); Ventures art (stash, visuals only); Land drift line; museum pennants (P7-07 ✅); endless milestones (P7-09 ✅); photo export (P7-05 ✅); notices filter + unread. **Still open:** P1-02/05/06/07 spacing tokens, chrome on kit, legacy CSS cut; daily rule modifier (pacing-sensitive); map pin tap targets.
+
 ---
 
 ## 2. Design laws for 1.0 (apply to every task)

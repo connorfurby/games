@@ -2,6 +2,25 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AC. 1.0 fourth pass — every panel, Worlds era, ambience, collection (2026-11-17, on `main`) · SAVE **37** (unchanged)
+
+No state or balance changes; pacing untouched (`driftShopperLoss` is a pure extraction).
+
+- **Clarity pass, Store/Money/Empire:** Backroom (scanner says what it gives; perishables, bonded cage, seed vault as desks; no repeated meters), Books (dollar table with plain lines, advice callout with an Open button, only real actions in the tray), Upgrades (buy button names tree and first rank; hall cards are art), Strategy (one "Next doctrine" row, held doctrines as tags), Rivals (scene signs match names; "takes N% of your shoppers"), Ventures (Ready-only switch, no repeated footers).
+- **Naming:** Empire's trait-point unlocks are **Perks** in player text; Strategy keeps **Doctrines** (Read). Code names unchanged.
+- **Worlds era:** "File the standard" replaced by what it does per panel (Send the standard convoy / Plant the standard cross / Stock the standard shelf / Send the standard phrase / Fill with the standard). Exchange packing board uses kit `Select`; Cultivars parent pickers are `Field` + `SegmentedControl` with season wants starred; Signal agent habits are segmented; Charter table shows four slots, hearing copy uses "Downside", shared lock reasons show once. `PuzzleFrame` never renders a dead Standard/Commit button. Greenhouse scene no longer draws over its chips.
+- **Copy:** Era 7–12 tour template and bodies, coach recovery lines, checklist, goals and several tutorials rewritten without "gate", "fork", "docket", "verb", "sim", "layer". Floor planogram and write-off controls only when usable.
+- **Ambience:** `startEraAmbience(ambienceForEra(era))` — street/birds, shop murmur/door chime, cooler hum/compressor, harbour waves/gulls, space drone/shimmer; replaces the pack hum while the game is open; under Settings → Room tone. Audio restarts a tick after settings change.
+- **Room life:** Floor shoppers walk door → shelf → till (count follows sales); Backroom stocker carries crates while trucks are inbound. Both off under reduced motion. Fake "tap here →" prompts removed from Backroom, Cold and Lane scenes; `RoomEmpty` never links to the page it is on.
+- **Ventures art** revived from the stash (visuals only): `ui/ventures/VentureArt` + `ventureLook` (UI-only hue/sign table) + `ventureArt.css`; empty lot → cart → shop → two storeys → tower by level.
+- **Land:** one line on what drift costs (`driftShopperLoss`); the block event shows once.
+- **Collection on the street:** each completed museum wing flies a pennant above the storefront sign (`StoreScene pennants`); completing a wing gets a banner line and the award cue.
+- **After the story:** Next Goal frames endless play with milestones (5, 10, 25, 50, 100…) and a Show me to Planets.
+- **Photo export:** Photo mode → Save picture (`ui/scene/exportPng.ts`, computed paint inlined, 2x PNG with caption). e2e `photo.spec.ts`.
+- **Notices:** All/Rewards/Blocked filter, unread count on the Menu tab, no ding for blocked.
+- **Phone:** `Hit` pads small zones to 48 units; Fleet charter bars read Hull/Copy/Scout/Speed/Brand.
+- **Dev:** era jump goes to 12.
+
 ## AB. 1.0 third feedback pass — desks, no dead buttons, music (2026-11-17, on `main`) · SAVE **37** (unchanged)
 
 No state or balance changes; pacing untouched. Owner asks: thin side sheets are pointless, small bottom buttons hide big actions, invoices/slips/doctrines are hard to find, buttons that cannot be pressed should not exist, scene zones that glow and bounce but do nothing, Staff room looks messy, menu tabs clip, more music and sound variety.
