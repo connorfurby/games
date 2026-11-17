@@ -92,7 +92,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
       if (hasSave) engine.saveToSlot(3)
       saveDailyChallenge({ day: today.day, seed: today.seed, active: true })
       engine.newGame(today.seed)
-      setIoMsg(`Today's corner · seed ${today.seed}`)
+      setIoMsg('Today’s corner has started.')
     }
     if (hasSave) {
       setConfirm({
@@ -192,7 +192,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
           <header className="ge-more-block__head">
             <h3>This run</h3>
             <p>
-              Era {s.era} · {playMin} min · seed {s.seed}
+              Era {s.era} · {playMin} min played
               {dailyActive ? ` · Today's corner` : ''}
             </p>
           </header>
@@ -225,7 +225,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
           </div>
           <div className="ge-more-sparks">
             <Sparkline values={s.history?.cash ?? []} label="Cash" width={160} height={28} />
-            <Sparkline values={s.history?.revenue ?? []} label="Rev" width={160} height={28} />
+            <Sparkline values={s.history?.revenue ?? []} label="Sales" width={160} height={28} />
           </div>
           <div className="ge-more-actions">
             <Btn tone="ghost" onClick={startDaily} title={`Seed ${todaysChallenge().seed}`}>
@@ -246,7 +246,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
           {dailyActive || bestToday ? (
             <p className="ge-muted">
               {dailyActive
-                ? `Corner active · seed ${dailyBlob?.seed ?? s.seed}`
+                ? 'You are playing today’s corner'
                 : null}
               {bestToday
                 ? `${dailyActive ? ' · ' : ''}Best today ${bestToday.baskets.toLocaleString()} baskets`
@@ -260,7 +260,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
         <section className="ge-more-block">
           <header className="ge-more-block__head">
             <h3>Settings</h3>
-            <p>How numbers and motion feel.</p>
+            <p>How the game looks and moves.</p>
           </header>
           <div className="ge-more-fields">
             <label className="ge-more-field">
@@ -316,7 +316,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
                 checked={meta.settings.softPauseTutorials}
                 onChange={(e) => updateSettings({ softPauseTutorials: e.target.checked })}
               />
-              Soft-pause tutorials
+              Pause the game during lessons
             </label>
             <label className="ge-check">
               <input
@@ -333,7 +333,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
           </p>
           {only ? (
             <Btn tone="ghost" onClick={() => setAllSettings(true)}>
-              Sound, theme and everything else…
+              Sound, looks and more settings…
             </Btn>
           ) : null}
         </section>
@@ -352,13 +352,13 @@ export function MoreSections({ only }: { only?: MoreSection }) {
           <SaveSlots variant="ge" reducedMotion={reducedMotion} onNote={setIoMsg} />
           <div className="ge-more-actions">
             <Btn tone="ghost" onClick={exportRun}>
-              Download JSON
+              Download save
             </Btn>
             <Btn tone="ghost" onClick={() => void copySave()}>
-              Copy JSON
+              Copy save
             </Btn>
             <Btn tone="ghost" onClick={() => fileRef.current?.click()}>
-              Load file…
+              Load a save file…
             </Btn>
             <input
               ref={fileRef}
@@ -456,17 +456,17 @@ export function MoreSections({ only }: { only?: MoreSection }) {
         {show('go') ? (
         <section className="ge-more-block">
           <header className="ge-more-block__head">
-            <h3>Go</h3>
-            <p>Leave the store, or open the shelf for the rest of the site.</p>
+            <h3>Leave</h3>
+            <p>Leave the store.</p>
           </header>
           <div className="ge-more-links">
             <Link className="ge-more-link" to="/">
               <strong>Home</strong>
-              <span>The shelf of games</span>
+              <span>All games</span>
             </Link>
             <button type="button" className="ge-more-link" onClick={() => openHotkeyMap()}>
               <strong>Keys</strong>
-              <span>Hotkey map</span>
+              <span>Keyboard shortcuts</span>
             </button>
             {inDev ? (
               <Link className="ge-more-link" to="/play/grocery-empire">

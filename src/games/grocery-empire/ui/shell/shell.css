@@ -1799,4 +1799,11 @@
   .ge-root--photo .g2-toasts {
     display: none;
   }
+
+  /* Menu drawer: sections under one tab need air between them. */
+  .g2-tools .g2-inbox__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-5);
+  }
 }

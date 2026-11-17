@@ -397,7 +397,7 @@ export function UpgradesBoard() {
   const bestDef = bestPick ? UPGRADE_BY_ID[bestPick.id] : null
   const bestHint =
     bestPick && bestDef
-      ? `Best: ${bestDef.name} · ${bestDef.per} for ${money(bestPick.cost, numberFormat)} (effect per cost)`
+      ? `Best: ${bestDef.name} · ${bestDef.per} for ${money(bestPick.cost, numberFormat)}`
       : undefined
   const note = sweepNote && sweepNote.bought === s.stats.upgradesBought ? sweepNote.text : null
 

@@ -8,16 +8,17 @@ import type { MenuId } from '../../content/menus'
 
 export type ToolsTab = 'dev' | 'wiki' | 'notices' | MoreSection
 
+/** Five tabs, not eight: everything about this run lives under Game. */
 const TABS: { id: ToolsTab; label: string }[] = [
   { id: 'dev', label: 'Dev' },
-  { id: 'wiki', label: 'Wiki' },
+  { id: 'run', label: 'Game' },
+  { id: 'wiki', label: 'Guide' },
   { id: 'notices', label: 'Notices' },
-  { id: 'run', label: 'Run' },
   { id: 'settings', label: 'Settings' },
   { id: 'saves', label: 'Saves' },
-  { id: 'progress', label: 'Progress' },
-  { id: 'go', label: 'Go' },
 ]
+/** Older deep links still name these; they now sit inside Game. */
+const FOLDED: Partial<Record<ToolsTab, ToolsTab>> = { progress: 'run', go: 'run' }
 
 /** Right-hand drawer for everything that isn't the store: dev tools, run, settings, saves, links. */
 export function ToolsDrawer({
@@ -39,7 +40,8 @@ export function ToolsDrawer({
 }) {
   const inDev = isDevSave()
   const tabs = TABS.filter((t) => t.id !== 'dev' || inDev)
-  const active = tabs.some((t) => t.id === tab) ? tab : tabs[0]!.id
+  const wanted = FOLDED[tab] ?? tab
+  const active = tabs.some((t) => t.id === wanted) ? wanted : tabs[0]!.id
 
   return (
     <>
@@ -87,6 +89,12 @@ export function ToolsDrawer({
           <InGameWiki onOpenMenu={onOpenMenu} onPlayLesson={onPlayLesson} />
         ) : active === 'notices' ? (
           <NoticesPanel />
+        ) : active === 'run' ? (
+          <>
+            <MoreSections only="run" />
+            <MoreSections only="progress" />
+            <MoreSections only="go" />
+          </>
         ) : (
           <MoreSections only={active as MoreSection} />
         )}

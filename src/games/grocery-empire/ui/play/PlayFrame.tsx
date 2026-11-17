@@ -9,6 +9,8 @@ import './play.css'
  */
 export function PlayFrame({
   purpose,
+  title,
+  help = true,
   room,
   tray,
   primarySlot,
@@ -17,6 +19,10 @@ export function PlayFrame({
 }: {
   /** One sentence from hubs.ts (or the department purpose). */
   purpose?: ReactNode
+  /** Overrides the room name (drawers that are not a room, like Memos). */
+  title?: string
+  /** Set false where the room's `?` and tip card do not belong. */
+  help?: boolean
   /** @deprecated The hub head already names the department (design law 1: one title). Not rendered. */
   department?: ReactNode
   room?: ReactNode
@@ -32,13 +38,13 @@ export function PlayFrame({
       {purpose ? (
         <header className="pf__head">
           <div className="pf__headcopy">
-            <PanelTitle />
+            {title ? <h2 className="pf__title">{title}</h2> : <PanelTitle />}
             <p className="pf__purpose">{purpose}</p>
           </div>
-          <PanelHelpButton />
+          {help ? <PanelHelpButton /> : null}
         </header>
       ) : null}
-      <PanelHelp />
+      {help ? <PanelHelp /> : null}
       {room ? <div className="pf__room">{room}</div> : null}
       {tray ? <VerbTray {...tray} /> : null}
       {!tray && primarySlot ? <div className="pf__tray">{primarySlot}</div> : null}

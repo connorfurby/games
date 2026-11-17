@@ -111,7 +111,7 @@ function attentionNote(s: GS): string {
   ]
   if (drain > 0) parts.push(`stores −${drain.toFixed(2)}/s`)
   if (s.compute.ideasUnlocked) {
-    parts.push(s.compute.ideasOn ? 'full bar mints Ideas' : 'Ideas paused')
+    parts.push(s.compute.ideasOn ? 'a full bar makes Ideas' : 'Ideas paused')
   }
   if ((s.upgrades['tourney-while-full'] ?? 0) >= 1) {
     if (s.compute.autoTourney === false) parts.push('auto-tournament off')
@@ -133,7 +133,7 @@ function archivesFirstWarn(s: GS): string | null {
   const fill = cap > 0 ? att / cap : 1
   const secToCap = perSec > 0 ? Math.max(0, cap - att) / perSec : Number.POSITIVE_INFINITY
   if (fill >= 0.8 || secToCap < 45) {
-    return `Att ${qty(att)} / ${qty(cap)} (${Math.round(fill * 100)}%) — a faster Analyst mostly overflows. Open an Archive first.`
+    return `Attention ${qty(att)} / ${qty(cap)} (${Math.round(fill * 100)}%). It is nearly full, so a faster Analyst would mostly go to waste. Open an Archive first.`
   }
   for (const m of MEMOS) {
     if (owned(s, m.id) && !m.repeatable) continue
@@ -146,7 +146,7 @@ function archivesFirstWarn(s: GS): string | null {
     }
     const need = memoCosts(m, s).attention
     if (need > cap + 1e-9) {
-      return `${m.name} needs ${qty(need)} Att but the cap is ${qty(cap)} — Archive first, Analysts second.`
+      return `${m.name} needs ${qty(need)} Attention but you can only hold ${qty(cap)}. Open an Archive first, then Analysts.`
     }
   }
   return null
@@ -160,7 +160,7 @@ function SpinePath({ s, fmt }: { s: GS; fmt: NumberFormat }) {
   const next = steps.find((m) => !owned(s, m.id))
   return (
     <div className="ge-spine" data-coach-id="memo-spine">
-      <div className="ge-spine__dots" role="list" aria-label="Spine memos">
+      <div className="ge-spine__dots" role="list" aria-label="Story memos">
         {steps.map((m) => {
           const got = owned(s, m.id)
           const isNext = next?.id === m.id
@@ -186,7 +186,7 @@ function SpinePath({ s, fmt }: { s: GS; fmt: NumberFormat }) {
         })}
       </div>
       <p className="ge-muted" style={{ margin: '0.25rem 0 0', fontSize: 'var(--t-xs)' }}>
-        Spine {done}/{steps.length}
+        Story {done} of {steps.length}
         {next ? ` · next: ${next.name} (${costLabel(next, s, fmt)})` : ' · complete'}
       </p>
     </div>
@@ -289,7 +289,7 @@ function memoGate(m: MemoDef, s: GS, check: { ok: boolean; reason?: string }): s
   const costs = memoCosts(m, s)
   const attCap = attentionCap(s)
   if (costs.attention > 0 && (s.compute.attention < costs.attention || costs.attention > attCap)) {
-    return `Att cap ${qty(attCap)} · memo needs ${qty(costs.attention)}${
+    return `Attention limit ${qty(attCap)} · memo needs ${qty(costs.attention)}${
       s.compute.attention < costs.attention ? ` · have ${qty(s.compute.attention)}` : ' · buy Archives'
     }`
   }
@@ -592,7 +592,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
   // Same pick the sweep files first: effect weight per blended cost, then cheapest.
   const bestMemoId = buyBestReady ? pickBestMemo(s)?.id : undefined
   const bestMemo = bestMemoId ? MEMOS.find((m) => m.id === bestMemoId) : undefined
-  const bestHint = bestMemo ? `Best: ${bestMemo.name} · ${bestMemo.effect} (effect per cost)` : undefined
+  const bestHint = bestMemo ? `Best: ${bestMemo.name} · ${bestMemo.effect}` : undefined
   const buyBest = async () => {
     const preview = memoSweepPreview(s)
     if (preview.count <= 0) return
@@ -631,7 +631,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
           <Meter
             value={s.compute.attention}
             max={Math.max(1, attCap)}
-            label={`Att ${qty(s.compute.attention)} / ${qty(attCap)}`}
+            label={`Attention ${qty(s.compute.attention)} / ${qty(attCap)}`}
           />
           <p className="wc-att__note">{attentionNote(s)}</p>
           {archivesWarn ? (
@@ -778,7 +778,9 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
             </StatusChip>
           </>
         }
-        purpose={compact ? 'Voice first, cost second.' : 'Projects that open the next door.'}
+        title="Memos"
+        help={false}
+        purpose="Memos open new parts of the store and move the story along."
         room={room}
         tray={{
           primary: {

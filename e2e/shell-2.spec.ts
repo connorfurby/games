@@ -69,7 +69,7 @@ test('Menu drawer holds settings, saves and links', async ({ page }) => {
   await expect(drawer.locator('.dv-stage').first()).toBeVisible()
   await drawer.locator('.g2-subtab', { hasText: 'Settings' }).click()
   await expect(drawer.getByText('Reduced motion')).toBeVisible()
-  await drawer.locator('.g2-subtab', { hasText: 'Go' }).click()
+  await drawer.locator('.g2-subtab', { hasText: 'Game' }).click()
   await expect(drawer.getByRole('link', { name: /Guide/ })).toBeVisible()
   await page.locator('.g2-scrim').click({ position: { x: 10, y: 400 } })
   await expect(drawer).toHaveCount(0)
