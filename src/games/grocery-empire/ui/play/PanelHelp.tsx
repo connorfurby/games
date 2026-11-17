@@ -12,6 +12,14 @@ const SEEN_MS = 8_000
 const QUIET_MS = 90_000
 let quietUntil = 0
 
+/** The room's own name: the one title on the screen. */
+export function PanelTitle() {
+  const { activeMenu } = useGame()
+  const menu = activeMenu as MenuId
+  if (!MENUS[menu]) return null
+  return <h2 className="pf__title">{MENUS[menu].name}</h2>
+}
+
 /** `?` beside a department's purpose line: opens that department's wiki page in the Menu drawer. */
 export function PanelHelpButton() {
   const { activeMenu } = useGame()

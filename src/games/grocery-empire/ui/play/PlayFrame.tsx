@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { PanelHelp, PanelHelpButton } from './PanelHelp'
+import { PanelHelp, PanelHelpButton, PanelTitle } from './PanelHelp'
 import { VerbTray, type VerbTrayProps } from './VerbTray'
 import './play.css'
 
@@ -30,10 +30,13 @@ export function PlayFrame({
   return (
     <div className={`pf${className ? ` ${className}` : ''}`.trim()}>
       {purpose ? (
-        <div className="pf__head">
-          <p className="pf__purpose">{purpose}</p>
+        <header className="pf__head">
+          <div className="pf__headcopy">
+            <PanelTitle />
+            <p className="pf__purpose">{purpose}</p>
+          </div>
           <PanelHelpButton />
-        </div>
+        </header>
       ) : null}
       <PanelHelp />
       {room ? <div className="pf__room">{room}</div> : null}

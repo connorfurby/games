@@ -7,7 +7,9 @@ import type { Suggestion } from '../../sim/suggestions'
 import type { GameState } from '../../sim/state'
 import { ChapterCard } from '../components/ChapterCard'
 import { CoachOverlay } from '../components/Coach'
+import { createPortal } from 'react-dom'
 import { DialogueStrip } from '../components/DialogueStrip'
+import { usePhone } from '../kit/hooks'
 import { HungryLawsModal } from '../components/HungryLaws'
 import { IntroCutscene } from '../components/IntroCutscene'
 import { OfflineReceiptModal } from '../components/OfflineReceipt'
@@ -46,6 +48,7 @@ export function OverlayManager({
   onHungryConfirm: ComponentProps<typeof HungryLawsModal>['onConfirm']
 }) {
   const offline = !!state.offlineReceipt
+  const phone = usePhone()
   const chapterEra = state.chapterQueue[0]
   const clear = !offline && state.introSeen && !state.pendingAccept
   const showDialogue =
@@ -75,16 +78,24 @@ export function OverlayManager({
   return (
     <>
       <AnimatePresence>
-        {showDialogue ? (
-          <div className="g2-dialogue" key={state.dialogueQueue[0]}>
-            <DialogueStrip
-              lineId={state.dialogueQueue[0]!}
-              reducedMotion={reducedMotion}
-              onNext={() => dispatch({ type: 'advanceDialogue' })}
-              onSkip={() => dispatch({ type: 'advanceDialogue' })}
-            />
-          </div>
-        ) : null}
+        {showDialogue
+          ? // On wide screens the story line speaks from the storefront banner, so it never
+            // sits on a room's buttons. Without a banner (phones, photo mode) it floats.
+            (() => {
+              const node = (
+              <div className="g2-dialogue" key={state.dialogueQueue[0]}>
+                <DialogueStrip
+                  lineId={state.dialogueQueue[0]!}
+                  reducedMotion={reducedMotion}
+                  onNext={() => dispatch({ type: 'advanceDialogue' })}
+                  onSkip={() => dispatch({ type: 'advanceDialogue' })}
+                />
+              </div>
+              )
+              const slot = phone ? null : document.getElementById('g2-dialogue-slot')
+              return slot ? createPortal(node, slot, String(state.dialogueQueue[0])) : node
+            })()
+          : null}
       </AnimatePresence>
 
       {receipt ? (

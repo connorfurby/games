@@ -827,8 +827,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           />
 
           <main className="g2-main" ref={mainRef}>
-            {hub === 'store' && !photoMode ? (
+            {!photoMode ? (
               <SceneStrip
+                away={hub !== 'store'}
                 state={state}
                 museumOpen={museum.unlocked}
                 reducedMotion={reducedMotion}
@@ -839,14 +840,8 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
             {photoMode ? <StoreScene state={state} museumOpen={museum.unlocked} reducedMotion={reducedMotion} /> : null}
             {hub ? (
               <div className="g2-hubhead">
-                <div className="g2-hubhead__title">
-                  <h1>{HUB_BY_ID[hub].name}</h1>
-                  {hubMenus(hub).length > 1 && MENUS[menu] && hubMenus(hub).includes(menu) ? (
-                    <p className="g2-hubhead__dept" aria-hidden="true">
-                      {MENUS[menu].name}
-                    </p>
-                  ) : null}
-                </div>
+                {/* One title per screen: the room names itself in its own header. */}
+                <h1 className="ge-sr-only">{HUB_BY_ID[hub].name}</h1>
                 {hubMenus(hub).length > 1 ? (
                   <div className="g2-subtabs" role="tablist" aria-label={HUB_BY_ID[hub].name}>
                     {hubMenus(hub).map((id) => (

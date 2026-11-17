@@ -61,12 +61,15 @@ export function SceneStrip({
   reducedMotion,
   expanded,
   onToggle,
+  away = false,
 }: {
   state: GameState
   museumOpen: boolean
   reducedMotion: boolean
   expanded: boolean
   onToggle: (v: boolean) => void
+  /** Not on the Store rooms: the banner stays (so tabs never jump between hubs) but phones drop it. */
+  away?: boolean
 }) {
   const [naming, setNaming] = useState(false)
   // The street answers a purchase: a ring and one line, laid over the banner (no layout change).
@@ -93,7 +96,7 @@ export function SceneStrip({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [growth.era, growth.builds, growth.stores, growth.staff])
   return (
-    <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}${bump ? ' is-bumped' : ''}`}>
+    <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}${bump ? ' is-bumped' : ''}${away ? ' g2-scenewrap--away' : ''}`}>
       {bump ? (
         <span className="g2-scenewrap__new" role="status">
           {bump}
@@ -108,6 +111,7 @@ export function SceneStrip({
         {state.storeName ? 'Rename' : 'Name your store'}
       </button>
       {naming ? <StoreNameDialog open onClose={() => setNaming(false)} /> : null}
+      <div id="g2-dialogue-slot" className="g2-scenewrap__say" />
       <StoreScene state={state} museumOpen={museumOpen} reducedMotion={reducedMotion} band={!expanded} />
       <button
         type="button"

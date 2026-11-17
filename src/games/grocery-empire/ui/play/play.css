@@ -12,6 +12,17 @@
     color: var(--ge-ink-muted);
   }
 
+  .pf__headcopy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .pf__title {
+    margin: 0;
+    font: 650 var(--t-xl) / var(--t-xl-lh, 1.2) var(--g2-display, var(--ge-font-display, serif));
+    letter-spacing: -0.01em;
+    color: var(--ge-ink);
+  }
   .pf__head {
     display: flex;
     align-items: flex-start;

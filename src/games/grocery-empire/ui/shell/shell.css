@@ -1590,4 +1590,42 @@
     color: var(--ge-ink-muted);
     white-space: nowrap;
   }
+
+  /* One title per screen: tabs sit directly under the banner; the room names itself. */
+  .g2-hubhead {
+    gap: 0;
+  }
+  .g2-goal__eyebrow {
+    font: 700 var(--t-2xs) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--g2-tag, var(--ge-tag));
+  }
+  @media (max-width: 720px) {
+    .g2-scenewrap--away {
+      display: none;
+    }
+    .pf__title {
+      font-size: var(--t-lg);
+    }
+    .g2-goal__eyebrow {
+      display: none;
+    }
+  }
+
+  /* Story line speaks from the storefront banner on wide screens. */
+  .g2-scenewrap__say {
+    position: absolute;
+    left: 0.5rem;
+    bottom: 0.4rem;
+    z-index: 3;
+    width: min(560px, calc(100% - 1rem));
+  }
+  .g2-scenewrap__say:empty {
+    display: none;
+  }
+  .g2-scenewrap__say .g2-dialogue {
+    position: static;
+    width: auto;
+  }
 }
