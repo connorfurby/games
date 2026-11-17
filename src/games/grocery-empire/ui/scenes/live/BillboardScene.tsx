@@ -46,13 +46,14 @@ export function BillboardScene() {
       }${air.length ? `, broadcasting to ${air.join(' and ')}` : ''}${wire ? ', wire ad running' : ''}`}
       chips={[
         { label: 'Ads', value: `Lv ${ads}` },
-        { label: 'Celebrity', value: celebrity ? clock(celebLeft) : '—' },
-        { label: 'Price war', value: war ? clock(warLeft) : 'off', neg: war },
+        // Timed effects only take a slot while they are running.
+        ...(celebrity ? [{ label: 'Celebrity', value: clock(celebLeft) }] : []),
+        ...(war ? [{ label: 'Price war', value: clock(warLeft), neg: true }] : []),
         s.era >= 7
           ? { label: 'On air', value: air.length ? String(air.length) : '0' }
           : s.era >= 2
             ? { label: 'Flyer', value: flyerLive ? 'live' : flyerCool ? 'cooling' : `${flyerWeeks} wk` }
-            : { label: 'Loyalty', value: loyal ? `T${s.loyalty.tier}` : '—' },
+            : { label: 'Loyalty', value: loyal ? `Level ${s.loyalty.tier}` : 'not yet' },
       ]}
       skyTop="#201a2e"
       skyBottom="#3a3330"

@@ -262,7 +262,7 @@ export function StaffFloor({
   const chips: RoomHudChip[] = [
     { label: 'Crew', value: String(headcount) },
     { label: 'Wages', value: rate(wagesPerSec) },
-    { label: 'Limit', value: bnShort },
+    { label: 'Holding back', value: bnShort },
     ...(annexOn ? [{ label: 'Annex', value: String(annexStaffed || annexPeople.length) }] : []),
   ]
 

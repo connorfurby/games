@@ -25,7 +25,7 @@ export function DockScene() {
         { label: 'Backroom', value: qty(back) },
         {
           label: 'Next truck',
-          value: orders.length ? clock(Math.min(...orders.map((o) => o.eta))) : '—',
+          value: orders.length ? clock(Math.min(...orders.map((o) => o.eta))) : 'none ordered',
         },
       ]}
       skyTop="#070b12"

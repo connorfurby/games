@@ -54,7 +54,7 @@ export function FleetHarborScene() {
         { label: 'Pockets', value: `${pocketsCleared}/${pockets.length || 6}` },
         {
           label: 'En route',
-          value: trips.length ? String(trips.length) : harvest > 0 ? `${qty(harvest)}/s` : '—',
+          value: trips.length ? String(trips.length) : harvest > 0 ? `${qty(harvest)}/s` : 'none',
         },
       ]}
       skyTop="#070b1f"

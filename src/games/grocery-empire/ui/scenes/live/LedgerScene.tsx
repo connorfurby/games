@@ -33,7 +33,7 @@ export function LedgerScene() {
         { label: 'Net', value: rate(net), neg: !rising },
         { label: 'Sales', value: rate(store) },
         { label: 'Costs', value: rate(burn), neg: burn > store },
-        { label: 'Other', value: rate(side) },
+        ...(side > 0 ? [{ label: 'Other', value: rate(side) }] : []),
       ]}
       className={`ls-skin ls-skin--${skin.id}`}
       skyTop="#171c22"

@@ -28,10 +28,14 @@ export function RivalStreetScene() {
         { label: 'Yours', value: String(ourStores) },
         { label: 'Chains', value: String(independent.length) },
         { label: 'Open', value: String(open.length) },
-        {
-          label: 'Keel',
-          value: keel?.bought ? 'yours' : keel ? String(keel.convoys) : '—',
-        },
+        ...(keel
+          ? [
+              {
+                label: 'Keel & Sons',
+                value: keel.bought ? 'yours' : `${keel.convoys} convoys`,
+              },
+            ]
+          : []),
       ]}
       skyTop="#222030"
       skyBottom="#3a3430"
