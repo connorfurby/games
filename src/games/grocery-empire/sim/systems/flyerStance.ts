@@ -28,4 +28,4 @@ export function freshWaySoftFlyerMul(s: GameState): number {
   return flyerLiveBand(s) === 'soft' ? DEPTH.flyerSoftFreshWaySpoilMul : 1
 }
 
-export const FLYER_STANCE_COPY = 'Deep pulls Penny · Soft feeds FreshWay spoil · Mid is calm.'
+export const FLYER_STANCE_COPY = 'Deep discounts make Penny lock your aisles sooner. Soft ones let FreshWay spoil your produce faster. Mid is safe.'

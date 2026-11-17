@@ -288,7 +288,7 @@ export function tickCoolerLog(s: GameState, _dt: number) {
   c.missed += 1
   c.nextDueAt = s.time + DEPTH.coolerLogGapSec
   s.cold.freshness = Math.max(COLD.freshnessFloor, s.cold.freshness * 0.85)
-  log(s, `Cooler log missed (${c.missed}). Brownout risk and FreshWay spoil rise.`, 'warn')
+  log(s, `Cooler log missed (${c.missed}). Power dips get likelier and FreshWay spoils more produce.`, 'warn')
 }
 
 /**

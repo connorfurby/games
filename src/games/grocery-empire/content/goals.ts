@@ -454,7 +454,7 @@ export const GOALS: GoalDef[] = [
     id: 'run-circular',
     era: 2,
     title: 'Hold flyer band weeks',
-    hint: 'Print a week, keep shelf price inside the band until it ends, cool down, repeat.',
+    hint: 'Print a week, keep your shelf price at or below the flyer price until it ends, wait, repeat.',
     done: (s) => (s.depth?.flyerWeeks ?? 0) >= DEPTH.flyerWeeksNeed,
     progress: (s) => frac(s.depth?.flyerWeeks ?? 0, DEPTH.flyerWeeksNeed),
     action: (s) => {

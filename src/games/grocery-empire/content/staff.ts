@@ -159,7 +159,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
   produceLead: {
     id: 'produceLead',
     name: 'Produce Lead',
-    blurb: 'Heads Fresh. Sets Turn or Pile on the produce bench.',
+    blurb: 'Runs the produce team and picks how fresh food is shelved.',
     hireBase: 55,
     hireGrowth: 1.25,
     wagePerMin: 0.75,

@@ -66,7 +66,7 @@ export function MarketingPanel() {
         } · ${Math.ceil((s.depth!.flyer!.until - s.time) / 60)}m left`
       : (s.depth?.flyer?.cooldownUntil ?? 0) > s.time
         ? `Cooldown ${Math.ceil((s.depth!.flyer!.cooldownUntil - s.time) / 60)}m · ${flyerWeeks} weeks held`
-        : `Print a week (2 aisles). Hold the band. ${flyerWeeks} / ${DEPTH.flyerWeeksNeed} toward the cold permit.`
+        : `Print a week of discounts on 2 aisles, and keep your shelf price at or below the flyer price until it ends. ${flyerWeeks} / ${DEPTH.flyerWeeksNeed} toward the cold permit.`
   const wireCheck = can(s, { type: 'wireAd' })
   const matchCheck = can(s, { type: 'matchCoupons' })
   const rivalKind = s.events?.rival?.kind ?? null
