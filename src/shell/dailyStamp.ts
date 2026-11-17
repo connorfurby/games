@@ -80,3 +80,47 @@ export function applyDailyStamp(meta: MetaSave, now = new Date()): DailyStampRes
     bonus: STAMP_TOKEN_BONUS,
   }
 }
+
+export interface WeekDay {
+  /** YYYY-MM-DD */
+  day: string
+  /** One-letter weekday, Monday first. */
+  letter: string
+  stamped: boolean
+  today: boolean
+  future: boolean
+}
+
+/**
+ * The current week (Monday to Sunday) with the days covered by the running streak marked.
+ * A streak of N ending on `lastStamp` covers that day and the N-1 before it.
+ */
+export function streakWeek(lastStamp: string | null, streak: number, now = new Date()): WeekDay[] {
+  const today = localDayKey(now)
+  const mondayOffset = (now.getDay() + 6) % 7
+  const out: WeekDay[] = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset + i)
+    const day = localDayKey(d)
+    const back = lastStamp ? daysBetween(day, lastStamp) : null
+    const toToday = daysBetween(day, today) ?? 0
+    out.push({
+      day,
+      letter: 'MTWTFSS'[i]!,
+      stamped: back != null && back >= 0 && back < Math.max(0, streak),
+      today: day === today,
+      future: toToday < 0,
+    })
+  }
+  return out
+}
+
+const THEME_A = ['Quiet', 'Rainy', 'Bright', 'Windy', 'Foggy', 'Busy', 'Lazy', 'Crisp']
+const THEME_B = ['morning rush', 'delivery day', 'market day', 'payday', 'school run', 'late shift', 'street fair', 'stock take']
+
+/** A name for today's seeded run, so the daily has an identity. Flavour only: it changes no rules. */
+export function dailyTheme(seed: number): string {
+  const a = THEME_A[Math.abs(seed) % THEME_A.length]!
+  const b = THEME_B[Math.abs(Math.floor(seed / 8)) % THEME_B.length]!
+  return `${a} ${b}`
+}

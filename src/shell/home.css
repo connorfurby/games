@@ -484,3 +484,59 @@ html.ornament--price-tag .hm .hm-shelf::before {
   bottom: 30px;
   right: 24px !important;
 }
+
+/* Daily corner: today's name, best, and the week at a glance. */
+.hm-daily {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--r-md, 10px);
+  border: 1px solid var(--ge-line, rgba(243, 234, 215, 0.14));
+  background: var(--ge-sunken, rgba(0, 0, 0, 0.25));
+}
+.hm-daily__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.hm-daily__copy strong {
+  font: 700 var(--t-sm, 0.8125rem) / 1.3 var(--ge-font-ui, system-ui, sans-serif);
+  color: var(--ge-ink);
+}
+.hm-daily__copy span {
+  font: 500 var(--t-xs, 0.75rem) / 1.35 var(--ge-font-ui, system-ui, sans-serif);
+  color: var(--ge-ink-muted);
+}
+.hm-week {
+  display: flex;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hm-week__day {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--ge-line-strong, rgba(243, 234, 215, 0.28));
+  font: 700 var(--t-2xs, 0.6875rem) / 1 var(--ge-font-ui, system-ui, sans-serif);
+  color: var(--ge-ink-muted);
+}
+.hm-week__day.is-on {
+  background: var(--ge-tag, #f2c14e);
+  border-color: var(--ge-tag, #f2c14e);
+  color: var(--ge-tag-ink, #1a1408);
+}
+.hm-week__day.is-today {
+  outline: 2px solid var(--ge-ink);
+  outline-offset: 2px;
+}
+.hm-week__day.is-future {
+  opacity: 0.45;
+}

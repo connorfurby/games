@@ -21,7 +21,7 @@ import {
   prepareDailyChallengeStart,
   todaysChallenge,
 } from './dailyChallenge'
-import { localDayKey } from './dailyStamp'
+import { dailyTheme, localDayKey, streakWeek } from './dailyStamp'
 import { useMeta } from './MetaContext'
 import { ShellFrame } from './ShellFrame'
 import './home.css'
@@ -228,6 +228,26 @@ export function Shelf() {
                       A neighbourhood shelf, one price and a stack of crates. About an hour to the corner store; forty to the last aisle.
                     </p>
                   )}
+                  <div className="hm-daily" aria-label="Today's corner">
+                    <div className="hm-daily__copy">
+                      <strong>Today&apos;s corner · {dailyTheme(dailyToday.seed)}</strong>
+                      <span>
+                        {bestToday ? `Best today: ${qty(bestToday.baskets, 'named')} baskets.` : 'No run yet today.'}{' '}
+                        {(meta.dailyStreak ?? 0) > 0 ? `Streak: ${meta.dailyStreak} day${meta.dailyStreak === 1 ? '' : 's'}.` : 'Play any day to start a streak.'}
+                      </span>
+                    </div>
+                    <ol className="hm-week" aria-label="This week">
+                      {streakWeek(meta.lastDailyStamp ?? null, meta.dailyStreak ?? 0).map((d) => (
+                        <li
+                          key={d.day}
+                          className={`hm-week__day${d.stamped ? ' is-on' : ''}${d.today ? ' is-today' : ''}${d.future ? ' is-future' : ''}`}
+                          title={`${d.day}${d.stamped ? ' · played' : d.future ? '' : ' · missed'}`}
+                        >
+                          <span>{d.letter}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                   <p className="hm-note">
                     Today&apos;s corner is a seeded Era-0 run{save ? ' — it parks your current run in slot 3.' : '.'}
                     {dailyActive ? ` Seed ${dailyBlob?.seed ?? dailyToday.seed} is running${bestToday ? `, best ${qty(bestToday.baskets, 'named')} baskets` : ''}.` : bestToday ? ` Today's best: ${qty(bestToday.baskets, 'named')} baskets.` : ''}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_META } from '@/shared/types'
-import { applyDailyStamp, daysBetween, localDayKey } from './dailyStamp'
+import { applyDailyStamp, daysBetween, localDayKey, dailyTheme, streakWeek } from './dailyStamp'
 
 describe('dailyStamp', () => {
   it('localDayKey formats YYYY-MM-DD', () => {
@@ -61,5 +61,31 @@ describe('dailyStamp', () => {
     expect(r.stamped).toBe(true)
     expect(r.streak).toBe(1)
     expect(r.meta.shelfTokens).toBe(6)
+  })
+})
+
+describe('streakWeek', () => {
+  // Wednesday 18 Nov 2026
+  const now = new Date(2026, 10, 18, 12)
+  it('marks the streak days ending on the last stamp', () => {
+    const w = streakWeek('2026-11-18', 3, now)
+    expect(w.map((d) => d.letter).join('')).toBe('MTWTFSS')
+    expect(w.map((d) => d.stamped)).toEqual([true, true, true, false, false, false, false])
+    expect(w[2]!.today).toBe(true)
+    expect(w[3]!.future).toBe(true)
+  })
+  it('a streak that ended earlier shows only its own days', () => {
+    const w = streakWeek('2026-11-16', 1, now)
+    expect(w.map((d) => d.stamped)).toEqual([true, false, false, false, false, false, false])
+  })
+  it('no stamp, no marks', () => {
+    expect(streakWeek(null, 0, now).some((d) => d.stamped)).toBe(false)
+  })
+})
+
+describe('dailyTheme', () => {
+  it('is stable for a seed and two words long', () => {
+    expect(dailyTheme(12345)).toBe(dailyTheme(12345))
+    expect(dailyTheme(12345).split(' ').length).toBeGreaterThanOrEqual(2)
   })
 })
