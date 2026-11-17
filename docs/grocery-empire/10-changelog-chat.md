@@ -27,6 +27,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Late rooms: captions moved off the floor line into the ground band.
 - Notices: about 35 sim log lines rewritten in plain words (power dip, investments restarted, you owe too much, visited a store, harvest, strategy learned); puzzle scores in notices read as percentages; money stays in dollars.
 - First-loop beats (P5-02): `useMilestones` now bursts "First basket!", then 10 / 100 / 1,000 … baskets, and "First hire!" (reduced motion keeps the sound only, as before).
+- HUD: Undo is invisible (slot kept, so nothing shifts) until there is something to undo, instead of sitting there greyed out.
 - Phone crawl p8: 123 screens, 0 errors, 0 overflow, 0 shifts, no new dead buttons; low-contrast hits down from 14 to 2.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

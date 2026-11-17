@@ -159,6 +159,10 @@ export function Hud({
             type="button"
             className="g2-icon-btn g2-icon-btn--undo"
             disabled={!undo.ok}
+            // Nothing to undo: keep the slot (no layout shift) but do not show a dead button.
+            style={undo.ok ? undefined : { visibility: 'hidden' }}
+            aria-hidden={undo.ok ? undefined : true}
+            tabIndex={undo.ok ? undefined : -1}
             onClick={() => performUndo()}
             aria-label={undo.ok ? `Undo ${undoText}` : 'Nothing to undo'}
             title={undo.ok ? `Undo ${undoText} · ${undoLeft}s left (Ctrl+Z)` : 'Nothing to undo'}
