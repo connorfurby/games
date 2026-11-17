@@ -3,7 +3,7 @@ import { deliveryTime } from '../../../sim/formulas'
 import { sumQty } from '../../../sim/helpers'
 import { useGame } from '../../GameContext'
 import { clock, qty } from '../../format'
-import { Hit, ROOM_GROUND, RoomScene, Sign } from '../room'
+import { ROOM_GROUND, RoomScene, Sign } from '../room'
 import { Conveyor, CrateStack, TickerTape, Truck } from './primitives'
 
 /** Dock room: trucks with ETA clocks, wholesale gauge, backroom tally. */
@@ -33,7 +33,7 @@ export function DockScene() {
     >
       <TickerTape x={24} y={56} text={`WHOLESALE ${index.toFixed(2)} · ${mood}`} />
 
-      <Hit x={24} y={90} w={500} h={160} label="Order a truck" menu="suppliers" coachId="suppliers-autorestock">
+      <g aria-label="Delivery bay">
         <Sign x={36} y={108} text="Bay" />
         <Conveyor x={40} y={ROOM_GROUND - 20} w={420} fill={orders.length > 0 ? 0.6 : 0.1} />
         {shown.map((o, i) => {
@@ -62,11 +62,11 @@ export function DockScene() {
         ) : null}
         {orders.length === 0 ? (
           <g>
-            <Sign x={48} y={150} text="Closed dock — no trucks on the road" />
-            <Sign x={48} y={172} text="Tap bay to place an order →" small />
+            <Sign x={48} y={150} text="No trucks on the road" />
+            <Sign x={48} y={172} text="Buy a crate below and a truck sets off" small />
           </g>
         ) : null}
-      </Hit>
+      </g>
 
       <g transform="translate(560 70)">
         <rect width="360" height="180" rx="6" fill="#0a0e14" stroke="#f2c14e" strokeOpacity="0.35" />
@@ -75,11 +75,6 @@ export function DockScene() {
         <Sign x={160} y={80} text={`${back} units waiting`} />
         <Sign x={160} y={104} text={orders.length ? 'Inbound on the belt' : 'Bay is clear'} small />
       </g>
-      <Hit x={560} y={250} w={180} h={28} label="Dock check-in" menu="suppliers" coachId="suppliers-dock-check">
-        <text x={650} y={268} textAnchor="middle" fill="#ff5a43" fontSize="12" fontWeight="700">
-          Dock check-in →
-        </text>
-      </Hit>
     </RoomScene>
   )
 }

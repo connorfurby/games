@@ -6,15 +6,14 @@ import { REBRAND } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { engine } from '../../sim/engine'
 import { empireXpToNext } from '../../sim/formulas'
-import { canReleaseAutonomous } from '../../sim/systems/capital'
 import { canCarry, canRebrand, pendingGoodwill, type RebrandCarry } from '../../sim/systems/prestige'
 import { statSources, statTable } from '../../sim/systems/stats'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { PrestigeKeepSheet } from '../components/PrestigeKeepSheet'
 import { useGame } from '../GameContext'
 import { clock, money, qty } from '../format'
-import { Button, Meter, SegmentedControl } from '../kit'
-import { ActionRow, PlayFrame, StatusChip } from '../play'
+import { Button, Meter, SegmentedControl, Sheet } from '../kit'
+import { PlayFrame, StatusChip } from '../play'
 import { RankHallScene } from '../scenes/live'
 import { EmpireSections } from './EmpirePanel'
 
@@ -26,7 +25,7 @@ function mulText(n: number) {
 type BoardTab = 'rewards' | 'projects' | 'totals'
 
 export function EmpireBoard() {
-  const { state: s, tick, dispatch, numberFormat, reducedMotion, setActiveMenu } = useGame()
+  const { state: s, tick, dispatch, numberFormat, reducedMotion } = useGame()
   const lv = s.empire.level
   const need = Math.max(1, empireXpToNext(lv))
   const next = nextEmpireReward(lv)
@@ -39,14 +38,10 @@ export function EmpireBoard() {
   const boosted = STAT_IDS.filter((k) => (table[k] ?? 1) > 1.0001)
   const gain = pendingGoodwill(s)
   const rebrandBlock = canRebrand(s)
-  const autoBlock = canReleaseAutonomous(s)
   const points = s.empire.points
-  const ownedDoctrines = Object.values(s.empire.perks).reduce((n, v) => n + ((v ?? 0) > 0 ? 1 : 0), 0)
   const showRebrand = s.era >= REBRAND.minEra || s.rebrand.count > 0
   const [confirm, setConfirm] = useState(false)
   const [carry, setCarry] = useState<RebrandCarry>(null)
-  const [doctrineOpen, setDoctrineOpen] = useState(false)
-  const [autoOpen, setAutoOpen] = useState(false)
   const [boardTab, setBoardTab] = useState<BoardTab>('rewards')
 
   const eraProjects = PROJECTS.filter((p) => {
@@ -62,7 +57,19 @@ export function EmpireBoard() {
     openProjects.find((p) => can(s, { type: 'startProject', id: p.id }).ok) ?? openProjects[0] ?? null
   const projectCheck = projectPick ? can(s, { type: 'startProject', id: projectPick.id }) : null
 
-  const primary = projectPick
+  const goDoctrine = () =>
+    document
+      .querySelector('.pf-desk--doctrine')
+      ?.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' })
+  const primary = points > 0
+    ? {
+        label: `Spend ${points} trait point${points > 1 ? 's' : ''}`,
+        tone: 'free' as const,
+        size: 'lg' as const,
+        coachId: 'empire-doctrine',
+        onClick: goDoctrine,
+      }
+    : projectPick
     ? {
         label: `Start ${projectPick.name}`,
         tone: projectCheck?.ok ? ('free' as const) : ('primary' as const),
@@ -77,60 +84,7 @@ export function EmpireBoard() {
           dispatch({ type: 'startProject', id: projectPick.id })
         },
       }
-    : {
-        label: 'Open Upgrades →',
-        // Navigation, not a spend: yellow is reserved for buttons that cost something.
-        tone: 'secondary' as const,
-        size: 'lg' as const,
-        title: 'Cash trees — each rank also grants trait points for doctrines.',
-        onClick: () => setActiveMenu('upgrades'),
-      }
-
-  const secondaries = [
-    {
-      key: 'doctrine',
-      label: 'Doctrine',
-      fact: points > 0 ? `${points} ready` : `${ownedDoctrines} owned`,
-      coachId: 'empire-doctrine',
-      onClick: () => setDoctrineOpen(true),
-    },
-    ...(s.era >= 2 && !s.autonomous
-      ? [
-          {
-            key: 'autonomous',
-            label: 'Autonomous',
-            fact: autoBlock ? 'locked' : 'ready',
-            coachId: 'empire-autonomous',
-            title: autoBlock ?? 'Release Autonomous',
-            onClick: () => setAutoOpen(true),
-          },
-        ]
-      : []),
-    ...(projectPick
-      ? [
-          {
-            key: 'upgrades',
-            label: 'Upgrades',
-            fact: 'cash trees',
-            onClick: () => setActiveMenu('upgrades'),
-          },
-        ]
-      : []),
-    ...(showRebrand
-      ? [
-          {
-            key: 'rebrand',
-            label: 'Rebrand',
-            fact: rebrandBlock ? 'not yet' : gain > 0 ? `+${gain} Goodwill` : 'ready',
-            disabled: !!rebrandBlock,
-            title:
-              rebrandBlock ??
-              `Start over with Goodwill. Each point adds ${Math.round(REBRAND.valuePerGoodwill * 100)}% basket value${gain > 0 ? ` · +${gain} now` : ''}.`,
-            onClick: () => setConfirm(true),
-          },
-        ]
-      : []),
-  ]
+    : null
 
   return (
     <section className="e2">
@@ -142,11 +96,37 @@ export function EmpireBoard() {
             <RankHallScene />
           </div>
         }
-        tray={{
-          primary,
-          failReason: projectPick && !projectCheck?.ok ? projectCheck?.reason : undefined,
-          secondaries,
-        }}
+        tray={
+          primary
+            ? {
+                primary,
+                failReason: points <= 0 && projectPick && !projectCheck?.ok ? projectCheck?.reason : undefined,
+              }
+            : undefined
+        }
+        desks={
+          <>
+            <EmpireSections
+              doctrineOpen
+              autoOpen
+              onDoctrineClose={() => {}}
+              onAutoClose={() => {}}
+            />
+            <Sheet open onClose={() => {}} title="Rebrand" deskHidden={!showRebrand}>
+              <p className="ge-muted">
+                Start the store over for Goodwill. Each point adds {Math.round(REBRAND.valuePerGoodwill * 100)}% to
+                every basket, for good.
+              </p>
+              {rebrandBlock ? (
+                <p className="ge-muted">Not yet: {rebrandBlock}</p>
+              ) : (
+                <Button tone="danger" onClick={() => setConfirm(true)}>
+                  Rebrand{gain > 0 ? ` · +${gain} Goodwill` : ''}
+                </Button>
+              )}
+            </Sheet>
+          </>
+        }
       >
         <div className="p6-stack">
           {s.autonomous ? (
@@ -177,20 +157,18 @@ export function EmpireBoard() {
                 label={next ? `Rank ${lv} → ${lv + 1}` : `Rank ${lv}`}
                 eta={`${xpLeft < 1000 ? Math.ceil(xpLeft) : qty(xpLeft)} XP`}
               />
-              <ActionRow
-                label={last ? last.name : 'No reward yet'}
-                fact={last ? `Last · Empire ${last.level}` : 'Reach Empire 2 for the first'}
-                title={last?.blurb}
-                disabled
-              />
-              <ActionRow
-                label={next ? next.name : 'Every reward is yours'}
-                fact={next ? `Next · Empire ${next.level}` : 'Hall complete'}
-                title={next?.blurb}
-                disabled
-              />
+              <dl className="e2-rewardpair">
+                <div title={last?.blurb}>
+                  <dt>Last reward</dt>
+                  <dd>{last ? `${last.name} · Empire ${last.level}` : 'None yet'}</dd>
+                </div>
+                <div title={next?.blurb}>
+                  <dt>Next reward</dt>
+                  <dd>{next ? `${next.name} · Empire ${next.level}` : 'You have them all'}</dd>
+                </div>
+              </dl>
               <details>
-                <summary className="ge-muted">All {EMPIRE_REWARDS.length} rewards</summary>
+                <summary className="e2-summary">See all {EMPIRE_REWARDS.length} rewards</summary>
                 <ol className="e2-track">
                   {EMPIRE_REWARDS.map((r) => {
                     const got = lv >= r.level
@@ -285,12 +263,6 @@ export function EmpireBoard() {
             </section>
           ) : null}
 
-          <EmpireSections
-            doctrineOpen={doctrineOpen}
-            autoOpen={autoOpen}
-            onDoctrineClose={() => setDoctrineOpen(false)}
-            onAutoClose={() => setAutoOpen(false)}
-          />
         </div>
       </PlayFrame>
 

@@ -662,4 +662,37 @@
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
   }
+
+  /* Empire: reward pair as plain facts, not buttons. */
+  .e2-rewardpair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--s-3);
+    margin: 0;
+  }
+  .e2-rewardpair > div {
+    padding: var(--s-3);
+    border: 1px solid var(--ge-line);
+    border-radius: var(--r-md);
+  }
+  .e2-rewardpair dt {
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+  }
+  .e2-rewardpair dd {
+    margin: var(--s-1) 0 0;
+    font-size: var(--t-md);
+    font-weight: 600;
+  }
+  .e2-summary {
+    cursor: pointer;
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--ge-ink);
+    padding: var(--s-2) 0;
+  }
+  /* The doctrine tree gets the whole width and a real height on the page. */
+  .pf-desk--doctrine .st-view {
+    min-height: 28rem;
+  }
 }

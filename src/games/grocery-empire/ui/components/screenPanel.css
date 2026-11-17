@@ -401,4 +401,33 @@
       grid-template-areas: 'icon who xp acts';
     }
   }
+
+  /* Suppliers desks -------------------------------------------------- */
+  .p6-invoice,
+  .p6-dockrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2) var(--s-3);
+    padding: var(--s-2) 0;
+    border-bottom: 1px solid var(--ge-line);
+  }
+  .p6-invoice:last-child,
+  .p6-dockrow:last-child {
+    border-bottom: 0;
+  }
+  .p6-invoice__what {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .p6-late {
+    font-size: var(--t-xs);
+    color: var(--ge-danger, var(--ge-tomato));
+  }
+  .p6-dockrow > strong {
+    flex: 1;
+    font-size: var(--t-sm);
+  }
 }

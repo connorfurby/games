@@ -6,7 +6,6 @@ import {
   backroomCap,
   crateCost,
   crateSize,
-  hireCost,
   doorOverflow,
   deliveryTime,
   shortShipChance,
@@ -18,8 +17,8 @@ import { useGame } from '../GameContext'
 import { clock, money, qty } from '../format'
 import { MixPriority } from '../components/MixPriority'
 import { MENUS } from '../../content/menus'
-import { ActionRow, FailReason, Field, FieldSet, PlayFrame } from '../play'
-import { Badge, Button, Disclosure, EmptyState, Meter, SegmentedControl, Sheet, Toggle, Tooltip } from '../kit'
+import { FailReason, Field, FieldSet, PlayFrame } from '../play'
+import { Badge, Button, Meter, SegmentedControl, Sheet, Toggle, Tooltip } from '../kit'
 import { DockScene } from '../scenes/live'
 
 const MAX_CRATES = 200
@@ -32,8 +31,6 @@ function indexMood(index: number): { label: string; hint: string } {
 
 export function SuppliersPanel() {
   const { state: s, dispatch, numberFormat, reducedMotion, setActiveMenu } = useGame()
-  const [invoiceBook, setInvoiceBook] = useState(false)
-  const [dockSheet, setDockSheet] = useState(false)
   const [qtyPick, setQtyPick] = useState<number | 'fill'>(1)
   const cat = (s.orderCat in CATEGORIES ? s.orderCat : 'cans') as CategoryId
   const unlocked = CATEGORY_IDS.filter((c) => s.categories[c])
@@ -58,7 +55,6 @@ export function SuppliersPanel() {
   const units = eachUnits * crates
   const backroomTight = backRoom < units && s.menus.build
   const buyCheck = can(s, { type: 'buyWholesale', cat, crates })
-  const dockCheck = can(s, { type: 'dockCheckIn', aisle: cat })
   const emergencyCheck = can(s, { type: 'emergencyDelivery' })
   const mentorCheck = can(s, { type: 'mentorRestock' })
   const bailoutCheck = can(s, { type: 'bailout' })
@@ -119,7 +115,6 @@ export function SuppliersPanel() {
   const safetyReady = safety.some((n) => n.check.ok)
   const openInvoices = (s.depth?.invoices ?? []).filter((i) => !i.paid)
   const invoicesOnTime = s.depth?.invoicesOnTime ?? 0
-  const dockReady = s.era >= 1 && dockCheck.ok
 
   return (
     <section className="ge-panel">
@@ -127,16 +122,136 @@ export function SuppliersPanel() {
         purpose={MENUS.suppliers.purpose}
         department="Suppliers"
         room={<DockScene />}
+        desks={
+          <>
+      <Sheet
+        open
+        onClose={() => {}}
+        title={openInvoices.length ? `Invoices · ${openInvoices.length} to pay` : 'Invoices'}
+        className="pf-desk--invoices"
+        deskHidden={openInvoices.length === 0 && invoicesOnTime === 0}
+      >
+        {openInvoices.length === 0 ? (
+          <p className="p6-copy">All paid. {invoicesOnTime} paid on time so far.</p>
+        ) : (
+          <div className="p6-stack">
+            <p className="p6-copy">
+              Some crates arrive on credit. Pay before the timer runs out for a discount; pay late and it costs more.
+              While the book is full you can't order.
+            </p>
+            <p className="p6-copy" data-coach-id="suppliers-float-vs-hire">
+              Paying everything early saves{' '}
+              {money(openInvoices.reduce((n, i) => n + i.amount * (1 - DEPTH.invoiceEarlyDisc), 0), numberFormat)}.
+            </p>
+            {openInvoices.map((inv) => {
+              const early = s.time <= inv.dueAt
+              const due = inv.amount * (early ? DEPTH.invoiceEarlyDisc : DEPTH.invoiceLateFee)
+              const left = Math.max(0, Math.ceil(inv.dueAt - s.time))
+              const check = can(s, { type: 'payInvoice', id: inv.id })
+              return (
+                <div key={inv.id} className="p6-invoice">
+                  <span className="p6-invoice__what">
+                    <strong>{CATEGORIES[inv.cat]?.name ?? inv.cat} crate</strong>
+                    <span className={early ? 'p6-muted' : 'p6-late'}>{early ? `Discount for ${left}s` : 'Late — costs more'}</span>
+                  </span>
+                  {check.ok ? (
+                    <Button tone="primary" size="sm" feedback cost={money(due, numberFormat)} onClick={() => dispatch({ type: 'payInvoice', id: inv.id })}>
+                      Pay
+                    </Button>
+                  ) : (
+                    <span className="p6-muted">{check.reason}</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Sheet>
+
+      <Sheet open onClose={() => {}} title={`Dock check-in · ${s.depth?.dockCheckIns ?? 0} of ${DEPTH.dockCheckInNeed}`} deskHidden={s.era < 1}>
+        <div className="p6-stack" data-coach-id="suppliers-dock-check">
+          <p className="p6-copy">
+            When a truck checks in, choose which aisle's back stock gets it. A full crate takes longer; a short one is
+            quicker with fewer units.
+            {(s.depth?.nextDockAt ?? 0) > s.time
+              ? ` Next truck in ${Math.ceil((s.depth?.nextDockAt ?? 0) - s.time)}s.`
+              : ''}
+          </p>
+          <div className="p6-stack">
+            {unlocked.map((aisle) => {
+              const full = can(s, { type: 'dockCheckIn', aisle })
+              const short = can(s, { type: 'dockCheckIn', aisle, short: true })
+              return (
+                full.ok || short.ok ? (
+                <div key={aisle} className="p6-dockrow">
+                  <strong>{CATEGORIES[aisle].name}</strong>
+                  {full.ok ? <Button
+                    tone="free"
+                    size="sm"
+                    onClick={() => dispatch({ type: 'dockCheckIn', aisle })}
+                  >
+                    Full crate
+                  </Button> : null}
+                  {short.ok ? <Button
+                    tone="secondary"
+                    size="sm"
+                    onClick={() => dispatch({ type: 'dockCheckIn', aisle, short: true })}
+                  >
+                    Short crate
+                  </Button> : null}
+                </div>
+                ) : null
+              )
+            })}
+          </div>
+        </div>
+      </Sheet>
+      <Sheet open onClose={() => {}} title="Auto-restock">
+        <div className="p6-stack" data-coach-id="suppliers-autorestock">
+          {autoOn ? (
+            <>
+              <Toggle checked={!!s.autoRestock?.enabled} onChange={(enabled) => setAuto({ enabled })}>
+                {s.autoRestock?.enabled ? 'Reordering for you' : 'Off'}
+              </Toggle>
+              <p className="p6-copy">Reorders the emptiest aisle when the backroom runs low.</p>
+                <div className="p6-row">
+                  <label className="p6-field">
+                    Max cost / unit
+                    <input
+                      type="number"
+                      min={0.05}
+                      step={0.05}
+                      value={s.autoRestock.maxCost}
+                      onChange={(e) => {
+                        const v = Number(e.target.value)
+                        if (Number.isFinite(v) && v > 0) setAuto({ maxCost: v })
+                      }}
+                    />
+                  </label>
+                  <label className="p6-field">
+                    Keep in back
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={s.autoRestock.minUnits}
+                      onChange={(e) => {
+                        const v = Math.floor(Number(e.target.value))
+                        if (Number.isFinite(v) && v >= 1) setAuto({ minUnits: v })
+                      }}
+                    />
+                  </label>
+                </div>
+            </>
+          ) : (
+            <p className="p6-copy">Buy the Auto-order memo and the desk will reorder for you.</p>
+          )}
+        </div>
+      </Sheet>
+          </>
+        }
         tray={{
-          primary: dockReady
-            ? {
-                label: `Dock check-in · ${s.depth?.dockCheckIns ?? 0}/${DEPTH.dockCheckInNeed}`,
-                tone: 'free',
-                size: 'lg',
-                coachId: 'suppliers-dock-check',
-                onClick: () => setDockSheet(true),
-              }
-            : {
+          primary: {
                 label: `Buy ${crates > 1 ? `${crates} crates` : 'crate'}${qtyPick === 'fill' ? ' (fill)' : ''}`,
                 tone: 'primary',
                 size: 'lg',
@@ -149,38 +264,17 @@ export function SuppliersPanel() {
                 feedback: true,
                 onClick: () => dispatch({ type: 'buyWholesale', cat, crates }),
               },
-          failReason: dockReady ? undefined : buyCheck.reason,          secondaries: [
-            {
-              key: 'invoices',
-              label: 'Invoices',
-              fact: String(openInvoices.length),
-              coachId: 'suppliers-invoices',
-              onClick: () => setInvoiceBook(true),
-            },
-            ...(s.era >= 1
-              ? [
-                  {
-                    key: 'dock',
-                    label: 'Dock',
-                    fact: `${s.depth?.dockCheckIns ?? 0}/${DEPTH.dockCheckInNeed}`,
-                    coachId: 'suppliers-dock-check',
-                    onClick: () => setDockSheet(true),
-                  },
-                ]
-              : []),
-            ...(s.memos['price-lock']
-              ? [
-                  {
-                    key: 'lock',
-                    label: lockLeft > 0 ? `Locked ${lockLeft}s` : 'Lock price',
-                    disabled: !lockCheck.ok && lockLeft <= 0,
-                    title: !lockCheck.ok ? lockCheck.reason : `Freeze index ${PRICE_LOCK.durationSec}s`,
-                    onClick: () => dispatch({ type: 'lockWholesalePrice' }),
-                  },
-                ]
-              : []),
-          ],
-        }}
+          failReason: buyCheck.reason,
+          failAction:
+            !buyCheck.ok && openInvoices.length > 0 && /invoice/i.test(buyCheck.reason ?? '')
+              ? {
+                  label: 'Pay an invoice',
+                  onClick: () =>
+                    document
+                      .querySelector('.pf-desk--invoices')
+                      ?.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' }),
+                }
+              : undefined,        }}
       >
         <div className="p6-row">
           <Badge tone={mood.label === 'Cheap' ? 'success' : mood.label === 'Dear' ? 'warn' : 'muted'}>
@@ -190,9 +284,6 @@ export function SuppliersPanel() {
             </span>
           </Badge>
           {orders.length > 0 ? <Badge tone="muted">{orders.length} on the road</Badge> : null}
-          <Badge tone="muted">
-            {openInvoices.length} open · {invoicesOnTime} on time
-          </Badge>
         </div>
 
         <FieldSet title="Your order">
@@ -220,7 +311,7 @@ export function SuppliersPanel() {
                 aria-label="Aisle to order for"
                 value={cat}
                 onChange={(c) => dispatch({ type: 'setOrderCat', cat: c })}
-                options={unlocked.map((c) => ({ value: c, label: CATEGORIES[c].short, title: CATEGORIES[c].name }))}
+                options={unlocked.map((c) => ({ value: c, label: CATEGORIES[c].name, title: CATEGORIES[c].name }))}
               />
             </Field>
           ) : null}
@@ -254,6 +345,19 @@ export function SuppliersPanel() {
               </Button>
             ) : null}
           </Field>
+          {s.memos['price-lock'] ? (
+            <Field label="Price lock" note={`Freeze today's wholesale price for ${PRICE_LOCK.durationSec}s.`}>
+              {lockLeft > 0 ? (
+                <span className="p6-copy">Locked for {lockLeft}s</span>
+              ) : lockCheck.ok ? (
+                <Button tone="secondary" size="sm" onClick={() => dispatch({ type: 'lockWholesalePrice' })}>
+                  Lock price
+                </Button>
+              ) : (
+                <span className="p6-copy">{lockCheck.reason}</span>
+              )}
+            </Field>
+          ) : null}
         </FieldSet>
         {backroomTight ? (
           <FailReason action={{ label: 'Open Build', onClick: () => setActiveMenu('build') }}>
@@ -293,167 +397,10 @@ export function SuppliersPanel() {
             )
           : null}
 
-        <Disclosure
-          title="Auto-restock"
-          actions={
-            <div data-coach-id="suppliers-autorestock">
-              <Toggle
-                checked={!!s.autoRestock?.enabled}
-                disabled={!autoOn}
-                title={autoOn ? undefined : 'Buy the Auto-order memo to unlock'}
-                onChange={(enabled) => setAuto({ enabled })}
-              >
-                {autoOn ? 'On' : 'Locked'}
-              </Toggle>
-            </div>
-          }
-        >
-          <div className="p6-stack">
-            <p className="p6-copy">
-              {autoOn
-                ? 'Reorders the aisle furthest under your Restock priority when the backroom runs low.'
-                : 'Buy the Auto-order memo to let the desk reorder for you.'}
-            </p>
-            {autoOn ? (
-              <>
-                <div className="p6-row">
-                  <label className="p6-field">
-                    Max cost / unit
-                    <input
-                      type="number"
-                      min={0.05}
-                      step={0.05}
-                      value={s.autoRestock.maxCost}
-                      onChange={(e) => {
-                        const v = Number(e.target.value)
-                        if (Number.isFinite(v) && v > 0) setAuto({ maxCost: v })
-                      }}
-                    />
-                  </label>
-                  <label className="p6-field">
-                    Keep in back
-                    <input
-                      type="number"
-                      min={1}
-                      step={1}
-                      value={s.autoRestock.minUnits}
-                      onChange={(e) => {
-                        const v = Math.floor(Number(e.target.value))
-                        if (Number.isFinite(v) && v >= 1) setAuto({ minUnits: v })
-                      }}
-                    />
-                  </label>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </Disclosure>
 
         <MixPriority coachId="floor-mix" compact />
       </PlayFrame>
 
-      <Sheet
-        open={invoiceBook}
-        onClose={() => setInvoiceBook(false)}
-        title={`Invoice book · ${openInvoices.length} open`}
-        reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setInvoiceBook(false)}>
-            Done
-          </Button>
-        }
-      >
-        {openInvoices.length === 0 ? (
-          <EmptyState
-            title="No open invoices"
-            body="Pay early for a discount; late fees hit stars."
-          />
-        ) : (
-          <div className="p6-stack">
-            <p className="p6-copy">
-              Pay now (×{DEPTH.invoiceEarlyDisc}) keeps the greengrocer deal. Float (×{DEPTH.invoiceLateFee}) ages
-              produce.
-            </p>
-            <p className="p6-copy" data-coach-id="suppliers-float-vs-hire">
-              Early pay saves {money(openInvoices.reduce((n, i) => n + i.amount * (1 - DEPTH.invoiceEarlyDisc), 0), numberFormat)}{' '}
-              · next clerk costs {money(hireCost(s, 'clerk'), numberFormat)}
-            </p>
-            {openInvoices.map((inv) => {
-              const early = s.time <= inv.dueAt
-              const due = inv.amount * (early ? DEPTH.invoiceEarlyDisc : DEPTH.invoiceLateFee)
-              const left = Math.max(0, Math.ceil(inv.dueAt - s.time))
-              const check = can(s, { type: 'payInvoice', id: inv.id })
-              return (
-                <ActionRow
-                  key={inv.id}
-                  label={`#${inv.id} ${CATEGORIES[inv.cat]?.name ?? inv.cat}`}
-                  fact={`${early ? `${left}s left` : 'late'} · ${money(due, numberFormat)}`}
-                  disabled={!check.ok}
-                  title={check.reason}
-                  onClick={() => dispatch({ type: 'payInvoice', id: inv.id })}
-                />
-              )
-            })}
-          </div>
-        )}
-      </Sheet>
-
-      <Sheet
-        open={dockSheet}
-        onClose={() => setDockSheet(false)}
-        title="Dock check-in"
-        reducedMotion={reducedMotion}
-        footer={
-          <Button tone="ghost" onClick={() => setDockSheet(false)}>
-            Done
-          </Button>
-        }
-      >
-        <div className="p6-stack" data-coach-id="suppliers-dock-check">
-          <p className="p6-copy">
-            Put the crate into an aisle’s back stock. Full crate is slower; short-ship is faster with fewer units.
-            {(s.depth?.nextDockAt ?? 0) > s.time
-              ? ` Next in ${Math.ceil((s.depth?.nextDockAt ?? 0) - s.time)}s.`
-              : ''}
-            {s.depth?.lastDockAisle ? ` Last → ${CATEGORIES[s.depth.lastDockAisle as CategoryId]?.short ?? s.depth.lastDockAisle}.` : ''}
-          </p>
-          <div className="p6-row">
-            {unlocked.map((aisle) => {
-              const full = can(s, { type: 'dockCheckIn', aisle })
-              const short = can(s, { type: 'dockCheckIn', aisle, short: true })
-              return (
-                <div key={aisle} className="p6-stack" style={{ gap: '0.35rem' }}>
-                  <strong>{CATEGORIES[aisle].short}</strong>
-                  <Button
-                    tone="free"
-                    size="sm"
-                    disabled={!full.ok}
-                    title={full.ok ? 'Full crate' : full.reason}
-                    onClick={() => {
-                      dispatch({ type: 'dockCheckIn', aisle })
-                      setDockSheet(false)
-                    }}
-                  >
-                    Full
-                  </Button>
-                  <Button
-                    tone="ghost"
-                    size="sm"
-                    disabled={!short.ok}
-                    title={short.ok ? 'Short-ship · faster, fewer units' : short.reason}
-                    onClick={() => {
-                      dispatch({ type: 'dockCheckIn', aisle, short: true })
-                      setDockSheet(false)
-                    }}
-                  >
-                    Short
-                  </Button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </Sheet>
     </section>
   )
 }

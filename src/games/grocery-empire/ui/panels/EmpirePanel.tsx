@@ -219,11 +219,9 @@ export function EmpireSections({
   return (
     <>
       {showLaws ? (
-        <section className="ge-panel e2-section ge-empire-block">
-          <header className="ge-empire-block__head">
-            <h3 className="e2-h3">Hungry laws</h3>
-            <p>NG+ physics this universe remembers — pick after Accept.</p>
-          </header>
+        <section className="pf-desk pf-desk--wide ge-empire-block">
+          <h3 className="pf-desk__title">Hungry laws</h3>
+          <p className="ge-muted">Extra rules this universe plays by. You choose them after you Accept.</p>
           {s.pendingAccept ? (
             <HungryLawsBoard
               compact
@@ -251,42 +249,21 @@ export function EmpireSections({
       ) : null}
 
       <Sheet
-        open={autoOpen}
-        onClose={onAutoClose}
-        title="Release Autonomous"
-        reducedMotion={reducedMotion}
-      >
-        <p className="ge-muted">Depot, Read, and Reputation are in. Habits will run from Books.</p>
-        <Button
-          tone="primary"
-          coachId="empire-autonomous"
-          disabled={!!autoBlock}
-          title={autoBlock ?? 'Release Autonomous'}
-          onClick={() => {
-            dispatch({ type: 'releaseAutonomous' })
-            onAutoClose()
-          }}
-        >
-          Release
-        </Button>
-      </Sheet>
-
-      <Sheet
         open={doctrineOpen}
         onClose={onDoctrineClose}
-        title={points > 0 ? `Doctrine board · ${points} ready` : 'Doctrine board'}
+        title={points > 0 ? `Doctrines · ${points} point${points > 1 ? 's' : ''} to spend` : 'Doctrines'}
         reducedMotion={reducedMotion}
+        className="pf-desk--wide pf-desk--doctrine"
       >
         <header className="ge-empire-block__head">
-          <p>
-            Floorcraft, Ledger, Charter, Frontier, Legacy, and Horizon — mild permanent picks with trait points.
-            Exclusive pairs give the run a shape.
+          <p className="ge-muted">
+            Every rank gives a trait point. Spend them on permanent perks below; tap a perk to see it. Some pairs are
+            choose-one.
           </p>
           {spent > 0 ? (
             <div className="ge-chip-row" style={{ marginTop: '0.35rem' }}>
-              <Button
-                tone="ghost"
-                disabled={!canRespec}
+              {canRespec ? <Button
+                tone="secondary"
                 title={
                   canRespec
                     ? `Refund all trait points for ${qty(respecCost)} Ideas`
@@ -294,15 +271,15 @@ export function EmpireSections({
                 }
                 onClick={async () => {
                   const ok = await confirm({
-                    title: 'Rewrite the Charter',
+                    title: 'Refund every doctrine?',
                     body: `Spend ${qty(respecCost)} Ideas to refund every doctrine and restore trait points. Exclusive forks clear. Archives already granted stay.`,
-                    confirmLabel: `Rewrite · ${qty(respecCost)} Ide`,
+                    confirmLabel: `Refund · ${qty(respecCost)} Ideas`,
                   })
                   if (ok) dispatch({ type: 'respecPerks' })
                 }}
               >
-                Rewrite the Charter · {qty(respecCost)} Ide
-              </Button>
+                Refund all points · {qty(respecCost)} Ideas
+              </Button> : <span className="ge-muted">Refunding points costs {qty(respecCost)} Ideas.</span>}
             </div>
           ) : null}
         </header>
@@ -322,7 +299,7 @@ export function EmpireSections({
                 style={{ '--bt': BRANCH_TINT[b] } as React.CSSProperties}
               >
                 <strong>{PERK_BRANCHES[b].name}</strong>
-                <small>{owned} pts in</small>
+                <small>{owned} spent</small>
                 {ready > 0 ? <span className="g2-badge">{ready}</span> : null}
               </button>
             )
@@ -350,30 +327,31 @@ export function EmpireSections({
           </p>
         ) : null}
       </Sheet>
-    </>
-  )
-}
 
-/** Standalone wrapper for callers that still import EmpirePanel (EmpireBoard drives the sheets itself). */
-export function EmpirePanel() {
-  const [doctrineOpen, setDoctrineOpen] = useState(false)
-  const [autoOpen, setAutoOpen] = useState(false)
-  return (
-    <>
-      <div className="ge-chip-row">
-        <Button tone="ghost" onClick={() => setDoctrineOpen(true)} data-coach-id="empire-doctrine">
-          Doctrine
-        </Button>
-        <Button tone="ghost" onClick={() => setAutoOpen(true)} data-coach-id="empire-autonomous">
-          Autonomous
-        </Button>
-      </div>
-      <EmpireSections
-        doctrineOpen={doctrineOpen}
-        autoOpen={autoOpen}
-        onDoctrineClose={() => setDoctrineOpen(false)}
-        onAutoClose={() => setAutoOpen(false)}
-      />
+      <Sheet
+        open={autoOpen}
+        onClose={onAutoClose}
+        title="Autonomous"
+        reducedMotion={reducedMotion}
+        deskHidden={s.era < 2 || !!s.autonomous}
+      >
+        <p className="ge-muted">Let the store run its own habits from Books, so you can focus on growing.</p>
+        {autoBlock ? (
+          <p className="ge-muted" data-coach-id="empire-autonomous">Not yet: {autoBlock}</p>
+        ) : (
+          <Button
+            tone="free"
+            coachId="empire-autonomous"
+            onClick={() => {
+              dispatch({ type: 'releaseAutonomous' })
+              onAutoClose()
+            }}
+          >
+            Release Autonomous
+          </Button>
+        )}
+      </Sheet>
+
     </>
   )
 }

@@ -24,7 +24,6 @@ export function RankHallScene() {
     <RoomScene
       label={`Empire rank ${lv}. ${points} trait points. ${next ? `Next ${next.name}` : 'All rewards claimed'}.`}
       chips={[
-        { label: 'Rank', value: `${lv}` },
         { label: 'XP', value: `${Math.round(fill * 100)}%` },
         { label: 'Points', value: String(points), rate: points > 0 ? 'spend' : undefined },
         next ? { label: 'Next', value: `${xpLeftLabel} XP` } : { label: 'Next', value: 'Done' },

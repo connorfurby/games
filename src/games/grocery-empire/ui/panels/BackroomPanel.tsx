@@ -223,7 +223,7 @@ export function BackroomPanel() {
                   aria-label="Aisle to partial-dump"
                   value={selectedCat}
                   onChange={(c) => setDumpCat(c)}
-                  options={perishableCats.map((c) => ({ value: c, label: CATEGORIES[c].short, title: CATEGORIES[c].name }))}
+                  options={perishableCats.map((c) => ({ value: c, label: CATEGORIES[c].name, title: CATEGORIES[c].name }))}
                 />
               </Field>
             ) : null}

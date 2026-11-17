@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { createPortal } from 'react-dom'
 import { sfx } from '@/shared/audio'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
-import { useDeskInline } from './desk'
+import { DeskInline, useDeskInline } from './desk'
 import { cx, useEscape, usePhone, useReducedMotion, overlayRoot } from './hooks'
 import { IconButton } from './IconButton'
 
@@ -117,8 +117,11 @@ export function Sheet({ open: openProp, onClose, title, children, footer, reduce
         <h3 id={titleId} className="pf-desk__title">
           {title}
         </h3>
-        <div className="pf-desk__body">{children}</div>
-        {footer ? <footer className="pf-desk__foot">{footer}</footer> : null}
+        {/* Sheets nested in a desk (item details) are real sheets again. */}
+        <DeskInline.Provider value={false}>
+          <div className="pf-desk__body">{children}</div>
+          {footer ? <footer className="pf-desk__foot">{footer}</footer> : null}
+        </DeskInline.Provider>
       </section>
     )
   }

@@ -316,7 +316,7 @@ function FloorPanelInner() {
                 aria-label="Aisle to buy"
                 value={orderCat}
                 onChange={(c) => dispatch({ type: 'setOrderCat', cat: c })}
-                options={unlockedCats.map((c) => ({ value: c, label: CATEGORIES[c].short, title: CATEGORIES[c].role }))}
+                options={unlockedCats.map((c) => ({ value: c, label: CATEGORIES[c].name, title: CATEGORIES[c].role }))}
               />
             </Field>
           ) : null}

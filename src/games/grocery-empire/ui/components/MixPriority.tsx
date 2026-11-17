@@ -30,9 +30,7 @@ export function MixPriority({
         <div>
           <h3>Restock priority</h3>
           <p>
-            When Unpack pulls from the backroom, high-priority aisles go first — but only if that aisle
-            already has crates waiting. Buy cans/household separately; this slider never orders them.
-            Shopper tastes stay separate.
+            When you Unpack, the aisles you rank higher get shelf space first.
           </p>
         </div>
       </header>
