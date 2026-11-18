@@ -13,7 +13,7 @@ export interface FailAction {
 export function FailReason({ children, action }: { children: ReactNode; action?: FailAction }) {
   // A reason that says "… in Memos." gets the way there for free.
   if (!action && typeof children === 'string' && /\bin Memos\.?$/.test(children.trim())) {
-    action = { label: 'Open Memos →', onClick: () => requestInbox('memos') }
+    action = { label: 'Open Memos', onClick: () => requestInbox('memos') }
   }
   return (
     <p className="pf__fail">

@@ -16,6 +16,7 @@ import {
   stockedCount,
 } from '../../sim/systems/horizon'
 import { useGame } from '../GameContext'
+import { ProbePadScene } from '../scenes/live/ProbePadScene'
 import { Button, SegmentedControl, Select } from '../kit'
 import { clock, money, qty } from '../format'
 import { EndlessBanNote } from '../horizon/EndlessBanNote'
@@ -322,7 +323,15 @@ export function PlanetsPanel() {
           onCommit={filing ? () => dispatch({ type: 'fileStandardPlanogram', planetId: run.id }) : undefined}
         />
       ) : (
-        <p className="hz-note">No world revealed yet. A probe finds the first one and opens its shelf here.</p>
+        <ProbePadScene
+          ready={probe.ok}
+          fill={cost > 0 ? s.cash / cost : 1}
+          note={
+            probe.ok
+              ? 'Probe ready. Launching it finds your first world.'
+              : (probe.reason ?? 'A probe finds your first world.')
+          }
+        />
       )}
       <HorizonGoalStrip
         title={goalTitle}
