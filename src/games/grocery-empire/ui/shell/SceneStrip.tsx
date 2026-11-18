@@ -149,7 +149,7 @@ export function SceneStrip({
         aria-expanded={expanded}
         title={expanded ? 'Shrink the storefront to a banner' : 'Show the whole street'}
       >
-        {expanded ? 'Shrink' : 'Expand'}
+        {expanded ? 'Collapse' : 'Expand'}
       </button>
     </div>
   )

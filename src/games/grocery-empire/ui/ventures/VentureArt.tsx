@@ -226,6 +226,13 @@ function ArtImpl({ hue, sign, tier, level, maxLevel, fill = 0, motion = true, co
           <rect x={62} y={58} width={36} height={18} rx={2} fill="#efe6cf" stroke="#5d5440" />
           <text x={80} y={66} textAnchor="middle" fontSize={6.5} fontWeight={700} fill="#3a3324">FOR</text>
           <text x={80} y={73} textAnchor="middle" fontSize={6.5} fontWeight={700} fill="#3a3324">LEASE</text>
+          {/* A faint preview of what this lot becomes: its sign, in its colour. */}
+          <g opacity={0.8}>
+            <circle cx={138} cy={74} r={12} fill={hsl(hue, 35, 18, 0.7)} stroke={hsl(hue, 55, 62)} strokeDasharray="3 2" />
+            <svg x={128} y={64} width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={hsl(hue, 60, 74)} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+              {SIGN[sign]}
+            </svg>
+          </g>
         </g>
       )}
     </svg>
