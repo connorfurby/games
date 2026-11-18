@@ -35,26 +35,26 @@ type LateVerb = [
   name: string,
   blurb: string,
   per: string,
-  /** Effect per rank (the node's `effectCap` on a linear curve). */
+  /** Effect per level (the node's `effectCap` on a linear curve). */
   unit: number,
   max: number,
   era: number,
 ]
 
 const VERBS: LateVerb[] = [
-  ['floor', 'lh-endcap-orbit', 'Orbital Endcap', 'An endcap for the off-world bay. Imported goods catch the eye.', '+3% off-world sales per rank.', 0.03, 5, 7],
-  ['people', 'lh-council-clerk', 'Council Clerk', 'A clerk keeps one more Council seat in good standing.', '+1 paying Council seat per rank.', 1, 4, 8],
-  ['supply', 'lh-bonded-rack', 'Bonded Rack', 'Another rack in the cage for sealed crates.', '+2 bonded crate capacity per rank.', 2, 5, 8],
-  ['supply', 'lh-bonded-ledger', 'Bonded Ledger', 'Filed circuits drop crates in the cage a little sooner.', '+5% bonded crate trickle per rank.', 0.05, 5, 8],
-  ['supply', 'lh-vault-lock', 'Vault Lock', 'A second lock, a deeper shelf, a wider door.', '+6 seed vault capacity per rank.', 6, 5, 9],
-  ['brand', 'lh-franchise-sign', 'Franchise Sign', 'The name goes up over an outpost door.', '+6% planet franchise layer per rank.', 0.06, 5, 7],
-  ['automation', 'lh-queue-clerk', 'Queue Clerk', 'The build queue buys sooner and leaves less in reserve.', '−10% queue cash reserve per rank.', 0.1, 4, 7],
-  ['capital', 'lh-bond-desk', 'Bond Desk', 'A desk that knows the coupon on every world.', '+8% instrument yield per rank.', 0.08, 5, 8],
-  ['capital', 'lh-futures-book', 'Futures Book', 'Buy the next lot before the price moves.', '−4% instrument lot price per rank.', 0.04, 5, 9],
-  ['lab', 'lh-survey-labs', 'Survey Labs', 'Instruments of your own, bolted to the survey desk.', '+0.004 survey per second per rank.', 0.004, 5, 7],
-  ['fresh', 'lh-cryo-seal', 'Cryo Seal', 'A better gasket on the vault door.', '−10% seed decay per rank.', 0.1, 4, 9],
-  ['logistics', 'lh-jump-tuning', 'Jump Tuning', 'The same fuel, a longer haul.', '+6% jump freight per rank.', 0.06, 5, 8],
-  ['space', 'lh-orbital-mail', 'Orbital Mail', 'Barges carry the mail. The mail carries freight.', '+10% barge freight per rank.', 0.1, 5, 8],
+  ['floor', 'lh-endcap-orbit', 'Orbital Endcap', 'An endcap for the off-world bay. Imported goods catch the eye.', '+3% off-world sales per level.', 0.03, 5, 7],
+  ['people', 'lh-council-clerk', 'Council Clerk', 'A clerk keeps one more Council seat in good standing.', '+1 paying Council seat per level.', 1, 4, 8],
+  ['supply', 'lh-bonded-rack', 'Bonded Rack', 'Another rack in the cage for sealed crates.', '+2 bonded crate capacity per level.', 2, 5, 8],
+  ['supply', 'lh-bonded-ledger', 'Bonded Ledger', 'Filed circuits drop crates in the cage a little sooner.', '+5% bonded crate trickle per level.', 0.05, 5, 8],
+  ['supply', 'lh-vault-lock', 'Vault Lock', 'A second lock, a deeper shelf, a wider door.', '+6 seed vault capacity per level.', 6, 5, 9],
+  ['brand', 'lh-franchise-sign', 'Franchise Sign', 'The name goes up over an outpost door.', '+6% planet franchise layer per level.', 0.06, 5, 7],
+  ['automation', 'lh-queue-clerk', 'Queue Clerk', 'The build queue buys sooner and leaves less in reserve.', '−10% queue cash reserve per level.', 0.1, 4, 7],
+  ['capital', 'lh-bond-desk', 'Bond Desk', 'A desk that knows the coupon on every world.', '+8% instrument yield per level.', 0.08, 5, 8],
+  ['capital', 'lh-futures-book', 'Futures Book', 'Buy the next lot before the price moves.', '−4% instrument lot price per level.', 0.04, 5, 9],
+  ['lab', 'lh-survey-labs', 'Survey Labs', 'Instruments of your own, bolted to the survey desk.', '+0.004 survey per second per level.', 0.004, 5, 7],
+  ['fresh', 'lh-cryo-seal', 'Cryo Seal', 'A better gasket on the vault door.', '−10% seed decay per level.', 0.1, 4, 9],
+  ['logistics', 'lh-jump-tuning', 'Jump Tuning', 'The same fuel, a longer haul.', '+6% jump freight per level.', 0.06, 5, 8],
+  ['space', 'lh-orbital-mail', 'Orbital Mail', 'Barges carry the mail. The mail carries freight.', '+10% barge freight per level.', 0.1, 5, 8],
 ]
 
 type LateStat = [

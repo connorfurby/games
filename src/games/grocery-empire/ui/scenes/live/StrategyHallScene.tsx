@@ -27,7 +27,8 @@ export function StrategyHallScene() {
       label={`Strategy hall. ${owned} strategies · Read bank ${readBank}.`}
       chips={[
         { label: 'Read', value: qty(readBank, 'named') },
-        { label: 'Next', value: `${nextCost} Read` },
+        // Nothing left to buy this era: say so instead of quoting a price for nothing.
+        { label: 'Next', value: visible.every((d) => (s.doctrines[d.id] ?? 0) > 0) ? 'All owned' : `${nextCost} Read` },
         { label: 'Tournament', value: coolLeft > 0 ? `${coolLeft}s` : `+${payout}`, neg: coolLeft > 0 && !tournyReady },
         { label: 'Attention', value: `${Math.floor(s.compute.attention)}/${Math.floor(attCap)}` },
       ]}
@@ -99,7 +100,7 @@ export function StrategyHallScene() {
       <g transform="translate(660 58)">
         <rect width="140" height="72" rx="8" fill="#121820" stroke="#3a4458" />
         <Sign x={14} y={24} text="Next doctrine" small />
-        <Sign x={14} y={48} text={`${nextCost} Read`} />
+        <Sign x={14} y={48} text={visible.every((d) => (s.doctrines[d.id] ?? 0) > 0) ? 'All owned' : `${nextCost} Read`} />
       </g>
 
       <Person x={700} y={210} tint="#c9a15a" working={tournyReady} delay={0.2} />

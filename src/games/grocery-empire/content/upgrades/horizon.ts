@@ -85,7 +85,7 @@ function stats(tree: TreeId, rows: StatRow[], start: number): UpgradeDef[] {
 const PANTRY_VERBS: UpgradeDef[] = [
   verb('pantry', 'survey-desk', 'Survey Desk', 'The survey trickle shows on the desk, even before the office memo.', 'Reveals the survey trickle.', 1, 7, 0),
   verb('pantry', 'probe-clerk', 'Probe Clerk', 'A deputy surveyor waits thirty seconds instead of forty-five.', 'Deputy probe cooldown 45s → 30s.', 1, 7, 1),
-  verb('pantry', 'local-chalk', 'Local Chalk', 'A planet with its own price earns a little more per rank.', '+2% on a planet with a local price, per rank.', 5, 7, 2),
+  verb('pantry', 'local-chalk', 'Local Chalk', 'A planet with its own price earns a little more per level.', '+2% on a planet with a local price, per level.', 5, 7, 2),
   verb(
     'pantry',
     'climate-serve-pad',
@@ -129,7 +129,7 @@ const PANTRY_STATS: StatRow[] = [
 
 const EXCHANGE_VERBS: UpgradeDef[] = [
   verb('exchange', 'standing-circuit', 'Standing Circuit', 'Pins one convoy so a deputy can file it again.', 'Unlocks the standing-route pin.', 1, 8, 0),
-  verb('exchange', 'bay-walls', 'Bay Walls', 'The largest bay holds one more crate per rank.', '+1 crate on the largest bay, per rank.', 4, 8, 1),
+  verb('exchange', 'bay-walls', 'Bay Walls', 'The largest bay holds one more crate per level.', '+1 crate on the largest bay, per level.', 4, 8, 1),
   verb(
     'exchange',
     'settlement-pad',

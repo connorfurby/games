@@ -281,7 +281,7 @@ export function EmpireMap() {
 
   const tray: VerbTrayProps = {
     primary: {
-      label: `Open ${MENUS[targetMenu].name}`,
+      label: `Go to ${MENUS[targetMenu].name}`,
       tone: 'free',
       size: 'lg',
       disabled: !targetOpen,
@@ -381,7 +381,7 @@ export function EmpireMap() {
       <section className="ge-panel mp-legend" aria-label="Legend">
         <ul className="mp-legend__dense">
           <li>
-            <i className="mp-key mp-key--flagship" /> Flagship · hand-run till
+            <i className="mp-key mp-key--flagship" /> Flagship · your first store
           </li>
           <li>
             <i className="mp-key mp-key--store" /> Chain · {s.stores.length} doors
@@ -418,7 +418,7 @@ export function EmpireMap() {
           ) : null}
           {Object.keys(s.rivals ?? {}).length ? (
             <li>
-              <i className="mp-key mp-key--rival" /> Rival awning
+              <i className="mp-key mp-key--rival" /> Rival store
             </li>
           ) : null}
           {Object.values(s.rivals ?? {}).some((r) => r.bought) ? (

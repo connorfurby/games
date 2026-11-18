@@ -71,6 +71,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Fleet: the status row drops the Pockets chip the room already shows; "N pockets waiting · 1 hauler at a time", "Round trips" (was Turnarounds), and the pocket note says what to do.
 - One card voice: late-page card titles (puzzle heads, goal heads, Politics/Invest cards and callouts) use the same display face as desk titles, so early and late pages read as one game. Invest: "Investment book".
 - Late rooms no longer repeat the currency (Seed, Freight, Signal, Seal) as a chip; the strip under the goal shows it with its per-second rate and the tour still points there.
+- Empire hub: Upgrades speak of **levels** (37 "per rank" blurbs → "per level", Buy the best upgrades in X, Buy the best in every group) and the duplicate Mastery tag became "Next bonus at N levels"; Strategy's Next chip says All owned when the era's strategies are bought; Map's verb is "Go to Floor" and its legend says your first store / rival store.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

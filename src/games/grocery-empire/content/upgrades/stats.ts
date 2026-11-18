@@ -138,13 +138,13 @@ export function softCap(raw: number): number {
   return Math.pow(1 + Math.max(0, raw), STAT_SOFTCAP)
 }
 
-/** Human line for a node card: "+4% shoppers per rank". */
+/** Human line for a node card: "+4% shoppers per level". */
 export function describeEffects(effects: StatEffect[]): string {
   return effects
     .map((e) => {
       const pct = Math.round(e.per * 1000) / 10
       const info = STAT_INFO[e.stat]
-      return info.kind === 'cut' ? `−${pct}% ${info.label} per rank` : `+${pct}% ${info.label} per rank`
+      return info.kind === 'cut' ? `−${pct}% ${info.label} per level` : `+${pct}% ${info.label} per level`
     })
     .join(' · ')
 }

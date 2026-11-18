@@ -426,9 +426,9 @@ export function UpgradesBoard() {
         <span className="wc-up-room__blurb">{TREES[active.id].blurb}</span>
         <StatusChip
           tone={mastery > 1 ? 'ready' : 'idle'}
-          title={`Tree mastery. ${tr} ranks · next step at ${nextMastery} ranks. Every ${MASTERY.ranksPerStep} ranks add ${Math.round(MASTERY.perStep * 100)}%.`}
+          title={`Group bonus. ${tr} levels bought · next step at ${nextMastery}. Every ${MASTERY.ranksPerStep} levels add ${Math.round(MASTERY.perStep * 100)}%.`}
         >
-          Mastery ×{mastery.toFixed(1)}
+          Next bonus at {nextMastery} levels
         </StatusChip>
       </p>
       {note ? (
@@ -448,13 +448,13 @@ export function UpgradesBoard() {
           <span
             title={`Ranks 10 and 25 double a node. Every ${MASTERY.ranksPerStep} ranks in a tree add ${Math.round(MASTERY.perStep * 100)}%.`}
           >
-            Buy ranks that multiply the store.
+            Buy upgrade levels that boost the store.
           </span>
         }
         room={room}
         tray={{
           primary: {
-            label: `Buy the best ranks in ${TREES[active.id].name}`,
+            label: `Buy the best upgrades in ${TREES[active.id].name}`,
             tone: 'primary',
             size: 'lg',
             coachId: 'upgrades-best',
@@ -467,7 +467,7 @@ export function UpgradesBoard() {
           secondaries: [
             {
               key: 'all',
-              label: 'Buy the best in every tree',
+              label: 'Buy the best in every group',
               disabled: !allReady,
               title: 'Same pass across every tree. Capstones stay a choice.',
               onClick: () => void sweep('all'),

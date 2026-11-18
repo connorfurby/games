@@ -1113,7 +1113,7 @@ const coreHandlers = {
       if (lvl >= def.max) return no('Maxed.')
       const rankCap = upgradeRankCap(s, id)
       if (lvl >= rankCap) {
-        return no(`Empire level unlocks deeper ranks (cap ${rankCap}).`)
+        return no(`A higher Empire rank unlocks more levels (limit ${rankCap}).`)
       }
       const want = Math.max(1, Math.floor(c.count ?? 1))
       const count = Math.min(want, def.max - lvl, rankCap - lvl, 50)
