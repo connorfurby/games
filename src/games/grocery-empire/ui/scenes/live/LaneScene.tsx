@@ -21,7 +21,7 @@ export function LaneScene() {
         circuits ? `, ${circuits} convoys` : ''
       }`}
       chips={[
-        { label: 'Routes', value: `${wet}/${lanes}`, neg: lanes > 0 && s.fuel <= 0 },
+        { label: 'Routes', value: lanes > 0 ? `${wet}/${lanes} fuelled` : 'None yet', neg: lanes > 0 && s.fuel <= 0 },
         { label: 'Fuel', value: `${fuelGal} gal`, rate: `${Math.round(fuelFrac * 100)}%`, neg: fuelFrac < 0.25 },
         ...(s.era >= 8 ? [{ label: 'Circuits', value: String(circuits) }] : []),
         ...(s.horizon?.keel?.bought ? [{ label: 'Convoys', value: String(keel) }] : []),
@@ -89,7 +89,7 @@ export function LaneScene() {
         <g key={`k${i}`} transform={`translate(${200 + i * 90} ${80 + i * 8})`}>
           <rect width="42" height="16" rx="3" fill="#c45a3c" />
           <path d="M6 -4 L21 -12 L36 -4" fill="none" stroke="#efe9dc" strokeWidth="1.5" />
-          <Sign x={21} y={30} text="Keel" small anchor="middle" />
+          <Sign x={21} y={30} text="Convoy" small anchor="middle" />
         </g>
       ))}
 
@@ -109,8 +109,21 @@ export function LaneScene() {
 
       {lanes <= 0 ? (
         <g>
-          <Sign x={80} y={150} text="Dry dock — no ocean lanes yet" />
-          <Sign x={80} y={174} text="Open a route below to start the fleet" small />
+          {/* No routes yet: four empty berths waiting for ships. */}
+          <Sign x={430} y={92} text="No sea routes yet: open one below and a ship takes a berth" anchor="middle" small />
+          {Array.from({ length: 4 }, (_, i) => {
+            const x = 90 + i * 185
+            return (
+              <g key={`berth${i}`}>
+                <rect x={x} y={178} width={130} height={10} rx="2" fill="#4a3d32" />
+                {[0, 1, 2, 3].map((k) => (
+                  <rect key={k} x={x + 6 + k * 38} y={186} width={6} height={20} fill="#3a3026" />
+                ))}
+                <rect x={x + 20} y={150} width={90} height={22} rx="4" fill="none" stroke="#5aa0c0" strokeDasharray="5 4" opacity="0.6" />
+                <Sign x={x + 65} y={134} text={`Berth ${i + 1}`} small anchor="middle" />
+              </g>
+            )
+          })}
         </g>
       ) : null}
     </RoomScene>
