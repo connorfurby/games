@@ -9,7 +9,7 @@ describe('devStages', () => {
   })
 
   it('builds every stage without throwing', () => {
-    for (const def of listDevStages()) {
+    for (const def of listDevStages().filter((d) => !d.load)) {
       const s = buildDevStage(def.id)
       expect(s).not.toBeNull()
       expect(s!.era).toBe(def.era)
@@ -30,5 +30,19 @@ describe('devStages', () => {
     const s = buildDevStage('fresh')!
     expect(s.introSeen).toBe(false)
     expect(s.era).toBe(0)
+  })
+})
+
+describe('late-era fixture stages', () => {
+  it('each bot snapshot loads, migrates and sits in its era', async () => {
+    const { listDevStages } = await import('./devStages')
+    const { migrate } = await import('./migrate')
+    const { deserializeState } = await import('@/shared/save')
+    const late = listDevStages().filter((d) => d.load)
+    expect(late.length).toBe(4)
+    for (const d of late) {
+      const s = migrate(deserializeState(await d.load!()))
+      expect(s.era).toBe(d.era)
+    }
   })
 })

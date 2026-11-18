@@ -1,6 +1,7 @@
 import { clearGameSave, loadGame } from '@/shared/save'
 import { TUTORIALS } from '../content/tutorials'
-import { buildDevStage, unlockAllMenus } from './devStages'
+import { buildDevStage, listDevStages, unlockAllMenus } from './devStages'
+import { deserializeState } from '@/shared/save'
 import { engine } from './engine'
 import { log, skipOpeningDialogue } from './helpers'
 import { migrate } from './migrate'
@@ -73,6 +74,19 @@ export function ensurePrimarySandbox() {
 
 export function applyDevStage(id: string): boolean {
   if (!isDevSave()) return false
+  const def = listDevStages().find((d) => d.id === id)
+  if (def?.load) {
+    // Late-era fixtures load asynchronously; the panel shows "Loaded" right away.
+    void def.load().then((raw) => {
+      const next = migrate(deserializeState(raw))
+      next.paused = false
+      next.chapterQueue = []
+      next.dialogueQueue = []
+      log(next, `DevMode stage loaded: ${id}`, 'story')
+      engine.replaceState(next)
+    })
+    return true
+  }
   const next = buildDevStage(id)
   if (!next) return false
   log(next, `DevMode stage loaded: ${id}`, 'story')

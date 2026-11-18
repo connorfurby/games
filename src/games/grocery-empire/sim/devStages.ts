@@ -36,6 +36,8 @@ export interface DevStageDef {
   blurb: string
   era: number
   build: () => GameState
+  /** Late eras: a bot-played save loaded on demand (code-split), migrated like any import. */
+  load?: () => Promise<string>
 }
 
 function openMenus(s: GameState, ids: MenuId[]) {
@@ -373,6 +375,29 @@ export const DEV_STAGES: DevStageDef[] = [
     era: 7,
     build: () => era7Worlds(),
   },
+  // Eras 8–12: snapshots of the campaign bot (seed 1) ten minutes into each era.
+  // Regenerate with GEN_FIXTURES=1 npx vitest run src/games/grocery-empire/sim/genFixtures.test.ts
+  ...([
+    [8, 'Era 8 · Convoys', 'Bot-played save ten minutes into Era 8.'],
+    [10, 'Era 10 · Signals', 'Bot-played save ten minutes into Era 10.'],
+    [11, 'Era 11 · Last aisle', 'Bot-played save ten minutes into Era 11.'],
+    [12, 'Era 12 · The end', 'Bot-played save ten minutes into Era 12.'],
+  ] as const).map(([era, label, blurb]) => ({
+    id: `era${era}-bot`,
+    label,
+    blurb,
+    era,
+    build: () => era7Worlds(),
+    load: () =>
+      (era === 8
+        ? import('./devFixtures/era8.json?raw')
+        : era === 10
+          ? import('./devFixtures/era10.json?raw')
+          : era === 11
+            ? import('./devFixtures/era11.json?raw')
+            : import('./devFixtures/era12.json?raw')
+      ).then((m) => m.default as string),
+  })),
   {
     id: 'cash-rich',
     label: 'Sandbox · Cash rich',
