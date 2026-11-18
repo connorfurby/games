@@ -390,3 +390,47 @@ describe('depth smoke', () => {
     expect(s.depth.starsFrozenAt).toBe(s.depth.stars)
   })
 })
+
+describe('autopilot pieces', () => {
+  it('dock check-ins run themselves only after the gate is earned', async () => {
+    const { createInitialState } = await import('./state')
+    const { tickAutoDock } = await import('./systems/dock')
+    const { DEPTH } = await import('./balance')
+    const s = createInitialState(5)
+    s.era = 1
+    ensureDepthForTest(s)
+    s.staff.push({ id: 9001, role: 'receiver' } as never)
+    s.depth.shifts[DEPTH.shiftSlots[0]] = [9001]
+    s.depth.nextDockAt = 0
+    s.depth.dockCheckIns = DEPTH.dockCheckInNeed - 1
+    tickAutoDock(s)
+    expect(s.depth.dockCheckIns).toBe(DEPTH.dockCheckInNeed - 1)
+    s.depth.dockCheckIns = DEPTH.dockCheckInNeed
+    const back = s.backroom.reduce((n, b) => n + b.qty, 0)
+    tickAutoDock(s)
+    expect(s.depth.dockCheckIns).toBe(DEPTH.dockCheckInNeed + 1)
+    expect(s.backroom.reduce((n, b) => n + b.qty, 0)).toBeGreaterThan(back)
+    s.depth.autoDock = false
+    s.depth.nextDockAt = 0
+    tickAutoDock(s)
+    expect(s.depth.dockCheckIns).toBe(DEPTH.dockCheckInNeed + 1)
+  })
+
+  it('collect all empties every till in one command', async () => {
+    const { createInitialState } = await import('./state')
+    const { run, can } = await import('./commands')
+    const s = createInitialState(6)
+    s.ventures = {
+      a: { level: 1, stored: 10, lifetime: 0 },
+      b: { level: 1, stored: 5, lifetime: 0 },
+    } as never
+    const cash = s.cash
+    expect(run(s, { type: 'collectAllVentures' }).ok).toBe(true)
+    expect(s.cash).toBeCloseTo(cash + 15, 5)
+    expect(can(s, { type: 'collectAllVentures' }).ok).toBe(false)
+  })
+})
+
+function ensureDepthForTest(s: { depth?: unknown }) {
+  expect(s.depth).toBeTruthy()
+}

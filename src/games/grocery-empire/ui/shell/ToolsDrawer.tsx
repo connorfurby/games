@@ -2,17 +2,19 @@ import { motion } from 'motion/react'
 import { isDevSave } from '../../sim/saveKey'
 import { DevModePanel } from '../components/DevModePanel'
 import { MoreSections, type MoreSection } from '../panels/MorePanel'
+import { AutopilotPanel } from './AutopilotPanel'
 import { NoticesPanel } from './NoticesPanel'
 import { useUnreadNotices } from './notices'
 import { InGameWiki } from '../wiki/InGameWiki'
 import type { MenuId } from '../../content/menus'
 
-export type ToolsTab = 'dev' | 'wiki' | 'notices' | MoreSection
+export type ToolsTab = 'dev' | 'wiki' | 'notices' | 'autopilot' | MoreSection
 
 /** Five tabs, not eight: everything about this run lives under Game. */
 const TABS: { id: ToolsTab; label: string }[] = [
   { id: 'dev', label: 'Dev' },
   { id: 'run', label: 'Game' },
+  { id: 'autopilot', label: 'Autopilot' },
   { id: 'wiki', label: 'Guide' },
   { id: 'notices', label: 'Notices' },
   { id: 'settings', label: 'Settings' },
@@ -95,6 +97,8 @@ export function ToolsDrawer({
           <InGameWiki onOpenMenu={onOpenMenu} onPlayLesson={onPlayLesson} />
         ) : active === 'notices' ? (
           <NoticesPanel />
+        ) : active === 'autopilot' ? (
+          <AutopilotPanel onOpenMenu={(m) => { onOpenMenu(m); onClose() }} />
         ) : active === 'run' ? (
           <>
             <MoreSections only="run" />

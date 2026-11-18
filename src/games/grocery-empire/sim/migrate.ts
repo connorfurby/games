@@ -416,6 +416,8 @@ function mergeDepth(raw: unknown): DepthState {
   base.invoicesOnTime = Math.max(0, Math.floor(num(raw.invoicesOnTime, 0)))
   // SAVE 39: auto-pay invoices; older saves get it on so the chore goes away.
   base.autoPayInvoices = typeof raw.autoPayInvoices === 'boolean' ? raw.autoPayInvoices : true
+  // SAVE 40: auto dock check-in (only acts once the check-in gate is earned).
+  base.autoDock = typeof raw.autoDock === 'boolean' ? raw.autoDock : true
   base.dockCheckIns = Math.max(0, Math.floor(num(raw.dockCheckIns, 0)))
   base.nextDockAt = Math.max(0, num(raw.nextDockAt, 0))
   base.lastDockAisle = typeof raw.lastDockAisle === 'string' ? raw.lastDockAisle : null

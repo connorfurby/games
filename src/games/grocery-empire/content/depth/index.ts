@@ -249,6 +249,8 @@ export interface DepthState {
   invoicesOnTime: number
   /** SAVE 39: pay supplier invoices automatically while cash allows (default on). */
   autoPayInvoices: boolean
+  /** SAVE 40: after the check-in gate, the receiver checks trucks in on their own. */
+  autoDock: boolean
   /** Receiver dock check-ins (side-yard gate). */
   dockCheckIns: number
   /** Next dock check-in allowed at this sim time. */
@@ -443,6 +445,7 @@ export function emptyDepth(): DepthState {
     nextInvoiceId: 1,
     invoicesOnTime: 0,
     autoPayInvoices: true,
+    autoDock: true,
     dockCheckIns: 0,
     nextDockAt: 0,
     lastDockAisle: null,

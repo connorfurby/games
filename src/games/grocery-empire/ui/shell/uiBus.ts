@@ -26,3 +26,15 @@ export function onWikiRequest(fn: (articleId: string) => void): () => void {
   window.addEventListener(OPEN_WIKI, h)
   return () => window.removeEventListener(OPEN_WIKI, h)
 }
+
+const OPEN_AUTOPILOT = 'ge:open-autopilot'
+
+/** Ask the shell to open the Menu drawer on the Autopilot tab. */
+export function requestAutopilot() {
+  window.dispatchEvent(new CustomEvent(OPEN_AUTOPILOT))
+}
+
+export function onAutopilotRequest(fn: () => void): () => void {
+  window.addEventListener(OPEN_AUTOPILOT, fn)
+  return () => window.removeEventListener(OPEN_AUTOPILOT, fn)
+}

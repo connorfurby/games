@@ -58,7 +58,7 @@ import { SceneStrip, useScenePref } from './shell/SceneStrip'
 import { HubNav } from './shell/HubNav'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
-import { onInboxRequest, onWikiRequest } from './shell/uiBus'
+import { onInboxRequest, onAutopilotRequest, onWikiRequest } from './shell/uiBus'
 import { pushNotice } from './shell/notices'
 import { overlayRoot } from './kit/hooks'
 import { ERA_STORY } from '../content/lore'
@@ -262,6 +262,16 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
         toolsTabPicked.current = true
         setToolsTab('wiki')
         setWikiNonce((n) => n + 1)
+        setToolsOpen(true)
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+  useEffect(
+    () =>
+      onAutopilotRequest(() => {
+        toolsTabPicked.current = true
+        setToolsTab('autopilot')
         setToolsOpen(true)
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

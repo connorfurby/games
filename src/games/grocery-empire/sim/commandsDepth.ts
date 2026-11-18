@@ -13,13 +13,13 @@ import {
   type ShiftSlot,
 } from '../content/depth'
 import { ROLES, type RoleId } from '../content/staff'
-import { upgradeEffect } from '../content/upgrades'
 import { DEPTH } from './balance'
 import type { Check, Command } from './commands'
-import { crateSize, unitCost } from './formulas'
-import { addBatch, compact, log, round2 } from './helpers'
+import { unitCost } from './formulas'
+import { compact, log, round2 } from './helpers'
 import { syncDeptRoster } from './staffDept'
 import { invoiceDue, payInvoicesWhileCash, settleInvoice } from './systems/invoices'
+import { dockCheckInBlock, runDockCheckIn } from './systems/dock'
 import type { GameState } from './state'
 import { canRunBrownoutDrill, canSignCoolerLog, runBrownoutDrill, signCoolerLog } from './systems/cold'
 import { dumpCooler, perishableQty } from './systems/recovery'
@@ -49,6 +49,7 @@ export type DepthCmd =
   | Extract<Command, { type: 'payInvoice' }>
   | Extract<Command, { type: 'payAllInvoices' }>
   | Extract<Command, { type: 'setAutoPayInvoices' }>
+  | Extract<Command, { type: 'setAutoDock' }>
   | Extract<Command, { type: 'writeOffInvoice' }>
   | Extract<Command, { type: 'setFlagshipSlot' }>
   | Extract<Command, { type: 'fileFlagshipPlanogram' }>
@@ -430,36 +431,25 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
   dockCheckIn: {
     can: (s) => {
       ensureDepth(s)
-      if (s.era < 1) return no('Dock check-in opens in Era 1.')
-      const onBoard = DEPTH.shiftSlots.some((slot) =>
-        (s.depth.shifts?.[slot] ?? []).some((id) => {
-          const m = s.staff.find((x) => x.id === id)
-          return m?.role === 'receiver'
-        }),
-      )
-      if (!onBoard) return no('Put a receiver on a shift board first.')
-      if (s.time < (s.depth.nextDockAt ?? 0)) {
-        const left = Math.ceil((s.depth.nextDockAt ?? 0) - s.time)
-        return no(`Next dock check-in in ${left}s.`)
-      }
-      return ok
+      const why = dockCheckInBlock(s)
+      return why ? no(why) : ok
     },
     run: (s, cmd) => {
       ensureDepth(s)
       const aisle = cmd.aisle && s.categories[cmd.aisle] ? cmd.aisle : 'cans'
-      const short = !!cmd.short
-      const units = short ? Math.max(2, Math.floor(crateSize(s) * 0.55)) : crateSize(s)
-      addBatch(s.backroom, aisle, units, 0)
-      s.depth.dockCheckIns = (s.depth.dockCheckIns ?? 0) + 1
-      s.depth.lastDockAisle = aisle
-      const pad = Math.min(0.4, upgradeEffect(s, 'dock-check-pad'))
-      const cd = DEPTH.dockCheckInCooldownSec * (1 - pad) * (short ? 0.7 : 1)
-      s.depth.nextDockAt = s.time + cd
-      log(
-        s,
-        `Dock check-in ${s.depth.dockCheckIns}/${DEPTH.dockCheckInNeed} → ${aisle}${short ? ' (short)' : ''}. Next in ${Math.ceil(cd)}s.`,
-        'good',
-      )
+      runDockCheckIn(s, aisle, !!cmd.short)
+    },
+  },
+  setAutoDock: {
+    can: (s) => {
+      ensureDepth(s)
+      return (s.depth.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed
+        ? ok
+        : no(`Earned after ${DEPTH.dockCheckInNeed} check-ins.`)
+    },
+    run: (s, cmd) => {
+      ensureDepth(s)
+      s.depth.autoDock = !!cmd.on
     },
   },
   payInvoice: {

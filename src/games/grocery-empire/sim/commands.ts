@@ -242,6 +242,8 @@ export type Command =
   | { type: 'payInvoice'; id: number }
   | { type: 'payAllInvoices' }
   | { type: 'setAutoPayInvoices'; on: boolean }
+  | { type: 'setAutoDock'; on: boolean }
+  | { type: 'collectAllVentures' }
   /** Clear oldest unpaid invoice without cash (softlock rail / collections). */
   | { type: 'writeOffInvoice' }
   | { type: 'setFlagshipSlot'; index: number; cat: CategoryId | '' }
@@ -1374,6 +1376,21 @@ const coreHandlers = {
       const id = (cmd as Extract<Command, { type: 'collectVenture' }>).id
       const got = collectVenture(s, id)
       if (got > 0) log(s, `Collected $${got.toFixed(2)} from venture.`, 'sale')
+    },
+  },
+  collectAllVentures: {
+    can: (s) => (Object.values(s.ventures).some((v) => (v?.stored ?? 0) > 0) ? ok : no('Nothing to collect.')),
+    run: (s) => {
+      let total = 0
+      let n = 0
+      for (const id of Object.keys(s.ventures)) {
+        const got = collectVenture(s, id)
+        if (got > 0) {
+          total += got
+          n += 1
+        }
+      }
+      if (total > 0) log(s, `Collected $${total.toFixed(2)} from ${n} till${n === 1 ? '' : 's'}.`, 'sale')
     },
   },
   depositPassbook: {

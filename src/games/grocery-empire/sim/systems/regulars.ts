@@ -1,3 +1,4 @@
+import { tickAutoDock } from './dock'
 import { payInvoicesWhileCash } from './invoices'
 import { REGULAR_BY_ID, pickNextRegular, type ShiftSlot } from '../../content/depth'
 import { DEPTH } from '../balance'
@@ -243,6 +244,7 @@ export function tickShifts(s: GameState) {
   }
   // Auto-pay (default on): settle invoices oldest first whenever cash covers them, quietly.
   if (s.depth.autoPayInvoices && s.depth.invoices.length > 0) payInvoicesWhileCash(s, true)
+  tickAutoDock(s)
   // Safety prune: never let paid invoices accumulate across ticks.
   if (s.depth.invoices.length > DEPTH.invoiceUnpaidCap * 2) {
     s.depth.invoices = s.depth.invoices.filter((i) => !i.paid)
