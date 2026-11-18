@@ -169,6 +169,13 @@
     opacity: 1;
   }
 
+  /* One clause under an enabled primary: why this is the pick. */
+  .pf__hint {
+    margin: 0;
+    font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
   .pf__fail {
     margin: 0;
     font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);

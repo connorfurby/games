@@ -426,8 +426,8 @@ export function UpgradesBoard() {
           value={tr - (nextMastery - MASTERY.ranksPerStep)}
           max={MASTERY.ranksPerStep}
           tone={mastery > 1 ? 'success' : 'accent'}
-          label={`${tr} of ${nextMastery} levels to the next group bonus`}
-          eta={`${nextMastery - tr} to ×${masteryMul(nextMastery).toFixed(1)}`}
+          label={`${tr}/${nextMastery} levels`}
+          eta={`×${masteryMul(nextMastery).toFixed(1)} next`}
         />
       </div>
       {note ? (

@@ -29,7 +29,6 @@ export function EmpireBoard() {
   const lv = s.empire.level
   const need = Math.max(1, empireXpToNext(lv))
   const next = nextEmpireReward(lv)
-  const last = [...EMPIRE_REWARDS].reverse().find((r) => lv >= r.level) ?? null
   const xpLeft = Math.max(0, need - s.empire.xp)
   const table = useMemo(() => statTable(s), [tick, s])
   const sourceCount = useMemo(() => statSources(s).length, [tick, s])
@@ -157,18 +156,12 @@ export function EmpireBoard() {
                 label={next ? `Rank ${lv} → ${lv + 1}` : `Rank ${lv}`}
                 eta={`${xpLeft < 1000 ? Math.ceil(xpLeft) : qty(xpLeft)} XP`}
               />
-              <dl className="e2-rewardpair">
-                <div title={last?.blurb}>
-                  <dt>Last reward</dt>
-                  <dd>{last ? `${last.name} · rank ${last.level}` : 'None yet'}</dd>
-                  {last?.blurb ? <dd className="e2-rewardpair__blurb">{last.blurb}</dd> : null}
-                </div>
-                <div title={next?.blurb}>
-                  <dt>Next reward</dt>
-                  <dd>{next ? `${next.name} · rank ${next.level}` : 'You have them all'}</dd>
-                  {next?.blurb ? <dd className="e2-rewardpair__blurb">{next.blurb}</dd> : null}
-                </div>
-              </dl>
+              {/* The rank hall above already names the last and next reward; here, just what the next one does. */}
+              {next?.blurb ? (
+                <p className="ge-muted">
+                  At rank {next.level}: {next.blurb}
+                </p>
+              ) : null}
               <details>
                 <summary className="e2-summary">See all {EMPIRE_REWARDS.length} rewards</summary>
                 <ol className="e2-track">
