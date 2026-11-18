@@ -1,3 +1,4 @@
+import { requestRoadAhead } from './uiBus'
 import { goalNeeds, nextGoal, type GoalChoice } from '../../content/goals'
 import { DEPTH } from '../../sim/balance'
 import { useSticky } from '../useStable'
@@ -196,7 +197,9 @@ export function NextGoal({
   return (
     <div className={`g2-goal${ready ? ' is-ready' : ''}`} role="group" aria-label={`Next goal: ${g.title}`}>
       <div className="g2-goal__copy">
-        <span className="g2-goal__eyebrow">Next goal</span>
+        <button type="button" className="g2-goal__eyebrow g2-goal__road" onClick={requestRoadAhead} title="See every step to the next era">
+          Next goal · road ahead ›
+        </button>
         <span className="g2-goal__title" title={starsTitle}>
           <span className="g2-goal__title-text">{g.title}</span>
         </span>

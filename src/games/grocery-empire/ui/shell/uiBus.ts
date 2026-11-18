@@ -29,12 +29,18 @@ export function onWikiRequest(fn: (articleId: string) => void): () => void {
 
 const OPEN_AUTOPILOT = 'ge:open-autopilot'
 
-/** Ask the shell to open the Menu drawer on the Autopilot tab. */
-export function requestAutopilot() {
-  window.dispatchEvent(new CustomEvent(OPEN_AUTOPILOT))
+/** Ask the shell to open the Menu drawer on a tab (default Autopilot). */
+export function requestAutopilot(tab: 'autopilot' | 'run' = 'autopilot') {
+  window.dispatchEvent(new CustomEvent(OPEN_AUTOPILOT, { detail: { tab } }))
 }
 
-export function onAutopilotRequest(fn: () => void): () => void {
-  window.addEventListener(OPEN_AUTOPILOT, fn)
-  return () => window.removeEventListener(OPEN_AUTOPILOT, fn)
+/** Menu → Game, where the Road ahead and Run story live. */
+export function requestRoadAhead() {
+  requestAutopilot('run')
+}
+
+export function onAutopilotRequest(fn: (tab: 'autopilot' | 'run') => void): () => void {
+  const h = (e: Event) => fn((e as CustomEvent<{ tab?: 'autopilot' | 'run' }>).detail?.tab ?? 'autopilot')
+  window.addEventListener(OPEN_AUTOPILOT, h)
+  return () => window.removeEventListener(OPEN_AUTOPILOT, h)
 }

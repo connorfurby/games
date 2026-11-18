@@ -1,4 +1,4 @@
-import { requestAutopilot } from './uiBus'
+import { requestAutopilot, requestRoadAhead } from './uiBus'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MENUS, type MenuId } from '../../content/menus'
 import { MEMOS } from '../../content/memos'
@@ -78,7 +78,8 @@ export function CommandPalette({
       { id: 'pause', label: state.paused ? 'Resume time' : 'Pause time', hint: 'Space', run: () => dispatch({ type: 'setPaused', paused: !state.paused }) },
       { id: 'memos', label: 'Open memos', hint: 'M', run: onInbox },
       { id: 'tools', label: 'Open menu (saves, settings)', hint: ',', run: onTools },
-      { id: 'autopilot', label: 'Autopilot: chores that run themselves', hint: '', run: requestAutopilot },
+      { id: 'road', label: 'Road ahead: goals to the next era', hint: '', run: requestRoadAhead },
+      { id: 'autopilot', label: 'Autopilot: chores that run themselves', hint: '', run: () => requestAutopilot() },
     )
     return list
     // state mutates in place; paused is the only live field read here.

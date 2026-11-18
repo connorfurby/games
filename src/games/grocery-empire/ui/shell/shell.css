@@ -2191,3 +2191,21 @@
     background: var(--g2-tag, #f2c14e);
   }
 }
+
+@layer shell {
+  .g2-goal__road {
+    appearance: none;
+    justify-self: start;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .g2-goal__road:hover,
+  .g2-goal__road:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}

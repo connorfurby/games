@@ -269,9 +269,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   )
   useEffect(
     () =>
-      onAutopilotRequest(() => {
+      onAutopilotRequest((tab) => {
         toolsTabPicked.current = true
-        setToolsTab('autopilot')
+        setToolsTab(tab)
         setToolsOpen(true)
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
