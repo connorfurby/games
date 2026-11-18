@@ -2,6 +2,8 @@ import { motion } from 'motion/react'
 import type { OfflineReceipt as Receipt } from '../../sim/state'
 import type { MenuId } from '../../content/menus'
 import type { Suggestion } from '../../sim/suggestions'
+import { can } from '../../sim/commands'
+import { useGame } from '../GameContext'
 import { money, qty } from '../format'
 import { Btn } from './Btn'
 import { Line } from './Line'
@@ -41,6 +43,18 @@ export function OfflineReceiptModal({
   nudge?: { menu: MenuId; label: string; hint?: string } | null
   onNudge?: (menu: MenuId) => void
 }) {
+  const { state: s, dispatch } = useGame()
+  // "Do the obvious": everything that piled up while you were gone, in one tap.
+  const tillCash = Object.values(s.ventures).reduce((n, v) => n + (v?.stored ?? 0), 0)
+  const owed = (s.depth?.invoices ?? []).filter((i) => !i.paid).length
+  const chores: string[] = []
+  if (tillCash > 0) chores.push(`collect ${money(tillCash)} from tills`)
+  if (owed > 0 && can(s, { type: 'payAllInvoices' }).ok) chores.push(`pay ${owed} invoice${owed === 1 ? '' : 's'}`)
+  const tidy = () => {
+    if (tillCash > 0) dispatch({ type: 'collectAllVentures' })
+    if (owed > 0) dispatch({ type: 'payAllInvoices' })
+    onDismiss()
+  }
   return (
     <div className="ge-modal" role="dialog" aria-labelledby="ge-offline-title">
       <motion.div
@@ -74,7 +88,12 @@ export function OfflineReceiptModal({
           {(receipt.seal ?? 0) > 0 ? <Line left="Seal" right={`+${pocketQty(receipt.seal)}`} /> : null}
         </div>
         <div className="ge-chip-row ge-receipt-actions">
-          <Btn tone="primary" onClick={onDismiss}>
+          {chores.length > 0 ? (
+            <Btn tone="primary" onClick={tidy} title={`One tap: ${chores.join(', ')}.`}>
+              Catch up: {chores.join(' · ')}
+            </Btn>
+          ) : null}
+          <Btn tone={chores.length > 0 ? 'secondary' : 'primary'} onClick={onDismiss}>
             Back to work
           </Btn>
           {nudge && onNudge && followUp?.channel !== nudge.menu ? (

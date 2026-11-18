@@ -104,9 +104,8 @@ export function VenturesPanel() {
       levels: levelSum(),
     })
   }
-  const claimAll = () => {
-    for (const { def } of claimable) dispatch({ type: 'collectVenture', id: def.id })
-  }
+  // One command, one log line, one undo: not a loop of single collects.
+  const claimAll = () => dispatch({ type: 'collectAllVentures' })
 
   const anyOpened = open.some((r) => (r.vs?.level ?? 0) > 0)
   const claimTotal = claimable.reduce((n, { vs }) => n + (vs?.stored ?? 0), 0)
