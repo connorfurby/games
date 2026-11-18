@@ -1,4 +1,4 @@
-import { clearGameSave, loadGame, saveGame } from '@/shared/save'
+import { clearGameSave, clearSnapshots, listSnapshots, loadGame, readSnapshot, saveGame, snapshotGame, type SnapshotInfo } from '@/shared/save'
 import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
 import { can as canCmd, run as runCmd, tickAutoRestock, type Check, type Command } from './commands'
 import { migrate } from './migrate'
@@ -206,6 +206,9 @@ export class GroceryEngine {
     this.state.lastSavedAt = Date.now()
     try {
       saveGame(getActiveSaveId(), this.state)
+      // Rolling backup every ten minutes of play (cheap: one JSON copy, newest three kept).
+      const s = this.state
+      snapshotGame(getActiveSaveId(), s, `Era ${s.era} · ${Math.floor(s.baskets).toLocaleString()} baskets`)
     } catch {
       /* ignore quota */
     }
@@ -234,6 +237,8 @@ export class GroceryEngine {
     const blocked = canRebrand(this.state) ?? canCarry(this.state, carry)
     if (blocked) return blocked
     clearUndo()
+    // A Rebrand pays out for the run; a backup from before it would let that payout repeat.
+    clearSnapshots(getActiveSaveId())
     this.replaceState(rebrandState(this.state, Date.now(), carry))
     return null
   }
@@ -272,6 +277,26 @@ export class GroceryEngine {
       const fromSlot = loadGame<unknown>(`${getActiveSaveId()}-slot-${slot}`)
       if (fromSlot == null) return false
       this.replaceState(migrate(fromSlot))
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** Automatic backups for the active save, newest first. */
+  backups(): SnapshotInfo[] {
+    return listSnapshots(getActiveSaveId())
+  }
+
+  /** Restore automatic backup `i`. The current run is snapshotted first, so a restore can be undone. */
+  restoreBackup(i: number): boolean {
+    try {
+      const id = getActiveSaveId()
+      const data = readSnapshot<unknown>(id, i)
+      if (data == null) return false
+      const s = this.state
+      snapshotGame(id, s, `Before restore · Era ${s.era} · ${Math.floor(s.baskets).toLocaleString()} baskets`, Date.now(), true)
+      this.replaceState(migrate(data))
       return true
     } catch {
       return false

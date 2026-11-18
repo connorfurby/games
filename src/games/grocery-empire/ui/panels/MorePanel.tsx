@@ -375,6 +375,17 @@ export function MoreSections({ only }: { only?: MoreSection }) {
             />
           </div>
           {ioMsg ? <p className="ge-muted">{ioMsg}</p> : null}
+          <AutoBackups
+            onRestore={(i, label) =>
+              setConfirm({
+                title: 'Go back to this backup?',
+                body: `${label}. Your current run is kept as a backup too, so you can come back to it.`,
+                confirmLabel: 'Restore',
+                tone: 'danger',
+                onConfirm: () => setIoMsg(engine.restoreBackup(i) ? 'Backup restored.' : 'That backup could not be read.'),
+              })
+            }
+          />
           {!inDev ? (
             <div className="ge-more-danger">
               <label className="ge-more-field">
@@ -520,5 +531,38 @@ export function MoreSections({ only }: { only?: MoreSection }) {
         }}
       />
     </>
+  )
+}
+
+/** Automatic backups: one every ten minutes of play, newest three kept. */
+function AutoBackups({ onRestore }: { onRestore: (i: number, label: string) => void }) {
+  const list = engine.backups()
+  // Read the clock once when the list opens, not on every render.
+  const [now] = useState(() => Date.now())
+  if (list.length === 0) return null
+  const ago = (at: number) => {
+    const min = Math.max(0, Math.round((now - at) / 60000))
+    if (min < 1) return 'just now'
+    if (min < 60) return `${min} min ago`
+    const h = Math.floor(min / 60)
+    return h < 24 ? `${h} h ago` : `${Math.floor(h / 24)} d ago`
+  }
+  return (
+    <div className="ge-backups">
+      <h4>Automatic backups</h4>
+      <p className="ge-muted">One every ten minutes of play; the last three are kept.</p>
+      <ul>
+        {list.map((b, i) => (
+          <li key={b.at}>
+            <span>
+              <strong>{ago(b.at)}</strong> · {b.label}
+            </span>
+            <Btn tone="ghost" onClick={() => onRestore(i, `${ago(b.at)} · ${b.label}`)}>
+              Restore
+            </Btn>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

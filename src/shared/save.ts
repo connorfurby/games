@@ -80,7 +80,7 @@ export function importSave(id: string, raw: string) {
 /** Wipe primary + tmp + backup for a game id. Used by New Game / recovery UI. */
 export function clearGameSave(id: string) {
   try {
-    for (const suffix of ['', '.tmp', '.bak']) {
+    for (const suffix of ['', '.tmp', '.bak', '.snaps']) {
       localStorage.removeItem(PREFIX + id + suffix)
     }
   } catch {
@@ -98,4 +98,66 @@ export function saveMeta(data: unknown) {
 
 export function loadMeta<T>(fallback: T): T {
   return loadGame<T>('meta') ?? fallback
+}
+
+// ── Rolling automatic backups ─────────────────────────────────────────────
+// `.bak` mirrors the live save, so it can't undo a bad hour. Snapshots can: one every
+// SNAP_EVERY_MS of play, the newest SNAP_KEEP kept, each with a short label to choose by.
+
+export const SNAP_EVERY_MS = 10 * 60 * 1000
+export const SNAP_KEEP = 3
+
+export interface SnapshotInfo {
+  at: number
+  label: string
+}
+
+interface Snapshot extends SnapshotInfo {
+  payload: string
+}
+
+function readSnaps(id: string): Snapshot[] {
+  try {
+    const raw = localStorage.getItem(PREFIX + id + '.snaps')
+    const arr = raw ? (JSON.parse(raw) as unknown) : []
+    return Array.isArray(arr)
+      ? arr.filter((x): x is Snapshot => !!x && typeof x.at === 'number' && typeof x.payload === 'string')
+      : []
+  } catch {
+    return []
+  }
+}
+
+/** Take a snapshot if the newest is older than SNAP_EVERY_MS (or `force`). Never throws. */
+export function snapshotGame(id: string, data: unknown, label: string, now = Date.now(), force = false): boolean {
+  try {
+    const snaps = readSnaps(id)
+    const newest = snaps[0]
+    if (!force && newest && now - newest.at < SNAP_EVERY_MS) return false
+    const next = [{ at: now, label, payload: serializeState(data) }, ...snaps].slice(0, SNAP_KEEP)
+    localStorage.setItem(PREFIX + id + '.snaps', JSON.stringify(next))
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Newest first, without the payloads. */
+export function listSnapshots(id: string): SnapshotInfo[] {
+  return readSnaps(id).map(({ at, label }) => ({ at, label }))
+}
+
+/** The saved data of snapshot `i` (newest = 0), or null. */
+export function readSnapshot<T>(id: string, i: number): T | null {
+  const s = readSnaps(id)[i]
+  return s ? deserializeState<T>(s.payload) : null
+}
+
+/** Drop every automatic backup for `id` (after a Rebrand, so its payout can't be replayed). */
+export function clearSnapshots(id: string) {
+  try {
+    localStorage.removeItem(PREFIX + id + '.snaps')
+  } catch {
+    /* ignore */
+  }
 }
