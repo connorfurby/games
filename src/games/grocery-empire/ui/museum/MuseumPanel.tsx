@@ -42,7 +42,7 @@ import {
 } from '../../sim/museum'
 import { useGame } from '../GameContext'
 import { HubStage } from '../components/HubStage'
-import { Button, EmptyState, SegmentedControl, Select, Sheet, useConfirm, usePhone } from '../kit'
+import { Button, EmptyState, Select, Sheet, useConfirm, usePhone } from '../kit'
 import type { VerbTrayProps } from '../play'
 import { ChestOpener } from './ChestOpener'
 import { MuseumGallery } from './MuseumGallery'
@@ -191,7 +191,7 @@ export function MuseumPanel() {
               ]
             : []),
           { key: 'gallery', label: 'Explore gallery', onClick: exploreGallery },
-          perksSecondary,
+          ...(owned > 0 ? [perksSecondary] : []),
         ],
       }
     : {
@@ -202,7 +202,7 @@ export function MuseumPanel() {
           onClick: exploreGallery,
         },
         failReason: 'No chests waiting. Feats and the dust shop below fill the shelf.',
-        secondaries: [perksSecondary],
+        secondaries: owned > 0 ? [perksSecondary] : [],
       }
 
   return (
@@ -350,27 +350,23 @@ export function MuseumPanel() {
         dispatch={dispatch}
       />
 
-      <div className="mu-wings-seg">
-        <SegmentedControl
+      {/* 21 wings are too many for a row of chips: one picker, with progress in each option. */}
+      <label className="mu-wings-pick">
+        <span>Show</span>
+        <Select
           aria-label="Wings"
           value={wing}
-          onChange={setWing}
-          reducedMotion={reducedMotion}
+          onChange={(v) => setWing(v as WingId | 'all')}
           options={[
-            { value: 'all' as const, label: 'All' },
+            { value: 'all', label: 'All wings' },
             ...WINGS.map((w) => {
               const list = relicsInWing(w.id)
               const have = list.filter((r) => m.relics[r.id]).length
-              return {
-                value: w.id as WingId | 'all',
-                label: w.name,
-                badge: have,
-                title: `${have}/${list.length}`,
-              }
+              return { value: w.id, label: `${w.name} · ${have}/${list.length}` }
             }),
           ]}
         />
-      </div>
+      </label>
 
       {wing === 'all' ? (
         <div className="mu-wall mu-overview" aria-label="Wings">

@@ -216,7 +216,8 @@ export function VenturesPanel() {
         </div>
       ) : null}
 
-      {open.length > 0 ? (
+      {/* Filtering only helps once there are a few tills to sort through. */}
+      {open.length >= 3 || readyOnly ? (
         <div className="p6-row">
           <Toggle checked={readyOnly} onChange={setReadyOnly}>
             Only show tills with something to collect or buy
