@@ -72,7 +72,7 @@ export function ToolsDrawer({
             ✕
           </button>
         </div>
-        <div className="g2-tools__tabs" role="tablist" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+        <div className="g2-tools__tabs" role="tablist">
           {tabs.map((t) => (
             <button
               key={t.id}
