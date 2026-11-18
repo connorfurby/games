@@ -1,3 +1,4 @@
+import { longNumber } from '@/shared/bn'
 import { Link } from 'react-router-dom'
 import { useStable } from '../useStable'
 import type { NumberFormat } from '@/shared/bn'
@@ -78,7 +79,7 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="cash" size={13} /> Cash
           </span>
-          <span className="g2-stat__value" data-fx-flash={cashFlash ?? undefined} title={money(cashShown, 'named')}>
+          <span className="g2-stat__value" data-fx-flash={cashFlash ?? undefined} title={`$${longNumber(cashShown)}`}>
             <span className="g2-stat__full">{money(cashShown, 'named')}</span>
             <span className="g2-stat__short" aria-hidden="true">
               {shortFigure(money(cashShown, 'named'))}
@@ -92,7 +93,11 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="baskets" size={13} /> Baskets
           </span>
-          <span className="g2-stat__value g2-stat__value--small" data-fx-flash={basketsFlash ?? undefined}>
+          <span
+            className="g2-stat__value g2-stat__value--small"
+            data-fx-flash={basketsFlash ?? undefined}
+            title={`${longNumber(basketsShown)} baskets`}
+          >
             <span className="g2-stat__full">{qty(basketsShown, 'named')}</span>
             <span className="g2-stat__short" aria-hidden="true">
               {shortFigure(qty(basketsShown, 'named'))}

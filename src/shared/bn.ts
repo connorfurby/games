@@ -52,7 +52,8 @@ const NAMES = [
   'Qi',
   'Sx',
   'Sp',
-  'Oc',
+  // 'Oct', not 'Oc': in the display face a capital O reads as a zero ("12.940c").
+  'Oct',
   'No',
   'Dc',
 ]
@@ -94,6 +95,31 @@ export function formatBN(value: Decimal | number, format: NumberFormat = 'named'
     return `${scaled.toFixed(digits)}${NAMES[tier]}`
   }
   return d.toExponential(digits)
+}
+
+const LONG_NAMES = [
+  '',
+  'thousand',
+  'million',
+  'billion',
+  'trillion',
+  'quadrillion',
+  'quintillion',
+  'sextillion',
+  'septillion',
+  'octillion',
+  'nonillion',
+  'decillion',
+]
+
+/** "949.27 octillion": the spoken name of a big number, for tooltips next to the short suffix. */
+export function longNumber(value: number): string {
+  if (!Number.isFinite(value)) return '0'
+  const abs = Math.abs(value)
+  if (abs < 1000) return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  const tier = Math.floor(Math.log10(abs) / 3)
+  if (tier >= LONG_NAMES.length) return value.toExponential(2)
+  return `${(value / 10 ** (tier * 3)).toFixed(2)} ${LONG_NAMES[tier]}`
 }
 
 /** `$12.50` under 1k; named suffixes above. For sim gate reasons and UI. */

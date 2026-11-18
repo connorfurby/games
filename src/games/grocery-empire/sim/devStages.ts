@@ -44,7 +44,7 @@ function openMenus(s: GameState, ids: MenuId[]) {
   for (const id of ids) s.menus[id] = true
 }
 
-function markTutorialsDone(s: GameState, upToEra: number) {
+export function markTutorialsDone(s: GameState, upToEra: number) {
   for (const t of TUTORIALS) {
     if (t.era <= upToEra) s.tutorials.done[t.id] = true
   }

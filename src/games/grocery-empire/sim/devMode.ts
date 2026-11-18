@@ -1,6 +1,6 @@
 import { clearGameSave, loadGame } from '@/shared/save'
 import { TUTORIALS } from '../content/tutorials'
-import { buildDevStage, listDevStages, unlockAllMenus } from './devStages'
+import { buildDevStage, listDevStages, markTutorialsDone, unlockAllMenus } from './devStages'
 import { deserializeState } from '@/shared/save'
 import { engine } from './engine'
 import { log, skipOpeningDialogue } from './helpers'
@@ -82,6 +82,8 @@ export function applyDevStage(id: string): boolean {
       next.paused = false
       next.chapterQueue = []
       next.dialogueQueue = []
+      // The bot never opens a lesson; mark them done so the late pages aren't buried under tours.
+      markTutorialsDone(next, next.era)
       log(next, `DevMode stage loaded: ${id}`, 'story')
       engine.replaceState(next)
     })
