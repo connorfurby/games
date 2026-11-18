@@ -2095,3 +2095,99 @@
     font-size: var(--t-sm);
   }
 }
+
+/* ── Road ahead (Menu → Game) ───────────────────────────────────────── */
+@layer shell {
+  .ra-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    position: relative;
+  }
+
+  .ra-list li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    gap: var(--s-2);
+    padding-bottom: var(--s-3);
+  }
+
+  /* The path between pins. */
+  .ra-list li:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: calc(0.875rem - 1px);
+    top: 1.75rem;
+    bottom: 0;
+    width: 2px;
+    background: color-mix(in srgb, var(--ge-ink) 14%, transparent);
+  }
+
+  .ra-pin {
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--ge-ink) 22%, transparent);
+    font: 700 var(--t-xs) / 1 var(--g2-ui);
+    color: var(--ge-muted);
+    background: var(--g2-bg, #12181a);
+  }
+
+  .ra-list li.is-now .ra-pin {
+    border-color: var(--g2-tag, #f2c14e);
+    background: var(--g2-tag, #f2c14e);
+    color: #1a1508;
+  }
+
+  .ra-list li.is-door .ra-pin {
+    border-color: var(--ge-accent, #e8583c);
+    color: var(--ge-accent, #e8583c);
+  }
+
+  .ra-body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    padding-top: 0.2rem;
+  }
+
+  .ra-body strong {
+    font-size: var(--t-sm);
+  }
+
+  .ra-list li:not(.is-now) .ra-body strong {
+    color: var(--ge-muted);
+    font-weight: 600;
+  }
+
+  .ra-hint,
+  .ra-door {
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+
+  .ra-door {
+    color: var(--ge-accent, #e8583c);
+    font-weight: 600;
+  }
+
+  .ra-bar {
+    display: block;
+    height: 5px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--ge-ink) 10%, transparent);
+    overflow: hidden;
+    margin-top: 2px;
+  }
+
+  .ra-bar i {
+    display: block;
+    height: 100%;
+    background: var(--g2-tag, #f2c14e);
+  }
+}

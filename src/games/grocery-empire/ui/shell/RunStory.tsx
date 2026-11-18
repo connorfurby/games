@@ -38,7 +38,7 @@ export function RunStory() {
         </div>
         <div>
           <dt>Stores</dt>
-          <dd>{s.stores.length}</dd>
+          <dd>{Math.max(1, s.stores.length)}</dd>
         </div>
       </dl>
       <ol className="rs-eras">
