@@ -1,4 +1,4 @@
-import { nextGoal } from '../content/goals'
+import { nextGoalInOrder as nextGoal } from '../content/goals'
 import { can, run, type Command } from './commands'
 import { HORIZON } from './balance'
 import type { GameState } from './state'

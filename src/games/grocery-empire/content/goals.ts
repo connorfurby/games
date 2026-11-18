@@ -1181,17 +1181,6 @@ export const GOALS: GoalDef[] = [
     action: () => ({ type: 'unpackBonded', count: 1, kind: 'dry' }),
   },
   {
-    id: 'wire-ad-goal',
-    era: 10,
-    title: 'Run a wire ad',
-    hint: 'Once a relay is lit, spend signal on a wire ad in Marketing.',
-    done: (s) => s.era > 10 || (s.late?.wireAdsUntil ?? 0) > 0,
-    progress: (s) => ((s.late?.wireAdsUntil ?? 0) > 0 ? 1 : (s.horizon?.relays ?? 0) >= 1 ? 0.5 : 0),
-    cash: () => 0,
-    action: (s) =>
-      (s.horizon?.relays ?? 0) < 1 ? { type: 'buyRelay' } : { type: 'wireAd' },
-  },
-  {
     id: 'settle-stop-tax',
     era: 8,
     title: 'Settle a stop with a cost',
@@ -1327,6 +1316,17 @@ export const GOALS: GoalDef[] = [
     opensEra: 10,
   },
   // ── Era 10 · Signal
+  {
+    id: 'wire-ad-goal',
+    era: 10,
+    title: 'Run a wire ad',
+    hint: 'Once a relay is lit, spend signal on a wire ad in Marketing.',
+    done: (s) => s.era > 10 || (s.late?.wireAdsUntil ?? 0) > 0,
+    progress: (s) => ((s.late?.wireAdsUntil ?? 0) > 0 ? 1 : (s.horizon?.relays ?? 0) >= 1 ? 0.5 : 0),
+    cash: () => 0,
+    action: (s) =>
+      (s.horizon?.relays ?? 0) < 1 ? { type: 'buyRelay' } : { type: 'wireAd' },
+  },
   {
     id: 'first-phrase',
     era: 10,
@@ -1581,10 +1581,28 @@ export function nextGoal(s: GameState): GoalDef | null {
     // A goal from an era you've already left was a side road, not the way forward: the era
     // opened without it. Showing it for hours ("Resolve a board agenda" in Era 12) is a dead sign.
     if (g.era < s.era && g.opensEra == null) continue
+    // Never show a goal from an era you haven't reached.
+    if (g.era > s.era) continue
     try {
       if (!g.done(s)) return g
     } catch {
       /* never break the HUD */
+    }
+  }
+  return null
+}
+
+/**
+ * The spine exactly as the campaign bot was tuned on it: first unfinished goal in list order,
+ * with no era filtering. Pacing targets were set against this, so the bot keeps it; the HUD uses
+ * nextGoal. (Follow-up: retune the bot to follow nextGoal; see 10-changelog-chat AJ.)
+ */
+export function nextGoalInOrder(s: GameState): GoalDef | null {
+  for (const g of GOALS) {
+    try {
+      if (!g.done(s)) return g
+    } catch {
+      /* never break */
     }
   }
   return null

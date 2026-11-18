@@ -35,3 +35,10 @@ describe('next goal never points back at a past era', () => {
     expect(GOALS.some((x) => x.id === 'board-agenda')).toBe(true)
   })
 })
+
+describe('goal spine order', () => {
+  it('goals are listed in era order', async () => {
+    const { GOALS } = await import('../content/goals')
+    for (let i = 1; i < GOALS.length; i++) expect(GOALS[i]!.era).toBeGreaterThanOrEqual(GOALS[i - 1]!.era)
+  })
+})

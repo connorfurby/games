@@ -1,4 +1,4 @@
-import { goalCash, goalNeeds, nextGoal } from '../content/goals'
+import { goalCash, goalNeeds, nextGoalInOrder as nextGoal } from '../content/goals'
 import { STORE_TRAIT_BY_ID, policyMatchesTrait, type PlaceTraitId } from '../content/depth'
 import { RIVALS } from '../content/rivals'
 import { MEMOS } from '../content/memos'
