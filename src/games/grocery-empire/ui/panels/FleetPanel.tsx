@@ -285,15 +285,12 @@ export function FleetPanel() {
             </Button>
           ) : null}
           <div className="ge-chip-row" aria-label="Fleet status">
-            <StatusChip tone={pocketsCleared >= 4 ? 'ready' : 'idle'} title="Clear four pockets, staff the middle shift and hold off Off-Brand to reach the next chapter.">
-              Pockets {pocketsCleared}/{pockets.length || 6}
-            </StatusChip>
             {pocketsOutrunHauler(s) ? (
               <StatusChip
                 tone="waiting"
-                title="Open pockets want different rations. One Hauler feeds one ration at a time until Second Berth (Supply) raises concurrent trips."
+                title="Each open pocket needs a different ration, and one hauler can only carry one at a time. The Second Berth memo lets two leave at once."
               >
-                {openPocketRations(s).length} rations open · 1 hauler
+                {openPocketRations(s).length} pockets waiting · 1 hauler at a time
               </StatusChip>
             ) : pocketConcurrency(s) > 1 && openPocketRations(s).length >= 2 ? (
               <StatusChip tone="ready" title="Second Berth: two Haulers can leave at once — one per ration.">
@@ -314,8 +311,8 @@ export function FleetPanel() {
               </StatusChip>
             ) : null}
             {s.era >= 5 ? (
-              <StatusChip title="Berth turnarounds toward the Era 6 gate.">
-                Turnarounds {s.depth?.berthTurnarounds ?? 0}/{DEPTH.berthTurnaroundNeed}
+              <StatusChip title="Hauler round trips; you need these for the next chapter.">
+                Round trips {s.depth?.berthTurnarounds ?? 0}/{DEPTH.berthTurnaroundNeed}
               </StatusChip>
             ) : null}
             {s.era >= 6 && rationWeekLeft > 0 ? (
@@ -344,8 +341,8 @@ export function FleetPanel() {
                     .join(' · ')}
                   {openPockets.length > 2 ? ` · +${openPockets.length - 2} more` : ''} —{' '}
                   {pocketsOutrunHauler(s)
-                    ? 'one Hauler feeds one ration at a time; Second Berth sends two.'
-                    : 'each Hauler carries its own ration; a wrong load wastes the trip.'}
+                    ? 'send one hauler at a time with the ration each pocket wants.'
+                    : 'each hauler carries one ration; the wrong one wastes the trip.'}
                 </p>
               ) : null}
               <SegmentedControl
