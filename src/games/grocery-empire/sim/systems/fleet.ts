@@ -132,7 +132,7 @@ export function canDispatchHauler(
   if (barge.class !== 'hauler') return 'Only Haulers run Pocket Ops.'
   if (bargeOnTrip(s, barge.id)) return 'Hauler already en route.'
   if ((barge.restUntil ?? 0) > s.time) {
-    return `Hauler resting ${Math.ceil((barge.restUntil ?? 0) - s.time)}s (berth turnaround).`
+    return `Hauler resting ${waitLabel((barge.restUntil ?? 0) - s.time)} (berth turnaround).`
   }
   const concurrent = pocketConcurrency(s)
   if (activeTrips(s).length >= concurrent) {
@@ -235,7 +235,7 @@ function resolveArrivedTrips(s: GameState) {
       s.depth.berthTurnarounds = (s.depth.berthTurnarounds ?? 0) + 1
       log(
         s,
-        `Berth turnaround ${s.depth.berthTurnarounds}/${DEPTH.berthTurnaroundNeed} · rest ${Math.ceil(rest)}s.`,
+        `Berth turnaround ${s.depth.berthTurnarounds}/${DEPTH.berthTurnaroundNeed} · rest ${waitLabel(rest)}.`,
         'info',
       )
     }

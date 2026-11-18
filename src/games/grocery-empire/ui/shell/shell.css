@@ -2254,13 +2254,31 @@
     transform-origin: left;
   }
 
-  /* Phones: sit above the bottom hub bar. */
+  /* Phones: a slim strip above the bottom hub bar — no portrait, small type. */
   @media (max-width: 720px) {
     .hz-wire {
       left: var(--s-2);
       right: var(--s-2);
       width: auto;
       bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .hz-wire .hz-headline__card {
+      padding: var(--s-2) var(--s-3);
+    }
+
+    .hz-wire .hz-headline__card .hz-bust,
+    .hz-wire .hz-headline__card > .hz-note {
+      display: none;
+    }
+
+    .hz-wire__title {
+      font-size: var(--t-sm) !important;
+    }
+
+    .hz-wire .hz-headline__card > p {
+      margin: 0;
+      font-size: var(--t-xs);
     }
   }
 }

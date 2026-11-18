@@ -42,7 +42,7 @@ import { DEPTH, NETWORK } from '../balance'
 import { cashLabel } from '@/shared/bn'
 import { upgradeEffect } from '../../content/upgrades'
 import { HORIZON, LATE, PRICE } from '../balance'
-import { clamp, log, setEra } from '../helpers'
+import { clamp, log, setEra, waitLabel } from '../helpers'
 import {
   diplomatSealCut,
   tasterMatchBonus,
@@ -176,19 +176,19 @@ function creditUniqueFiling(
 function standardFileGap(s: GameState): string | null {
   const h = s.horizon
   if (h?.watchUntil > s.time) {
-    return `Habit watch still running (${Math.ceil(h.watchUntil - s.time)}s).`
+    return `Habit watch still running (${waitLabel(h.watchUntil - s.time)}).`
   }
   if (h?.settlementUntil > s.time) {
-    return `Stop settlement ETA (${Math.ceil(h.settlementUntil - s.time)}s).`
+    return `Stop settlement ETA (${waitLabel(h.settlementUntil - s.time)}).`
   }
   if (h?.seatingGapUntil > s.time) {
-    return `Clause seating gap (${Math.ceil(h.seatingGapUntil - s.time)}s).`
+    return `Clause seating gap (${waitLabel(h.seatingGapUntil - s.time)}).`
   }
   if (!s.depth) return null
   const last = s.depth.lastStandardFileAt ?? 0
   if (last <= 0) return null
   const left = HORIZON.standardFileGapSec - (s.time - last)
-  if (left > 0) return `Standard desk cooling down (${Math.ceil(left)}s).`
+  if (left > 0) return `Standard desk cooling down (${waitLabel(left)}).`
   return null
 }
 
@@ -1373,7 +1373,7 @@ export function canPlantCross(s: GameState, index: number, a: string, b: string)
     const opens = bedLockOpensIn(s)
     if (opens === 0) return null
     return opens != null
-      ? `The bed is locked to ${locked} for ${Math.ceil(opens)}s more. The standard cross still files.`
+      ? `The bed is locked to ${locked} for ${waitLabel(opens)} more. The standard cross still files.`
       : `The bed is locked to ${locked} until the season turns. The standard cross still files.`
   }
   return null
@@ -1706,9 +1706,9 @@ export function canSetAgentHabit(s: GameState, id: number, habit: string): strin
   if (!ensureHorizon(s).agents.some((agent) => agent.id === id)) return 'No such agent.'
   if (!isHabit(habit)) return 'Pick a habit.'
   if (postedAgentId(s) === id) {
-    return `Posted on ${s.horizon.postedHabit?.habit} until the watch resolves (${Math.ceil(
+    return `Posted on ${s.horizon.postedHabit?.habit} until the watch resolves (${waitLabel(
       s.horizon.watchUntil - s.time,
-    )}s).`
+    )}).`
   }
   const phrase = s.horizon.phrase
   if (phrase?.habit && habit !== phrase.habit && s.horizon.agents.length >= 2) {
@@ -1805,13 +1805,13 @@ export function canToggleClause(s: GameState, id: string): string | null {
   // Serial seating: seat (and gap) before the next keep.
   if (!kept) {
     if (h.seatingUntil > s.time) {
-      return `Seat the pending clause first (${Math.ceil(h.seatingUntil - s.time)}s).`
+      return `Seat the pending clause first (${waitLabel(h.seatingUntil - s.time)}).`
     }
     if (h.seatingUntil > 0 && s.time >= h.seatingUntil) {
       return 'Seat the pending clause before keeping another.'
     }
     if (h.seatingGapUntil > s.time) {
-      return `Seating gap ${Math.ceil(h.seatingGapUntil - s.time)}s.`
+      return `Seating gap ${waitLabel(h.seatingGapUntil - s.time)}.`
     }
   }
   if (!kept && h.clauses.length >= HORIZON.clauseKeep) return 'Four clauses. The fifth does not fit.'
@@ -2075,7 +2075,7 @@ export function canAcceptLastAisle(s: GameState): string | null {
   if (h.listScore + 1e-9 < HORIZON.listAcceptScore) return 'The list is still short of 0.85.'
   if (!h.acceptRehearsal) return 'Run Accept rehearsal first (clever fill + desk gap).'
   if (h.acceptRehearsalUntil > s.time) {
-    return `Accept rehearsal cooling (${Math.ceil(h.acceptRehearsalUntil - s.time)}s).`
+    return `Accept rehearsal cooling (${waitLabel(h.acceptRehearsalUntil - s.time)}).`
   }
   return null
 }

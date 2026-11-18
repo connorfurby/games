@@ -80,8 +80,7 @@ import {
   setEra,
   skipOpeningDialogue,
   sumQty,
-  unlockMenu,
-} from './helpers'
+  unlockMenu, waitLabel } from './helpers'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { chance } from './rng'
 import type {
@@ -880,7 +879,7 @@ const coreHandlers = {
     can: (s) => {
       if (!s.memos['price-lock']) return no('Price Lock memo first.')
       if (s.priceLockUntil > s.time) {
-        return no(`Already locked (${Math.ceil(s.priceLockUntil - s.time)}s).`)
+        return no(`Already locked (${waitLabel(s.priceLockUntil - s.time)}).`)
       }
       const cost = crateCost(s, s.orderCat) * PRICE_LOCK.cratesCost
       if (s.cash < cost) return needCash(cost)

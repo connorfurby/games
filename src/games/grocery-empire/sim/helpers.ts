@@ -320,3 +320,17 @@ export function clamp(v: number, lo: number, hi: number) {
 export function round2(v: number) {
   return Math.round(v * 100) / 100
 }
+
+/** "45s", "21m 37s", "1h 05m": a wait the player can read at a glance. */
+export function waitLabel(sec: number): string {
+  const s = Math.max(0, Math.ceil(sec))
+  if (s < 60) return `${s}s`
+  if (s < 3600) {
+    const m = Math.floor(s / 60)
+    const r = s % 60
+    return r ? `${m}m ${r}s` : `${m}m`
+  }
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  return `${h}h ${String(m).padStart(2, '0')}m`
+}

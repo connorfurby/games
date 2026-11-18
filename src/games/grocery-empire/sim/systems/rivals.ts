@@ -2,7 +2,7 @@ import { cashLabel } from '@/shared/bn'
 import { CATEGORY_IDS, type CategoryId } from '../../content/categories'
 import { RIVALS, RIVAL_BY_ID, type RivalDef, type RivalId } from '../../content/rivals'
 import { DEPTH, EMPIRE, HORIZON, RIVAL_CHAINS } from '../balance'
-import { log } from '../helpers'
+import { log, waitLabel } from '../helpers'
 import { lateCashFloor } from '../lateCost'
 import { chance, pick } from '../rng'
 import type { GameState, RivalState } from '../state'
@@ -132,7 +132,7 @@ export function canPriceWar(s: GameState, id: RivalId): string | null {
   if (!st) return `${def.name} opens in Era ${def.era}.`
   if (st.bought) return 'Already yours.'
   if (st.stores <= 1) return 'Down to their first store.'
-  if (s.time < st.warReadyAt) return `Ready in ${Math.ceil(st.warReadyAt - s.time)}s.`
+  if (s.time < st.warReadyAt) return `Ready in ${waitLabel(st.warReadyAt - s.time)}.`
   const cost = priceWarCost(s, id)
   if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   return null

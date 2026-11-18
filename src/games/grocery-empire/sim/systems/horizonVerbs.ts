@@ -19,7 +19,7 @@ import {
 } from '../../content/horizon'
 import { upgradeEffect } from '../../content/upgrades'
 import { DEPTH, HORIZON } from '../balance'
-import { log, sumQty, takeUnits } from '../helpers'
+import { log, sumQty, takeUnits, waitLabel } from '../helpers'
 import { chance } from '../rng'
 import type { GameState } from '../state'
 import {
@@ -83,7 +83,7 @@ export function currentClimateGuest(s: GameState): ClimateGuestDef | null {
 export function canServeClimateNeighbor(s: GameState): string | null {
   if (s.era < 7) return 'Climate neighbors open after Continue.'
   const h = ensureHorizon(s)
-  if (h.nextClimateAt > s.time) return `Next climate neighbor in ${Math.ceil(h.nextClimateAt - s.time)}s.`
+  if (h.nextClimateAt > s.time) return `Next climate neighbor in ${waitLabel(h.nextClimateAt - s.time)}.`
   const climates = stockedClimates(s)
   if (climates.length === 0) return 'Stock a world first.'
   const want = h.climateGuest ?? climates[0]
@@ -162,7 +162,7 @@ export function canSettleStop(s: GameState): string | null {
   if (s.era < 8) return 'Stop settlements open in Era 8.'
   const h = ensureHorizon(s)
   if (h.settlementUntil <= 0) return 'No settlement pending.'
-  if (s.time < h.settlementUntil) return `Settlement ETA ${Math.ceil(h.settlementUntil - s.time)}s.`
+  if (s.time < h.settlementUntil) return `Settlement ETA ${waitLabel(h.settlementUntil - s.time)}.`
   return null
 }
 
@@ -193,7 +193,7 @@ export function canHaulYield(s: GameState): string | null {
   if (s.era < 9) return 'Yield hauls open in Era 9.'
   const h = ensureHorizon(s)
   if (h.haulUntil <= 0) return 'No haul armed — finish a season chore first.'
-  if (s.time < h.haulUntil) return `Haul ETA ${Math.ceil(h.haulUntil - s.time)}s.`
+  if (s.time < h.haulUntil) return `Haul ETA ${waitLabel(h.haulUntil - s.time)}.`
   return null
 }
 
@@ -212,8 +212,8 @@ export function canSeatClause(s: GameState): string | null {
   if (s.era < 11) return 'Clause seating opens in Era 11.'
   const h = ensureHorizon(s)
   if (h.seatingUntil <= 0) return 'No clause awaiting seating.'
-  if (s.time < h.seatingUntil) return `Seating seal ETA ${Math.ceil(h.seatingUntil - s.time)}s.`
-  if (h.seatingGapUntil > s.time) return `Seating gap ${Math.ceil(h.seatingGapUntil - s.time)}s.`
+  if (s.time < h.seatingUntil) return `Seating seal ETA ${waitLabel(h.seatingUntil - s.time)}.`
+  if (h.seatingGapUntil > s.time) return `Seating gap ${waitLabel(h.seatingGapUntil - s.time)}.`
   return null
 }
 
@@ -268,10 +268,10 @@ export function canRehearseAccept(s: GameState): string | null {
   if (!h.list?.length) return 'The list is blank.'
   if (h.acceptRehearsal && h.acceptRehearsalUntil <= s.time) return 'Rehearsal already complete.'
   if (h.acceptRehearsal && h.acceptRehearsalUntil > s.time) {
-    return `Rehearsal cooling (${Math.ceil(h.acceptRehearsalUntil - s.time)}s).`
+    return `Rehearsal cooling (${waitLabel(h.acceptRehearsalUntil - s.time)}).`
   }
   if (!h.acceptRehearsal && h.acceptRehearsalUntil > s.time) {
-    return `Rehearsal retry in ${Math.ceil(h.acceptRehearsalUntil - s.time)}s.`
+    return `Rehearsal retry in ${waitLabel(h.acceptRehearsalUntil - s.time)}.`
   }
   return null
 }

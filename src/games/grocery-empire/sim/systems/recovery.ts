@@ -1,7 +1,7 @@
 import { isPerishable, type CategoryId } from '../../content/categories'
 import { INSPECTION, RECOVERY } from '../balance'
 import { bailoutCooldownSec, cheapestCrate, crateSize, inspectionGainMul, up } from '../formulas'
-import { addBatch, compact, log, sumQty } from '../helpers'
+import { addBatch, compact, log, sumQty, waitLabel } from '../helpers'
 import type { GameState } from '../state'
 
 export function progressMetric(s: GameState): number {
@@ -45,7 +45,7 @@ export function applyEmptyShelfHelper(s: GameState, opts?: { ignoreWait?: boolea
 /** Why a bailout is refused right now (null = eligible). Single source for can() and apply. */
 export function canBailout(s: GameState): string | null {
   const wait = bailoutCooldownSec(s) - (s.time - s.recovery.lastBailoutAt)
-  if (wait > 0) return `Bailout cooling down (${Math.ceil(wait)}s).`
+  if (wait > 0) return `Bailout cooling down (${waitLabel(wait)}).`
   const broke = s.cash < cheapestCrate(s) && sumQty(s.backroom) + sumQty(s.shelf) <= 0
   if (!broke && s.cash > 2) return 'Not broke enough.'
   return null
@@ -95,7 +95,7 @@ export function canMentorRestock(s: GameState): string | null {
   if (s.era > 0 && s.stats.playSec > 1200) return 'Mentor has moved on.'
   if (sumQty(s.shelf) + sumQty(s.backroom) > 0) return 'You still have stock.'
   const wait = RECOVERY.mentorCooldownSec - (s.time - s.recovery.lastMentorAt)
-  if (wait > 0) return `Mentor is busy (${Math.ceil(wait)}s).`
+  if (wait > 0) return `Mentor is busy (${waitLabel(wait)}).`
   return null
 }
 

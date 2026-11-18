@@ -2,7 +2,7 @@ import { CATEGORY_IDS, type CategoryId } from '../../content/categories'
 import { upgradeEffect } from '../../content/upgrades'
 import { DEPTH } from '../balance'
 import { crateSize } from '../formulas'
-import { addBatch, log } from '../helpers'
+import { addBatch, log, waitLabel } from '../helpers'
 import type { GameState } from '../state'
 
 /** Why a dock check-in can't happen right now (null when it can). */
@@ -14,7 +14,7 @@ export function dockCheckInBlock(s: GameState): string | null {
   )
   if (!onBoard) return 'Put a receiver on a shift board first.'
   if (s.time < (s.depth.nextDockAt ?? 0)) {
-    return `Next dock check-in in ${Math.ceil((s.depth.nextDockAt ?? 0) - s.time)}s.`
+    return `Next dock check-in in ${waitLabel((s.depth.nextDockAt ?? 0) - s.time)}.`
   }
   return null
 }
@@ -33,7 +33,7 @@ export function runDockCheckIn(s: GameState, aisle: CategoryId, short: boolean, 
   if (!quiet) {
     log(
       s,
-      `Dock check-in ${s.depth.dockCheckIns}/${DEPTH.dockCheckInNeed} → ${aisle}${short ? ' (short)' : ''}. Next in ${Math.ceil(cd)}s.`,
+      `Dock check-in ${s.depth.dockCheckIns}/${DEPTH.dockCheckInNeed} → ${aisle}${short ? ' (short)' : ''}. Next in ${waitLabel(cd)}.`,
       'good',
     )
   }
