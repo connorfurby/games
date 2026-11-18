@@ -188,6 +188,20 @@ export function SuppliersPanel() {
               ? ` Next truck in ${Math.ceil((s.depth?.nextDockAt ?? 0) - s.time)}s.`
               : ''}
           </p>
+          {(() => {
+            // One tap: send the truck to the aisle with the least back stock.
+            const stockOf = (cat: string) =>
+              s.backroom.filter((b) => b.cat === cat).reduce((n, b) => n + b.qty, 0) +
+              s.shelf.filter((b) => b.cat === cat).reduce((n, b) => n + b.qty, 0)
+            const pick = unlocked
+              .filter((aisle) => can(s, { type: 'dockCheckIn', aisle }).ok)
+              .sort((a, b) => stockOf(a) - stockOf(b))[0]
+            return pick && unlocked.length > 1 ? (
+              <Button tone="primary" feedback onClick={() => dispatch({ type: 'dockCheckIn', aisle: pick })}>
+                Check in to {CATEGORIES[pick].name} (lowest stock)
+              </Button>
+            ) : null
+          })()}
           <div className="p6-stack">
             {unlocked.map((aisle) => {
               const full = can(s, { type: 'dockCheckIn', aisle })
