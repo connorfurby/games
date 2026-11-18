@@ -24,7 +24,7 @@ export function ColdScene() {
       }${immune ? ', Cryo Treaty holds' : ''}${ark ? ', Cryo Ark' : ''}`}
       chips={[
         { label: 'Spare cold', value: surplusLabel, neg: c.surplus < 0 },
-        { label: 'Plants', value: `${online}/${plants}`, rate: offline > 0 ? `${offline} off` : 'online' },
+        plants > 0 ? { label: 'Plants', value: `${online}/${plants}`, rate: offline > 0 ? `${offline} off` : 'online' } : { label: 'Plants', value: 'None yet' },
         { label: 'Tanks', value: String(c.tanks), rate: c.tanks > 0 ? `${Math.round(tankFill * 100)}% full` : undefined },
         {
           label: 'Freshness',
