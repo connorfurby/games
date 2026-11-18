@@ -240,6 +240,8 @@ export type Command =
   | { type: 'focusRegular'; which: 'active' | 'waiting' }
   | { type: 'dockCheckIn'; aisle?: import('../content/categories').CategoryId; short?: boolean }
   | { type: 'payInvoice'; id: number }
+  | { type: 'payAllInvoices' }
+  | { type: 'setAutoPayInvoices'; on: boolean }
   /** Clear oldest unpaid invoice without cash (softlock rail / collections). */
   | { type: 'writeOffInvoice' }
   | { type: 'setFlagshipSlot'; index: number; cat: CategoryId | '' }
@@ -1730,7 +1732,8 @@ const coreHandlers = {
   setSpeed: {
     can: (_s, cmd) => {
       const speed = (cmd as Extract<Command, { type: 'setSpeed' }>).speed
-      if (![1, 2, 4, 8].includes(speed)) return no('Speed must be 1, 2, 4, or 8.')
+      // The game runs at one speed for everyone; the command stays so old replays still parse.
+      if (speed !== 1) return no('The game runs at one speed.')
       return ok
     },
     run: (s, cmd) => {

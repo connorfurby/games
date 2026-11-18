@@ -113,6 +113,12 @@ export function SuppliersPanel() {
   ]
   const safetyReady = safety.some((n) => n.check.ok)
   const openInvoices = (s.depth?.invoices ?? []).filter((i) => !i.paid)
+  const autoPay = s.depth?.autoPayInvoices ?? true
+  const payAll = can(s, { type: 'payAllInvoices' })
+  const totalDue = openInvoices.reduce(
+    (n, i) => n + i.amount * (s.time <= i.dueAt ? DEPTH.invoiceEarlyDisc : DEPTH.invoiceLateFee),
+    0,
+  )
   const invoicesOnTime = s.depth?.invoicesOnTime ?? 0
 
   return (
@@ -130,36 +136,42 @@ export function SuppliersPanel() {
         className="pf-desk--invoices"
         deskHidden={openInvoices.length === 0 && invoicesOnTime === 0}
       >
+        <Toggle
+          checked={autoPay}
+          onChange={(on) => dispatch({ type: 'setAutoPayInvoices', on })}
+        >
+          Pay invoices automatically when I have the cash
+        </Toggle>
         {openInvoices.length === 0 ? (
-          <p className="p6-copy">All paid. {invoicesOnTime} paid on time so far.</p>
+          <p className="p6-copy">
+            {autoPay ? 'Nothing owed. New invoices are paid for you, early, so you keep the discount.' : 'All paid.'}{' '}
+            {invoicesOnTime} paid on time so far.
+          </p>
         ) : (
           <div className="p6-stack">
             <p className="p6-copy">
-              Some crates arrive on credit. Pay before the timer runs out for a discount; pay late and it costs more.
-              While the book is full you can't order.
+              Some crates arrive on credit. Paying before the timer runs out saves{' '}
+              {money(openInvoices.reduce((n, i) => n + i.amount * (1 - DEPTH.invoiceEarlyDisc), 0), numberFormat)}; late
+              costs more, and a full book stops new orders.
             </p>
-            <p className="p6-copy" data-coach-id="suppliers-float-vs-hire">
-              Paying everything early saves{' '}
-              {money(openInvoices.reduce((n, i) => n + i.amount * (1 - DEPTH.invoiceEarlyDisc), 0), numberFormat)}.
-            </p>
+            {payAll.ok ? (
+              <Button tone="primary" feedback cost={money(totalDue, numberFormat)} onClick={() => dispatch({ type: 'payAllInvoices' })}>
+                Pay all {openInvoices.length}
+              </Button>
+            ) : (
+              <p className="p6-muted">{payAll.reason}</p>
+            )}
             {openInvoices.map((inv) => {
               const early = s.time <= inv.dueAt
               const due = inv.amount * (early ? DEPTH.invoiceEarlyDisc : DEPTH.invoiceLateFee)
               const left = Math.max(0, Math.ceil(inv.dueAt - s.time))
-              const check = can(s, { type: 'payInvoice', id: inv.id })
               return (
                 <div key={inv.id} className="p6-invoice">
                   <span className="p6-invoice__what">
                     <strong>{CATEGORIES[inv.cat]?.name ?? inv.cat} crate</strong>
                     <span className={early ? 'p6-muted' : 'p6-late'}>{early ? `Discount for ${left}s` : 'Late — costs more'}</span>
                   </span>
-                  {check.ok ? (
-                    <Button tone="primary" size="sm" feedback cost={money(due, numberFormat)} onClick={() => dispatch({ type: 'payInvoice', id: inv.id })}>
-                      Pay
-                    </Button>
-                  ) : (
-                    <span className="p6-muted">{check.reason}</span>
-                  )}
+                  <span className="p6-muted">{money(due, numberFormat)}</span>
                 </div>
               )
             })}

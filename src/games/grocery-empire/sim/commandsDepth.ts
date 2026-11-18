@@ -19,6 +19,7 @@ import type { Check, Command } from './commands'
 import { crateSize, unitCost } from './formulas'
 import { addBatch, compact, log, round2 } from './helpers'
 import { syncDeptRoster } from './staffDept'
+import { invoiceDue, payInvoicesWhileCash, settleInvoice } from './systems/invoices'
 import type { GameState } from './state'
 import { canRunBrownoutDrill, canSignCoolerLog, runBrownoutDrill, signCoolerLog } from './systems/cold'
 import { dumpCooler, perishableQty } from './systems/recovery'
@@ -46,6 +47,8 @@ export type DepthCmd =
   | Extract<Command, { type: 'focusRegular' }>
   | Extract<Command, { type: 'dockCheckIn' }>
   | Extract<Command, { type: 'payInvoice' }>
+  | Extract<Command, { type: 'payAllInvoices' }>
+  | Extract<Command, { type: 'setAutoPayInvoices' }>
   | Extract<Command, { type: 'writeOffInvoice' }>
   | Extract<Command, { type: 'setFlagshipSlot' }>
   | Extract<Command, { type: 'fileFlagshipPlanogram' }>
@@ -474,21 +477,30 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
       ensureDepth(s)
       const inv = s.depth.invoices.find((i) => i.id === cmd.id)
       if (!inv || inv.paid) return
-      const early = s.time <= inv.dueAt
-      const due = round2(inv.amount * (early ? DEPTH.invoiceEarlyDisc : DEPTH.invoiceLateFee))
-      s.cash = round2(s.cash - due)
-      s.stats.wholesaleSpent += due
-      inv.paid = true
-      inv.onTime = early
-      if (early) {
-        s.depth.invoicesOnTime += 1
-        log(s, `Paid invoice #${inv.id} early (−$${due.toFixed(2)}).`, 'good')
-      } else {
-        applyStarHit(s, DEPTH.starLateInvoiceHit)
-        log(s, `Paid invoice #${inv.id} late (−$${due.toFixed(2)}).`, 'warn')
-      }
+      settleInvoice(s, inv)
       // Drop settled invoices so the book stays O(unpaid), not O(lifetime orders).
       s.depth.invoices = s.depth.invoices.filter((i) => !i.paid)
+    },
+  },
+  payAllInvoices: {
+    can: (s) => {
+      ensureDepth(s)
+      const unpaid = s.depth.invoices.filter((i) => !i.paid)
+      if (unpaid.length === 0) return no('No open invoices.')
+      const first = invoiceDue(s, unpaid[0])
+      if (s.cash < first) return no(`Need ${cashLabel(first)}.`)
+      return ok
+    },
+    run: (s) => {
+      ensureDepth(s)
+      payInvoicesWhileCash(s)
+    },
+  },
+  setAutoPayInvoices: {
+    can: () => ok,
+    run: (s, cmd) => {
+      ensureDepth(s)
+      s.depth.autoPayInvoices = !!cmd.on
     },
   },
   writeOffInvoice: {
@@ -570,3 +582,4 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
     },
   },
 }
+

@@ -638,7 +638,7 @@ const ODDITIES: [name: string, glyph: Glyph, flavor: string, rarity: Rarity, fea
   ['The Bare Shelf', 'ghost', 'Shelf and backroom both empty, mid-empire.', 'common', 'bare'],
   ['Facing Choice', 'tag', 'Wide glass or deep counter — you picked once.', 'common', 'facing'],
   ['Pocket Lint', 'coin', 'Under a dollar in the bank, with a chain to run.', 'uncommon', 'broke'],
-  ['Speed Demon', 'flame', 'Ran the store at 8× speed.', 'uncommon', 'speed'],
+  ['Speed Demon', 'flame', 'Sold 100 baskets in a run’s first three minutes.', 'uncommon', 'speed'],
   ['Night Owl Pin', 'moon', 'Played in the small hours of the morning.', 'uncommon', 'owl'],
   ['Museum of Rot', 'flame', 'Ten spoilage exhibits in one run.', 'uncommon', 'rot'],
   ['Twelve Doors', 'key', 'Opened every store slot.', 'uncommon', 'doors'],

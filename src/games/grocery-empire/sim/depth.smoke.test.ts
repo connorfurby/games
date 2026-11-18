@@ -114,6 +114,20 @@ describe('depth smoke', () => {
     expect(run(s, { type: 'payInvoice', id: 99 }).ok).toBe(true)
     expect(s.depth.invoicesOnTime).toBe(before + 1)
 
+    // Pay all: settles every invoice cash covers, oldest first, in one command.
+    for (const id of [100, 101, 102]) {
+      s.depth.invoices.push({ id, cat: 'cans', amount: 5, dueAt: s.time + 60, paid: false, onTime: false })
+    }
+    s.cash = Math.max(s.cash, 50)
+    expect(run(s, { type: 'payAllInvoices' }).ok).toBe(true)
+    expect(s.depth.invoices.filter((i) => !i.paid)).toHaveLength(0)
+    expect(s.depth.invoicesOnTime).toBe(before + 4)
+    expect(can(s, { type: 'payAllInvoices' }).ok).toBe(false)
+    // Auto-pay is on by default; switching it off is a command.
+    expect(s.depth.autoPayInvoices).toBe(true)
+    run(s, { type: 'setAutoPayInvoices', on: false })
+    expect(s.depth.autoPayInvoices).toBe(false)
+
     expect(DEPTH.marketBellNeed).toBe(3)
     expect(can(s, { type: 'expandLot', id: 'side-yard' }).ok).toBe(true)
   })

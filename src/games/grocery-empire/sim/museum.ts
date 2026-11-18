@@ -240,7 +240,7 @@ export const FEATS: Record<string, { text: string; vague: string; test: (s: Game
   markup: { vague: 'Something about the highest possible price.', text: 'Set the price to the maximum.', test: (s) => s.price >= PRICE.max - 1e-9 },
   bare: { vague: 'Empty, completely, at the wrong moment.', text: 'Have nothing on the shelf or in the backroom after 1,000 baskets.', test: (s) => s.baskets >= 1000 && s.shelf.length === 0 && s.backroom.length === 0 },
   broke: { vague: 'Rich enough to own a chain, poor enough to count coins.', text: 'Have under $1 in cash in Era 2 or later.', test: (s) => s.era >= 2 && s.cash < 1 },
-  speed: { vague: 'Faster. Faster than that.', text: 'Run the game at 8× speed.', test: (s) => s.speed >= 8 },
+  speed: { vague: 'Faster. Faster than that.', text: 'Sell 100 baskets in the first 3 minutes of a run.', test: (s) => s.baskets >= 100 && s.time <= 180 },
   owl: { vague: 'Open the store when everyone else is asleep.', text: 'Play between midnight and 4 a.m. (your local time).', test: (s) => !s.paused && new Date().getHours() < 4 },
   rot: { vague: 'An exhibition nobody wanted.', text: 'Collect 10 spoilage exhibits in one run.', test: (s) => (s.museum?.exhibits?.length ?? 0) >= 10 },
   doors: { vague: 'Every door you are allowed to open.', text: 'Own 12 stores.', test: (s) => s.stores.length >= 12 },

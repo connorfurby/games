@@ -414,6 +414,8 @@ function mergeDepth(raw: unknown): DepthState {
   base.regularMissUntil = Math.max(0, num(raw.regularMissUntil, 0))
   base.nextInvoiceId = Math.max(1, Math.floor(num(raw.nextInvoiceId, 1)))
   base.invoicesOnTime = Math.max(0, Math.floor(num(raw.invoicesOnTime, 0)))
+  // SAVE 39: auto-pay invoices; older saves get it on so the chore goes away.
+  base.autoPayInvoices = typeof raw.autoPayInvoices === 'boolean' ? raw.autoPayInvoices : true
   base.dockCheckIns = Math.max(0, Math.floor(num(raw.dockCheckIns, 0)))
   base.nextDockAt = Math.max(0, num(raw.nextDockAt, 0))
   base.lastDockAisle = typeof raw.lastDockAisle === 'string' ? raw.lastDockAisle : null
@@ -772,7 +774,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       base.createdAt = num(raw.createdAt, now)
       base.lastSavedAt = num(raw.lastSavedAt, now)
       base.paused = bool(raw.paused, false)
-      base.speed = [1, 2, 4, 8].includes(num(raw.speed, 1)) ? num(raw.speed, 1) : 1
+      base.speed = 1 // speed-ups were removed; every save runs at 1×
       base.era = Math.max(0, Math.floor(num(raw.era, 0)))
 
       base.baskets = Math.max(0, num(raw.baskets, 0))

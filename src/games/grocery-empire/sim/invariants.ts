@@ -31,7 +31,7 @@ export function repair(s: GameState): GameState {
   s.price = Math.round(clamp(finite(s.price, PRICE.min), PRICE.min, PRICE.max) * 100) / 100
   s.hours = clamp(finite(s.hours, 1), HOURS.min, hoursMax(s))
   s.morale = clamp(finite(s.morale, 1), MORALE.min, MORALE.max)
-  s.speed = [1, 2, 4, 8].includes(s.speed) ? s.speed : 1
+  s.speed = 1
   s.era = Math.max(0, Math.floor(finite(s.era)))
   s.ads = Math.max(1, Math.floor(finite(s.ads, 1)))
   s.adCost = Math.max(1, finite(s.adCost, 20))

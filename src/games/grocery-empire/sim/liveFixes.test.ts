@@ -13,16 +13,16 @@ describe('live cash and tours', () => {
     vi.useRealTimers()
   })
 
-  it('applies playback speed once per pulse', () => {
+  it('runs at one speed: speed-ups are refused and real time equals game time', () => {
     vi.useFakeTimers()
     const eng = new GroceryEngine(createInitialState(4))
-    eng.dispatch({ type: 'setSpeed', speed: 4 })
+    expect(eng.dispatch({ type: 'setSpeed', speed: 4 }).ok).toBe(false)
     eng.start()
     vi.advanceTimersByTime(1000)
     eng.stop()
-    // 10Hz * 1s * 4× = 4 sim seconds. The old double multiply landed near 16.
-    expect(eng.getState().time).toBeGreaterThan(3.5)
-    expect(eng.getState().time).toBeLessThan(4.5)
+    expect(eng.getState().speed).toBe(1)
+    expect(eng.getState().time).toBeGreaterThan(0.5)
+    expect(eng.getState().time).toBeLessThan(1.5)
   })
 
   it('tracks net cash, not just shelf revenue minus rent', () => {

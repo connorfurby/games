@@ -293,16 +293,6 @@ export function MoreSections({ only }: { only?: MoreSection }) {
               </select>
             </label>
             <label className="ge-more-field">
-              <span>Speed</span>
-              <select
-                value={String(meta.settings.speedUnlock)}
-                onChange={(e) => updateSettings({ speedUnlock: e.target.value === 'true' })}
-              >
-                <option value="false">1×–2×</option>
-                <option value="true">1× · 2× · 4× · 8×</option>
-              </select>
-            </label>
-            <label className="ge-more-field">
               <span>Text size</span>
               <select
                 value={meta.settings.textSize ?? 'normal'}

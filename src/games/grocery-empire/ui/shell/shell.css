@@ -255,10 +255,6 @@
   }
 
   /* ── HUD controls ───────────────────────────────────────────────────── */
-  .g2-hud__controls .g2-icon-btn--cycle {
-    display: none;
-    font: 700 var(--t-sm) / 1 var(--ge-font-mono, monospace);
-  }
 
   .g2-hud__controls {
     grid-area: controls;
@@ -311,7 +307,6 @@
   }
 
   .g2-icon-btn--text,
-  .g2-icon-btn--speed,
 .g2-icon-btn--undo {
     font-variant-numeric: tabular-nums;
   }
@@ -524,20 +519,11 @@
       clip-path: inset(50%);
     }
 
-    /* Keep speed / Undo reachable: icon stays, wide label hides. */
-    .g2-hud__controls .g2-icon-btn--speed .g2-icon-btn__label,
+    /* Keep Undo reachable: icon stays, wide label hides. */
     .g2-hud__controls .g2-icon-btn--undo .g2-icon-btn__label {
       display: none;
     }
 
-    .g2-hud__controls .g2-icon-btn--speed {
-      display: none;
-    }
-
-    .g2-hud__controls .g2-icon-btn--cycle {
-      display: inline-grid;
-      place-items: center;
-    }
 
     .g2-hud__controls .g2-icon-btn,
     .g2-hud__controls .g2-inbox-btn {

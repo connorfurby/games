@@ -124,7 +124,7 @@ export function freshRunKeepingMeta(
   fresh.storeName = s.storeName
   fresh.dailyRule = s.dailyRule
   fresh.museum = s.museum
-  fresh.speed = s.speed
+  fresh.speed = 1
   fresh.cash = Math.round(fresh.cash * (1 + fresh.rebrand.goodwill * REBRAND.startCashPerGoodwill))
   if (s.projects?.done?.['pj-manifest'] && s.horizon?.standingRoute) {
     const route = s.horizon.standingRoute

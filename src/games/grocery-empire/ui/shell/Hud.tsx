@@ -24,7 +24,6 @@ function perSec(n: number, fmt: NumberFormat) {
 export function Hud({
   state: s,
   pops,
-  speeds,
   numberFormat,
   dispatch,
   onMenu,
@@ -38,7 +37,6 @@ export function Hud({
 }: {
   state: GameState
   pops: PopItem[]
-  speeds: number[]
   numberFormat: NumberFormat
   dispatch: (cmd: Command) => void
   onMenu: (id: MenuId) => void
@@ -131,30 +129,6 @@ export function Hud({
             aria-pressed={s.paused}
           >
             <span aria-hidden>{s.paused ? '▶' : '❚❚'}</span>
-          </button>
-          {speeds.map((sp) => (
-            <button
-              key={sp}
-              type="button"
-              className={`g2-icon-btn g2-icon-btn--speed${s.speed === sp ? ' is-on' : ''}`}
-              aria-pressed={s.speed === sp}
-              aria-label={`Speed ${sp}×`}
-              title={`Speed ${sp}×`}
-              onClick={() => dispatch({ type: 'setSpeed', speed: sp })}
-            >
-              <span aria-hidden>{sp}×</span>
-              <span className="ge-sr-only">{sp}×</span>
-            </button>
-          ))}
-          {/* Phones: one button cycles the speeds so the HUD fits on one row. */}
-          <button
-            type="button"
-            className="g2-icon-btn g2-icon-btn--cycle"
-            aria-label={`Speed ${s.speed}×, tap for ${speeds[(speeds.indexOf(s.speed) + 1) % speeds.length]}×`}
-            title="Change speed"
-            onClick={() => dispatch({ type: 'setSpeed', speed: speeds[(speeds.indexOf(s.speed) + 1) % speeds.length]! })}
-          >
-            {s.speed}×
           </button>
           <button
             type="button"

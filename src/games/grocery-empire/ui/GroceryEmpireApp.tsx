@@ -695,7 +695,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     }
   }, [dispatch])
 
-  const speeds = meta.settings.speedUnlock ? [1, 2, 4, 8] : [1, 2]
   // Memos you could file right now (Inbox badge).
   const inboxCountRaw = useMemo(() => {
     let n = 0
@@ -854,7 +853,6 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
           <Hud
             state={state}
             pops={pops}
-            speeds={speeds}
             numberFormat={numberFormat}
             dispatch={dispatch}
             onMenu={(id) => {
