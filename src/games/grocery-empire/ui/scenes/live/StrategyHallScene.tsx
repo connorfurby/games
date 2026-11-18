@@ -99,7 +99,7 @@ export function StrategyHallScene() {
 
       <g transform="translate(660 58)">
         <rect width="140" height="72" rx="8" fill="#121820" stroke="#3a4458" />
-        <Sign x={14} y={24} text="Next doctrine" small />
+        <Sign x={14} y={24} text="Next strategy" small />
         <Sign x={14} y={48} text={visible.every((d) => (s.doctrines[d.id] ?? 0) > 0) ? 'All owned' : `${nextCost} Read`} />
       </g>
 

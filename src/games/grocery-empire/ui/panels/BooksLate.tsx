@@ -51,7 +51,7 @@ export function IncomeWaterfall({ s }: { s: GameState }) {
   const cols: Column<(typeof rows)[number] | null>[] = [
     {
       key: 'layer',
-      header: 'Layer',
+      header: 'Source',
       render: (r) =>
         r ? (
           <span className="lh-swatch" style={{ color: r.color }}>

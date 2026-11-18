@@ -117,7 +117,7 @@ export function coldDemand(s: GameState): number {
 export function canBuyPlant(s: GameState, kind: PlantKind = 'compressor'): string | null {
   if (s.era < 3 && !(s.memos['cold-plant-permit'] > 0)) return 'Need Cold Plant Permit (Era 3).'
   if (kind !== 'compressor' && kind !== 'tunnel' && kind !== 'blast') return 'Unknown plant kind.'
-  if (s.cold.yieldLeft <= 0 && kind === 'blast') return 'Regional yield is empty.'
+  if (s.cold.yieldLeft <= 0 && kind === 'blast') return 'The region’s supply is empty.'
   const cost = plantCost(s)
   if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   return null

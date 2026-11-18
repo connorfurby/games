@@ -102,7 +102,7 @@ export const HUNGRY_MUTATORS = [
   },
   {
     id: 'richerYield' as const,
-    name: 'Richer yield',
+    name: 'Richer plants',
     blurb: 'Cold plants pay a little more cash while they run.',
   },
   {

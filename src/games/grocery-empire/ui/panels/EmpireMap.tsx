@@ -261,7 +261,7 @@ export function EmpireMap() {
   const counts: [string, string][] = [
     ['Stores', String(s.stores.length)],
     ...(s.era >= 3 ? ([['Districts', String(s.politics?.acquisitions ?? 0)], ['Cold plants', String(s.cold?.plants ?? 0)]] as [string, string][]) : []),
-    ...(s.era >= 4 ? ([['Lanes', String(lanes)], ['Franchises', String(s.fleet?.franchises ?? 0)]] as [string, string][]) : []),
+    ...(s.era >= 4 ? ([['Sea routes', String(lanes)], ['Franchises', String(s.fleet?.franchises ?? 0)]] as [string, string][]) : []),
     ...(s.era >= 5 ? ([['Barges', String(s.fleet?.barges ?? 0)]] as [string, string][]) : []),
     ...(s.era >= 7 ? ([['Worlds', String(s.horizon.planets.filter((p) => p.revealed).length)]] as [string, string][]) : []),
     ['Network', `×${net.total >= 100 ? Math.round(net.total) : net.total.toFixed(2)}`],
@@ -400,7 +400,7 @@ export function EmpireMap() {
           ) : null}
           {s.era >= 4 ? (
             <li>
-              <i className="mp-key mp-key--port" /> Lane · {lanes} ports
+              <i className="mp-key mp-key--port" /> Sea route · {lanes} ports
             </li>
           ) : null}
           {s.era >= 4 ? (
