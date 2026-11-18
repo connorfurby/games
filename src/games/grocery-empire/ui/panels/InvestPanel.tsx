@@ -243,7 +243,7 @@ export function InvestPanel() {
             state={book.circuitBreaker ? 'suggested' : undefined}
             header={
               <div className="lh-card-title">
-                <strong>Risk book</strong>
+                <strong>Investment book</strong>
                 <span>Only cash up to the cap earns. The Engine raises the cap and the average return a little.</span>
               </div>
             }

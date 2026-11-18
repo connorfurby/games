@@ -68,7 +68,9 @@
     flex-wrap: wrap;
   }
   .lh-card-title strong {
-    font-size: var(--t-md);
+    font-family: var(--g2-display);
+    font-size: var(--t-lg);
+    line-height: var(--t-lg-lh);
   }
   .lh-card-title span {
     font-size: var(--t-xs);
@@ -104,7 +106,9 @@
   }
   .lh-callout__copy h3 {
     margin: 0;
-    font-size: var(--t-md);
+    font-family: var(--g2-display);
+    font-size: var(--t-lg);
+    line-height: var(--t-lg-lh);
   }
   .lh-callout__copy h3::first-letter {
     text-transform: uppercase;

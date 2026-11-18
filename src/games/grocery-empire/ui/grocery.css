@@ -3555,8 +3555,11 @@
 }
 
 .hz-puzzle__head h3 {
-  font-size: var(--t-md);
-  font-weight: 600;
+  /* Same title voice as a desk: display face, large. */
+  font-family: var(--g2-display);
+  font-size: var(--t-lg);
+  line-height: var(--t-lg-lh);
+  font-weight: 700;
 }
 
 .hz-puzzle__head p,
@@ -3654,8 +3657,9 @@
 
 .hz-goal__head h3 {
   margin: 0;
+  font-family: var(--g2-display);
   font-size: var(--t-md);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .hz-goal__head span {
