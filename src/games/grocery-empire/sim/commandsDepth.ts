@@ -443,9 +443,9 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
   setAutoDock: {
     can: (s) => {
       ensureDepth(s)
-      return (s.depth.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed
+      return (s.depth.dockCheckIns ?? 0) >= DEPTH.dockAutoAfter
         ? ok
-        : no(`Earned after ${DEPTH.dockCheckInNeed} check-ins.`)
+        : no(`Earned after ${DEPTH.dockAutoAfter} check-ins.`)
     },
     run: (s, cmd) => {
       ensureDepth(s)

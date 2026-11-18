@@ -402,18 +402,18 @@ describe('autopilot pieces', () => {
     s.staff.push({ id: 9001, role: 'receiver' } as never)
     s.depth.shifts[DEPTH.shiftSlots[0]] = [9001]
     s.depth.nextDockAt = 0
-    s.depth.dockCheckIns = DEPTH.dockCheckInNeed - 1
+    s.depth.dockCheckIns = DEPTH.dockAutoAfter - 1
     tickAutoDock(s)
-    expect(s.depth.dockCheckIns).toBe(DEPTH.dockCheckInNeed - 1)
-    s.depth.dockCheckIns = DEPTH.dockCheckInNeed
+    expect(s.depth.dockCheckIns).toBe(DEPTH.dockAutoAfter - 1)
+    s.depth.dockCheckIns = DEPTH.dockAutoAfter
     const back = s.backroom.reduce((n, b) => n + b.qty, 0)
     tickAutoDock(s)
-    expect(s.depth.dockCheckIns).toBe(DEPTH.dockCheckInNeed + 1)
+    expect(s.depth.dockCheckIns).toBe(DEPTH.dockAutoAfter + 1)
     expect(s.backroom.reduce((n, b) => n + b.qty, 0)).toBeGreaterThan(back)
     s.depth.autoDock = false
     s.depth.nextDockAt = 0
     tickAutoDock(s)
-    expect(s.depth.dockCheckIns).toBe(DEPTH.dockCheckInNeed + 1)
+    expect(s.depth.dockCheckIns).toBe(DEPTH.dockAutoAfter + 1)
   })
 
   it('collect all empties every till in one command', async () => {

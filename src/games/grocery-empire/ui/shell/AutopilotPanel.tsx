@@ -76,7 +76,7 @@ export function AutopilotPanel({ onOpenMenu }: { onOpenMenu: (m: MenuId) => void
 
     // 4. Dock check-ins
     const done = s.depth.dockCheckIns ?? 0
-    const earned = done >= DEPTH.dockCheckInNeed
+    const earned = done >= DEPTH.dockAutoAfter
     rows.push({
       id: 'dock',
       title: 'Dock check-ins',
@@ -87,11 +87,11 @@ export function AutopilotPanel({ onOpenMenu }: { onOpenMenu: (m: MenuId) => void
           Check trucks in automatically
         </Toggle>
       ) : undefined,
-      earn: earned ? undefined : `Do ${DEPTH.dockCheckInNeed} check-ins by hand first (${done} of ${DEPTH.dockCheckInNeed}).`,
+      earn: earned ? undefined : `Do ${DEPTH.dockAutoAfter} check-ins by hand first (${done} of ${DEPTH.dockAutoAfter}).`,
       go: earned ? undefined : goto('suppliers', 'Suppliers'),
       extra: earned ? null : (
         <span className="ap-bar" aria-hidden>
-          <i style={{ width: `${(done / DEPTH.dockCheckInNeed) * 100}%` }} />
+          <i style={{ width: `${(done / DEPTH.dockAutoAfter) * 100}%` }} />
         </span>
       ),
     })

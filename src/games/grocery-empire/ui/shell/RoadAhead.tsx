@@ -51,6 +51,7 @@ export function RoadAhead() {
               <span className="ra-body">
                 <strong>{g.title}</strong>
                 {i === 0 ? <span className="ra-hint">{g.hint}</span> : null}
+                {i === 0 && g.counts ? <span className="ra-hint ra-left">{safe(() => g.counts!(s), '')}</span> : null}
                 {i === 0 && p > 0 ? (
                   <span className="ra-bar" aria-hidden>
                     <i style={{ width: `${p * 100}%` }} />

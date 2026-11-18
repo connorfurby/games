@@ -30,6 +30,8 @@ export const DEPTH = {
   /** Side-yard path: receiver check-ins at the dock. */
   dockCheckInNeed: 28,
   dockCheckInCooldownSec: 120,
+  /** After this many by hand, the receiver checks trucks in on their own (same 2-min rhythm). */
+  dockAutoAfter: 5,
   era2RegularNeed: 24,
   era1StarMin: 3.5,
   writeOffNeedEra2: 3,

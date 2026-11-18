@@ -27,7 +27,7 @@ export function runDockCheckIn(s: GameState, aisle: CategoryId, short: boolean, 
   const pad = Math.min(0.4, upgradeEffect(s, 'dock-check-pad'))
   const cd = DEPTH.dockCheckInCooldownSec * (1 - pad) * (short ? 0.7 : 1)
   s.depth.nextDockAt = s.time + cd
-  if (s.depth.dockCheckIns === DEPTH.dockCheckInNeed) {
+  if (s.depth.dockCheckIns === DEPTH.dockAutoAfter) {
     log(s, 'Your receiver has the routine down: trucks now check in on their own. Switch it in Menu → Autopilot.', 'good')
   }
   if (!quiet) {
@@ -49,10 +49,14 @@ export function lowestStockAisle(s: GameState): CategoryId | null {
   return [...open].sort((a, b) => stock(a) - stock(b))[0] ?? null
 }
 
-/** Once the 28 check-ins are earned, the receiver checks trucks in on their own (lowest-stock aisle). */
+/**
+ * After a few check-ins by hand, the receiver checks trucks in on their own (lowest-stock aisle),
+ * at the same rhythm. The 28-check-in gate still takes the same time; it just isn't a tap every
+ * two minutes for an hour (waits debug: 13–18 min stretches of nothing else to do in Era 1).
+ */
 export function tickAutoDock(s: GameState) {
   if (!s.depth?.autoDock) return
-  if ((s.depth.dockCheckIns ?? 0) < DEPTH.dockCheckInNeed) return
+  if ((s.depth.dockCheckIns ?? 0) < DEPTH.dockAutoAfter) return
   if (dockCheckInBlock(s)) return
   const aisle = lowestStockAisle(s)
   if (aisle) runDockCheckIn(s, aisle, false, true)

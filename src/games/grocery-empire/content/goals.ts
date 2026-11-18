@@ -144,6 +144,16 @@ export const GOALS: GoalDef[] = [
     title: 'Become a corner store',
     hint: 'Feature cans, 3 bells, regulars, layaway slips, Open shift or baskets, stars ≥ 3.5.',
     done: (s) => s.era >= 1,
+    counts: (s) => {
+      const d = s.depth
+      const left: string[] = []
+      if (!d?.facings?.cans) left.push('Feature cans')
+      if ((d?.marketBellDips ?? 0) < DEPTH.marketBellNeed) left.push(`Price dips ${d?.marketBellDips ?? 0}/${DEPTH.marketBellNeed}`)
+      if ((d?.regularSatisfied ?? 0) < DEPTH.era1RegularNeed) left.push(`Regulars ${d?.regularSatisfied ?? 0}/${DEPTH.era1RegularNeed}`)
+      if ((d?.layawaySlips ?? 0) < DEPTH.layawaySlipNeed) left.push(`Layaway ${d?.layawaySlips ?? 0}/${DEPTH.layawaySlipNeed}`)
+      if ((d?.stars ?? 0) < DEPTH.era1StarMin) left.push(`Stars ${(d?.stars ?? 0).toFixed(1)}/${DEPTH.era1StarMin}`)
+      return left.length ? `Still to do: ${left.join(' · ')}` : ''
+    },
     progress: (s) => {
       const featured = s.depth?.facings?.cans ? 0.12 : 0
       const bell = frac(s.depth?.marketBellDips ?? 0, DEPTH.marketBellNeed) * 0.15
@@ -338,6 +348,24 @@ export const GOALS: GoalDef[] = [
       )
     },
     cash: () => 2500,
+    // Nine parts behind one goal: say which are still open, so the long stretch has a checklist.
+    counts: (s) => {
+      const d = s.depth
+      const left: string[] = []
+      const part = (label: string, have: number, need: number) => {
+        if (have < need) left.push(`${label} ${Math.floor(have)}/${need}`)
+      }
+      part('Write-offs', d?.writeOffs ?? 0, DEPTH.writeOffNeedEra2)
+      if (!s.staff.some((m) => m.role === 'produceLead') && (d?.departments?.fresh?.leadId ?? null) == null) left.push('Fresh lead')
+      if ((s.builds.storefront ?? 1) < 2) left.push('Storefront 2')
+      if (!s.categories.dairy) left.push('Dairy')
+      part('Regulars', d?.regularSatisfied ?? 0, DEPTH.era2RegularNeed)
+      part('Invoices on time', d?.invoicesOnTime ?? 0, DEPTH.invoiceOnTimeNeedSideYard)
+      part('Dock check-ins', d?.dockCheckIns ?? 0, DEPTH.dockCheckInNeed)
+      if (!d?.flagship?.credited) left.push('Planogram')
+      part('Open days', d?.shifts?.daysCoveredOpen ?? 0, DEPTH.openDaysNeedSideYard)
+      return left.length ? `Still to do: ${left.join(' · ')}` : 'All set: buy the side yard.'
+    },
     action: (s) => {
       if ((s.depth?.writeOffs ?? 0) < DEPTH.writeOffNeedEra2) {
         if (!s.categories.produce) return { type: 'buyMemo', id: 'produce-crates' }
@@ -530,6 +558,17 @@ export const GOALS: GoalDef[] = [
     title: 'File the Cold Plant Permit',
     hint: 'Band-held flyer weeks, hot-trait walks, matched stores, stars, depot, chain planogram — then stamp.',
     done: (s) => s.era >= 3,
+    counts: (s) => {
+      const d = s.depth
+      const left: string[] = []
+      if ((d?.flyerWeeks ?? 0) < DEPTH.flyerWeeksNeed) left.push(`Flyer weeks ${d?.flyerWeeks ?? 0}/${DEPTH.flyerWeeksNeed}`)
+      if ((d?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed) left.push(`Hot-trait walks ${d?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed}`)
+      if (matchedStoreCount(s) < DEPTH.matchedStoresNeed) left.push(`Matched stores ${matchedStoreCount(s)}/${DEPTH.matchedStoresNeed}`)
+      if ((d?.stars ?? 0) < DEPTH.coldPermitStarMin) left.push(`Stars ${(d?.stars ?? 0).toFixed(1)}/${DEPTH.coldPermitStarMin}`)
+      if (!(s.depot || d?.contracts?.commissary)) left.push('Depot')
+      if (!d?.flagship?.chainCredited) left.push('Chain planogram')
+      return left.length ? `Still to do: ${left.join(' · ')}` : ''
+    },
     progress: (s) => {
       const flyers = frac(s.depth?.flyerWeeks ?? 0, DEPTH.flyerWeeksNeed) * 0.15
       const walks = frac(s.depth?.hotTraitWalks ?? 0, DEPTH.hotTraitWalkNeed) * 0.2
@@ -881,6 +920,15 @@ export const GOALS: GoalDef[] = [
     title: 'Hold the line',
     hint: 'Clear four pockets, feature ration packs, staff the middle shift, and hold off Off-Brand.',
     done: (s) => s.era >= 6,
+    counts: (s) => {
+      const left: string[] = []
+      const cleared = (s.fleet.pockets ?? []).filter((p) => p.left <= 0).length
+      if (cleared < 4) left.push(`Pockets ${cleared}/4`)
+      if (!s.depth?.facings?.ration) left.push('Feature ration packs')
+      if (!s.depth?.orbitMidOnce) left.push('Staff the middle shift')
+      if ((s.depth?.driftWar?.step ?? 0) < 3) left.push('Hold off Off-Brand')
+      return left.length ? `Still to do: ${left.join(' · ')}` : ''
+    },
     progress: (s) => {
       const cleared = (s.fleet.pockets ?? []).filter((p) => p.left <= 0).length
       return (
