@@ -1964,3 +1964,102 @@
     align-self: center;
   }
 }
+
+/* ── Your run (Menu → Game) ─────────────────────────────────────────── */
+@layer shell {
+  .rs-big {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-2);
+    margin: 0 0 var(--s-3);
+  }
+
+  .rs-big div {
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--g2-r-md, 10px);
+    background: color-mix(in srgb, var(--ge-ink) 4%, transparent);
+  }
+
+  .rs-big dt {
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+
+  .rs-big dd {
+    margin: 2px 0 0;
+    font: 700 var(--t-lg) / 1.1 var(--g2-display);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rs-spark {
+    display: grid;
+    gap: var(--s-1);
+    margin-bottom: var(--s-3);
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+
+  .rs-spark svg {
+    width: 100%;
+  }
+
+  .rs-eras {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .rs-eras li {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 7.5rem) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-2);
+    font-size: var(--t-sm);
+  }
+
+  .rs-eras__n {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+    font: 700 var(--t-xs) / 1 var(--g2-ui);
+  }
+
+  .rs-eras li.is-now .rs-eras__n {
+    background: var(--g2-tag, #f2c14e);
+    color: #1a1508;
+  }
+
+  .rs-eras__t {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rs-eras__bar {
+    height: 6px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+    overflow: hidden;
+  }
+
+  .rs-eras__bar i {
+    display: block;
+    height: 100%;
+    background: var(--ge-accent, #e8583c);
+  }
+
+  .rs-eras li.is-now .rs-eras__bar i {
+    background: var(--g2-tag, #f2c14e);
+  }
+
+  .rs-eras__d {
+    font-variant-numeric: tabular-nums;
+    color: var(--ge-muted);
+    font-size: var(--t-xs);
+  }
+}

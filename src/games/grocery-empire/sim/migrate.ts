@@ -729,6 +729,12 @@ function mergeStats(raw: unknown, base: Stats): Stats {
   if (!isObject(raw)) return base
   const out = { ...base }
   for (const k of Object.keys(base) as (keyof Stats)[]) {
+    if (k === 'eraAt') {
+      // SAVE 41: era start times; older saves only know Era 0 began at 0.
+      const arr = Array.isArray(raw.eraAt) ? raw.eraAt : [0]
+      out.eraAt = arr.map((v) => Math.max(0, num(v, 0)))
+      continue
+    }
     if (k === 'soldByCat' || k === 'revenueByCat' || k === 'spoiledByCat') {
       const nested = isObject(raw[k]) ? raw[k] : {}
       for (const c of CATEGORY_IDS) {

@@ -290,6 +290,7 @@ export function compact(list: Batch[]) {
 export function setEra(s: GameState, era: number) {
   if (era <= s.era) return
   s.era = era
+  if (Array.isArray(s.stats.eraAt)) s.stats.eraAt[era] = s.time
   s.chapterQueue.push(era)
   const story = ERA_STORY[era]
   if (story) log(s, story.line, 'story')

@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 40
+export const SAVE_VERSION = 41
 
 /** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
 export const PUZZLE_SLOW = 0.72

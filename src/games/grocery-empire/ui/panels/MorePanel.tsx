@@ -33,6 +33,7 @@ import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { DevModePanel } from '../components/DevModePanel'
 import { Panel } from '../components/Panel'
 import { Sparkline } from '../components/Sparkline'
+import { RunStory } from '../shell/RunStory'
 
 export type MoreSection = 'run' | 'settings' | 'saves' | 'progress' | 'go'
 
@@ -406,6 +407,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
         </section>
         ) : null}
 
+        {show('progress') ? <RunStory /> : null}
         {show('progress') ? (
         <section className="ge-more-block">
           <header className="ge-more-block__head">

@@ -312,6 +312,8 @@ export interface Stats {
   ordersBelow85: number
   shortShips: number
   peakCash: number
+  /** SAVE 41: run time (s.time) when each era began; index = era. */
+  eraAt: number[]
   peakPrice: number
   minPrice: number
   priceChanges: number
@@ -795,6 +797,7 @@ export function emptyStats(): Stats {
     ordersBelow85: 0,
     shortShips: 0,
     peakCash: START.cash,
+    eraAt: [0],
     peakPrice: START.price,
     minPrice: START.price,
     priceChanges: 0,
