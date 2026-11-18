@@ -1,7 +1,7 @@
 import { VENTURES, ventureIncome, venturePolicyIncomeMul } from '../../content/ventures'
 import { useGame } from '../GameContext'
 import { money, rate } from '../format'
-import { Badge, Gauge, Hit, ROOM_GROUND, RoomEmpty, RoomScene, Sign } from '../scenes/room'
+import { Badge, Gauge, Hit, ROOM_GROUND, RoomScene, Sign } from '../scenes/room'
 
 /** One illustrated row of open ventures — jar fill + $/s — above the card grid. */
 export function VenturesStreet() {
@@ -73,16 +73,32 @@ export function VenturesStreet() {
         )
       })}
 
-      {open.length === 0 ? (
-        <RoomEmpty
-          title="No tills open"
-          body="Open a venture card below to start a side till."
-          cta="Open ventures"
-          menu="ventures"
-          x={280}
-          y={120}
-        />
-      ) : null}
+      {open.length === 0
+        ? (() => {
+            // No tills yet: the street is a row of empty lots, one per venture you could open.
+            const lots = rows.slice(0, 6)
+            const w = Math.min(140, Math.floor(880 / Math.max(1, lots.length)))
+            return (
+              <>
+                <Sign x={480} y={92} text="Empty lots: open one below to start a side till" anchor="middle" small />
+                {lots.map(({ def }, i) => {
+                  const x = Math.round((960 - lots.length * w) / 2) + 10 + i * w
+                  return (
+                    <g key={def.id}>
+                      <rect x={x} y={108} width={w - 20} height={ROOM_GROUND - 108} rx="4" fill="none" stroke="#7a6a52" strokeDasharray="5 4" />
+                      <line x1={x + (w - 20) / 2} y1={136} x2={x + (w - 20) / 2} y2={ROOM_GROUND} stroke="#5d5440" strokeWidth="2" />
+                      <rect x={x + (w - 20) / 2 - 26} y={126} width={52} height={22} rx="2" fill="#efe6cf" stroke="#5d5440" />
+                      <text x={x + (w - 20) / 2} y={141} textAnchor="middle" fontSize="9" fontWeight="700" fill="#3a3324">
+                        FOR LEASE
+                      </text>
+                      <Sign x={x + (w - 20) / 2} y={ROOM_GROUND + 14} text={def.name.length > 14 ? `${def.name.slice(0, 13)}…` : def.name} small anchor="middle" />
+                    </g>
+                  )
+                })}
+              </>
+            )
+          })()
+        : null}
     </RoomScene>
   )
 }
