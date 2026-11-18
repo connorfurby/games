@@ -245,7 +245,6 @@ export function ExchangePanel() {
           stop={named(stop)}
           dest={named(dest)}
           convoys={h.keel.convoys}
-          freight={h.freight}
           reducedMotion={reducedMotion}
           onOpen={() => dispatch({ type: 'openCircuit' })}
         />

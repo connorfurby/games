@@ -70,6 +70,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Late pages: Cultivar beds show Harvest only when there is something to take; Last Aisle lines show Fill only when ready and otherwise say what to do ("Stock that world on Planets, then fill"), shelf targets read as % ("at 72%"), plain labels (Chance a practice misses, crossed out, At the end…); Exchange hides the Keel note at zero convoys; Signal agent lines say what each agent does; "Unlocks: buy the X memo in Memos". Phone crawl p12: 123 screens clean.
 - Fleet: the status row drops the Pockets chip the room already shows; "N pockets waiting · 1 hauler at a time", "Round trips" (was Turnarounds), and the pocket note says what to do.
 - One card voice: late-page card titles (puzzle heads, goal heads, Politics/Invest cards and callouts) use the same display face as desk titles, so early and late pages read as one game. Invest: "Investment book".
+- Late rooms no longer repeat the currency (Seed, Freight, Signal, Seal) as a chip; the strip under the goal shows it with its per-second rate and the tour still points there.
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

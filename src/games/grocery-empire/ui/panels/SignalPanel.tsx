@@ -149,7 +149,6 @@ export function SignalPanel() {
         scene={
           <SignalScene
           symbols={symbols}
-          signal={h.signal}
           reducedMotion={reducedMotion}
           onCommit={() => {
             if (!incomplete && commit.ok) dispatch({ type: 'commitPhrase', symbols })

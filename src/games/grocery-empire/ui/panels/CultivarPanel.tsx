@@ -226,7 +226,6 @@ export function CultivarPanel() {
             seasonT={h.seasonT}
             seasonSec={HORIZON.seasonSec}
             beds={h.plots.map((row) => row.child.length > 0)}
-            seed={h.seed}
             reducedMotion={reducedMotion}
             onPlant={() => {
               if (standard.ok) dispatch({ type: 'fileStandardCross', ...(bed ? { index: safeIndex } : {}) })

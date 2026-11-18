@@ -312,7 +312,6 @@ export function CharterPanel() {
           kept={h.clauses.length}
           embassies={h.embassies}
           signed={!!h.charter}
-          seal={h.seal}
           reducedMotion={reducedMotion}
           onEmbassy={() => {
             if (embassy.ok) dispatch({ type: 'openEmbassy' })
