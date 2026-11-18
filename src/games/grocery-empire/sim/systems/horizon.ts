@@ -732,7 +732,7 @@ export function unsealHorizon(s: GameState): string | null {
 }
 
 function needHorizonMemo(s: GameState, id: string, unlock: string): string | null {
-  if ((s.memos[id] ?? 0) <= 0) return `Unlocks: buy ${unlock} on the memo desk.`
+  if ((s.memos[id] ?? 0) <= 0) return `Unlocks: buy the ${unlock} memo in Memos.`
   return null
 }
 

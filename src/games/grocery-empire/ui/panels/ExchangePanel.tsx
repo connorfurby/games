@@ -412,7 +412,7 @@ export function ExchangePanel() {
         </article>
       ) : null}
 
-      {!h.keel.bought ? (
+      {!h.keel.bought && h.keel.convoys === 0 ? null : !h.keel.bought ? (
         <p className="hz-note">
           Keel & Sons run {h.keel.convoys} convoy{h.keel.convoys === 1 ? '' : 's'} on your routes
           {frozen > 0 ? `, frozen for ${clock(frozen)}` : ''}.

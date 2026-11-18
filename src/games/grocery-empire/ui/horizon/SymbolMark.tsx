@@ -43,10 +43,10 @@ export function SymbolMark({ id, size = 18 }: { id: string; size?: number }) {
 }
 
 const HABIT = {
-  price: 'A price habit files the shelf.',
-  stock: 'A stock habit fills a thin world.',
-  route: 'A route habit refiles the standing circuit.',
-  taste: 'A taste habit plants the season’s cross.',
+  price: 'A price agent restocks the planet shelf for you.',
+  stock: 'A stock agent tops up a world that is running low.',
+  route: 'A route agent files your trade route again.',
+  taste: 'A taste agent plants the season’s cross.',
 } as const
 
 export function habitLine(habit: string): string {

@@ -862,18 +862,16 @@
       padding-bottom: 0.1rem;
     }
 
+    /* Every tab stays in view: an even grid that wraps to a second row, never a sideways scroll. */
     .g2-hubhead .g2-subtabs {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding-right: 1.6rem;
-      /* Fade the right edge so a horizontal scroll is discoverable. */
-      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
-      mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(6.25rem, 1fr));
+      overflow: visible;
     }
 
     .g2-root .g2-hubhead .g2-subtab {
-      flex: 0 0 auto;
+      min-width: 0;
+      padding-inline: var(--s-2);
     }
   }
 

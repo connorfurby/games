@@ -151,16 +151,16 @@ export function LastAislePanel() {
           data-coach-id="lastaisle-scratch"
           title="Practising below an 85% average always misses. At 85% it can still miss. A miss crosses out your weakest line."
         >
-          <span>Scratch risk</span>
+          <span>Chance a practice misses</span>
           <strong>{scratchPct}%</strong>
-          {scratched >= 0 ? <span>line {scratched + 1} scratched</span> : null}
+          {scratched >= 0 ? <span>line {scratched + 1} crossed out</span> : null}
         </p>
       ) : null}
-      {h.ending === 'accept' ? <p className="hz-note">The list is a standing order.</p> : null}
-      {h.ending === 'reject' ? <p className="hz-note">Refused. The run is paused.</p> : null}
+      {h.ending === 'accept' ? <p className="hz-note">You accepted. The list is a standing order now.</p> : null}
+      {h.ending === 'reject' ? <p className="hz-note">You refused. The run is paused.</p> : null}
       <PuzzleFrame
         title="The list"
-        purpose="Five lines. Fill each when the matching verb is done."
+        purpose="Five lines. Fill each one once you have done what it asks."
         score={h.listScore}
         hideStandard
         hideCommit
@@ -177,9 +177,9 @@ export function LastAislePanel() {
 
       <div data-coach-id="lastaisle-ending">
         <p className="hz-note" title="Accept and Reject open once your average reaches 85%.">
-          Stakes preview · Accept opens endless worlds; Reject pauses the run.
+          At the end: Accept opens endless worlds; Reject pauses the run.
         </p>
-        {ready ? null : <p className="hz-note">Keep filing until the list is ready.</p>}
+        {ready ? null : <p className="hz-note">Keep filling lines until your average reaches 85%.</p>}
       </div>
       {h.endless ? (
         <p className="hz-note">

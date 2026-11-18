@@ -293,14 +293,16 @@ export function CultivarPanel() {
                   <span>{row.a && row.b ? `${row.a} × ${row.b}` : 'Unplanted'}</span>
                   <span>{child}</span>
                 </button>
-                <Button
-                  tone="ghost"
-                  disabled={!harvest.ok}
-                  title={gateTitle(harvest, 'Take the seed and clear the bed')}
-                  onClick={() => dispatch({ type: 'harvestPlot', index: i })}
-                >
-                  Harvest
-                </Button>
+                {/* Harvest appears once the bed has something to take (no dead button). */}
+                {harvest.ok ? (
+                  <Button
+                    tone="secondary"
+                    title="Take the seed and clear the bed"
+                    onClick={() => dispatch({ type: 'harvestPlot', index: i })}
+                  >
+                    Harvest
+                  </Button>
+                ) : null}
               </li>
             )
           })}

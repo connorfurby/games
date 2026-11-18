@@ -80,7 +80,7 @@ describe('worlds hub panels', () => {
   it('renders the exchange', () => {
     const out = html(createElement(ExchangePanel), state)
     expect(out).toContain('Freight')
-    expect(out).toContain('Keel')
+    expect(out).toContain('Convoys')
     expect(out).toContain('lifts flagship sales')
   })
 
@@ -115,6 +115,6 @@ describe('worlds hub panels', () => {
     expect(out).toContain('with the standard')
     expect(out).toContain('Accept')
     expect(out).toContain('Reject')
-    expect(out).toContain('Stakes preview')
+    expect(out).toContain('At the end')
   })
 })

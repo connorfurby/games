@@ -22,7 +22,7 @@ function titleCase(word: string): string {
 export function wantLabel(kind: LastLineKind, want: string): string {
   if (kind === 'shelf') {
     const [planet, score] = want.split('@')
-    return `${planetDef(planet ?? '')?.name ?? titleCase(planet ?? '')} at ${score || '0.8'}`
+    return `${planetDef(planet ?? '')?.name ?? titleCase(planet ?? '')} at ${Math.round(Number(score || '0.8') * 100)}%`
   }
   if (kind === 'route') {
     const [good, dest] = want.split('@')
@@ -56,7 +56,7 @@ function fillValue(s: GameState, line: LastLine): string {
 
 function tip(kind: LastLineKind): string {
   if (kind === 'shelf') return 'Stock that world on Planets, then fill.'
-  if (kind === 'route') return 'File that good to that dest on Exchange, then fill.'
+  if (kind === 'route') return 'Send that good to that world on Exchange, then fill.'
   if (kind === 'crop') return 'Plant that trait on Cultivars, then fill.'
   if (kind === 'phrase') return 'Clear a phrase on Signal, then fill.'
   return 'Keep that clause on Charter, then fill.'
@@ -84,17 +84,14 @@ export function LastList({
             <span className="hz-status__kind">{KIND[line.kind]}</span>
             <span className="hz-status__want">{wantLabel(line.kind, line.want)}</span>
             <em className="hz-badge">{pct(line.score)}</em>
-            <Btn
-              tone={done ? 'ghost' : ready ? 'primary' : 'ghost'}
-              disabled={!ready && !done}
-              title={done ? 'Already filled' : ready ? gateTitle(check, tip(line.kind)) : tip(line.kind)}
-              onClick={() => {
-                if (!value) return
-                onFill(i, value)
-              }}
-            >
-              {done ? 'Filled' : ready ? 'Fill' : 'Needs work'}
-            </Btn>
+            {/* Fill only appears when the line can be filled; otherwise the row says what it needs. */}
+            {ready && !done ? (
+              <Btn tone="primary" title={gateTitle(check, tip(line.kind))} onClick={() => value && onFill(i, value)}>
+                Fill
+              </Btn>
+            ) : (
+              <span className="hz-status__state" style={{ fontSize: 'var(--t-xs)', color: 'var(--ge-ink-muted)' }}>{done ? '✓ Filled' : tip(line.kind)}</span>
+            )}
           </li>
         )
       })}
