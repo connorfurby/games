@@ -52,8 +52,7 @@ const NAMES = [
   'Qi',
   'Sx',
   'Sp',
-  // 'Oct', not 'Oc': in the display face a capital O reads as a zero ("12.940c").
-  'Oct',
+  'Oc',
   'No',
   'Dc',
 ]
@@ -92,7 +91,9 @@ export function formatBN(value: Decimal | number, format: NumberFormat = 'named'
   const tier = Math.floor(exp / 3)
   if (tier < NAMES.length) {
     const scaled = d.div(D(10).pow(tier * 3))
-    return `${scaled.toFixed(digits)}${NAMES[tier]}`
+    // Two-letter late suffixes get a thin space: in the mono face "8.14Oct" reads as "8.140ct".
+    const gap = tier >= 5 ? '\u2009' : ''
+    return `${scaled.toFixed(digits)}${gap}${NAMES[tier]}`
   }
   return d.toExponential(digits)
 }

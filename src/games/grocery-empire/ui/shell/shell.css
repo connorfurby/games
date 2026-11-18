@@ -2209,3 +2209,58 @@
     text-underline-offset: 2px;
   }
 }
+
+/* ── Headline on the wire: a corner card, not a modal ───────────────── */
+@layer shell {
+  .hz-wire {
+    position: fixed;
+    right: var(--s-4);
+    bottom: calc(var(--s-4) + env(safe-area-inset-bottom, 0px));
+    z-index: 54;
+    width: min(22rem, calc(100vw - 2 * var(--s-3)));
+    pointer-events: none;
+  }
+
+  .hz-wire .hz-headline__card {
+    position: relative;
+    pointer-events: auto;
+    gap: var(--s-1);
+    padding: var(--s-3) var(--s-3) var(--s-3);
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+  }
+
+  .hz-wire .hz-headline__card .hz-bust {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hz-wire__title {
+    font-size: var(--t-md) !important;
+    line-height: 1.25;
+  }
+
+  .hz-wire__life {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: color-mix(in srgb, var(--ge-ink) 8%, transparent);
+  }
+
+  .hz-wire__life i {
+    display: block;
+    height: 100%;
+    background: var(--g2-tag, #f2c14e);
+    transform-origin: left;
+  }
+
+  /* Phones: sit above the bottom hub bar. */
+  @media (max-width: 720px) {
+    .hz-wire {
+      left: var(--s-2);
+      right: var(--s-2);
+      width: auto;
+      bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+}

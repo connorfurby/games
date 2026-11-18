@@ -24,3 +24,14 @@ describe('run story: era start times', () => {
     expect(m.stats.eraAt).toEqual([0])
   })
 })
+
+describe('next goal never points back at a past era', () => {
+  it('skips undone side goals once their era is behind you', async () => {
+    const { GOALS, nextGoal } = await import('../content/goals')
+    const s = createInitialState(3)
+    s.era = 7
+    const g = nextGoal(s)
+    if (g) expect(g.era >= 7 || g.opensEra != null).toBe(true)
+    expect(GOALS.some((x) => x.id === 'board-agenda')).toBe(true)
+  })
+})

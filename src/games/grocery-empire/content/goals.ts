@@ -1530,6 +1530,9 @@ export const GOALS: GoalDef[] = [
 
 export function nextGoal(s: GameState): GoalDef | null {
   for (const g of GOALS) {
+    // A goal from an era you've already left was a side road, not the way forward: the era
+    // opened without it. Showing it for hours ("Resolve a board agenda" in Era 12) is a dead sign.
+    if (g.era < s.era && g.opensEra == null) continue
     try {
       if (!g.done(s)) return g
     } catch {

@@ -44,16 +44,25 @@ export function HeadlineCard({ reducedMotion }: { reducedMotion: boolean }) {
   if (!def) return null
   const hideHelp = def.helpCost?.currency === 'seed' && s.era < 9
   const help = can(s, { type: 'helpHeadline' })
+  const left = Math.max(0, (s.horizon.headlineUntil ?? 0) - s.time)
+  const span = Math.max(left, 360)
   const ignore = can(s, { type: 'ignoreHeadline' })
   return (
-    <div className="ge-modal hz-headline" role="dialog" aria-labelledby="hz-headline-title">
+    // Not a modal: a headline arrives every few minutes and expires on its own, so it waits in the
+    // corner instead of dimming the game. The bar shows how long it stays on the wire.
+    <aside className="hz-wire" role="status" aria-labelledby="hz-headline-title">
       <div
         className="hz-headline__card"
         style={reducedMotion ? undefined : { animation: 'hz-rise 220ms ease-out' }}
       >
+        {left > 0 ? (
+          <span className="hz-wire__life" aria-hidden>
+            <i style={{ transform: `scaleX(${Math.min(1, left / Math.max(1, span))})` }} />
+          </span>
+        ) : null}
         <HorizonBust id={speakerFor(def.id)} />
         <p className="hz-note">Headline</p>
-        <h2 id="hz-headline-title">{def.text}</h2>
+        <h2 id="hz-headline-title" className="hz-wire__title">{def.text}</h2>
         <p>{helpBlurb(def, s.horizon.season)}</p>
         <div className="ge-chip-row">
           {hideHelp ? null : (
@@ -71,6 +80,6 @@ export function HeadlineCard({ reducedMotion }: { reducedMotion: boolean }) {
           </Btn>
         </div>
       </div>
-    </div>
+    </aside>
   )
 }
