@@ -193,26 +193,6 @@
     font: 700 10px var(--g2-mono, var(--ge-font-mono, monospace));
   }
 
-  /* Upgrades hall: tree plaques. Tag yellow = spend (a rank is affordable). */
-  .uh-plaque {
-    fill: var(--sc-night-wall, #121820);
-    stroke: var(--sc-night-trim, #3a4458);
-    stroke-width: 1.5;
-  }
-
-  .uh-plaque.is-ready {
-    stroke: color-mix(in srgb, var(--sc-lamp-counter, #f2c14e) 55%, transparent);
-  }
-
-  .uh-plaque.is-active {
-    stroke: var(--sc-lamp-counter, #f2c14e);
-    stroke-width: 2.5;
-  }
-
-  .uh-ready {
-    fill: var(--sc-lamp-counter, #f2c14e);
-  }
-
   /* ── Shop cosmetics in the rooms you play in (presentation only) ─────────────────── */
 
   /* Unpack FX: same three packs, on the Floor room's Unpack station. */

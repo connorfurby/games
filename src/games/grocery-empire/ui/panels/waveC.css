@@ -251,8 +251,40 @@
     color: var(--ge-ink-muted);
   }
 
-  .wc-up-room .pf-chip {
+  .wc-up-room__blurb {
+    margin: 0;
+  }
+
+  /* Group bonus track: the one number this room adds that the tabs don't. */
+  .wc-up-track {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border: 1px solid var(--ge-line, rgb(255 255 255 / 0.12));
+    border-radius: var(--r-md, 10px);
+    background: var(--ge-surface-2, rgb(255 255 255 / 0.04));
+  }
+
+  .wc-up-track__now {
+    display: grid;
     flex: 0 0 auto;
+    line-height: 1.1;
+  }
+
+  .wc-up-track__now strong {
+    font: 700 var(--t-lg) / 1 var(--g2-display, var(--ge-font-ui, system-ui, sans-serif));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wc-up-track__k {
+    font: 600 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .wc-up-track__bar {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .wc-up-room__note {

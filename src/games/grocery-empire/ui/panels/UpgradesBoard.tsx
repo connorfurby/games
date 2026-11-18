@@ -27,9 +27,8 @@ import { treeRanks } from '../../sim/systems/stats'
 import { hasAffordableUpgrade, pickBestUpgrade, planAffordableUpgrades } from '../../sim/upgradePlan'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { SegmentedControl, useConfirm, Toggle } from '../kit'
-import { PlayFrame, StatusChip } from '../play'
-import { UpgradesHallScene } from '../scenes/live'
+import { Meter, SegmentedControl, useConfirm, Toggle } from '../kit'
+import { PlayFrame } from '../play'
 import './waveC.css'
 
 type NodeView = {
@@ -403,12 +402,6 @@ export function UpgradesBoard() {
 
   const room = (
     <div className="wc-up-room">
-      <UpgradesHallScene
-        trees={trees.map((t) => ({ id: t.id, ranks: t.ranks, ready: t.ready }))}
-        activeId={active.id}
-        mastery={mastery}
-        totalReady={trees.reduce((n, t) => n + t.ready, 0)}
-      />
       <div data-coach-id="upgrades-floor">
         <SegmentedControl
           aria-label="Trees"
@@ -422,15 +415,21 @@ export function UpgradesBoard() {
           }))}
         />
       </div>
-      <p className="wc-up-room__line">
-        <span className="wc-up-room__blurb">{TREES[active.id].blurb}</span>
-        <StatusChip
-          tone={mastery > 1 ? 'ready' : 'idle'}
-          title={`Group bonus. ${tr} levels bought · next step at ${nextMastery}. Every ${MASTERY.ranksPerStep} levels add ${Math.round(MASTERY.perStep * 100)}%.`}
-        >
-          Next bonus at {nextMastery} levels
-        </StatusChip>
-      </p>
+      <p className="wc-up-room__blurb">{TREES[active.id].blurb}</p>
+      <div className="wc-up-track" title={`Every ${MASTERY.ranksPerStep} levels in a group add ${Math.round(MASTERY.perStep * 100)}% to that whole group.`}>
+        <span className="wc-up-track__now">
+          <span className="wc-up-track__k">Group bonus</span>
+          <strong>×{mastery.toFixed(1)}</strong>
+        </span>
+        <Meter
+          className="wc-up-track__bar"
+          value={tr - (nextMastery - MASTERY.ranksPerStep)}
+          max={MASTERY.ranksPerStep}
+          tone={mastery > 1 ? 'success' : 'accent'}
+          label={`${tr} of ${nextMastery} levels to the next group bonus`}
+          eta={`${nextMastery - tr} to ×${masteryMul(nextMastery).toFixed(1)}`}
+        />
+      </div>
       {note ? (
         <p className="wc-up-room__note" role="status">
           {note}

@@ -997,11 +997,6 @@
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.ge-memo:hover {
-  border-color: color-mix(in srgb, var(--ge-accent) 35%, transparent);
-  background: color-mix(in srgb, var(--ge-accent) 6%, transparent);
-}
-
 .ge-memo__top {
   display: flex;
   justify-content: space-between;
@@ -1288,11 +1283,6 @@
   padding: var(--s-1) 0.15rem;
   color: var(--ge-muted);
   border-bottom: 1px dotted color-mix(in srgb, var(--ge-ink) 10%, transparent);
-}
-
-.ge-ledger__row:hover {
-  background: color-mix(in srgb, var(--ge-accent) 7%, transparent);
-  color: var(--ge-ink);
 }
 
 .ge-ledger__t {
