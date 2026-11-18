@@ -353,9 +353,6 @@ export function MuseumPanel() {
       if (ok) setQueue([...m.chests])
     })
   }
-  const fillSecondary = canFill
-    ? [{ key: 'fill', label: 'Fill the showcase with my best', onClick: fill }]
-    : []
   const tray: VerbTrayProps = firstGroup
     ? {
         primary: {
@@ -368,12 +365,9 @@ export function MuseumPanel() {
           ...(m.chests.length > 1
             ? [{ key: 'all', label: 'Open all', fact: String(m.chests.length), onClick: openAll }]
             : []),
-          ...fillSecondary,
         ],
       }
-    : canFill
-      ? { primary: { label: 'Fill the showcase with my best', tone: 'free', size: 'lg', onClick: fill } }
-      : {
+    : {
           primary: {
             label: 'Open a chest',
             tone: 'free',

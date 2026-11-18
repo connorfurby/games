@@ -102,7 +102,6 @@ export function CouncilScene() {
             <g transform={`translate(${x} ${y})`}>
               <rect x="-14" y="-10" width="28" height="18" rx="4" fill={fill} stroke="#3a444e" />
               {held ? <circle cy="-18" r="5" fill="#e6c2a0" opacity={pays ? 1 : 0.7} /> : null}
-              <Sign x={0} y={24} text={`${i + 1}`} small anchor="middle" />
             </g>
           </Hit>
         )

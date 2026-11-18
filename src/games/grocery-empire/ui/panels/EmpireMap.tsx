@@ -197,7 +197,9 @@ function describe(s: GameState, p: Pin, fmt: ReturnType<typeof useGame>['numberF
 export function EmpireMap() {
   const { state: s, tick, numberFormat, reducedMotion, setActiveMenu } = useGame()
   const phone = usePhone()
-  const open = VIEWS.filter((v) => s.era >= v.era)
+  // Space rings stay hidden until a probe has revealed a world: an empty system view is a dead end.
+  const anyWorld = (s.horizon?.planets ?? []).some((p) => p.revealed)
+  const open = VIEWS.filter((v) => s.era >= v.era && (v.era < 7 || anyWorld))
   const [viewId, setViewId] = useState<View['id']>(() => open[open.length - 1]!.id)
   const view = open.find((v) => v.id === viewId) ?? open[open.length - 1]!
   const [selected, setSelected] = useState<string>('flagship')

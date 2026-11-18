@@ -127,7 +127,8 @@ export function PlanetsPanel() {
   const wantCluster = stocked >= 4 && !h.cluster
   const surveyLive =
     (s.memos['survey-office'] ?? 0) > 0 || h.continued || upgradeEffect(s, 'survey-desk') > 0
-  const probeEta = etaCash(cost, s.cash, s.rates.revenuePerSec)
+  // Cash ETA only when cash is what's missing; a memo gate is said by the tray's reason instead.
+  const probeEta = probe.ok || /Need \$|cash/i.test(probe.reason ?? '') ? etaCash(cost, s.cash, s.rates.revenuePerSec) : null
   const retargetEta =
     h.survey >= HORIZON.clusterRetarget
       ? 'retarget ready'
@@ -321,7 +322,7 @@ export function PlanetsPanel() {
           onCommit={filing ? () => dispatch({ type: 'fileStandardPlanogram', planetId: run.id }) : undefined}
         />
       ) : (
-        <p className="hz-note">Launch a probe to open the first shelf.</p>
+        <p className="hz-note">No world revealed yet. A probe finds the first one and opens its shelf here.</p>
       )}
       <HorizonGoalStrip
         title={goalTitle}
