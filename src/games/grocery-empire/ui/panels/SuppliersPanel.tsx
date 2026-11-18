@@ -1,3 +1,4 @@
+import { waitLabel } from '../../sim/helpers'
 import { useState } from 'react'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
 import { DEPTH, PRICE_LOCK, WHOLESALE } from '../../sim/balance'
@@ -185,7 +186,7 @@ export function SuppliersPanel() {
             When a truck checks in, choose which aisle's back stock gets it. A full crate takes longer; a short one is
             quicker with fewer units.
             {(s.depth?.nextDockAt ?? 0) > s.time
-              ? ` Next truck in ${Math.ceil((s.depth?.nextDockAt ?? 0) - s.time)}s.`
+              ? ` Next truck in ${waitLabel((s.depth?.nextDockAt ?? 0) - s.time)}.`
               : ''}
           </p>
           {(() => {

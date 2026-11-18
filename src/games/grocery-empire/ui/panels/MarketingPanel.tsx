@@ -1,3 +1,4 @@
+import { waitLabel } from '../../sim/helpers'
 import { useState } from 'react'
 import { CELEBRITY_ENDCAP, DEPTH, LATE } from '../../sim/balance'
 import { can } from '../../sim/commands'
@@ -86,7 +87,7 @@ export function MarketingPanel() {
   const loyaltyOn = s.loyalty.tier > 0 || !!s.memos['punch-card']
   const paybackText = Number.isFinite(paybackSec)
     ? paybackSec < 60
-      ? `~${Math.ceil(paybackSec)}s`
+      ? `~${waitLabel(paybackSec)}`
       : `~${Math.ceil(paybackSec / 60)} min`
     : '—'
 

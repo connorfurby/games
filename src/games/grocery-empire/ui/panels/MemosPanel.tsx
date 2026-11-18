@@ -1,3 +1,4 @@
+import { waitLabel } from '../../sim/helpers'
 import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { NumberFormat } from '@/shared/bn'
 import { playMemoFx } from '@/shared/audio'
@@ -701,7 +702,7 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
                     s.rates.soldPerSec > 1e-6
                       ? ` · ~${
                           (s.compute.nextRepAt - s.baskets) / s.rates.soldPerSec < 60
-                            ? `${Math.ceil((s.compute.nextRepAt - s.baskets) / s.rates.soldPerSec)}s`
+                            ? `${waitLabel((s.compute.nextRepAt - s.baskets) / s.rates.soldPerSec)}`
                             : `${Math.ceil((s.compute.nextRepAt - s.baskets) / s.rates.soldPerSec / 60)} min`
                         }`
                       : ''
