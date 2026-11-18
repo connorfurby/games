@@ -2,6 +2,16 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AI. Designer round — autopilot, story, safety, the late game (2026-11-17/18, on `main`) · SAVE **41**
+
+- **Autopilot (P6-02).** Menu → Autopilot (and the palette) lists every chore that can run itself: unpacking (clerks), paying invoices, restocking (Auto-Order Clipboard), dock check-ins, the cooler log (Plant Operator on shift), collecting tills (Venture Runner / Cart Runner), tournaments (Tourney While Full), dusting duplicates. On/off, a toggle once earned, or how to earn it with a link. `AutopilotPanel.tsx`.
+- **Dock check-ins run themselves** after the 28 by hand (`depth.autoDock`, SAVE 40; `sim/systems/dock.ts`), to the lowest-stock aisle; a log line marks the moment. `collectAllVentures` command; Ventures' Claim and the return receipt use it.
+- **Return receipt "Catch up"** collects tills and pays invoices in one tap (P6-03).
+- **Run story (P6-04)** in Menu → Game: baskets, takings, most cash, stores, and a bar per era. `stats.eraAt` (SAVE 41) is stamped by `setEra`.
+- **Road ahead**: the goals left to the next era as a path, current step with hint and progress, the door starred. The Next goal eyebrow ("Next goal · road ahead ›") opens it.
+- **Automatic backups (P6-09)**: a snapshot every 10 min of play, newest 3, restorable in Saves; restoring snapshots the current run first; New Game and Rebrand clear them.
+- **Late game, finally looked at.** DevMode has Era 8/10/11/12 stages from bot-played saves (`sim/devFixtures`, code-split; regenerate with `GEN_FIXTURES=1`). Found and fixed: the Next goal sat on an Era 6 side goal through Era 12 (nextGoal now skips undone goals from eras already left); headlines were a full-screen modal every six minutes (now a corner card with a life bar); "Oc" read as "0c" in the mono face (thin space before Qa+ suffixes); HUD cash and baskets show the spoken number on hover ("949.27 octillion").
+
 ## AH. Round 6 — page-by-page visual pass (2026-11-17, on `main`) · SAVE **39** (unchanged)
 
 - **Goal plate.** A tray primary that can't be used yet and has no price is no longer a greyed button: it renders as a dashed "Not yet" plate with the reason under it (`.pf__goal` in VerbTray). Priced primaries stay buttons.
