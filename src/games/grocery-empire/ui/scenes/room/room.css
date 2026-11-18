@@ -102,6 +102,8 @@
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
+    /* The band pans: a soft right edge says there is more room that way. */
+    mask-image: linear-gradient(to right, #000 82%, transparent);
   }
   .rm--band .rm-stage::-webkit-scrollbar {
     display: none;
