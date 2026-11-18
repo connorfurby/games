@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 /**
  * Late-hub (Era 7–12) systems that thread Worlds into every existing hub.
  * Horizon currencies gate verbs; cash buys buildings via gated floors.
@@ -321,7 +322,7 @@ export function canCoopOrder(s: GameState, cat: CategoryId = s.orderCat): string
   const survey = coopSurveyCost()
   if (s.horizon.survey < survey) return `Need ${survey} survey.`
   const cost = coopCrateCost(s, cat)
-  if (s.cash < cost) return `Need $${cost.toFixed(2)}.`
+  if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   return null
 }
 

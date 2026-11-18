@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { poemsForEra } from '../../content/poetry'
 import { CELEBRITY_ENDCAP, COUPON_WAR, FRANCHISE_CLONE, INSPECTION, LATE, MORALE, RIVAL_EVENTS } from '../balance'
 import { hasFork } from '../ventureForks'
@@ -11,7 +12,7 @@ export function canCallInspector(s: GameState): string | null {
   if (s.time - s.inspection.lastInspectorAt < INSPECTION.inspectorCooldownSec) {
     return 'Inspector still on the other side of town.'
   }
-  if (s.cash < INSPECTION.inspectorCost) return `Need $${INSPECTION.inspectorCost}.`
+  if (s.cash < INSPECTION.inspectorCost) return `Need ${cashLabel(INSPECTION.inspectorCost)}.`
   return null
 }
 
@@ -27,7 +28,7 @@ export function callInspector(s: GameState) {
 export function canOrderPizza(s: GameState): string | null {
   if (!memo(s, 'pizza-friday')) return 'Pizza Friday memo first.'
   if (s.time - s.lastPizzaAt < MORALE.pizzaCooldownSec) return 'Pizza oven is cooling down.'
-  if (s.cash < MORALE.pizzaCost) return `Need $${MORALE.pizzaCost}.`
+  if (s.cash < MORALE.pizzaCost) return `Need ${cashLabel(MORALE.pizzaCost)}.`
   if (s.staff.length === 0) return 'Nobody to feed.'
   return null
 }
@@ -51,7 +52,7 @@ export function matchCouponCost(s: GameState) {
 export function canMatchCoupons(s: GameState): string | null {
   if (!s.events?.couponWar?.active) return 'No coupon war running.'
   const cost = matchCouponCost(s)
-  if (s.cash < cost) return `Need $${cost}.`
+  if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   return null
 }
 
@@ -132,7 +133,7 @@ export function rivalActive(s: GameState): RivalKind | null {
 export function canAnswerRival(s: GameState): string | null {
   if (!rivalActive(s)) return 'No rival pressure right now.'
   const cost = rivalAnswerCost(s)
-  if (s.cash < cost) return `Need $${cost}.`
+  if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   return null
 }
 

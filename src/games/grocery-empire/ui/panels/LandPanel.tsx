@@ -218,7 +218,7 @@ function ChainRoster({
                   })()}
                 </span>
               </div>
-              <div className="ld-row__drift" title="Drift rises when a store gets less than its fair share of Attention. Walking it clears drift.">
+              <div className="ld-row__drift" title="A store slips when it gets less than its fair share of Attention. A visit puts it back on track.">
                 <span className="ld-meter">
                   <span style={{ transform: `scaleX(${Math.min(1, drift)})` }} />
                 </span>
@@ -481,7 +481,7 @@ export function LandPanel() {
         <section className="ge-empire-block" aria-label="Expansions">
           {(s.depth?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed && !(s.depth?.blockEvent?.kind && (s.depth.blockEvent.until ?? 0) > s.time) ? (
             <p className="ge-muted" data-coach-id="land-hot-trait" style={{ marginBottom: '0.55rem' }}>
-              Walks during a block event: {s.depth?.hotTraitWalks ?? 0} of {DEPTH.hotTraitWalkNeed} (needed for the cold permit).
+              Store visits during a block event: {s.depth?.hotTraitWalks ?? 0} of {DEPTH.hotTraitWalkNeed} (needed for the cold permit).
             </p>
           ) : null}
           <header className="ge-empire-block__head">
@@ -510,7 +510,7 @@ export function LandPanel() {
       <section className="ge-empire-block">
         <header className="ge-empire-block__head">
           <h3>Later deeds</h3>
-          <p>Era-gated parcels and metro slots.</p>
+          <p>More plots open in later eras.</p>
         </header>
         <div className="ge-card-grid" data-coach-id="land-expansions">
           {(() => {

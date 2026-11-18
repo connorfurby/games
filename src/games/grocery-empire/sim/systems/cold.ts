@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { statMul } from './stats'
 import { COLD, DEPTH, HUNGRY_LAWS, NETWORK } from '../balance'
 import { log, round2, unlockMenu } from '../helpers'
@@ -118,7 +119,7 @@ export function canBuyPlant(s: GameState, kind: PlantKind = 'compressor'): strin
   if (kind !== 'compressor' && kind !== 'tunnel' && kind !== 'blast') return 'Unknown plant kind.'
   if (s.cold.yieldLeft <= 0 && kind === 'blast') return 'Regional yield is empty.'
   const cost = plantCost(s)
-  if (s.cash < cost) return `Need $${cost.toFixed(0)}.`
+  if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   return null
 }
 
@@ -149,7 +150,7 @@ export function buyPlant(s: GameState, kind: PlantKind = 'compressor') {
 export function canBuyTank(s: GameState): string | null {
   if (s.cold.plants < 1 && !(s.memos['tank-farm'] > 0)) return 'Need a plant (or Tank Farm memo).'
   const cost = tankCost(s)
-  if (s.cash < cost) return `Need $${cost.toFixed(0)}.`
+  if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   return null
 }
 

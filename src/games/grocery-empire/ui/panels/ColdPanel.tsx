@@ -40,9 +40,9 @@ export function ColdPanel() {
   // A missed Cooler Log adds load to the line, so a brownout points at the log first, tanks second.
   const brownoutNote = showCooler
     ? signCheck.ok
-      ? `Brownout — sign the Cooler Log (${missed} missed adds load), then add plant or tank.`
-      : `Brownout — ${signCheck.reason ?? 'log not due'} Add plant or tank to recover.`
-    : 'Brownout — supply is short of demand. Add plant or tank to recover.'
+      ? `Power dip: sign the cooler log (${missed} missed makes it worse), then add a plant or tank.`
+      : `Power dip: ${signCheck.reason ?? 'the log is not due yet.'} Add a plant or tank to recover.`
+    : 'Power dip: demand is higher than your cold supply. Add a plant or tank to recover.'
 
   return (
     <section className="ge-panel">
@@ -198,12 +198,12 @@ export function ColdPanel() {
                 onClick: () => dispatch({ type: 'signCoolerLog' }),
               }
             : {
-                label: 'Build buffer',
+                label: 'Add cold capacity',
                 tone: 'primary',
                 size: 'lg',
                 coachId: 'cold-momentum',
                 disabled: !balancedAny,
-                title: !balancedAny ? 'Need cash for plant or tank' : `Cold line · surplus ${surplus}`,
+                title: !balancedAny ? 'Need cash for plant or tank' : `Buys whatever adds the most cold now · spare ${surplus}`,
                 onClick: () => {
                   for (const cmd of BALANCED_COLD) {
                     if (engine.can(cmd).ok) engine.dispatch(cmd)
@@ -220,16 +220,16 @@ export function ColdPanel() {
         ) : null}
         {blastDrain ? (
           <FailReason action={showCooler ? { label: 'Open Cooler log', onClick: () => scrollToDesk('desk-cooler') } : undefined}>
-            Blast is draining yield — tunnel spoil cut returns after Cooler log.
+            The blast freezer is using up the region’s supply. Sign the cooler log to get the tunnel’s spoilage cut back.
           </FailReason>
         ) : null}
-        <div className="p6-row">
-          <Badge tone={c.browned ? 'danger' : 'muted'}>
-            {c.plants} plant{c.plants === 1 ? '' : 's'} · {c.tanks} tank{c.tanks === 1 ? '' : 's'}
-          </Badge>
-          {c.momentumOn ? <Badge tone="success">Cold bonus ×{c.momentum.toFixed(2)}</Badge> : null}
-          {c.browned ? <Badge tone="danger">Brownout</Badge> : null}
-        </div>
+        {/* Plant and tank counts are on the room; only the states worth flagging get a badge. */}
+        {c.momentumOn || c.browned ? (
+          <div className="p6-row">
+            {c.momentumOn ? <Badge tone="success">Cold bonus ×{c.momentum.toFixed(2)}</Badge> : null}
+            {c.browned ? <Badge tone="danger">Power dip</Badge> : null}
+          </div>
+        ) : null}
       </PlayFrame>
 
     </section>

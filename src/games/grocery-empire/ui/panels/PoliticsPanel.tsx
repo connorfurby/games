@@ -7,8 +7,8 @@ import { councilPayingSeats, councilSeatAdd, councilSeatCap, councilSeats } from
 import { acquireCost, billCost, billsPassed } from '../../sim/systems/politics'
 import { useGame } from '../GameContext'
 import { money, pct } from '../format'
-import { Button, Card, Chip, Disclosure, EmptyState, Meter } from '../kit'
-import { StatusChip, type VerbTrayProps } from '../play'
+import { Button, Card, Disclosure, EmptyState, Meter } from '../kit'
+import { ActionRow, StatusChip, type VerbTrayProps } from '../play'
 import { Icon } from '../icons/Icon'
 import { CouncilScene } from '../scenes/live/CouncilScene'
 import { HubCallout, LateHubShell } from './LateHubShell'
@@ -39,24 +39,11 @@ export function PoliticsPanel() {
 
   const kpiChips = (
     <div className="lh-chips" data-coach-id="politics-kpis">
-      <StatusChip
-        tone="idle"
-        title={`Leak ${POLITICS.leakPerSec}/s while you hold any; each ${council ? 'whip' : 'lobbyist'} +${POLITICS.lobbyGainPerSec}/s`}
-      >
-        Capital {p.capital.toFixed(1)} · {capitalNet >= 0 ? '+' : ''}
-        {capitalNet.toFixed(3)}/s
-      </StatusChip>
-      <StatusChip
-        tone="idle"
-        title={council ? `${seats} held · ${paying} paying at the annex cap` : 'Neighbors bought'}
-      >
-        {council ? 'Seats' : 'Neighbors'} {council ? `${paying}/${seatCap}` : p.acquisitions}
-      </StatusChip>
-      <StatusChip tone={p.monopolyRisk > 0.6 ? 'warn' : 'idle'} title="Acquisition pressure — a gauge, not a gavel">
-        Heat {pct(p.monopolyRisk)}
+      <StatusChip tone={p.monopolyRisk > 0.6 ? 'warn' : 'idle'} title="Buying neighbours raises this. High heat brings fines.">
+        Monopoly heat {pct(p.monopolyRisk)}
       </StatusChip>
       {council ? (
-        <StatusChip tone={scrutiny > 0.6 ? 'warn' : 'idle'} title="Past 60% it trims instrument yield">
+        <StatusChip tone={scrutiny > 0.6 ? 'warn' : 'idle'} title="Past 60% it lowers what your investments earn">
           Scrutiny {pct(scrutiny)}
         </StatusChip>
       ) : null}
@@ -165,28 +152,33 @@ export function PoliticsPanel() {
           </Card>
         ) : (
           <>
-          <div className="lh-stack">
-            <p className="lh-note" title={`Next bill ${money(billCost(s).cash, numberFormat)} + ${billCost(s).capital} Capital. Pass two before you leave.`}>
-              Bills · {billsPassed(s)}/4
-            </p>
-            <div className="lh-actions">
-              {BILL_IDS.map((id: BillId) => {
-                const passed = !!p.bills?.[id]
-                const check = can(s, { type: 'passBill', id })
-                return (
-                  <span key={id} title={passed ? 'Passed' : check.ok ? BILL_DEFS[id].blurb : check.reason}>
-                    <Chip
-                      selected={passed}
-                      disabled={passed || !check.ok}
-                      onClick={() => dispatch({ type: 'passBill', id })}
-                    >
-                      {BILL_DEFS[id].name}
-                    </Chip>
-                  </span>
-                )
-              })}
-            </div>
-          </div>
+          <Card
+            header={
+              <div className="lh-card-title">
+                <strong>County bills · {billsPassed(s)} of 4 passed</strong>
+                <span>
+                  Each costs {money(billCost(s).cash, numberFormat)} + {billCost(s).capital} Capital. Pass two before you
+                  leave the region.
+                </span>
+              </div>
+            }
+          >
+            {BILL_IDS.map((id: BillId) => {
+              const passed = !!p.bills?.[id]
+              const check = can(s, { type: 'passBill', id })
+              return (
+                <ActionRow
+                  key={id}
+                  label={BILL_DEFS[id].name}
+                  fact={passed ? 'Passed' : BILL_DEFS[id].blurb}
+                  trail={passed ? undefined : 'Pass'}
+                  disabled={passed || !check.ok}
+                  title={passed ? 'Already passed' : check.ok ? BILL_DEFS[id].blurb : check.reason}
+                  onClick={() => dispatch({ type: 'passBill', id })}
+                />
+              )
+            })}
+          </Card>
           </>
         )}
 

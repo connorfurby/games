@@ -1370,8 +1370,10 @@
     gap: var(--s-2) var(--s-3);
   }
 
+  /* Policy picker takes its own full-width line so the three options sit side by side. */
   .ld-seg {
-    justify-self: start;
+    grid-column: 1 / -1;
+    justify-self: stretch;
   }
 
   .ld-row__act {

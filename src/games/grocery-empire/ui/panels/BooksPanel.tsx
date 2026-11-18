@@ -93,9 +93,9 @@ function BooksPanelInner() {
     s.incorporated
       ? 'Already incorporated'
       : s.cash < CAPITAL.incorporateCash
-        ? `Need $${CAPITAL.incorporateCash}`
+        ? `Need ${money(CAPITAL.incorporateCash, numberFormat)}`
         : s.compute.reputation < CAPITAL.incorporateRep
-          ? `Need ${CAPITAL.incorporateRep} Rep`
+          ? `Need ${CAPITAL.incorporateRep} Reputation`
           : null
 
   // Runway follows the till (cashPerSec), not sales minus rent alone.

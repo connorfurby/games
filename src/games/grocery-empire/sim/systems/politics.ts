@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { emptyBills, type BillId, BILL_DEFS } from '../../content/depth'
 import { DEPTH, POLITICS } from '../balance'
 import { clamp, log, round2, setEra, unlockMenu } from '../helpers'
@@ -13,7 +14,7 @@ export function openPolitics(s: GameState) {
 
 export function canHireLobby(s: GameState): string | null {
   if (!(s.memos['lobby-office'] > 0) && s.era < 3) return 'Politics locked.'
-  if (s.cash < POLITICS.lobbyCost) return `Need $${POLITICS.lobbyCost}.`
+  if (s.cash < POLITICS.lobbyCost) return `Need ${cashLabel(POLITICS.lobbyCost)}.`
   return null
 }
 
@@ -38,7 +39,7 @@ export function canAcquire(s: GameState): string | null {
     return 'Acquisition Desk locked.'
   }
   const { cash, capital } = acquireCost(s)
-  if (s.cash < cash) return `Need $${cash.toFixed(0)}.`
+  if (s.cash < cash) return `Need ${cashLabel(cash)}.`
   if (s.politics.capital < capital) return `Need ${capital} Political Capital.`
   return null
 }
@@ -86,7 +87,7 @@ export function canPassBill(s: GameState, id: BillId): string | null {
   if (!s.politics.bills) s.politics.bills = emptyBills()
   if (s.politics.bills[id]) return 'Already passed.'
   const { cash, capital } = billCost(s)
-  if (s.cash < cash) return `Need $${cash.toFixed(0)}.`
+  if (s.cash < cash) return `Need ${cashLabel(cash)}.`
   if (s.politics.capital < capital) return `Need ${capital} Political Capital.`
   return null
 }
@@ -115,7 +116,7 @@ export function canLeaveRegion(s: GameState): string | null {
     return `Pass ${POLITICS.leaveBillsNeed} bills first (${billsPassed(s)}/${POLITICS.leaveBillsNeed}).`
   }
   if (s.politics.capital < POLITICS.leaveCapitalNeed) {
-    return `Need ${POLITICS.leaveCapitalNeed} Political Capital to file departure.`
+    return `Need ${POLITICS.leaveCapitalNeed} Political Capital to leave the region.`
   }
   if (!(s.memos['leave-region'] > 0) && s.era < 3) return 'Leave the Region memo first.'
   const logs = s.depth?.cooler?.logsSigned ?? 0

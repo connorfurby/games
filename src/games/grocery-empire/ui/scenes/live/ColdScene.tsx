@@ -74,7 +74,7 @@ export function ColdScene() {
 
       <Hit x={560} y={56} w={220} h={180} label="Buy a tank" menu="cold" coachId="cold-buy-tank">
         <Sign x={572} y={74} text="Tanks" />
-        <Badge x={630} y={60} text={`${Math.round(tankFill * 100)}%`} w={48} />
+        {tanks > 0 ? <Badge x={630} y={60} text={`${Math.round(tankFill * 100)}%`} w={48} /> : null}
         {Array.from({ length: Math.max(tanks, 1) }, (_, i) => {
           const x = 572 + (i % 3) * 54
           const y = 96 + Math.floor(i / 3) * 64
@@ -153,7 +153,7 @@ export function ColdScene() {
 
       {plants <= 0 && tanks <= 0 ? (
         <g>
-          <Sign x={48} y={200} text="Cold line dark — buy a plant, then tanks" />
+          <Sign x={48} y={200} text="No cold yet: buy a plant, then tanks" />
           <Sign x={48} y={220} text="Buy a cooling plant below to start" small />
         </g>
       ) : null}

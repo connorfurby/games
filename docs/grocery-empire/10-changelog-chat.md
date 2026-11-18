@@ -65,6 +65,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - Suppliers / Backroom: Restock priority has one home (Backroom) instead of appearing on both pages; with only Express available the supplier shows as plain text, not a one-option picker; the Backroom room shows numbers only on phones.
 - Kit: a `SegmentedControl` whose only possible option is already chosen renders as plain text (`.gk-seg-static`) instead of a lone toggle, everywhere. Phone crawl p11: 121 screens, 0 errors / overflow / shifts.
 - Invest: one name, **Savings**, for the passbook (card, sheet, advisor, lesson, glossary); the duplicate status-chip row under the room is gone (the room already shows those numbers). Books room: "More money streams appear later".
+- Cold / Politics / Land pass: every "Need $X" reason now uses the shared money label ("Need $400.00K." not "Need $400000."); Cold's primary is **Add cold capacity**, power-dip notes are plain, the plant/tank badge row is gone (the room shows it), the tank % hides with no tanks; Politics bills are a real desk of rows with what each does and why it is locked (were greyed chips), the repeated Capital / Neighbours chips are gone (Monopoly heat stays); Land's policy picker gets its own line on phones, "Store visits during a block event", "More plots open in later eras".
 - Upgrades room chips: Upgrade groups, Levels bought, Can afford, <group> bonus.
 
 ## AD. Daily twist, phone rooms, CSS cut (2026-11-17, on `main`) · SAVE **38**

@@ -353,7 +353,7 @@ export function canWinBackFranchise(s: GameState, franchiseId: string): string |
   if (!fr) return 'Unknown franchise.'
   if (!fr.defected) return 'Franchise is still loyal.'
   if (s.control < DEPTH.franchiseWinBackControl) {
-    return `Need ${DEPTH.franchiseWinBackControl} Control (or walk / circular).`
+    return `Need ${DEPTH.franchiseWinBackControl} Control (or a visit or flyer).`
   }
   return null
 }
@@ -608,7 +608,7 @@ function bargeGateBlocked(s: GameState): string | null {
   }
   const exams = s.depth?.dispatch?.examsHeld ?? 0
   if (exams < DEPTH.examHoldNeed) {
-    return `Need ${DEPTH.examHoldNeed} sworn exams (${exams}/${DEPTH.examHoldNeed}).`
+    return `Need ${DEPTH.examHoldNeed} passed inspections (${exams}/${DEPTH.examHoldNeed}).`
   }
   if (!logisticsStaffed(s)) return 'Hire a Dispatcher or Purser.'
   const handled = s.depth?.defectionsHandled ?? 0

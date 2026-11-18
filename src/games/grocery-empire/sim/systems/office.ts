@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { chainAttentionDrainPerSec } from './chain'
 import { COMPUTE, OFFICE_REBALANCE, SCANNER_PULSE } from '../balance'
 import { attentionCap, attentionPerSec, ideasPerSec } from '../formulas'
@@ -77,7 +78,7 @@ export function toggleIdeas(s: GameState) {
 export function canRebalanceOffice(s: GameState, toward: OfficeRebalanceToward): string | null {
   if (!s.compute.unlocked) return 'Back office is not open yet.'
   const cost = officeRebalanceCost(s)
-  if (s.cash < cost) return `Need $${cost.toFixed(0)}.`
+  if (s.cash < cost) return `Need ${cashLabel(cost)}.`
   if (toward === 'archive') {
     if (s.compute.analysts < 2) return 'Need a spare Analyst (keep at least one).'
   } else if (s.compute.archives < 2) {

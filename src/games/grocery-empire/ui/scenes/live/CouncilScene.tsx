@@ -46,7 +46,6 @@ export function CouncilScene() {
         skyBottom="#2b2f3c"
         phoneChipsOnly
       >
-        <Sign x={60} y={60} text="County bills" />
         {BILLS.map((b, i) => {
           const on = !!s.politics?.bills?.[b.id]
           const x = 60 + i * 150
