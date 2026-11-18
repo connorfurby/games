@@ -25,8 +25,8 @@ export const INTRO_BEATS: IntroBeat[] = [
     speaker: 'clerk',
     plate: 'corner',
     kicker: 'You',
-    title: 'Era 0 starts here',
-    body: 'Cans. Soft rent. Unpack onto the shelf, take baskets, call a truck when the till allows. Departments teach themselves when they arrive.',
+    title: 'Day one',
+    body: 'A shelf of cans and cheap rent. Unpack cans onto the shelf, people buy them, and when you have the cash you order more. New parts of the store explain themselves when they open.',
     ledger: 'Keys on the counter. The sign still says OPEN.',
   },
   {
@@ -34,15 +34,15 @@ export const INTRO_BEATS: IntroBeat[] = [
     plate: 'corner',
     kicker: 'The tally',
     title: 'Baskets and cash',
-    body: 'Baskets are the neighborhood’s memory of you. Cash beside them pays rent and crates. Watch both — they argue different points.',
+    body: 'Every sale is a basket, and baskets are your score. Cash pays rent and buys more stock. Keep an eye on both.',
     ledger: 'A basket is a trip that finished. Count those.',
   },
   {
     speaker: 'clerk',
     plate: 'counter',
     kicker: 'The loop',
-    title: 'Three verbs',
-    body: 'Unpack. Price. Wholesale. That heartbeat runs the whole empire. Everything else is a department stacked on top.',
+    title: 'Three jobs',
+    body: 'Unpack the shelf. Set a fair price. Order more stock. That loop runs the whole empire; everything else is built on top of it.',
     ledger: 'Three verbs. Everything else is a department.',
   },
   {
@@ -50,7 +50,7 @@ export const INTRO_BEATS: IntroBeat[] = [
     plate: 'corner',
     kicker: 'Begin',
     title: 'Open the door',
-    body: 'I’ll point at Unpack, price, wholesale, and rent once. Skip whenever the aisle feels loud enough on its own.',
+    body: 'I’ll show you each of those once. Skip whenever you’d rather figure it out yourself.',
     ledger: 'Coach on standby. Unpack when you are ready.',
   },
 ]
