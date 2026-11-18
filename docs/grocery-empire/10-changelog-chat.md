@@ -2,6 +2,18 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AH. Round 6 — page-by-page visual pass (2026-11-17, on `main`) · SAVE **39** (unchanged)
+
+- **Goal plate.** A tray primary that can't be used yet and has no price is no longer a greyed button: it renders as a dashed "Not yet" plate with the reason under it (`.pf__goal` in VerbTray). Priced primaries stay buttons.
+- Fail reasons ending "in Memos." get an **Open Memos →** link automatically (FailReason → `requestInbox`).
+- HUD: Undo sits outside the pause pill, so the pill doesn't show an empty slot now that speed buttons are gone.
+- Menu tabs size to their words and wrap (no "Notices…" ellipsis).
+- De-duplication: Invest's second Savings card, Books' second Incorporate button (coach now points at the tray), Museum's second Fill button, Empire's Last/Next reward pair (the rank hall shows them; the board keeps what the next reward does).
+- Land keeps the street as its room in Era 7+ until a world is stocked; the Map hides System/Cluster/Galaxy until a probe reveals a world; Planets stops saying "affordable now" when a memo is the blocker.
+- Upgrades: the group blurb no longer stretches 14rem tall on phones; the bonus track reads "14/50 levels · ×1.1 next". Tray hints have their own small muted style.
+- Council seats lost their overlapping numbers. Ventures' empty lots show a faint preview of their sign. The store scene's Shrink button says **Collapse**.
+- Plain words: Next strategy, Sea routes (map), Richer plants (law), "The region’s supply is empty", Books late table column **Source**. Opening cutscene rewritten: Day one, Three jobs, no "Era 0".
+
 ## AG. Owner round — fewer clicks, one speed, a museum you can read (2026-11-17, on `main`) · SAVE **39**
 
 - **Invoices pay themselves.** New `depth.autoPayInvoices` (default on; SAVE 39 turns it on for old saves) settles open invoices oldest first, early, whenever cash covers them, quietly. The Invoices desk has the toggle and one **Pay all N** button (`payAllInvoices`) instead of a Pay button per invoice. Shared logic in `sim/systems/invoices.ts`.
