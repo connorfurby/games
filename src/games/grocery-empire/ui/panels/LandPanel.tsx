@@ -452,7 +452,8 @@ export function LandPanel() {
         purpose={MENUS.land.purpose}
         department={MENUS.land.name}
         scene={
-          s.era >= 7 ? (
+          // Outposts replace the street only once a world is stocked; until then the street is the room.
+          s.era >= 7 && outposts(s).length > 0 ? (
             <OutpostStreetScene />
           ) : s.era >= 2 ? (
             <LandStreet state={s} onPick={pickStore} />

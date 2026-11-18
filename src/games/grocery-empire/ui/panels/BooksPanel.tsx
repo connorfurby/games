@@ -238,6 +238,7 @@ function BooksPanelInner() {
           primary: {
             label: `Incorporate · ${incorporateCost}`,
             tone: 'primary',
+            coachId: 'books-incorporate',
             size: 'lg',
             onClick: () => dispatch({ type: 'incorporate' }),
           },
@@ -400,9 +401,10 @@ function BooksPanelInner() {
                   Incorporating costs {incorporateCost}. {incorporateBlocked}
                 </p>
               ) : (
-                <Button tone="primary" coachId="books-incorporate" onClick={() => dispatch({ type: 'incorporate' })}>
-                  Incorporate · {incorporateCost}
-                </Button>
+                // The tray at the top already holds the Incorporate button; don't draw a second one.
+                <p className="lh-note">
+                  Ready: use Incorporate at the top of this page.
+                </p>
               )}
             </div>
             {s.incorporated ? (

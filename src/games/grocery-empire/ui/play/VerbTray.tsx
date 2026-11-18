@@ -33,7 +33,17 @@ export function VerbTray({ primary, secondaries = [], failReason, failAction, hi
   const { label, tone = 'free', className, ...rest } = primary ?? { label: null }
   return (
     <div className="pf__tray">
-      {primary ? (
+      {primary && rest.disabled && !rest.cost ? (
+        // A primary you can't use yet is not drawn as a button (law 15): it reads as the next
+        // thing to work toward, with the reason right under it.
+        <div className="pf__primary">
+          <div className="pf__goal" role="status" data-coach-id={rest.coachId}>
+            <span className="pf__goal-kicker">Not yet</span>
+            <span className="pf__goal-label">{label}</span>
+            {failReason ? <FailReason action={failAction}>{failReason}</FailReason> : null}
+          </div>
+        </div>
+      ) : primary ? (
         <div className="pf__primary">
           <Button
             {...rest}

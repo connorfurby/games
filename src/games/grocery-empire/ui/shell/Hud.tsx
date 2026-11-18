@@ -119,7 +119,7 @@ export function Hud({
       ) : null}
 
       <div className="g2-hud__controls">
-        <div className="g2-transport" role="group" aria-label="Time">
+        <div className="g2-transport" role="group" aria-label="Pause">
           <button
             type="button"
             className={`g2-icon-btn${s.paused ? ' is-on' : ''}`}
@@ -130,22 +130,22 @@ export function Hud({
           >
             <span aria-hidden>{s.paused ? '▶' : '❚❚'}</span>
           </button>
-          <button
-            type="button"
-            className="g2-icon-btn g2-icon-btn--undo"
-            disabled={!undo.ok}
-            // Nothing to undo: keep the slot (no layout shift) but do not show a dead button.
-            style={undo.ok ? undefined : { visibility: 'hidden' }}
-            aria-hidden={undo.ok ? undefined : true}
-            tabIndex={undo.ok ? undefined : -1}
-            onClick={() => performUndo()}
-            aria-label={undo.ok ? `Undo ${undoText}` : 'Nothing to undo'}
-            title={undo.ok ? `Undo ${undoText} · ${undoLeft}s left (Ctrl+Z)` : 'Nothing to undo'}
-          >
-            <span aria-hidden>↶</span>
-            <span className="g2-icon-btn__label">{undo.ok ? `Undo ${undoText}` : 'Undo'}</span>
-          </button>
         </div>
+        <button
+          type="button"
+          className="g2-icon-btn g2-icon-btn--undo"
+          disabled={!undo.ok}
+          // Nothing to undo: keep the slot (no layout shift) but do not show a dead button.
+          style={undo.ok ? undefined : { visibility: 'hidden' }}
+          aria-hidden={undo.ok ? undefined : true}
+          tabIndex={undo.ok ? undefined : -1}
+          onClick={() => performUndo()}
+          aria-label={undo.ok ? `Undo ${undoText}` : 'Nothing to undo'}
+          title={undo.ok ? `Undo ${undoText} · ${undoLeft}s left (Ctrl+Z)` : 'Nothing to undo'}
+        >
+          <span aria-hidden>↶</span>
+          <span className="g2-icon-btn__label">{undo.ok ? `Undo ${undoText}` : 'Undo'}</span>
+        </button>
         <button
           type="button"
           className={`g2-inbox-btn${inboxOpen ? ' is-on' : ''}`}

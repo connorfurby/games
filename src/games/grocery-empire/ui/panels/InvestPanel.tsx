@@ -156,10 +156,10 @@ export function InvestPanel() {
             <Sheet
         open
         onClose={() => {}}
-        title="Savings · deposit and withdraw"
+        title={`Savings · ${money(bal, numberFormat)}`}
         reducedMotion={reducedMotion}
       >
-        <div className="lh-stack">
+        <div className="lh-stack" data-coach-id="invest-passbook">
           <Meter
             tone={bal >= pbCap - 1 ? 'warn' : 'accent'}
             value={pbYield}
@@ -170,7 +170,7 @@ export function InvestPanel() {
           <Rows
             rows={[
               { label: 'Balance', value: money(bal, numberFormat) },
-              { label: 'Rate', value: `${(rate * 3600 * 100).toFixed(2)}% / hr` },
+              { label: 'Rate', value: `${(rate * 3600 * 100).toFixed(2)}% / hr · ${money(perHour, numberFormat)} / hr` },
               {
                 label: 'Time to cap',
                 value: capRoom <= 0 ? 'at cap' : bal <= 0 ? 'deposit first' : duration(toCapSec),
@@ -221,14 +221,6 @@ export function InvestPanel() {
             : `${shortfall?.name} needs ${money(withdrawSuggest, numberFormat)} from savings.`}
         </HubCallout>
       ) : null}
-      <div className="lh-callout" data-coach-id="invest-passbook">
-        <div className="lh-callout__copy">
-          <h3>Savings {money(bal, numberFormat)}</h3>
-          <p>
-            {(rate * 3600 * 100).toFixed(2)}%/hr · {money(perHour, numberFormat)}/hr · holds up to {money(pbCap, numberFormat)}
-          </p>
-        </div>
-      </div>
       {outgrown ? (
         <p className="lh-note" role="note">
           <strong>Small change now.</strong> Full savings earn about {money(pbCap * rate, numberFormat)}/s against{' '}

@@ -808,4 +808,31 @@
   .st-owned__chip:hover {
     border-color: var(--ge-line-strong);
   }
+
+  /* Disabled primary: a goal plate, not a greyed button. */
+  .pf__goal {
+    display: grid;
+    gap: 2px;
+    padding: var(--s-2) var(--s-3);
+    border: 1px dashed color-mix(in srgb, var(--ge-ink) 22%, transparent);
+    border-radius: var(--g2-r-md, 10px);
+    background: color-mix(in srgb, var(--ge-ink) 3%, transparent);
+    text-align: left;
+  }
+
+  .pf__goal-kicker {
+    font: 700 var(--t-2xs, 0.6875rem) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ge-ink-muted);
+  }
+
+  .pf__goal-label {
+    font: 700 var(--t-md) / 1.25 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink);
+  }
+
+  .pf__goal .pf__fail {
+    margin: 0;
+  }
 }
