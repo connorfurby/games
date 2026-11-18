@@ -86,7 +86,7 @@ test('Museum: chest opens to a relic that lands on the wall', async ({ page }) =
   // The Museum opens on wing cards; one wing's wall at a time keeps the page short.
   await page.locator('.mu-wingcard').first().click()
   await expect(page.locator('.mu-tile.is-unknown').first()).toBeVisible()
-  await page.locator('.mu-wings-pick select').selectOption('all')
+  await page.getByRole('button', { name: '← All wings' }).click()
   await expect(page.locator('.mu-wingcard').first()).toBeVisible()
   await page.locator('.mu-chest--common').click()
   // A stack opens as one burst onto a reward sheet that names each relic and its wing.

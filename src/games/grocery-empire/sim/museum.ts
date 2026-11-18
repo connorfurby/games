@@ -18,7 +18,7 @@ import {
   type RelicDef,
   type WingId,
 } from '../content/relics'
-import { effectiveLitWings, wingLightBlock } from '../content/relicPerks'
+import { effectiveLitWings, relicPerk, wingLightBlock } from '../content/relicPerks'
 import { HORIZON, PRICE } from './balance'
 import type { GameState } from './state'
 
@@ -609,6 +609,31 @@ export function socketRelic(m: MuseumSave, id: string, cap: number = HORIZON.rel
   if (m.sockets.includes(id)) return false
   if (m.sockets.length >= cap) return false
   m.sockets.push(id)
+  return true
+}
+
+/** How strong a relic's perk is on its own (main stat plus half its second stat), level included. */
+export function relicWorth(m: MuseumSave, id: string): number {
+  const def = RELIC_BY_ID[id]
+  const rec = m.relics[id]
+  if (!def || !rec) return 0
+  const p = relicPerk(def)
+  return p.per * (p.also ? 1.5 : 1) * relicLevelPower(rec.level)
+}
+
+/** The relics a full showcase should hold: the strongest perks on the wall, best first. */
+export function bestShowcase(m: MuseumSave, cap: number): string[] {
+  return Object.keys(m.relics)
+    .sort((a, b) => relicWorth(m, b) - relicWorth(m, a) || a.localeCompare(b))
+    .slice(0, Math.max(0, cap))
+}
+
+/** Put the strongest relics in the showcase. Returns true when anything changed. */
+export function fillShowcase(m: MuseumSave, cap: number): boolean {
+  const next = bestShowcase(m, cap)
+  const same = next.length === m.sockets.length && next.every((id) => m.sockets.includes(id))
+  if (same) return false
+  m.sockets = next
   return true
 }
 

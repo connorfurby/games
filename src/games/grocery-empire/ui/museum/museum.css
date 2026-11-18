@@ -5,80 +5,6 @@
   gap: 0.9rem;
 }
 
-.mu-hero {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.8rem 1.5rem;
-  padding: 1rem 1.1rem;
-  border-radius: var(--g2-r-lg);
-  background:
-    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--g2-tag) 16%, transparent), transparent 60%),
-    radial-gradient(120% 140% at 100% 100%, rgba(165, 109, 226, 0.16), transparent 55%),
-    var(--g2-raised);
-  border: 1px solid var(--g2-line);
-}
-
-.mu-hero__title p {
-  margin: 0;
-  color: var(--ge-muted);
-  font-size: var(--t-sm);
-}
-
-.mu-hero__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.mu-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: 6rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: var(--g2-r-md);
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid var(--g2-line);
-}
-
-.mu-stat--select {
-  min-width: 9.5rem;
-  flex: 1 1 9.5rem;
-}
-
-.mu-stat--select .gk-select {
-  width: 100%;
-}
-
-.mu-stat--select .gk-select select {
-  width: 100%;
-  min-height: 2.25rem;
-  padding-right: 1.75rem;
-}
-
-.mu-stat--wide {
-  min-width: 11rem;
-}
-
-.mu-stat span {
-  font-size: var(--t-2xs);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ge-muted);
-}
-
-.mu-stat strong {
-  font-family: var(--g2-display);
-  font-size: var(--t-lg);
-  font-variant-numeric: tabular-nums;
-}
-
-.mu-stat small {
-  font-size: var(--t-xs);
-  color: var(--ge-muted);
-}
-
 .mu-dust {
   color: #c9b8ff;
 }
@@ -255,47 +181,6 @@
 .mu-shop__lean .gk-select,
 .mu-shop__lean .gk-select select {
   width: 100%;
-}
-
-/* Wings */
-.mu-wings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
-.mu-wingchip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid var(--g2-line);
-  background: transparent;
-  color: var(--ge-muted);
-  font: inherit;
-  font-size: var(--t-xs);
-  cursor: pointer;
-}
-
-.mu-wingchip small {
-  font-size: var(--t-2xs);
-  opacity: 0.8;
-}
-
-.mu-wingchip.is-on {
-  background: hsl(var(--wh, 45) 55% 55%);
-  border-color: transparent;
-  color: #120f0a;
-}
-
-.mu-wingchip:not([style]).is-on {
-  background: var(--g2-tag);
-}
-
-.mu-wingchip.is-done::before {
-  content: '✓';
-  color: var(--ge-success);
 }
 
 .mu-wall {
@@ -1003,19 +888,6 @@
   }
 }
 
-.mu-stat--btn {
-  appearance: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.mu-stat--btn small {
-  color: var(--g2-tag);
-  font-size: var(--t-2xs);
-}
-
 .mu-perk {
   margin: 0.4rem 0 0;
   padding: 0.5rem 0.7rem;
@@ -1054,237 +926,6 @@
 
 .co-card__perk::before {
   content: 'Perk';
-}
-
-.mu-perks {
-  padding: 0.8rem 0.9rem;
-  border-radius: var(--g2-r-md);
-  background: var(--g2-raised);
-  border: 1px solid var(--g2-line);
-}
-
-.mu-perks h3 {
-  margin: 0;
-  font-family: var(--g2-display);
-  font-size: var(--t-lg);
-}
-
-.mu-perks p {
-  margin: 0.15rem 0 0.6rem;
-  font-size: var(--t-xs);
-  color: var(--ge-muted);
-}
-
-.mu-perks ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.mu-perks li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.35rem 0.6rem;
-  border-radius: var(--g2-r-sm);
-  background: rgba(0, 0, 0, 0.2);
-  font-size: var(--t-sm);
-}
-
-.mu-perks strong {
-  color: var(--ge-success);
-  font-variant-numeric: tabular-nums;
-}
-
-.mu-sockets {
-  padding: 0.8rem 0.9rem;
-  border-radius: var(--g2-r-md);
-  background: var(--g2-raised);
-  border: 1px solid var(--g2-line);
-}
-
-.mu-sockets h3 {
-  margin: 0;
-  font-family: var(--g2-display);
-  font-size: var(--t-lg);
-}
-
-.mu-sockets p {
-  margin: 0.15rem 0 0.6rem;
-  font-size: var(--t-xs);
-  color: var(--ge-muted);
-}
-
-.mu-sockets ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.mu-sockets li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: var(--g2-r-sm);
-  background: rgba(0, 0, 0, 0.2);
-  font-size: var(--t-sm);
-}
-
-.mu-sockets li.is-lit {
-  box-shadow: inset 0 0 0 1px var(--ge-success);
-}
-
-.mu-sockets li.is-dark span {
-  opacity: 0.6;
-}
-
-/* Gallery strip — CSS grid so alcove/plaque never overlap pedestals. */
-.mu-gallery {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas:
-    'hud hud hud'
-    'peds alcove plaque';
-  gap: 0.55rem 0.75rem;
-  align-items: end;
-  margin: 0;
-  padding: 0.7rem 0.8rem 0.85rem;
-  border-radius: var(--g2-r-lg);
-  border: 1px solid var(--g2-line);
-  background:
-    linear-gradient(180deg, #1a1624 0%, #2a2238 62%, #16121c 62%, #16121c 100%);
-  min-height: 0;
-}
-.mu-gallery__hud {
-  grid-area: hud;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem 0.85rem;
-  font-size: var(--t-xs);
-  color: #c8c0d8;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.mu-gallery__hud strong {
-  color: #efe9dc;
-  font-variant-numeric: tabular-nums;
-}
-.mu-gallery__peds {
-  grid-area: peds;
-  display: flex;
-  gap: 0.45rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  overflow-x: auto;
-  min-width: 0;
-  align-items: flex-end;
-}
-.mu-gallery__empty {
-  color: #a89eb8;
-  font-size: var(--t-sm);
-  padding: 0.85rem 0.25rem;
-}
-.mu-gallery__ped {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.25rem;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  min-width: 4.4rem;
-}
-.mu-gallery__plinth {
-  display: block;
-  width: 2.6rem;
-  height: 0.45rem;
-  border-radius: 2px;
-  background: #4a4058;
-}
-.mu-gallery__ped em {
-  font-style: normal;
-  font-size: var(--t-2xs);
-  color: #a89eb8;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.mu-gallery__alcove {
-  grid-area: alcove;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  min-width: 5.5rem;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid #6a5a40;
-  border-radius: 8px;
-  background: #121018;
-  color: #efe9dc;
-  font-size: var(--t-xs);
-  cursor: pointer;
-}
-.mu-gallery__plaque {
-  grid-area: plaque;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 6rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, #8d7bc4 50%, transparent);
-  background: #1c1824;
-  color: #c9b8ff;
-}
-.mu-gallery__plaque span {
-  font-size: var(--t-2xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #a89eb8;
-}
-.mu-gallery__plaque strong {
-  font-family: var(--g2-display);
-  font-size: var(--t-xl);
-  line-height: 1.1;
-}
-.mu-gallery__plaque small {
-  font-size: var(--t-2xs);
-  color: #a89eb8;
-}
-@media (max-width: 720px) {
-  .mu-gallery {
-    max-height: min(12rem, 32vh);
-    overflow: auto;
-  }
-}
-@media (max-width: 520px) {
-  .mu-gallery {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      'hud hud'
-      'peds peds'
-      'alcove plaque';
-    max-height: min(12rem, 32vh);
-    overflow: auto;
-  }
-  .mu-gallery__alcove,
-  .mu-gallery__plaque {
-    width: 100%;
-  }
-}
-.mu-wings-seg {
-  overflow-x: auto;
-  margin: 0 0 0.5rem;
 }
 .mu-detail--sheet {
   padding: 0.25rem 0 0.5rem;
@@ -1379,18 +1020,358 @@
   }
 }
 
-@layer museum {
-  /* Wing picker: label and a full-width native select. */
-  .mu-wings-pick {
-    display: flex;
-    align-items: center;
+/* ── Museum 1.0: showcase room, how-it-works, perk totals, lit wings ─────── */
+@layer shell {
+  /* Showcase: the room is a row of lit display cases (sockets in the sim). */
+  .mu-case {
+    margin: 0;
+    display: grid;
     gap: var(--s-3);
-    margin: var(--s-3) 0;
-    font: 600 var(--t-sm) / 1.3 var(--ge-font-ui, system-ui, sans-serif);
+    padding: var(--s-3) var(--s-4) var(--s-4);
+    border-radius: var(--r-lg, 14px);
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgb(255 230 170 / 0.1), transparent 60%),
+      linear-gradient(180deg, #1c1a26, #121119 70%, #0d0c12);
+    border: 1px solid rgb(255 255 255 / 0.08);
+  }
+
+  .mu-case__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+  }
+
+  .mu-case__title {
+    font: 700 var(--t-lg) / 1 var(--g2-display, var(--ge-font-ui, system-ui, sans-serif));
+    color: #f4ead2;
+  }
+
+  .mu-case__rule {
+    flex: 1 1 14rem;
+    min-width: 0;
+    font: 500 var(--t-sm) / var(--t-sm-lh, 1.4) var(--ge-font-ui, system-ui, sans-serif);
+    color: rgb(244 234 210 / 0.75);
+  }
+
+  .mu-case__rule strong {
+    color: #f2c14e;
+  }
+
+  .mu-case__row {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5.25rem, 1fr));
+    gap: var(--s-2);
+  }
+
+  @media (max-width: 560px) {
+    .mu-case {
+      padding: var(--s-3);
+    }
+
+    .mu-case__btn,
+    .mu-case__slot.is-empty {
+      min-height: 9rem;
+      padding: var(--s-3) var(--s-1) var(--s-2);
+    }
+
+    /* Phones: just the boosted number; the struck-out base lives in the detail sheet. */
+    .mu-case__perk s {
+      display: none;
+    }
+  }
+
+  .mu-case__slot {
+    position: relative;
+    min-width: 0;
+  }
+
+  .mu-case__btn,
+  .mu-case__slot.is-empty {
+    position: relative;
+    width: 100%;
+    min-height: 11rem;
+    display: grid;
+    justify-items: center;
+    align-content: end;
+    gap: var(--s-1);
+    padding: var(--s-4) var(--s-2) var(--s-3);
+    border-radius: var(--r-md, 10px);
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .mu-case__btn {
+    cursor: pointer;
+    color: #f4ead2;
+    border: 1px solid color-mix(in srgb, var(--rc, #f2c14e) 45%, transparent);
+    background:
+      linear-gradient(180deg, transparent 62%, rgb(0 0 0 / 0.35) 62%, rgb(0 0 0 / 0.5)),
+      linear-gradient(180deg, color-mix(in srgb, var(--rc, #f2c14e) 10%, #1a1822), #15141b);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .mu-case__btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--rc, #f2c14e);
+  }
+
+  .mu-case__btn:focus-visible {
+    outline: 2px solid var(--ge-tag, #f2c14e);
+    outline-offset: 2px;
+  }
+
+  /* Spotlight cone from the top of the case. */
+  .mu-case__light {
+    position: absolute;
+    inset: 0 18% auto;
+    height: 75%;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rc, #f2c14e) 32%, transparent), transparent);
+    clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  .mu-case__btn .rl-icon {
+    position: relative;
+    filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.5));
+  }
+
+  .mu-case__slot.is-empty {
+    border: 1px dashed rgb(244 234 210 / 0.22);
+    background: rgb(255 255 255 / 0.02);
+    color: rgb(244 234 210 / 0.6);
+    align-content: center;
+  }
+
+  .mu-case__glass {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    border: 1px dashed rgb(244 234 210 / 0.25);
+    margin-bottom: var(--s-1);
+  }
+
+  .mu-case__name {
+    position: relative;
+    font: 700 var(--t-sm) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+  }
+
+  .mu-case__perk {
+    position: relative;
+    font: 600 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-success, #7cc47f);
+  }
+
+  .mu-case__slot.is-empty .mu-case__perk {
+    color: inherit;
+    font-weight: 500;
+  }
+
+  .mu-case__perk s {
+    color: rgb(244 234 210 / 0.45);
+    margin-right: 0.25em;
+  }
+
+  /* How it works: three numbered rules, one line each. */
+  .mu-how {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--s-2);
+  }
+
+  .mu-how p {
+    margin: 0;
+    display: flex;
+    gap: var(--s-2);
+    align-items: flex-start;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md, 10px);
+    background: rgb(255 255 255 / 0.03);
+    border: 1px solid rgb(255 255 255 / 0.07);
+    font: 500 var(--t-sm) / var(--t-sm-lh, 1.4) var(--ge-font-ui, system-ui, sans-serif);
     color: var(--ge-ink-muted);
   }
-  .mu-wings-pick .gk-select {
-    flex: 1;
-    max-width: 24rem;
+
+  .mu-how b {
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: #f2c14e;
+    color: #1a1508;
+    font: 800 var(--t-xs) / 1 var(--ge-font-ui, system-ui, sans-serif);
+  }
+
+  /* What your relics add: a grid of stat chips. */
+  .mu-perks {
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .mu-perks h3,
+  .mu-sockets h3 {
+    margin: 0;
+    font: 700 var(--t-md) / 1.2 var(--g2-display, var(--ge-font-ui, system-ui, sans-serif));
+  }
+
+  .mu-perks ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: var(--s-2);
+  }
+
+  .mu-perks li {
+    display: grid;
+    gap: 2px;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md, 10px);
+    background: rgb(255 255 255 / 0.04);
+    border: 1px solid rgb(255 255 255 / 0.07);
+  }
+
+  .mu-perks li span {
+    font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .mu-perks li strong {
+    font: 700 var(--t-md) / 1.1 var(--ge-font-ui, system-ui, sans-serif);
+    font-variant-numeric: tabular-nums;
+    color: var(--ge-success, #7cc47f);
+  }
+
+  .mu-perks__case {
+    font: 600 var(--t-xs) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+    font-style: normal;
+    color: #f2c14e;
+  }
+
+  .mu-perks > .gk-btn {
+    justify-self: start;
+  }
+
+  /* Lit wings */
+  .mu-sockets {
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .mu-sockets p {
+    margin: 0;
+    font: 500 var(--t-sm) / var(--t-sm-lh, 1.4) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+  }
+
+  .mu-sockets ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--s-2);
+  }
+
+  .mu-sockets li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-md, 10px);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .mu-sockets li.is-lit {
+    border-color: rgb(242 193 78 / 0.55);
+    background: rgb(242 193 78 / 0.08);
+  }
+
+  .mu-sockets li > span:first-child {
+    display: grid;
+    min-width: 0;
+  }
+
+  .mu-sockets li small {
+    color: var(--ge-ink-muted);
+    font-size: var(--t-xs);
+  }
+
+  .mu-sockets__why {
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+  }
+
+  /* Wings */
+  .mu-wall__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+    margin-bottom: var(--s-3);
+  }
+
+  .mu-wall__head h3 {
+    margin: 0;
+    font: 700 var(--t-md) / 1.2 var(--g2-display, var(--ge-font-ui, system-ui, sans-serif));
+  }
+
+  .mu-wall__count {
+    font: 600 var(--t-sm) / 1.2 var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mu-wall__head .mu-bar {
+    flex: 1 1 8rem;
+  }
+
+  .mu-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: var(--s-2);
+  }
+
+  .mu-wingcard__peek {
+    display: flex;
+    gap: 4px;
+    min-height: 28px;
+  }
+
+  .mu-wingcard.is-lit {
+    border-color: rgb(242 193 78 / 0.7);
+    box-shadow: 0 0 0 1px rgb(242 193 78 / 0.25), 0 0 18px rgb(242 193 78 / 0.12);
+  }
+
+  .mu-tile.is-cased {
+    border-color: #f2c14e;
+  }
+
+  .mu-detail__acts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .mu-detail__note,
+  .mu-shop__note {
+    font: 500 var(--t-xs) / var(--t-xs-lh) var(--ge-font-ui, system-ui, sans-serif);
+    color: var(--ge-ink-muted);
+    margin: 0;
+  }
+
+  .mu-shop {
+    display: grid;
+    gap: var(--s-2);
   }
 }

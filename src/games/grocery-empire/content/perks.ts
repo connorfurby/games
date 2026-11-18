@@ -231,7 +231,7 @@ const HORIZON_PERKS: PerkDef[] = [
   { id: 'hz-agent', name: 'Agent Wage', per: '−10% agent wage per point. Staff wages stay put.', max: 3, cost: 2, branch: 'horizon', band: 1, visible: (s) => s.era >= 10 },
   { id: 'hz-clause', name: 'Clause Ink', per: pctLine('charter seal', 0.04), max: 5, cost: 2, branch: 'horizon', band: 1, visible: (s) => s.era >= 11, effects: fx('seal', 0.04) },
   { id: 'hz-boutique', name: 'Boutique Craft', per: 'Boutique craft cap 1.5 → 1.65.', max: 1, cost: 3, branch: 'horizon', band: 2, visible: (s) => s.era >= 11, effects: fx('margin', 0.02) },
-  { id: 'hz-socket', name: 'Fifth Socket', per: 'Socketed relics multiply by ×1.45 instead of ×1.35.', max: 1, cost: 3, branch: 'horizon', band: 2, visible: (s) => s.era >= 11 },
+  { id: 'hz-socket', name: 'Brighter Showcase', per: 'Relics in the showcase give +45% instead of +35%.', max: 1, cost: 3, branch: 'horizon', band: 2, visible: (s) => s.era >= 11 },
   { id: 'hz-endless', name: 'Endless Divisor', per: 'Endless planets fall off slower: divisor 0.12 → 0.10.', max: 1, cost: 3, branch: 'horizon', band: 2, visible: (s) => s.era >= 12, effects: fx('network', 0.02) },
 ]
 

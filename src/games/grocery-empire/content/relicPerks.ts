@@ -156,7 +156,7 @@ export function wingLightBlock(
   if (!completed.includes(wing)) return 'Finish that wing first.'
   const now = effectiveLitWings(completed, lit, cap)
   if (now.includes(wing)) return 'That wing is already lit.'
-  if (now.length >= cap) return 'Every socket is lit. Leave another wing dark first.'
+  if (now.length >= cap) return 'Every wing light is on. Turn another wing off first.'
   return null
 }
 

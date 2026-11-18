@@ -67,7 +67,7 @@ export const EMPIRE_REWARDS: EmpireReward[] = [
   { level: 125, name: 'Ink on the clause.', blurb: 'Seal comes a little easier. The Council opens an annex: two more seats pay out.', effects: [e('seal', 0.02)], unlocks: 'annex-seat' },
   { level: 130, name: 'The night frequency.', blurb: 'Shoppers who only come after close.', effects: [e('demand', 0.02)] },
   { level: 135, name: 'A fair margin.', blurb: 'The till keeps a little more of the same sale. Council seats pay a quarter more.', effects: [e('margin', 0.02)], unlocks: 'council-whip' },
-  { level: 140, name: 'The planet shelf.', blurb: 'Planet shelves, thicker. The fifth socket stays with the project.', effects: [e('planet', 0.1)] },
+  { level: 140, name: 'The planet shelf.', blurb: 'Planet shelves, thicker. The two extra showcase cases stay with the project.', effects: [e('planet', 0.1)] },
   { level: 145, name: 'The network listens.', blurb: 'Every copy of the store hears the list. A second annex seats two more.', effects: [e('network', 0.02)], unlocks: 'annex-seat-2' },
   { level: 150, name: 'One can, worth more.', blurb: 'The basket remembers who asked for it. Every instrument takes one more lot.', effects: [e('value', 0.02)], unlocks: 'instrument-lot' },
   { level: 155, name: 'Rank on the wire.', blurb: 'Empire learns from the last aisle.', effects: [e('xp', 0.02)] },

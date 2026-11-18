@@ -42,7 +42,7 @@ export const PROJECTS: ProjectDef[] = [
   { id: 'pj-bed-glass', name: 'Glaze the Beds', blurb: 'Glass over the beds. The season’s lock lifts earlier, and a clever cross can go in before the turn.', era: 9, cash: 6e18, seconds: 30 * MIN, effects: [e('seed', 0.06)] },
   { id: 'pj-wire-hall', name: 'Raise the Wire Hall', blurb: 'One room for every relay, and one more chair on the agent desk.', era: 10, cash: 2e19, seconds: 40 * MIN, effects: [e('signal', 0.1), e('network', 0.03)] },
   { id: 'pj-council-annex', name: 'Open the Council Annex', blurb: 'Three more Council seats pay in full, and a side door for the press.', era: 10, cash: 5e19, seconds: 45 * MIN, effects: [e('district', 0.12), e('seal', 0.06)] },
-  { id: 'pj-fifth-socket', name: 'Cut the Fifth Socket', blurb: 'The museum can socket five relics.', era: 11, cash: 2e20, seconds: 45 * MIN, effects: [e('planet', 0.05)] },
+  { id: 'pj-fifth-socket', name: 'Build Two More Cases', blurb: 'The museum showcase holds five relics, and five wings can be lit.', era: 11, cash: 2e20, seconds: 45 * MIN, effects: [e('planet', 0.05)] },
   { id: 'pj-embassy-chair', name: 'Seat the Embassy Chair', blurb: 'One more chair at the hearing table. The Minutes Clerk may strike one more grudge per docket.', era: 11, cash: 3e20, seconds: 35 * MIN, effects: [e('seal', 0.04)] },
   { id: 'pj-retaste', name: 'Retaste the Fork', blurb: 'Clear the taster fork once.', era: 11, cash: 1.5e20, seconds: 20 * MIN, effects: [e('seed', 0.08)] },
   { id: 'pj-reseal', name: 'Reseal the Charter', blurb: 'Clear the charter fork once.', era: 12, cash: 8e20, seconds: 30 * MIN, effects: [e('seal', 0.1)] },

@@ -265,7 +265,7 @@ describe('museum sockets', () => {
     const lit = litWingsOf(m, 3)
     expect(lit.length).toBe(3)
     const dark = completedWings(m).find((w) => !lit.includes(w))!
-    expect(canLightWing(m, dark, 3)).toMatch(/leave another wing dark/i)
+    expect(canLightWing(m, dark, 3)).toMatch(/turn another wing off/i)
     expect(lightWing(m, dark, 3)).toBe(false)
     expect(litWingsOf(m, 3)).toEqual(lit)
   })

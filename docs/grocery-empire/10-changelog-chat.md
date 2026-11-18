@@ -2,6 +2,15 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AG. Owner round — fewer clicks, one speed, a museum you can read (2026-11-17, on `main`) · SAVE **39**
+
+- **Invoices pay themselves.** New `depth.autoPayInvoices` (default on; SAVE 39 turns it on for old saves) settles open invoices oldest first, early, whenever cash covers them, quietly. The Invoices desk has the toggle and one **Pay all N** button (`payAllInvoices`) instead of a Pay button per invoice. Shared logic in `sim/systems/invoices.ts`.
+- **No time speed-ups.** The 2×/4×/8× HUD buttons, the phone speed cycler and the Speed setting are gone. `setSpeed` only accepts 1; migrate, invariants and reset force `speed = 1`. The "Speed Demon" relic now asks for 100 baskets in a run's first three minutes.
+- **Upgrades:** the plaque wall (a copy of the group tabs) is gone. The room is the group tabs, the group's blurb and a **group bonus track** (current ×, levels to the next step).
+- **No hover on things that do nothing.** Scene zones are tappable only for an action, another page or a live suggestion; zones that only scrolled to a control already on the page (Rank hall trait points) are plain art. Memo cards and ledger rows lost their hover highlight. Probe: `/home/claude/audit/hover.cjs`.
+- **Museum rebuilt.** The room is a lit **Showcase**: one display case per socket, showing each relic's perk before → after the +35%. Empty cases say what to do; **Fill with my best** (`fillShowcase`, `bestShowcase`, `relicWorth` in `sim/museum.ts`) fills them in one tap. A three-step "how it works" strip, a **What your relics add** grid that finally includes levels and cases (with the cases' share), **Lit wings** (wing sockets, renamed) with the bonus on each row, wing cards with relic silhouettes and a Lit state, a back button instead of the wing picker, and the dust shop holding Auto-dust. The relic card is one component for phone and desktop, portals to the game root (it was off-screen on long pages), and swaps a stronger relic into a full showcase instead of greying the button. Player copy says showcase/case, never socket.
+- `sim/sockets.test.ts` proves a case raises the stat by ×1.35 and unsocketing restores it, and that Fill picks the strongest relics.
+
 ## AE. New-player playtest, Era 0→2 (2026-11-17, on `main`) · SAVE **38** (unchanged)
 
 - Walked a fresh save at 390 px and 1440 px with "Do it for me" on every tour step.
