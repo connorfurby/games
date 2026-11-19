@@ -12,37 +12,37 @@ export const ERA_STORY: Record<
   },
   1: {
     title: 'Corner Store',
-    line: 'Era 1 — Shift Board, invoice book, flagship planogram practice, then the side yard.',
+    line: 'Era 1 — run shifts, pay suppliers on time, lay out the shelves, then buy the side yard.',
     epigraph: 'The block knows which door stays lit after dark.',
   },
   2: {
     title: 'Chain',
-    line: 'Era 2 — Flyer Desk weeks, matched stores, Star Board ≥ 3.7 before the cold permit.',
+    line: 'Era 2 — run flyer weeks, match each store to its street, and earn 3.7 stars before the cold permit.',
     epigraph: 'A second keyring is heavier than the first.',
   },
   3: {
     title: 'Cold Chain',
-    line: 'Era 3 — Cooler Log signs, blast + tunnel, Fresh+Cold on the board, then leave.',
+    line: 'Era 3 — keep the cooler log signed, build a blast freezer and a cold tunnel, then leave the region.',
     epigraph: 'Cold is a promise you pay for twice.',
   },
   4: {
     title: 'Autonomous Globe',
-    line: 'Era 4 — Dispatch Board clean manifests, win back a defection, then the berth.',
+    line: 'Era 4 — ship clean manifests, win back a store that left, then build the barge berth.',
     epigraph: 'Distance is just another aisle.',
   },
   5: {
     title: 'Seed Barges',
-    line: 'Era 5 — haulers clear pockets, staff the middle shift, hold off Off-Brand, feature ration packs.',
+    line: 'Era 5 — send haulers to clear pockets, staff the middle shift, hold off Off-Brand, and feature ration packs.',
     epigraph: 'Someone still has to name what gets filled.',
   },
   6: {
     title: 'Hungry Universe',
-    line: 'Era 6 — ration week freezes the Star Board. Continue, Accept, or Reject. The aisle stays.',
+    line: 'Era 6 — ration week holds your stars where they are. Then choose: continue, accept or reject. The store stays.',
     epigraph: 'The counter outlives the clerk who opened it.',
   },
   7: {
     title: 'Pantry of Worlds',
-    line: 'Era 7 — practise two shelf layouts, put a surveyor on a shift, then file one for credit (72% or 85%).',
+    line: 'Era 7 — practise two shelf layouts, put a surveyor on a shift, then stock worlds well (72% or 85%).',
     epigraph: 'A planet is a shelf that learned a climate.',
   },
   8: {
@@ -52,7 +52,7 @@ export const ERA_STORY: Record<
   },
   9: {
     title: 'Cultivars',
-    line: 'Era 9 — named crosses and season chores on the Shift Board. A weak year is still a gate.',
+    line: 'Era 9 — breed named crops and keep up with the season’s chores. Even a weak year counts.',
     epigraph: 'Seed pays rent in traits.',
   },
   10: {
@@ -62,12 +62,12 @@ export const ERA_STORY: Record<
   },
   11: {
     title: 'Charter of Groceries',
-    line: 'Era 11 — keep four clauses, clear Concord’s hearing docket (2–3 sessions), then stamp.',
+    line: 'Era 11 — keep four clauses, sit Concord’s hearings (two or three sessions), then sign the charter.',
     epigraph: 'A stamp is a small law.',
   },
   12: {
     title: 'The Last Aisle',
-    line: 'Era 12 — Ivo’s list. Staffed departments make lines kinder. Accepting needs 85%.',
+    line: 'Era 12 — fill Ivo’s list. Staffed departments make the lines easier. Accepting the ending needs 85%.',
     epigraph: 'One can, and then the plaque or the standing order.',
   },
 }

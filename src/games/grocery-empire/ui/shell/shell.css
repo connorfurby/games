@@ -2282,3 +2282,33 @@
     }
   }
 }
+
+@layer shell {
+  .ra-next {
+    display: grid;
+    gap: 2px;
+    margin-top: var(--s-1);
+    padding: var(--s-2) var(--s-3);
+    border-left: 3px solid var(--ge-accent, #e8583c);
+    border-radius: 0 var(--g2-r-sm, 8px) var(--g2-r-sm, 8px) 0;
+    background: color-mix(in srgb, var(--ge-accent, #e8583c) 7%, transparent);
+    font-size: var(--t-sm);
+  }
+
+  .ra-next__k {
+    font: 700 var(--t-2xs, 0.6875rem) / 1.2 var(--g2-ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ge-accent, #e8583c);
+  }
+
+  .ra-next em {
+    color: var(--ge-muted);
+    font-size: var(--t-xs);
+  }
+
+  .ra-next span:last-child {
+    color: var(--ge-muted);
+    font-size: var(--t-xs);
+  }
+}

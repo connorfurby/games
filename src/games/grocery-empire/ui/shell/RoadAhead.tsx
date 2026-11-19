@@ -65,6 +65,14 @@ export function RoadAhead() {
           )
         })}
       </ol>
+      {door != null && ERA_STORY[door] ? (
+        <aside className="ra-next">
+          <span className="ra-next__k">Next chapter</span>
+          <strong>{ERA_STORY[door].title}</strong>
+          <em>“{ERA_STORY[door].epigraph}”</em>
+          <span>{ERA_STORY[door].line.replace(/^Era \d+ — /, '')}</span>
+        </aside>
+      ) : null}
     </section>
   )
 }
