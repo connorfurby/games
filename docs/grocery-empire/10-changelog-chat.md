@@ -11,6 +11,14 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - **Level-up moment**: confetti and a "Grand opening!" / "Built!" sign over the building that grew; the card itself glows. Reduced motion: sign only.
 - **Museum showcase grows through the run**: base 3 (5 with the fifth-socket project) +1 case at Era 3, 6, 9 and 12, +1 for Museum of Baskets (civic 5). Only cases the run has opened pay (`relicEffects` ignores sockets past `socketCapOf`); a locked "Another case · Opens in Era N" tile shows what's coming.
 
+## AO. Back alley, visitors, venture rushes (2026-11-19, on `main`, SAVE 43)
+
+- **The back alley** (`content/crime.ts`, `sim/systems/crime.ts`, `sim/commandsCrime.ts`, `ui/ventures/BackAlley.tsx`, `CRIME` in balance): 18 optional schemes from Era 1 (Relabel the dates, Borrow from the charity jar, Water down the coffee) to Era 12 (The Last Aisle heist). Each pays now (shoppers, cash, faster tills, cheaper wages, free stock, ends a rival move) and adds **Heat**. Heat cools 10/min; **Lie low** cools 3× and shuts the alley; **Envelope for the inspector** (Era 4+) cuts 35 Heat or backfires. Catch odds = (heat + half the scheme's heat) / 170, capped 60%; above 70 Heat surprise raids can come. Punishments escalate: warning letter → fine (scheme cancelled) → padlock (shoppers ×0.2 for 1 min) → scandal / frozen venture tills / probation. Fines are seconds of sales, never more than half your cash. Rap sheet + alley rank (Honest grocer → Legend of the back alley); BUSTED stamp on the card. Bots never use it, so pacing is unchanged by design.
+- **Visitors at the door** (`content/visitors.ts`, `sim/systems/visitors.ts`, `components/VisitorCard.tsx`, `VISITOR` in balance): 29 characters across Eras 1–12, at least two per era. One knocks every ~4 min, waits 90 s in a corner card, two choices (shoppers, tills, wages, cash, brand, stock, coin flips, Heat up or down). Never shown over a chapter card, a headline or a tutorial.
+- **Venture rushes** (`content/ventureRushes.ts`, `VENTURE_RUSH`): about every 4 min one open till fills 3× for 30 s, with its own line ("A tour bus just parked by the Coffee Cart."); the card glows with a Rush badge.
+- **Books**: demand multipliers now use plain names and only list the ones that move.
+- State: `crime`, `visitors`, `ventureRush` (SAVE 43, migrate paths, version pins bumped).
+
 ## AN. Signage track (2026-11-19, on `main`)
 
 - **Seventh build track, Signage** (`content/builds.ts`, `BUILD_TIERS.signageDemand`, `signageMul` in `demandBreakdown`): Chalkboard ($120, Era 1) → Painted Sign → Neon Sign → Billboard → Video Tower → Sky Banner → Aurora Sign → Orbital Billboard (Era 11), +4% to +26% demand. Opens after $150 lifetime revenue. Bots buy it like any track (`BUILD_FILTERS`); late tiers have claim readers.

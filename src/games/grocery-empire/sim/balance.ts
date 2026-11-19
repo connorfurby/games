@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 42
+export const SAVE_VERSION = 43
 
 /** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
 export const PUZZLE_SLOW = 0.72
@@ -342,6 +342,68 @@ export const SHRINK = {
   floor: 0.2,
   mirrorMul: 0.7,
   senseCutPerLevel: 0.06,
+}
+
+/** The Back Alley (optional schemes): Heat, the odds of getting caught, and what it costs. */
+export const CRIME = {
+  /** The alley opens once any venture is open (or Era 2). */
+  heatMax: 100,
+  /** Heat cools this much per second (10 a minute). */
+  coolPerSec: 1 / 6,
+  /** Lying low cools this many times faster and closes the alley. */
+  lieLowMul: 3,
+  lieLowSec: 120,
+  /** Catch odds when you pull a scheme: (heat before + half the scheme's heat) / catchDiv, capped. */
+  catchDiv: 170,
+  catchCap: 0.6,
+  /** Above this Heat, a surprise raid can come any time. */
+  raidHeat: 70,
+  /** Chance per second of a raid while above raidHeat. */
+  raidPerSec: 1 / 300,
+  /** Punishment ladder (by Heat when caught) and the fine, in seconds of sales. */
+  warningBelow: 35,
+  fineBelow: 60,
+  padlockBelow: 80,
+  fineSec: { warning: 30, fine: 120, padlock: 120, severe: 180 },
+  fineMinCash: 5,
+  /** A fine never takes more than this share of cash on hand. */
+  fineCashCap: 0.5,
+  padlockSec: 60,
+  padlockDemandMul: 0.2,
+  scandalSec: 240,
+  scandalDemandMul: 0.8,
+  scandalBrandHit: 0.05,
+  frozenSec: 240,
+  probationSec: 360,
+  /** Getting caught adds this Heat on top (the inspector now knows your name). */
+  caughtHeat: 10,
+  /** An envelope for the inspector (Era 4+): seconds of sales, Heat removed, backfire odds. */
+  bribeSec: 60,
+  bribeHeatCut: 35,
+  bribeBackfire: 0.12,
+  bribeBackfireHeat: 25,
+  bribeCooldownSec: 300,
+  /** Rap sheet keeps this many entries. */
+  sheetCap: 12,
+}
+
+/** Venture rushes: now and then one open till fills much faster for a short while. */
+export const VENTURE_RUSH = {
+  /** Average seconds between rushes. */
+  everySec: 240,
+  sec: 30,
+  fillMul: 3,
+}
+
+/** Visitors at the door. */
+export const VISITOR = {
+  firstAfterSec: 240,
+  /** Average seconds between visitors (±40%). */
+  gapSec: 260,
+  /** How long a visitor waits before leaving. */
+  waitSec: 90,
+  /** No visitors until the store has earned this much. */
+  minRevenue: 300,
 }
 
 export const INSPECTION = {

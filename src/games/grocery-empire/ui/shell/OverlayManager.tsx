@@ -1,3 +1,4 @@
+import { VisitorCard } from '../components/VisitorCard'
 import { AnimatePresence, motion } from 'motion/react'
 import type { ComponentProps } from 'react'
 import type { MenuId } from '../../content/menus'
@@ -127,6 +128,10 @@ export function OverlayManager({
       ) : null}
 
       {clear && chapterEra == null && state.horizon.headlineId ? <HeadlineCard reducedMotion={reducedMotion} /> : null}
+
+      {clear && chapterEra == null && !state.horizon.headlineId && !state.tutorials.active && state.visitors?.current ? (
+        <VisitorCard reducedMotion={reducedMotion} />
+      ) : null}
 
       {clear && !chapterEra && state.tutorials.active ? <CoachOverlay active={state.tutorials.active} /> : null}
 

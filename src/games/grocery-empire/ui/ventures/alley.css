@@ -1,0 +1,271 @@
+@layer panels {
+  .al {
+    margin-top: var(--s-4);
+    padding: var(--s-3);
+    border-radius: var(--r-lg, 14px);
+    background:
+      repeating-linear-gradient(0deg, rgb(0 0 0 / 0.12) 0 2px, transparent 2px 22px),
+      repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 2px, transparent 2px 46px),
+      linear-gradient(180deg, #2a1c1a, #1a1214);
+    border: 1px solid rgb(232 88 60 / 0.25);
+    display: grid;
+    gap: var(--s-3);
+  }
+  .al-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+  }
+  .al-title {
+    margin: 0;
+    font-size: var(--t-lg, 1.15rem);
+  }
+  .al-sub {
+    margin: 2px 0 0;
+    color: var(--ge-ink-muted);
+    font-size: var(--t-xs);
+  }
+  .al-rank {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgb(242 193 78 / 0.12);
+    border: 1px solid rgb(242 193 78 / 0.35);
+    color: #f2c14e;
+    font-size: var(--t-xs);
+    font-weight: 700;
+  }
+  .al-heat__bar {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    background: rgb(0 0 0 / 0.4);
+    overflow: hidden;
+  }
+  .al-heat__fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #6ea8c9, #f2c14e 45%, #e8583c 80%, #ff2d55);
+    background-size: 100vw 100%;
+    transition: width 0.6s ease;
+  }
+  .al-heat__mark {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgb(255 255 255 / 0.5);
+  }
+  .al-heat__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-2);
+    margin-top: 4px;
+    font-size: var(--t-xs);
+    flex-wrap: wrap;
+  }
+  .al-heat__word {
+    font-weight: 700;
+  }
+  .al-heat__word.is-hot {
+    color: #ff7a5c;
+  }
+  .al-heat__hint {
+    color: var(--ge-ink-muted);
+  }
+  .al-states {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .al-state {
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: var(--t-2xs, 0.72rem);
+    font-weight: 700;
+    background: rgb(90 168 90 / 0.18);
+    color: #9fd69f;
+    font-variant-numeric: tabular-nums;
+  }
+  .al-state.is-bad {
+    background: rgb(232 88 60 / 0.2);
+    color: #ff9a80;
+  }
+  .al-counters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .al-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: var(--s-2);
+  }
+  .al-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--s-3);
+    border-radius: var(--r-md, 10px);
+    background: rgb(12 10 12 / 0.7);
+    border: 1px solid rgb(244 234 210 / 0.08);
+    overflow: hidden;
+  }
+  .al-card.is-running {
+    border-color: rgb(90 168 90 / 0.5);
+    box-shadow: inset 0 0 24px rgb(90 168 90 / 0.08);
+  }
+  .al-card > .gk-btn,
+  .al-card > button {
+    margin-top: auto;
+  }
+  .al-card__name {
+    margin: 0;
+    font-size: var(--t-sm);
+  }
+  .al-card__pitch {
+    margin: 0;
+    font-style: italic;
+    color: var(--ge-ink);
+    font-size: var(--t-xs);
+  }
+  .al-card__from {
+    margin: 0;
+    color: var(--ge-ink-muted);
+    font-size: var(--t-2xs, 0.72rem);
+  }
+  .al-card__pays {
+    margin: 0;
+    color: #9fd69f;
+    font-size: var(--t-xs);
+    font-weight: 700;
+  }
+  .al-card__chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .al-chip {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: var(--t-2xs, 0.72rem);
+    background: rgb(255 255 255 / 0.06);
+    color: var(--ge-ink-muted);
+  }
+  .al-chip--heat {
+    color: #f2c14e;
+  }
+  .al-chip--risk {
+    color: #ff9a80;
+    background: rgb(232 88 60 / 0.15);
+  }
+  .al-card__need {
+    margin: 0;
+    color: var(--ge-ink-muted);
+    font-size: var(--t-2xs, 0.72rem);
+  }
+  .al-stamp {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    background: rgb(20 8 8 / 0.72);
+    pointer-events: none;
+    animation: al-stamp 2.6s cubic-bezier(0.3, 1.5, 0.5, 1) forwards;
+  }
+  .al-stamp span {
+    padding: 4px 14px;
+    border: 3px solid #ff5a3c;
+    border-radius: 6px;
+    color: #ff5a3c;
+    font-weight: 900;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    transform: rotate(-8deg);
+  }
+  .al-stamp small {
+    margin-top: 8px;
+    color: #ffd2c4;
+    font-weight: 700;
+  }
+  @keyframes al-stamp {
+    0% { opacity: 0; transform: scale(1.3); }
+    10% { opacity: 1; transform: scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .al-more {
+    margin: 0;
+    color: var(--ge-ink-muted);
+    font-size: var(--t-xs);
+  }
+  .al-sheet__sum {
+    margin: 0 0 var(--s-2);
+    color: var(--ge-ink-muted);
+    font-size: var(--t-xs);
+  }
+  .al-sheet {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+    font-size: var(--t-xs);
+  }
+  .al-sheet li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.03);
+  }
+  .al-sheet li.is-caught span:last-child {
+    color: #ff9a80;
+  }
+  .al-sheet li.is-clean span:last-child {
+    color: #9fd69f;
+  }
+  .ge-reduced-motion .al-stamp {
+    animation: none;
+  }
+  .ge-reduced-motion .al-heat__fill {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .al-stamp { animation: none; }
+    .al-heat__fill { transition: none; }
+  }
+}
+
+@layer panels {
+  .ge-card--venture.is-rush {
+    box-shadow: 0 0 0 2px rgb(242 193 78 / 0.7), 0 0 22px rgb(242 193 78 / 0.25);
+  }
+  .vt-rush {
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #f2c14e;
+    color: #2a1d18;
+    font-size: var(--t-2xs, 0.72rem);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    animation: vt-rush 1.6s ease-in-out infinite;
+  }
+  @keyframes vt-rush {
+    50% { transform: scale(1.06); }
+  }
+  .ge-reduced-motion .vt-rush {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vt-rush { animation: none; }
+  }
+}

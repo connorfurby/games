@@ -113,6 +113,7 @@ import {
   matchCoupons,
   orderPizza,
 } from './systems/events'
+import { crimeHandlers } from './commandsCrime'
 import { collectVenture } from './systems/growth'
 import type { RebrandCarry } from './systems/prestige'
 import { hasAffordableMemo, planAffordableMemos } from './memoPlan'
@@ -181,6 +182,10 @@ export type Command =
   | { type: 'openVenture'; id: string }
   | { type: 'levelVenture'; id: string }
   | { type: 'collectVenture'; id: string }
+  | { type: 'pullScheme'; id: string }
+  | { type: 'lieLow' }
+  | { type: 'bribeInspector' }
+  | { type: 'answerVisitor'; pick: 'a' | 'b' }
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
@@ -1876,6 +1881,15 @@ const handlers = {
   ),
   ...Object.fromEntries(
     Object.entries(horizonHandlers).map(([k, h]) => [
+      k,
+      {
+        can: (s: GameState, cmd: Command) => h.can(s, cmd as never),
+        run: (s: GameState, cmd: Command) => h.run(s, cmd as never),
+      } satisfies Handler,
+    ]),
+  ),
+  ...Object.fromEntries(
+    Object.entries(crimeHandlers).map(([k, h]) => [
       k,
       {
         can: (s: GameState, cmd: Command) => h.can(s, cmd as never),

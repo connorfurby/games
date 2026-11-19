@@ -985,8 +985,12 @@
     filter: brightness(1.05);
   }
 
+  /* Waiting: readable, just quiet (no washed-out text). */
   .g2-goal__do--free:disabled {
-    opacity: 0.45;
+    background: transparent;
+    border: 1px dashed color-mix(in srgb, var(--ge-free, #e85d4c) 60%, transparent);
+    color: var(--ge-ink-muted);
+    box-shadow: none;
     cursor: not-allowed;
     filter: none;
   }

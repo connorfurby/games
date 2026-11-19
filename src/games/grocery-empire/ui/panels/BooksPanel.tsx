@@ -455,11 +455,56 @@ function BooksPanelInner() {
       <Disclosure title="Demand multipliers" open={demandOpen} onOpenChange={setDemandOpen}>
         <Rows
           rows={[
-            ...Object.entries(demand.parts).map(([k, v]) => ({ label: k, value: `×${v.toFixed(2)}`, muted: true })),
+            ...Object.entries(demand.parts)
+              .filter(([, v]) => Math.abs(v - 1) > 0.005)
+              .map(([k, v]) => ({ label: demandPartLabel(k), value: `×${v.toFixed(2)}`, muted: true })),
             { label: 'Total', value: `×${demand.total.toFixed(2)}` },
           ]}
         />
       </Disclosure>
     </LateHubShell>
   )
+}
+
+/** Plain names for the demand multipliers (no code words on screen). */
+const DEMAND_PART_LABELS: Record<string, string> = {
+  ads: 'Ads',
+  reputation: 'Reputation',
+  hours: 'Opening hours',
+  weather: 'Weather',
+  storefront: 'Storefront',
+  civic: 'Civic builds',
+  signage: 'Signage',
+  loyalty: 'Loyalty cards',
+  memos: 'Memos',
+  upgrades: 'Upgrades',
+  inspection: 'Inspection',
+  alley: 'Back alley',
+  couponWar: 'Coupon war',
+  rival: 'Rival move',
+  celebrity: 'Celebrity endcap',
+  brand: 'Brand',
+  morale: 'Crew morale',
+  empire: 'Empire',
+  expansions: 'Expansions',
+  marketing: 'Marketing',
+  ventures: 'Ventures',
+  wordOfMouth: 'Word of mouth',
+  rivals: 'Rival stores',
+  trees: 'Talents and projects',
+  open: 'Open or closed',
+  early: 'Getting started',
+  stars: 'Star rating',
+  counterFlyer: 'Penny’s flyer',
+  regularMiss: 'Missed regular',
+  openShift: 'Open shift',
+  produceGrade: 'Produce grade',
+  chainPolicy: 'Chain policy',
+  rationWeek: 'Ration week',
+  buildFacing: 'Build styles',
+  endcaps: 'Endcaps',
+}
+
+function demandPartLabel(k: string): string {
+  return DEMAND_PART_LABELS[k] ?? k.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
 }

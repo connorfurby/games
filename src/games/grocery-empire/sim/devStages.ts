@@ -438,7 +438,12 @@ export function listDevStages(): DevStageDef[] {
 
 export function buildDevStage(id: string): GameState | null {
   const def = DEV_STAGES.find((d) => d.id === id)
-  return def ? def.build() : null
+  if (!def) return null
+  const s = def.build()
+  // A stage opens quietly: the first knock comes half a minute in.
+  s.visitors.current = null
+  s.visitors.nextAt = s.time + 30
+  return s
 }
 
 /** Open every department menu (debug). */

@@ -626,6 +626,12 @@ export interface GameState {
   introSeen: boolean
   /** SAVE 42: goals that have been completed once. A goal never un-completes on the HUD. */
   goalsDone: Record<string, true>
+  /** SAVE 43: the Back Alley — optional schemes, Heat and punishments. Resets on Rebrand. */
+  crime: CrimeState
+  /** SAVE 43: a venture rush (one till fills faster for a while). */
+  ventureRush: { id: string; until: number } | null
+  /** SAVE 43: visitors at the door. */
+  visitors: VisitorsState
 
   /** Gallery of notable spoilage events (top 12 by qty). */
   museum: { exhibits: { t: number; qty: number; note: string }[] }
@@ -1046,6 +1052,9 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     dialogueQueue: [],
     introSeen: false,
     goalsDone: {},
+    crime: emptyCrime(),
+    ventureRush: null,
+    visitors: { current: null, nextAt: 240, boosts: [], met: {}, answered: 0 },
 
     museum: { exhibits: [] },
 
@@ -1120,4 +1129,57 @@ export function cleanStoreName(raw: unknown): string {
 /** What the sign, HUD and share cards print. */
 export function storeDisplayName(s: Pick<GameState, 'storeName'>): string {
   return s.storeName || 'Grocery Empire'
+}
+
+export interface CrimeSheetEntry {
+  t: number
+  scheme: string
+  /** 'clean' when it worked, otherwise the punishment id. */
+  outcome: string
+  fine: number
+}
+
+export interface CrimeState {
+  heat: number
+  /** Scheme id → time it can be pulled again. */
+  cooldowns: Record<string, number>
+  /** Running scheme boosts: scheme id → until. */
+  active: Record<string, number>
+  lieLowUntil: number
+  padlockUntil: number
+  scandalUntil: number
+  frozenUntil: number
+  probationUntil: number
+  bribeReadyAt: number
+  pulled: number
+  caught: number
+  finesPaid: number
+  sheet: CrimeSheetEntry[]
+}
+
+export function emptyCrime(): CrimeState {
+  return {
+    heat: 0,
+    cooldowns: {},
+    active: {},
+    lieLowUntil: 0,
+    padlockUntil: 0,
+    scandalUntil: 0,
+    frozenUntil: 0,
+    probationUntil: 0,
+    bribeReadyAt: 0,
+    pulled: 0,
+    caught: 0,
+    finesPaid: 0,
+    sheet: [],
+  }
+}
+
+export interface VisitorsState {
+  current: { id: string; until: number } | null
+  nextAt: number
+  boosts: { kind: 'demand' | 'ventures' | 'wages'; mul: number; until: number }[]
+  /** Visitor id → times they turned up. */
+  met: Record<string, number>
+  answered: number
 }

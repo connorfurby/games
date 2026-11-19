@@ -1,4 +1,6 @@
 import { BUILD_TIERS, DAILY_RULES, type DailyRuleMods } from './balance'
+import { crimeDemandMul, crimeWageMul } from './systems/crime'
+import { visitorMul } from './systems/visitors'
 import { offworldSalesMul, wireAdActive } from './systems/late'
 import { hasFork } from './ventureForks'
 export { annexSeatCap } from './staffAnnex'
@@ -547,6 +549,10 @@ export function demandBreakdown(s: GameState) {
           up(s, 'aisle-caps') * 0.003 +
           upgradeMagnitude(s, 'endcap-season') * 0.01),
     inspection: s.time < s.inspection.penaltyUntil ? INSPECTION.demandPenalty : 1,
+    /** The Back Alley: running schemes, a padlock or a scandal. */
+    alley: crimeDemandMul(s),
+    /** Visitors at the door: a deal you took. */
+    visitors: visitorMul(s, 'demand'),
     /** Rival coupon war (Era 2+): mild −8% while active. */
     couponWar: s.events?.couponWar?.active ? COUPON_WAR.demandMul : 1,
     /** Rival undercut / smear (Era 2+): mild −5–6% while active. Poach hits morale instead. */
@@ -897,7 +903,9 @@ export function wagesPerSec(s: GameState) {
     hoursMul *
     Math.max(0.6, 1 - wageCut) *
     (memo(s, 'open-book-accounting') ? 0.98 : 1) *
-    statCut(s, 'wageCut')
+    statCut(s, 'wageCut') *
+    crimeWageMul(s) *
+    visitorMul(s, 'wages')
   if (s.depth && s.depth.open === false) wage *= DEPTH.closedWageMul
   // Soft-cap: total wage burden cannot exceed ~30% of recent revenue forever.
   const rev = Math.max(0, s.rates?.revenuePerSec ?? 0)

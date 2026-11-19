@@ -33,13 +33,15 @@ import {
   type LastLine,
   type StopPersonality,
 } from '../content/horizon'
-import { COMPUTE, DEPTH, FLEET, HISTORY, HORIZON, SAVE_VERSION } from './balance'
+import { COMPUTE, DEPTH, FLEET, HISTORY, HORIZON, SAVE_VERSION, VISITOR } from './balance'
 import { log, skipOpeningDialogue } from './helpers'
 import { repair } from './invariants'
 import { basketRepEarned, deservedRepEarned, nextRepThreshold } from './reputation'
 import {
   createInitialState,
   emptyCold,
+  emptyCrime,
+  type CrimeState,
   emptyFleet,
   emptyPolitics,
   emptyPrestigeCarry,
@@ -1478,6 +1480,32 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           .slice(0, 40)
       }
 
+      // SAVE 43: the Back Alley.
+      base.crime = migrateCrime(raw.crime)
+      if (isObject(raw.visitors)) {
+        const rv = raw.visitors
+        const v = base.visitors
+        v.nextAt = typeof rv.nextAt === 'number' && Number.isFinite(rv.nextAt) ? rv.nextAt : v.nextAt
+        v.answered = typeof rv.answered === 'number' ? Math.max(0, rv.answered) : 0
+        if (isObject(rv.current) && typeof rv.current.id === 'string' && typeof rv.current.until === 'number') {
+          v.current = { id: rv.current.id, until: rv.current.until }
+        }
+        if (isObject(rv.met)) for (const [k, n] of Object.entries(rv.met)) if (typeof n === 'number') v.met[k] = n
+        if (Array.isArray(rv.boosts)) {
+          v.boosts = (rv.boosts as unknown[])
+            .filter((b): b is Record<string, unknown> => isObject(b))
+            .filter((b) => (b.kind === 'demand' || b.kind === 'ventures' || b.kind === 'wages') && typeof b.mul === 'number' && typeof b.until === 'number')
+            .map((b) => ({ kind: b.kind as 'demand' | 'ventures' | 'wages', mul: b.mul as number, until: b.until as number }))
+            .slice(0, 20)
+        }
+      }
+      // Nobody knocks the moment a save loads: the first visitor comes a few minutes in.
+      if (!base.visitors.current) base.visitors.nextAt = Math.max(base.visitors.nextAt, base.time + VISITOR.firstAfterSec)
+      base.ventureRush =
+        isObject(raw.ventureRush) && typeof raw.ventureRush.id === 'string' && typeof raw.ventureRush.until === 'number'
+          ? { id: raw.ventureRush.id, until: raw.ventureRush.until }
+          : null
+
       // SAVE 42: sticky goal completions.
       base.goalsDone = {}
       if (isObject(raw.goalsDone)) {
@@ -1618,4 +1646,28 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
   } catch {
     return resetNote(createInitialState(undefined, now), 'Save recovery failed — fresh counter.')
   }
+}
+
+function migrateCrime(raw: unknown): CrimeState {
+  const c = emptyCrime()
+  if (!isObject(raw)) return c
+  const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d)
+  const rec = (v: unknown) => {
+    const out: Record<string, number> = {}
+    if (isObject(v)) for (const [k, x] of Object.entries(v)) if (typeof x === 'number' && Number.isFinite(x)) out[k] = x
+    return out
+  }
+  c.heat = Math.max(0, Math.min(100, n(raw.heat)))
+  c.cooldowns = rec(raw.cooldowns)
+  c.active = rec(raw.active)
+  for (const k of ['lieLowUntil', 'padlockUntil', 'scandalUntil', 'frozenUntil', 'probationUntil', 'bribeReadyAt', 'pulled', 'caught', 'finesPaid'] as const) {
+    c[k] = Math.max(0, n(raw[k]))
+  }
+  if (Array.isArray(raw.sheet)) {
+    c.sheet = (raw.sheet as unknown[])
+      .filter((e): e is Record<string, unknown> => isObject(e))
+      .map((e) => ({ t: n(e.t), scheme: String(e.scheme ?? ''), outcome: String(e.outcome ?? 'clean'), fine: n(e.fine) }))
+      .slice(-12)
+  }
+  return c
 }

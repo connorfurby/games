@@ -6,7 +6,8 @@ import { can } from '../../sim/commands'
 import { VENTURES, ventureIncome, ventureLevelCost, venturePolicyIncomeMul } from '../../content/ventures'
 import { ventureOutgrownBelow } from '../../sim/systems/growth'
 import { hasAffordableVenture, planAffordableVentures } from '../../sim/upgradePlan'
-import { VENTURE_TRAFFIC } from '../../sim/balance'
+import { VENTURE_RUSH, VENTURE_TRAFFIC } from '../../sim/balance'
+import { rushLine } from '../../content/ventureRushes'
 import { sumQty } from '../../sim/helpers'
 import { useGame, useIsSuggested } from '../GameContext'
 import { money, rate } from '../format'
@@ -16,6 +17,7 @@ import { Button, Card, EmptyState, Meter, Sheet, Toggle } from '../kit'
 import type { VerbTrayProps } from '../play'
 import { EndlessBanNote } from '../horizon/EndlessBanNote'
 import { VenturesStreet } from '../ventures/VenturesStreet'
+import { BackAlley } from '../ventures/BackAlley'
 
 function duration(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) return '—'
@@ -258,7 +260,7 @@ export function VenturesPanel() {
             <Card
               key={def.id}
               state={cardState}
-              className={`ge-card ge-card--venture${opened ? ' ge-card--owned' : ''}${canCollect || canOpen || canLevel ? ' is-ready' : ''}`.trim()}
+              className={`ge-card ge-card--venture${s.ventureRush?.id === def.id && s.ventureRush.until > s.time ? ' is-rush' : ''}${opened ? ' ge-card--owned' : ''}${canCollect || canOpen || canLevel ? ' is-ready' : ''}`.trim()}
               header={
                 <div className="ge-card__head ge-card__head--art" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8, width: '100%', flex: '1 1 auto' }}>
                   <VentureArt
@@ -269,6 +271,11 @@ export function VenturesPanel() {
                     fill={storeCap > 0 ? Math.min(1, stored / storeCap) : 0}
                     motion={!reducedMotion}
                   />
+                  {s.ventureRush?.id === def.id && s.ventureRush.until > s.time ? (
+                    <span className="vt-rush" title={rushLine(def.id, def.name)}>
+                      Rush ×{VENTURE_RUSH.fillMul} · {Math.ceil(s.ventureRush.until - s.time)}s
+                    </span>
+                  ) : null}
                   <div>
                     <strong>{def.name}</strong>
                     <p className="ge-muted">
@@ -476,6 +483,7 @@ export function VenturesPanel() {
           Next side business: {nextLocked.def.name}. Unlocked by: {nextLocked.def.opensAt}.
         </p>
       ) : null}
+      <BackAlley />
       </HubStage>
     </section>
   )

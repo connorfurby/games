@@ -1,11 +1,14 @@
+import { tickVisitors, visitorMul } from './visitors'
+import { rushLine } from '../../content/ventureRushes'
+import { crimeVentureMul, tickCrime } from './crime'
 import { PROJECT_BY_ID } from '../../content/projects'
 import { EMPIRE_REWARDS, EMPIRE_REWARD_POINTS } from '../../content/empireRewards'
 import { VENTURE_BY_ID, ventureIncome, venturePolicyIncomeMul } from '../../content/ventures'
-import { BUILD_TIERS, EMPIRE, HORIZON, LATE } from '../balance'
+import { BUILD_TIERS, EMPIRE, HORIZON, LATE, VENTURE_RUSH } from '../balance'
 import { hasFork } from '../ventureForks'
 import { backroomCap, empireXpToNext, perk, up } from '../formulas'
 import { addBatch, log, sumQty, takeUnits } from '../helpers'
-import { chance } from '../rng'
+import { chance, pick } from '../rng'
 import type { GameState } from '../state'
 
 /** Garden / production trickle into the backroom. */
@@ -35,7 +38,18 @@ export function tickGarden(s: GameState, dt: number) {
   }
 }
 
+function tickRush(s: GameState, dt: number) {
+  if (s.ventureRush && s.ventureRush.until <= s.time) s.ventureRush = null
+  if (s.ventureRush) return
+  const open = Object.keys(s.ventures).filter((k) => (s.ventures[k]?.level ?? 0) > 0 && VENTURE_BY_ID[k])
+  if (!open.length || !chance(s, Math.min(1, dt / VENTURE_RUSH.everySec))) return
+  const id = pick(s, open)
+  s.ventureRush = { id, until: s.time + VENTURE_RUSH.sec }
+  log(s, `${rushLine(id, VENTURE_BY_ID[id].name)} Its till fills ${VENTURE_RUSH.fillMul}× as fast for ${VENTURE_RUSH.sec}s.`, 'good')
+}
+
 export function tickVentures(s: GameState, dt: number) {
+  tickRush(s, dt)
   let ventureRate = 0
   for (const id of Object.keys(s.ventures)) {
     const vs = s.ventures[id]
@@ -76,11 +90,16 @@ export function tickVentures(s: GameState, dt: number) {
       (s.horizon?.clauses?.includes('one-price') ? 0.92 : 1) *
       (s.horizon?.charter === 'coop' ? HORIZON.coopVentureMul : 1)
     const cap = income * def.storeSec
+    // The Back Alley: frozen tills stop filling; venture schemes speed them up (cap unchanged).
+    const fillMul =
+      crimeVentureMul(s) *
+      visitorMul(s, 'ventures') *
+      (s.ventureRush?.id === id && s.ventureRush.until > s.time ? VENTURE_RUSH.fillMul : 1)
     if (cap <= 0) continue
     const before = vs.stored
-    vs.stored = Math.min(cap, vs.stored + income * dt)
+    vs.stored = Math.min(cap, vs.stored + income * fillMul * dt)
     // Only count filling rate (not when capped).
-    if (vs.stored > before) ventureRate += income
+    if (vs.stored > before) ventureRate += income * fillMul
 
     // Outgrown tills (under 0.5% of income) collect themselves: small change shouldn't be a chore.
     const outgrown = income < ventureOutgrownBelow(s)
@@ -150,5 +169,7 @@ export function tickGrowth(s: GameState, dt: number) {
   tickProjects(s)
   tickGarden(s, dt)
   tickVentures(s, dt)
+  tickCrime(s, dt)
+  tickVisitors(s)
   tickEmpire(s)
 }
