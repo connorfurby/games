@@ -1,3 +1,5 @@
+import { emptyCorp } from './corp/core'
+import type { CorpState } from './corp/types'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
 import { emptyDepth, type DepthState } from '../content/depth'
 import { emptyHorizon, type HorizonState } from '../content/horizon'
@@ -632,6 +634,8 @@ export interface GameState {
   ventureRush: { id: string; until: number } | null
   /** SAVE 43: visitors at the door. */
   visitors: VisitorsState
+  /** SAVE 44: the company layer (markets, listing, owners, courts, community, lab). */
+  corp: CorpState
 
   /** Gallery of notable spoilage events (top 12 by qty). */
   museum: { exhibits: { t: number; qty: number; note: string }[] }
@@ -1055,6 +1059,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     crime: emptyCrime(),
     ventureRush: null,
     visitors: { current: null, nextAt: 240, boosts: [], met: {}, answered: 0 },
+    corp: emptyCorp(seed),
 
     museum: { exhibits: [] },
 

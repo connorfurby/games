@@ -1,6 +1,7 @@
 import { BUILD_TIERS, DAILY_RULES, type DailyRuleMods } from './balance'
 import { crimeDemandMul, crimeWageMul } from './systems/crime'
 import { visitorMul } from './systems/visitors'
+import { corpCrateMul, corpDemandMul, corpWageMul } from './corp/effects'
 import { offworldSalesMul, wireAdActive } from './systems/late'
 import { hasFork } from './ventureForks'
 export { annexSeatCap } from './staffAnnex'
@@ -283,7 +284,8 @@ export function unitCost(s: GameState, cat: CategoryId, supplier: SupplierId = s
     CATEGORIES[cat].costMul *
     wholesaleMul(s) *
     valueMul(s) *
-    statCut(s, 'crateCut')
+    statCut(s, 'crateCut') *
+    corpCrateMul(s)
   if (supplier === 'b') base *= WHOLESALE.supplierB.discount
   if (
     cat === DEPTH.greengrocer.cat &&
@@ -553,6 +555,8 @@ export function demandBreakdown(s: GameState) {
     alley: crimeDemandMul(s),
     /** Visitors at the door: a deal you took. */
     visitors: visitorMul(s, 'demand'),
+    /** The company layer: owners, rivals' bosses, the foundation, the press, segments. */
+    company: corpDemandMul(s),
     /** Rival coupon war (Era 2+): mild −8% while active. */
     couponWar: s.events?.couponWar?.active ? COUPON_WAR.demandMul : 1,
     /** Rival undercut / smear (Era 2+): mild −5–6% while active. Poach hits morale instead. */
@@ -905,7 +909,8 @@ export function wagesPerSec(s: GameState) {
     (memo(s, 'open-book-accounting') ? 0.98 : 1) *
     statCut(s, 'wageCut') *
     crimeWageMul(s) *
-    visitorMul(s, 'wages')
+    visitorMul(s, 'wages') *
+    corpWageMul(s)
   if (s.depth && s.depth.open === false) wage *= DEPTH.closedWageMul
   // Soft-cap: total wage burden cannot exceed ~30% of recent revenue forever.
   const rev = Math.max(0, s.rates?.revenuePerSec ?? 0)

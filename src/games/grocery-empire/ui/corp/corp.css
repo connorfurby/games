@@ -1,0 +1,114 @@
+@layer panels {
+  .is-up { color: #5fd38a; }
+  .is-down { color: #ff7a5c; }
+  .mk-muted { color: var(--ge-ink-muted); font-size: var(--t-xs); }
+  .mk-h {
+    margin: var(--s-4) 0 var(--s-1);
+    font-size: var(--t-md);
+  }
+  .mk-note {
+    margin: 0 0 var(--s-2);
+    color: var(--ge-ink-muted);
+    font-size: var(--t-xs);
+  }
+  .mk-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--s-2);
+  }
+  .mk-strip > div {
+    display: grid;
+    gap: 2px;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--g2-r-sm, 8px);
+    background: rgb(255 255 255 / 0.04);
+    border: 1px solid rgb(255 255 255 / 0.06);
+  }
+  .mk-strip span { color: var(--ge-ink-muted); font-size: var(--t-2xs, 0.7rem); }
+  .mk-strip strong { font-variant-numeric: tabular-nums; }
+  .mk-list {
+    display: grid;
+    gap: 6px;
+  }
+  .mk-row {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1.4fr) 96px minmax(6rem, 0.8fr) minmax(9rem, 1.2fr);
+    grid-template-areas: 'id spark px own' 'acts acts acts acts';
+    align-items: center;
+    gap: 6px var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--g2-r-sm, 8px);
+    background: rgb(255 255 255 / 0.03);
+    border: 1px solid rgb(255 255 255 / 0.06);
+    cursor: pointer;
+  }
+  .mk-row.is-sel {
+    border-color: rgb(242 193 78 / 0.55);
+    background: rgb(242 193 78 / 0.06);
+  }
+  .mk-row__id { grid-area: id; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+  .mk-sym { font-family: var(--ge-font-mono, monospace); font-weight: 800; color: #f2c14e; }
+  .mk-name { font-weight: 700; font-size: var(--t-sm); }
+  .mk-sector {
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: var(--t-2xs, 0.68rem);
+    background: rgb(255 255 255 / 0.07);
+    color: var(--ge-ink-muted);
+  }
+  .mk-sector--rival { background: rgb(232 88 60 / 0.16); color: #ff9a80; }
+  .mk-sector--space { background: rgb(143 196 224 / 0.15); color: #a9d6ee; }
+  .mk-sector--utility { background: rgb(95 211 138 / 0.14); color: #8fe0aa; }
+  .mk-row__spark { grid-area: spark; }
+  .mk-row__px { grid-area: px; display: grid; font-variant-numeric: tabular-nums; }
+  .mk-row__px span { font-size: var(--t-xs); font-weight: 700; }
+  .mk-row__own { grid-area: own; display: grid; font-size: var(--t-xs); font-variant-numeric: tabular-nums; }
+  .mk-row__acts { grid-area: acts; display: flex; flex-wrap: wrap; gap: 6px; }
+  .mk-futures {
+    display: grid;
+    grid-template-columns: minmax(10rem, 0.7fr) 1fr 1fr;
+    gap: var(--s-2);
+  }
+  .mk-fut__index, .mk-fut__card {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding: var(--s-3);
+    border-radius: var(--g2-r-md, 12px);
+    background: rgb(255 255 255 / 0.03);
+    border: 1px solid rgb(255 255 255 / 0.07);
+  }
+  .mk-fut__index span { color: var(--ge-ink-muted); font-size: var(--t-xs); }
+  .mk-fut__index strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  .mk-fut__card h4 { margin: 0; font-size: var(--t-sm); }
+  .mk-fut__card p { margin: 0; color: var(--ge-ink-muted); font-size: var(--t-xs); }
+  .mk-fut__bets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mk-live { color: #5fd38a !important; font-weight: 700; }
+  .mk-bets { margin: 0; padding-left: 1rem; font-size: var(--t-xs); font-variant-numeric: tabular-nums; }
+  .mk-news {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+    font-size: var(--t-xs);
+  }
+  .mk-news li { padding: 4px 8px; border-radius: 6px; background: rgb(255 255 255 / 0.03); }
+  .mk .mk-quote { cursor: pointer; }
+  .mk .mk-tape { animation: mk-tape 40s linear infinite; }
+  @keyframes mk-tape {
+    from { transform: translateX(0); }
+    to { transform: translateX(-2520px); }
+  }
+  .ge-reduced-motion .mk .mk-tape { animation: none; }
+  @media (prefers-reduced-motion: reduce) { .mk .mk-tape { animation: none; } }
+  @media (max-width: 720px) {
+    .mk-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mk-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: 'id px' 'spark own' 'acts acts';
+    }
+    .mk-row__own { text-align: right; }
+    .mk-futures { grid-template-columns: 1fr; }
+  }
+}

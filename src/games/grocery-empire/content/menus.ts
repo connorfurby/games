@@ -25,6 +25,7 @@ export const MENU_IDS = [
   'signal',
   'charter',
   'lastaisle',
+  'market',
   'coach',
   'more',
 ] as const
@@ -68,6 +69,12 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Marketing',
     glyph: 'MK',
     purpose: 'Bring more shoppers through the door.',
+  },
+  market: {
+    id: 'market',
+    name: 'Exchange',
+    glyph: 'EX',
+    purpose: 'Buy and sell shares, collect dividends and bet on crate prices.',
   },
   rivals: {
     id: 'rivals',

@@ -1,3 +1,4 @@
+import { tickCorp } from '../corp/tick'
 import { tickVisitors, visitorMul } from './visitors'
 import { rushLine } from '../../content/ventureRushes'
 import { crimeVentureMul, tickCrime } from './crime'
@@ -171,5 +172,6 @@ export function tickGrowth(s: GameState, dt: number) {
   tickVentures(s, dt)
   tickCrime(s, dt)
   tickVisitors(s)
+  tickCorp(s, dt)
   tickEmpire(s)
 }

@@ -1,3 +1,4 @@
+import { emptyCorp, fillDefaults } from './corp/core'
 import { DAILY_RULE_ORDER, type DailyRuleId } from './balance'
 import { normalizeBuildVariants } from '../content/builds'
 import { CATEGORY_IDS, type CategoryId } from '../content/categories'
@@ -1479,6 +1480,9 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           .filter((id): id is string => typeof id === 'string')
           .slice(0, 40)
       }
+
+      // SAVE 44: the company layer (deep-filled onto defaults; junk dropped).
+      base.corp = fillDefaults(emptyCorp(base.seed), raw.corp)
 
       // SAVE 43: the Back Alley.
       base.crime = migrateCrime(raw.crime)

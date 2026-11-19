@@ -338,8 +338,8 @@ describe('museum sockets', () => {
 // ── SAVE 36 pins ─────────────────────────────────────────────────────────────
 
 describe('SAVE 36 pins', () => {
-  it('SAVE_VERSION is current (43) and a v35 save migrates with the new fields clear', () => {
-    expect(SAVE_VERSION).toBe(43)
+  it('SAVE_VERSION is current (44) and a v35 save migrates with the new fields clear', () => {
+    expect(SAVE_VERSION).toBe(44)
     const s = createInitialState(84)
     s.horizon.endlessBan = { kind: 'clause', id: 'open-hours' }
     s.relics.litWings = ['corner']

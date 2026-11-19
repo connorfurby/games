@@ -1,3 +1,4 @@
+import { companyOpen } from './corp/tick'
 import { DIALOGUE_LINES } from '../content/dialogue'
 import { BASKET_MILESTONES } from '../content/lore'
 import { MEMOS } from '../content/memos'
@@ -52,6 +53,7 @@ function tickMenus(s: GameState) {
   if (s.era >= 5 || s.memos['barge-berth'] || s.fleet.launched || s.fleet.barges > 0) {
     unlockMenu(s, 'fleet')
   }
+  if (companyOpen(s)) unlockMenu(s, 'market')
   if (s.era >= 7) unlockMenu(s, 'planets')
   if (s.era >= 8) unlockMenu(s, 'exchange')
   if (s.era >= 9) unlockMenu(s, 'cultivars')

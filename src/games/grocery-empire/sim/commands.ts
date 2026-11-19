@@ -114,6 +114,7 @@ import {
   orderPizza,
 } from './systems/events'
 import { crimeHandlers } from './commandsCrime'
+import { corpHandlers } from './commandsCorp'
 import { collectVenture } from './systems/growth'
 import type { RebrandCarry } from './systems/prestige'
 import { hasAffordableMemo, planAffordableMemos } from './memoPlan'
@@ -186,6 +187,9 @@ export type Command =
   | { type: 'lieLow' }
   | { type: 'bribeInspector' }
   | { type: 'answerVisitor'; pick: 'a' | 'b' }
+  | { type: 'buyStock'; id: string; cash: number }
+  | { type: 'sellStock'; id: string; shares: number }
+  | { type: 'openFuture'; kind: 'hedge' | 'rise' | 'fall'; stake: number }
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
@@ -1881,6 +1885,15 @@ const handlers = {
   ),
   ...Object.fromEntries(
     Object.entries(horizonHandlers).map(([k, h]) => [
+      k,
+      {
+        can: (s: GameState, cmd: Command) => h.can(s, cmd as never),
+        run: (s: GameState, cmd: Command) => h.run(s, cmd as never),
+      } satisfies Handler,
+    ]),
+  ),
+  ...Object.fromEntries(
+    Object.entries(corpHandlers).map(([k, h]) => [
       k,
       {
         can: (s: GameState, cmd: Command) => h.can(s, cmd as never),

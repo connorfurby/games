@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
-export const SAVE_VERSION = 43
+export const SAVE_VERSION = 44
 
 /** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
 export const PUZZLE_SLOW = 0.72
@@ -404,6 +404,37 @@ export const VISITOR = {
   waitSec: 90,
   /** No visitors until the store has earned this much. */
   minRevenue: 300,
+}
+
+/** The company layer: markets, listing, owners, rivals' bosses, courts, community, lab. */
+export const CORP = {
+  /** The Company hub opens in Era 1 once the store has earned this much. */
+  openRevenue: 1500,
+  sharesPerCompany: 1000,
+  tradeFee: 0.005,
+  histEverySec: 10,
+  histMax: 90,
+  /** Mean reversion of a ticker's random walk, per minute. */
+  revertPerMin: 0.08,
+  walkMin: 0.35,
+  walkMax: 3,
+  /** Young companies grow for this many eras after listing, then at a tenth of the pace. */
+  youngEras: 1,
+  /** Rival tickers: value per store above their starting count. */
+  rivalStoreWeight: 0.06,
+  newsGapMin: 45,
+  newsGapMax: 110,
+  newsShockMin: 0.06,
+  newsShockMax: 0.18,
+  tapeMax: 14,
+  /** Futures: hedge premium (seconds of sales) and length; bets settle after betSec. */
+  hedgePremiumSec: 25,
+  hedgeSec: 300,
+  betSec: 180,
+  /** A bet pays stake × (1 + leverage × move), between 0 and maxPayout × stake. */
+  betLeverage: 6,
+  betMaxPayout: 2.5,
+  futuresMax: 4,
 }
 
 export const INSPECTION = {
