@@ -64,7 +64,7 @@ export function acquireRegion(s: GameState) {
     const pay = round2(Math.min(s.cash, fine))
     s.cash = round2(s.cash - pay)
     s.stats.finesPaid += pay
-    log(s, `Monopoly receipt: $${pay.toFixed(0)} fine. Run continues.`, 'warn')
+    log(s, `Monopoly receipt: ${cashLabel(pay)} fine. Run continues.`, 'warn')
   }
 }
 

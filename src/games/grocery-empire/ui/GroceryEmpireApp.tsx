@@ -56,6 +56,7 @@ import { HUBS, HUB_BY_ID, MENU_COACH, hubOf, type HubId } from './shell/hubs'
 import { StoreScene } from './scene/StoreScene'
 import { SceneStrip, useScenePref } from './shell/SceneStrip'
 import { HubNav } from './shell/HubNav'
+import { CatchUpScreen } from './components/CatchUpScreen'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
 import { onInboxRequest, onAutopilotRequest, onWikiRequest } from './shell/uiBus'
@@ -132,6 +133,29 @@ const PANEL: Record<MenuId, () => ReactNode> = {
   lastaisle: () => <LastAislePanel />,
   coach: () => <CoachPanel />,
   more: () => <MorePanel />,
+}
+
+/** Every page in hub order, for transition direction. */
+const PAGE_ORDER: MenuId[] = HUBS.flatMap((h) => h.menus)
+
+/** Page transitions: slide within a hub, rise between hubs. Springs, never linear. */
+const PAGE_VARIANTS = {
+  enter: (dir: number) =>
+    dir === 0
+      ? { opacity: 0, y: 14, scale: 0.985, filter: 'blur(3px)' }
+      : { opacity: 0, x: dir * 28, filter: 'blur(2px)' },
+  center: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    scale: 1,
+    filter: 'blur(0px)',
+    transition: { type: 'spring' as const, stiffness: 420, damping: 36, mass: 0.8, opacity: { duration: 0.18 } },
+  },
+  exit: (dir: number) =>
+    dir === 0
+      ? { opacity: 0, y: -6, scale: 0.995, transition: { duration: 0.12, ease: 'easeIn' as const } }
+      : { opacity: 0, x: dir * -20, transition: { duration: 0.12, ease: 'easeIn' as const } },
 }
 
 export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
@@ -828,6 +852,15 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
   const hub = hubOf(menu)
   const hubMenus = (h: HubId) => HUB_BY_ID[h].menus.filter((id) => !!state.menus[id])
+  // Page transitions know where you came from: a sub-tab to the right slides in from the right,
+  // a different hub rises in. 1 = forward, -1 = back, 0 = new hub.
+  const pageOrder = PAGE_ORDER.indexOf(menu)
+  const lastPage = useRef<{ menu: MenuId; idx: number; dir: number }>({ menu, idx: pageOrder, dir: 0 })
+  if (lastPage.current.menu !== menu) {
+    const sameHub = hubOf(lastPage.current.menu) === hubOf(menu)
+    lastPage.current = { menu, idx: pageOrder, dir: sameHub ? (pageOrder >= lastPage.current.idx ? 1 : -1) : 0 }
+  }
+  const pageDir = lastPage.current.dir
   const openHub = (h: HubId) => {
     const ms = hubMenus(h)
     if (ms.length === 0) return
@@ -841,6 +874,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   return (
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
       <GameProvider value={ctx}>
+        <CatchUpScreen info={engine.catchUp()} reducedMotion={reducedMotion} />
         <div
           className={`ge-root g2-root ge-root--${meta.settings.presentation}${
             state.paused ? ' ge-root--paused' : ''
@@ -974,14 +1008,15 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 ) : null}
               </div>
             ) : null}
-            <AnimatePresence mode="wait" initial={false}>
+            <AnimatePresence mode="wait" initial={false} custom={pageDir}>
               <motion.div
                 key={menu}
-                className="ge-main__panel g2-panel"
-                initial={reducedMotion ? false : { opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reducedMotion ? undefined : { opacity: 0, y: -4 }}
-                transition={{ duration: reducedMotion ? 0 : 0.16, ease: 'easeOut' }}
+                custom={pageDir}
+                className={`ge-main__panel g2-panel${reducedMotion ? '' : ' g2-panel--enter'}`}
+                variants={PAGE_VARIANTS}
+                initial={reducedMotion ? false : 'enter'}
+                animate="center"
+                exit={reducedMotion ? undefined : 'exit'}
               >
                 {Active()}
               </motion.div>

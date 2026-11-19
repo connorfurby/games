@@ -1,4 +1,3 @@
-import { motion } from 'motion/react'
 import type { OfflineReceipt as Receipt } from '../../sim/state'
 import type { MenuId } from '../../content/menus'
 import type { Suggestion } from '../../sim/suggestions'
@@ -26,7 +25,7 @@ function headline(r: Receipt): string {
 
 export function OfflineReceiptModal({
   receipt,
-  reducedMotion,
+  reducedMotion: _reducedMotion,
   onDismiss,
   followUp,
   onFollowUp,
@@ -57,12 +56,8 @@ export function OfflineReceiptModal({
   }
   return (
     <div className="ge-modal" role="dialog" aria-labelledby="ge-offline-title">
-      <motion.div
-        className="ge-receipt-paper"
-        initial={reducedMotion ? false : { y: 40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: reducedMotion ? 0 : 0.35, ease: 'easeOut' }}
-      >
+      {/* Prints in via CSS (g2-print in shell.css). */}
+      <div className="ge-receipt-paper">
         <div className="ge-receipt-paper__perf" />
         <p className="ge-receipt-paper__epigraph">While you were away</p>
         <h3 id="ge-offline-title" className="ge-receipt-headline">
@@ -121,7 +116,7 @@ export function OfflineReceiptModal({
             </Btn>
           ) : null}
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

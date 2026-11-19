@@ -174,7 +174,7 @@ export function decommissionPlant(s: GameState) {
   s.cold.plantList.pop()
   syncPlantCount(s)
   s.cash = round2(s.cash + refund)
-  log(s, `Decommissioned a plant. $${refund} refunded.`, 'info')
+  log(s, `Decommissioned a plant. ${cashLabel(refund)} refunded.`, 'info')
 }
 
 function autoShedNewestPlant(s: GameState) {

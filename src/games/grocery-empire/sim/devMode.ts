@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { clearGameSave, loadGame } from '@/shared/save'
 import { TUTORIALS } from '../content/tutorials'
 import { buildDevStage, listDevStages, markTutorialsDone, unlockAllMenus } from './devStages'
@@ -116,7 +117,7 @@ export function devMutate(fn: (s: GameState) => void) {
 export function devGrantCash(amount: number) {
   devMutate((s) => {
     s.cash += amount
-    log(s, `DevMode +$${amount.toFixed(0)} cash.`, 'story')
+    log(s, `DevMode +${cashLabel(amount)} cash.`, 'story')
   })
 }
 

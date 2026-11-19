@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 /**
  * Next-best progression suggestions for the tip strip + rail mark.
  * Intentional buys only — no restock / unpack / price chores.
@@ -233,7 +234,7 @@ function collectStaff(s: GameState, out: Suggestion[]) {
       channel: 'staff',
       kind: 'growth',
       title: 'Hire first clerk',
-      blurb: cost < 1000 ? `Hands on Unpack · $${cost}` : 'Hands on Unpack — see Staff.',
+      blurb: cost < 1000 ? `Hands on Unpack · ${cashLabel(cost)}` : 'Hands on Unpack — see Staff.',
       score: 750,
       target: 'staff-hire-clerk',
       action: { type: 'hire', role: 'clerk' },
@@ -253,8 +254,8 @@ function collectStaff(s: GameState, out: Suggestion[]) {
         title: role === 'clerk' ? 'Hire a clerk' : 'Hire a cashier',
         blurb:
           role === 'clerk'
-            ? `Shelf is draining · $${cost}`
-            : `Line at the till · $${cost}`,
+            ? `Shelf is draining · ${cashLabel(cost)}`
+            : `Line at the till · ${cashLabel(cost)}`,
         score: 730,
         action: { type: 'hire', role },
         cta: 'Hire',
@@ -359,7 +360,7 @@ function collectEra2(s: GameState, out: Suggestion[]) {
       channel: 'land',
       kind: 'growth',
       title: 'Open a store',
-      blurb: `Another door for the chain · $${openStoreCost(s)}.`,
+      blurb: `Another door for the chain · ${cashLabel(openStoreCost(s))}.`,
       score: 790,
       target: 'land-open-store',
       action: { type: 'openStore' },
@@ -451,7 +452,7 @@ function collectEra2(s: GameState, out: Suggestion[]) {
         channel: 'invest',
         kind: 'growth',
         title: 'Park idle cash',
-        blurb: `$${amount.toLocaleString()} of surplus can earn in the book.`,
+        blurb: `${cashLabel(amount)} of surplus can earn in the book.`,
         score: 500,
         target: 'invest-book-deposit',
         action: { type: 'depositInvest', amount },
@@ -468,7 +469,7 @@ function collectEra2(s: GameState, out: Suggestion[]) {
         channel: 'marketing',
         kind: 'growth',
         title: 'Buy an ad',
-        blurb: `Demand is the bottleneck · $${s.adCost}.`,
+        blurb: `Demand is the bottleneck · ${cashLabel(s.adCost)}.`,
         score: 430,
         target: 'marketing-ads',
         action: { type: 'buyAd' },

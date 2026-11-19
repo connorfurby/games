@@ -63,7 +63,7 @@ export function matchCoupons(s: GameState) {
   s.stats.couponMatches = (s.stats.couponMatches ?? 0) + 1
   endCouponWar(s, true)
   s.brand = clamp(s.brand + COUPON_WAR.brandBoost, 0, 1)
-  log(s, `Matched rival coupons (−$${cost}). Demand recovers; Brand holds.`, 'good')
+  log(s, `Matched rival coupons (−${cashLabel(cost)}). Demand recovers; Brand holds.`, 'good')
 }
 
 function endCouponWar(s: GameState, matched: boolean) {
@@ -146,7 +146,7 @@ export function answerRival(s: GameState) {
   endRival(s, true)
   if (kind === 'smear') s.brand = clamp(s.brand + RIVAL_EVENTS.brandBoost, 0, 1)
   if (kind === 'poach') s.morale = Math.min(MORALE.max, s.morale + 0.05)
-  log(s, `${RIVAL_COPY[kind].answer} (−$${cost})`, 'good')
+  log(s, `${RIVAL_COPY[kind].answer} (−${cashLabel(cost)})`, 'good')
 }
 
 function endRival(s: GameState, answered: boolean) {
@@ -240,7 +240,7 @@ export function tickEvents(s: GameState, dt: number) {
     meter.penaltyUntil = s.time + INSPECTION.penaltySec
     log(
       s,
-      `Inspection failed. Fine $${paid.toFixed(2)} (capped). Demand soft for ${INSPECTION.penaltySec}s.`,
+      `Inspection failed. Fine ${cashLabel(paid)} (capped). Demand soft for ${INSPECTION.penaltySec}s.`,
       'warn',
     )
   }

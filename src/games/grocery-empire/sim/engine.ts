@@ -4,11 +4,26 @@ import { can as canCmd, run as runCmd, tickAutoRestock, type Check, type Command
 import { migrate } from './migrate'
 import { getActiveSaveId } from './saveKey'
 import { createInitialState, type GameState } from './state'
-import { applyOffline, applyTick } from './tick'
+import { applyOffline, applyTick, beginOffline, type OfflineRun } from './tick'
 import { canCarry, canRebrand, rebrand as rebrandState, type RebrandCarry } from './systems/prestige'
 import { applyUndo, canUndo as undoAvailable, clearUndo, pushUndo } from './undo'
 
 type Listener = () => void
+
+/** Away gaps at or above this many seconds catch up a slice per frame behind a loading screen. */
+const ASYNC_CATCHUP_SEC = 60
+/** Frame budget for one catch-up slice (ms). */
+const SLICE_MS = 14
+
+/** Set by loadState when the save was away long enough to catch up asynchronously. */
+let bootPending: { elapsed: number; showReceipt: boolean } | null = null
+
+export interface CatchUpInfo {
+  /** 0..1 */
+  progress: number
+  /** Away seconds being simulated. */
+  total: number
+}
 
 /** Sim pulses per UI repaint (10 Hz sim → 5 Hz paint). */
 const PULSES_PER_PAINT = 2
@@ -33,10 +48,66 @@ export class GroceryEngine {
   private softPauseMul = 1
   private pulses = 0
   private onVis: (() => void) | null = null
+  private catchRun: OfflineRun | null = null
+  private catchTimer: ReturnType<typeof setTimeout> | null = null
+  private pendingOffline: { elapsed: number; showReceipt: boolean } | null = null
 
   constructor(state?: GameState) {
     this.state = state ?? GroceryEngine.loadState()
+    // A long away gap found by loadState is caught up after start(), behind the loading screen.
+    this.pendingOffline = bootPending
+    bootPending = null
     this.snapshot = { v: this.version, state: this.state }
+  }
+
+  /** Non-null while away time is being caught up (the UI shows a loading screen). */
+  catchUp(): CatchUpInfo | null {
+    if (this.catchRun) return { progress: this.catchRun.progress(), total: this.catchRun.total }
+    if (this.pendingOffline) return { progress: 0, total: this.pendingOffline.elapsed }
+    return null
+  }
+
+  private cancelCatchUp() {
+    if (this.catchTimer) clearTimeout(this.catchTimer)
+    this.catchTimer = null
+    this.catchRun = null
+    this.pendingOffline = null
+  }
+
+  /** Start catching up `elapsed` seconds a slice at a time; live ticks wait until it's done. */
+  private beginCatchUp(elapsed: number, showReceipt: boolean) {
+    if (this.catchRun) return
+    this.pendingOffline = null
+    this.catchRun = beginOffline(this.state, elapsed, { showReceipt })
+    let perSlice = 400
+    const slice = () => {
+      const run = this.catchRun
+      if (!run) return
+      const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
+      let done = false
+      try {
+        done = run.step(perSlice)
+      } catch (e) {
+        console.error('offline catch-up failed', e)
+        done = true
+      }
+      const ms = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0
+      // Aim each slice at the frame budget so the loading screen stays smooth.
+      if (ms > 0) perSlice = Math.max(50, Math.min(20000, Math.round(perSlice * (SLICE_MS / ms))))
+      if (done) {
+        run.finish()
+        this.catchRun = null
+        this.catchTimer = null
+        this.state.lastSavedAt = Date.now()
+        this.save()
+        this.bump()
+        return
+      }
+      this.bump()
+      this.catchTimer = setTimeout(slice, 0)
+    }
+    this.bump()
+    this.catchTimer = setTimeout(slice, 30)
   }
 
   static loadState(): GameState {
@@ -52,10 +123,15 @@ export class GroceryEngine {
       // Paused stays paused across a reload. Short refreshes catch up quietly;
       // the away-receipt only appears once the gap is long enough to matter.
       if (elapsed > 2 && !state.paused) {
-        try {
-          applyOffline(state, elapsed, { showReceipt: elapsed >= 20 })
-        } catch (e) {
-          console.error('offline catch-up failed', e)
+        if (elapsed >= ASYNC_CATCHUP_SEC) {
+          // Long away: the engine catches up a slice per frame behind a loading screen.
+          bootPending = { elapsed, showReceipt: true }
+        } else {
+          try {
+            applyOffline(state, elapsed, { showReceipt: elapsed >= 20 })
+          } catch (e) {
+            console.error('offline catch-up failed', e)
+          }
         }
       }
     }
@@ -74,6 +150,7 @@ export class GroceryEngine {
     // Never leave a stale soft-pause from a previous mount / Esc-hold.
     if (this.softPauseMul <= 0) this.softPauseMul = 1
     this.timer = setInterval(() => this.pulse(), 1000 / TICK_HZ)
+    if (this.pendingOffline) this.beginCatchUp(this.pendingOffline.elapsed, this.pendingOffline.showReceipt)
     if (typeof document !== 'undefined') {
       this.onVis = () => this.onVisibility()
       document.addEventListener('visibilitychange', this.onVis)
@@ -110,7 +187,9 @@ export class GroceryEngine {
       this.hiddenAt = null
       // Live ticks are frozen while hidden, so this catch-up is the only
       // progress. A short tab switch must not also pop the away receipt.
-      if (elapsed >= 0.25 && !this.state.paused) {
+      if (elapsed >= ASYNC_CATCHUP_SEC && !this.state.paused) {
+        this.beginCatchUp(elapsed, true)
+      } else if (elapsed >= 0.25 && !this.state.paused) {
         applyOffline(this.state, elapsed, { showReceipt: elapsed >= 20 })
         this.bump()
         this.save()
@@ -123,6 +202,7 @@ export class GroceryEngine {
     // Background tabs throttle timers. Skip live ticks and catch up once on return
     // so cash, sales, and tours are not applied twice.
     if (typeof document !== 'undefined' && document.hidden) return
+    if (this.catchRun || this.pendingOffline) return
     const dt = DT * Math.max(0, this.state.speed) * this.softPauseMul
     if (!this.state.paused && dt > 0) {
       applyTick(this.state, dt)
@@ -203,6 +283,9 @@ export class GroceryEngine {
   }
 
   save() {
+    // Mid catch-up the state is part-way through the away time: keep the old save (and its
+    // timestamp) so closing the tab now just catches up again next time.
+    if (this.catchRun || this.pendingOffline) return
     this.state.lastSavedAt = Date.now()
     try {
       saveGame(getActiveSaveId(), this.state)
@@ -245,6 +328,7 @@ export class GroceryEngine {
 
   /** Replace live state from a deserialized save (after import / slot load). */
   replaceState(next: GameState) {
+    this.cancelCatchUp()
     this.state = next
     this.state.lastSavedAt = Date.now()
     this.bump()
@@ -253,7 +337,12 @@ export class GroceryEngine {
 
   /** Re-read the primary grocery save from localStorage into the live engine. */
   reloadFromDisk() {
+    this.cancelCatchUp()
     this.state = GroceryEngine.loadState()
+    const pending = bootPending
+    bootPending = null
+    if (pending && this.running) this.beginCatchUp(pending.elapsed, pending.showReceipt)
+    else this.pendingOffline = pending
     this.bump()
   }
 

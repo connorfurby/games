@@ -1,0 +1,164 @@
+@layer shell {
+  .cu {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: var(--s-4);
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgb(242 193 78 / 0.08), transparent 60%),
+      var(--g2-bg, #11161a);
+  }
+
+  .cu-card {
+    width: min(26rem, 100%);
+    display: grid;
+    justify-items: center;
+    gap: var(--s-2);
+    text-align: center;
+    color: var(--ge-ink, #efe6cf);
+  }
+
+  .cu-store {
+    width: min(18rem, 80vw);
+    height: auto;
+    filter: drop-shadow(0 18px 40px rgb(0 0 0 / 0.5));
+    margin-bottom: var(--s-2);
+  }
+
+  .cu-kicker {
+    margin: 0;
+    font: 700 var(--t-xs) / 1.2 var(--g2-ui, system-ui, sans-serif);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--g2-tag, #f2c14e);
+  }
+
+  .cu-title {
+    margin: 0;
+    font: 700 var(--t-xl, 1.5rem) / 1.2 var(--g2-display, Georgia, serif);
+  }
+
+  .cu-bar {
+    width: 100%;
+    height: 8px;
+    margin-top: var(--s-2);
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .cu-bar i {
+    display: block;
+    height: 100%;
+    transform-origin: left;
+    background: linear-gradient(90deg, #e8583c, #f2c14e);
+    transition: transform 0.18s linear;
+  }
+
+  .cu-line {
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-2);
+    font: 500 var(--t-sm) / 1.4 var(--g2-ui, system-ui, sans-serif);
+    color: var(--ge-muted, #a59f90);
+  }
+
+  .cu-pct {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cu-line__text {
+    animation: cu-in 0.35s ease-out;
+  }
+
+  /* Motion */
+  .cu-cart {
+    animation: cu-cart 3.2s linear infinite;
+  }
+
+  .cu-awning {
+    animation: cu-sway 2.4s ease-in-out infinite alternate;
+    transform-origin: 120px 50px;
+  }
+
+  .cu-window {
+    animation: cu-glow 1.8s ease-in-out infinite alternate;
+  }
+
+  .cu-sun {
+    animation: cu-sun 6s ease-in-out infinite alternate;
+  }
+
+  .cu-stars {
+    animation: cu-twinkle 2.2s ease-in-out infinite alternate;
+  }
+
+  .cu-card.is-still * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .cu-card.is-still .cu-cart {
+    transform: translate(40px, 112px);
+  }
+
+  @keyframes cu-cart {
+    from {
+      transform: translate(-30px, 112px);
+    }
+    to {
+      transform: translate(250px, 112px);
+    }
+  }
+
+  @keyframes cu-sway {
+    from {
+      transform: skewX(-1.5deg);
+    }
+    to {
+      transform: skewX(1.5deg);
+    }
+  }
+
+  @keyframes cu-glow {
+    from {
+      opacity: 0.55;
+    }
+    to {
+      opacity: 0.95;
+    }
+  }
+
+  @keyframes cu-sun {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes cu-twinkle {
+    from {
+      opacity: 0.4;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes cu-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

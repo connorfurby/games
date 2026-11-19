@@ -178,11 +178,22 @@ export function applyTick(s: GameState, dt: number) {
   return s
 }
 
-export function applyOffline(
-  s: GameState,
-  elapsedSec: number,
-  opts?: { showReceipt?: boolean },
-): OfflineReceipt {
+/**
+ * Offline catch-up as a runner, so the UI can do it a slice per frame behind a loading screen
+ * instead of freezing the page. Same ticks in the same order as one long loop: deterministic.
+ */
+export interface OfflineRun {
+  /** Run up to `maxTicks` offline ticks. Returns true when nothing is left. */
+  step(maxTicks: number): boolean
+  /** 0..1 */
+  progress(): number
+  /** Seconds of away time being simulated (after the cap). */
+  readonly total: number
+  /** Close the run: write the receipt, restore pause/speed, repair. */
+  finish(): OfflineReceipt
+}
+
+export function beginOffline(s: GameState, elapsedSec: number, opts?: { showReceipt?: boolean }): OfflineRun {
   const capped = Math.min(Math.max(0, elapsedSec), OFFLINE_CAP_SEC)
   const receipt: OfflineReceipt = {
     seconds: elapsedSec,
@@ -202,8 +213,15 @@ export function applyOffline(
     seal: 0,
   }
   if (capped <= 0 || s.paused) {
-    if (opts?.showReceipt !== false) s.offlineReceipt = receipt
-    return receipt
+    return {
+      total: 0,
+      step: () => true,
+      progress: () => 1,
+      finish: () => {
+        if (opts?.showReceipt !== false) s.offlineReceipt = receipt
+        return receipt
+      },
+    }
   }
 
   const wasPaused = s.paused
@@ -227,30 +245,53 @@ export function applyOffline(
   }
 
   let left = capped
-  while (left > 0) {
-    const dt = Math.min(OFFLINE_STEP_SEC, left)
-    applyTick(s, dt)
-    left -= dt
+  let finished = false
+  return {
+    total: capped,
+    step(maxTicks: number) {
+      let n = 0
+      while (left > 0 && n < maxTicks) {
+        const dt = Math.min(OFFLINE_STEP_SEC, left)
+        applyTick(s, dt)
+        left -= dt
+        n += 1
+      }
+      return left <= 0
+    },
+    progress: () => (capped <= 0 ? 1 : 1 - left / capped),
+    finish() {
+      if (finished) return receipt
+      finished = true
+      receipt.sold = s.stats.sold - before.sold
+      receipt.revenue = s.lifetimeRevenue - before.revenue
+      receipt.spoiled = s.stats.spoiled - before.spoiled
+      receipt.wages = s.stats.wagesPaid - before.wages
+      receipt.rent = s.stats.rentPaid - before.rent
+      receipt.attention = Math.max(0, s.compute.attention - before.attention)
+      receipt.ventures = s.stats.ventureCollected - before.ventures
+      receipt.interest = s.stats.interestEarned - before.interest
+      receipt.survey = Math.max(0, (s.horizon?.survey ?? 0) - before.survey)
+      receipt.freight = Math.max(0, (s.horizon?.freight ?? 0) - before.freight)
+      receipt.seed = Math.max(0, (s.horizon?.seed ?? 0) - before.seed)
+      receipt.signal = Math.max(0, (s.horizon?.signal ?? 0) - before.signal)
+      receipt.seal = Math.max(0, (s.horizon?.seal ?? 0) - before.seal)
+      s.stats.offlineSec += capped - Math.max(0, left)
+      s.paused = wasPaused
+      s.speed = wasSpeed
+      if (opts?.showReceipt !== false) s.offlineReceipt = receipt
+      repair(s)
+      return receipt
+    },
   }
+}
 
-  receipt.sold = s.stats.sold - before.sold
-  receipt.revenue = s.lifetimeRevenue - before.revenue
-  receipt.spoiled = s.stats.spoiled - before.spoiled
-  receipt.wages = s.stats.wagesPaid - before.wages
-  receipt.rent = s.stats.rentPaid - before.rent
-  receipt.attention = Math.max(0, s.compute.attention - before.attention)
-  receipt.ventures = s.stats.ventureCollected - before.ventures
-  receipt.interest = s.stats.interestEarned - before.interest
-  receipt.survey = Math.max(0, (s.horizon?.survey ?? 0) - before.survey)
-  receipt.freight = Math.max(0, (s.horizon?.freight ?? 0) - before.freight)
-  receipt.seed = Math.max(0, (s.horizon?.seed ?? 0) - before.seed)
-  receipt.signal = Math.max(0, (s.horizon?.signal ?? 0) - before.signal)
-  receipt.seal = Math.max(0, (s.horizon?.seal ?? 0) - before.seal)
-
-  s.stats.offlineSec += capped
-  s.paused = wasPaused
-  s.speed = wasSpeed
-  if (opts?.showReceipt !== false) s.offlineReceipt = receipt
-  repair(s)
-  return receipt
+/** All at once (tests, short tab switches). */
+export function applyOffline(
+  s: GameState,
+  elapsedSec: number,
+  opts?: { showReceipt?: boolean },
+): OfflineReceipt {
+  const r = beginOffline(s, elapsedSec, opts)
+  r.step(Number.POSITIVE_INFINITY)
+  return r.finish()
 }

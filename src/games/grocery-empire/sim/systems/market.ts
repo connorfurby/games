@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { bookNetworkSales } from './network'
 import { statMul } from './stats'
 import { CATEGORIES, CATEGORY_IDS, type CategoryId } from '../../content/categories'
@@ -112,7 +113,7 @@ export function tickDeliveries(s: GameState, dt: number) {
     if (refused > 0) {
       const refund = Math.round(refused * o.unitCost * 100) / 100
       s.cash += refund
-      log(s, `Backroom full: ${refused} ${CATEGORIES[o.cat].name.toLowerCase()} refused at the door, $${refund.toFixed(2)} refunded.`, 'warn')
+      log(s, `Backroom full: ${refused} ${CATEGORIES[o.cat].name.toLowerCase()} refused at the door, ${cashLabel(refund)} refunded.`, 'warn')
     }
   }
 }

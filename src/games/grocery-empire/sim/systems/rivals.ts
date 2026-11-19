@@ -178,7 +178,7 @@ export function priceWar(s: GameState, id: RivalId) {
     s.depth.megaMartUntil = 0
     log(s, 'Price war pushed MegaMart off your franchise.', 'good')
   }
-  log(s, `Price war with ${def.name}: ${closed} store${closed === 1 ? '' : 's'} closed (−$${cost}). ${def.flinch}`, 'good')
+  log(s, `Price war with ${def.name}: ${closed} store${closed === 1 ? '' : 's'} closed (−${cashLabel(cost)}). ${def.flinch}`, 'good')
 }
 
 export function canBuyout(s: GameState, id: RivalId): string | null {
@@ -213,7 +213,7 @@ export function buyout(s: GameState, id: RivalId) {
   const levelXp = EMPIRE.levelBase * Math.pow(EMPIRE.levelGrowth, Math.max(0, s.empire.level - 1))
   s.empire.xp += st.stores * levelXp * RIVAL_CHAINS.buyoutLevelShare * statMul(s, 'xp')
   s.stats.rivalsBought = (s.stats.rivalsBought ?? 0) + 1
-  log(s, `Bought ${def.name} (−$${cost}). ${st.stores} stores join the network. ${def.farewell}`, 'good')
+  log(s, `Bought ${def.name} (−${cashLabel(cost)}). ${st.stores} stores join the network. ${def.farewell}`, 'good')
 }
 
 function tickPennyAisleLock(s: GameState) {

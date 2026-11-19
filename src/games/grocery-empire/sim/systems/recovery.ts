@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { isPerishable, type CategoryId } from '../../content/categories'
 import { INSPECTION, RECOVERY } from '../balance'
 import { bailoutCooldownSec, cheapestCrate, crateSize, inspectionGainMul, up } from '../formulas'
@@ -61,7 +62,7 @@ export function applyBailout(s: GameState): boolean {
   s.stats.bailouts += 1
   s.stats.helperCrates += RECOVERY.bailoutCrates
   if (s.cash > s.stats.peakCash) s.stats.peakCash = s.cash
-  log(s, `Bailout: +$${cash.toFixed(0)} and ${RECOVERY.bailoutCrates} cans. Delay, not doom.`, 'recovery')
+  log(s, `Bailout: +${cashLabel(cash)} and ${RECOVERY.bailoutCrates} cans. Delay, not doom.`, 'recovery')
   return true
 }
 

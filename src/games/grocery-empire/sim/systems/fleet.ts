@@ -835,7 +835,7 @@ export function rebootFleet(s: GameState) {
   }
   s.fleet.charterPool += refund
   s.fleet.guardianUsed = false
-  log(s, `Reboot Fleet: Charter refunded (${refund} pts). Fee $${fee.toFixed(0)}.`, 'memo')
+  log(s, `Reboot Fleet: Charter refunded (${refund} pts). Fee ${cashLabel(fee)}.`, 'memo')
 }
 
 export function startDriftWar(s: GameState) {

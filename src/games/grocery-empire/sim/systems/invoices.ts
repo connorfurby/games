@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { DEPTH } from '../balance'
 import { log, round2 } from '../helpers'
 import type { GameState } from '../state'
@@ -20,10 +21,10 @@ export function settleInvoice(s: GameState, inv: Invoice, quiet = false) {
   inv.onTime = early
   if (early) {
     s.depth.invoicesOnTime += 1
-    if (!quiet) log(s, `Paid invoice #${inv.id} early (−$${due.toFixed(2)}).`, 'good')
+    if (!quiet) log(s, `Paid invoice #${inv.id} early (−${cashLabel(due)}).`, 'good')
   } else {
     applyStarHit(s, DEPTH.starLateInvoiceHit)
-    log(s, `Paid invoice #${inv.id} late (−$${due.toFixed(2)}).`, 'warn')
+    log(s, `Paid invoice #${inv.id} late (−${cashLabel(due)}).`, 'warn')
   }
 }
 

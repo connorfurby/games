@@ -1,3 +1,4 @@
+import { cashLabel } from '@/shared/bn'
 import { BUILD_TRACKS, BUILD_VARIANT_BY_ID, ownedVariantsForTrack, pendingVariantChoice, type BuildFilter } from '../../../content/builds'
 import { useGame } from '../../GameContext'
 import { Hit, Person, ROOM_GROUND, RoomScene, Sign } from '../room'
@@ -42,7 +43,7 @@ export function BuildSiteScene({ focusTrack }: { focusTrack?: string } = {}) {
         { label: 'Building', value: sil?.label ?? 'Site' },
         { label: 'Level', value: String(focusLvl) },
         { label: 'Style', value: facingLabel.length > 18 ? facingLabel.slice(0, 16) + '…' : facingLabel },
-        { label: 'Upkeep', value: upkeepMin > 0 ? `$${upkeepMin}/min` : 'none' },
+        { label: 'Upkeep', value: upkeepMin > 0 ? `${cashLabel(upkeepMin)}/min` : 'none' },
       ]}
       phoneChipsOnly
       skyTop="#1c2530"

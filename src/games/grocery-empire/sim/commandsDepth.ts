@@ -265,7 +265,7 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
         compact(s.backroom)
         s.cash = round2(s.cash + cash)
         if (cleared > 0) {
-          log(s, `Morning markdown: cleared ${cleared} sour units for $${cash.toFixed(2)}.`, 'good')
+          log(s, `Morning markdown: cleared ${cleared} sour units for ${cashLabel(cash)}.`, 'good')
         } else {
           log(s, 'Morning markdown: rotated the cooler; nothing dumped.', 'info')
         }

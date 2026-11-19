@@ -2312,3 +2312,117 @@
     font-size: var(--t-xs);
   }
 }
+
+/* ── Motion: page entrances and modals ─────────────────────────────────
+   The page wrapper springs in (GroceryEmpireApp PAGE_VARIANTS). Inside it, the page's blocks
+   rise in one after another so a new place assembles instead of popping. Reduced motion: none. */
+@layer shell {
+  .g2-panel--enter .pf > *,
+  .g2-panel--enter .pf__body > *,
+  .g2-panel--enter .ge-panel > .hub-stage > * {
+    animation: g2-rise 0.42s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  }
+
+  .g2-panel--enter .pf > :nth-child(1),
+  .g2-panel--enter .pf__body > :nth-child(1) {
+    animation-delay: 0.02s;
+  }
+
+  .g2-panel--enter .pf > :nth-child(2),
+  .g2-panel--enter .pf__body > :nth-child(2) {
+    animation-delay: 0.06s;
+  }
+
+  .g2-panel--enter .pf > :nth-child(3),
+  .g2-panel--enter .pf__body > :nth-child(3) {
+    animation-delay: 0.1s;
+  }
+
+  .g2-panel--enter .pf > :nth-child(4),
+  .g2-panel--enter .pf__body > :nth-child(4) {
+    animation-delay: 0.14s;
+  }
+
+  .g2-panel--enter .pf > :nth-child(5),
+  .g2-panel--enter .pf__body > :nth-child(5) {
+    animation-delay: 0.18s;
+  }
+
+  .g2-panel--enter .pf > :nth-child(n + 6),
+  .g2-panel--enter .pf__body > :nth-child(n + 6) {
+    animation-delay: 0.22s;
+  }
+
+  @keyframes g2-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Modals: the scrim fades, the card springs up. */
+  .ge-modal {
+    animation: g2-scrim 0.22s ease-out both;
+  }
+
+  .ge-modal > * {
+    animation: g2-card 0.5s cubic-bezier(0.18, 1.25, 0.3, 1) both 0.05s;
+  }
+
+  /* The away receipt prints: it unrolls downward from the top edge. */
+  .ge-modal > .ge-receipt-paper {
+    animation: g2-print 0.7s cubic-bezier(0.2, 0.9, 0.25, 1) both 0.08s;
+  }
+
+  @keyframes g2-scrim {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes g2-card {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes g2-print {
+    from {
+      opacity: 0;
+      clip-path: inset(0 0 100% 0);
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .g2-panel--enter *,
+    .ge-modal,
+    .ge-modal > * {
+      animation: none !important;
+    }
+  }
+
+  .ge-reduced-motion .g2-panel--enter *,
+  .ge-reduced-motion .ge-modal,
+  .ge-reduced-motion .ge-modal > *,
+  .ge-reduced-motion .cu * {
+    animation: none !important;
+  }
+}

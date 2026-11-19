@@ -439,7 +439,7 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
     const refund = round2(refundUnits * unit)
     amount = round2(amount - refund)
     s.stats.shortShips += 1
-    log(s, `Short ship: crate light by ${refundUnits}. Invoice cut $${refund.toFixed(2)}.`, 'warn')
+    log(s, `Short ship: crate light by ${refundUnits}. Invoice cut ${cashLabel(refund)}.`, 'warn')
   }
   const firstOrder = s.stats.ordersPlaced <= 0
   // Invoice float: goods arrive on ETA; cash settles via payInvoice.
@@ -472,7 +472,7 @@ function placeOrder(s: GameState, cat: CategoryId, crates: number): Check {
   if (firstOrder) {
     log(s, 'Truck inbound. Pay the invoice when you can — early pays discount.', 'story')
   } else {
-    log(s, `Invoice #${invId} for $${amount.toFixed(2)}, due in ${DEPTH.invoiceDueSec}s. Pay it in Suppliers.`, 'info')
+    log(s, `Invoice #${invId} for ${cashLabel(amount)}, due in ${DEPTH.invoiceDueSec}s. Pay it in Suppliers.`, 'info')
   }
   const room = backroomCap(s) - sumQty(s.backroom)
   if (room < qty * 0.25) {
@@ -831,7 +831,7 @@ const coreHandlers = {
       s.ads += 1
       s.stats.adsBought += 1
       s.adCost = Math.ceil(s.adCost * adCostGrowth(s))
-      log(s, `Ad level ${s.ads}. Next costs $${s.adCost}.`, 'info')
+      log(s, `Ad level ${s.ads}. Next costs ${cashLabel(s.adCost)}.`, 'info')
     },
   },
   refundAd: {
@@ -846,7 +846,7 @@ const coreHandlers = {
       s.cash += s.lastAdSpend
       s.adCost = Math.max(DEMAND.adStartCost, Math.ceil(s.lastAdSpend))
       s.lastAdAt = -1
-      log(s, `Ad refunded. $${s.lastAdSpend.toFixed(0)} returned.`, 'info')
+      log(s, `Ad refunded. ${cashLabel(s.lastAdSpend)} returned.`, 'info')
     },
   },
   setMarketingPosture: {
@@ -872,7 +872,7 @@ const coreHandlers = {
       }
       const label =
         posture === 'circular' ? 'Circular' : posture === 'houseBrand' ? 'House brand' : 'Neighborhood'
-      log(s, `Marketing posture → ${label} (−$${fee}).`, 'info')
+      log(s, `Marketing posture → ${label} (−${cashLabel(fee)}).`, 'info')
     },
   },
   lockWholesalePrice: {
@@ -892,7 +892,7 @@ const coreHandlers = {
       s.priceLockUntil = s.time + PRICE_LOCK.durationSec
       log(
         s,
-        `Wholesale index locked at ${s.priceLockIndex.toFixed(2)} for ${PRICE_LOCK.durationSec}s (−$${cost.toFixed(0)}).`,
+        `Wholesale index locked at ${s.priceLockIndex.toFixed(2)} for ${PRICE_LOCK.durationSec}s (−${cashLabel(cost)}).`,
         'good',
       )
     },
@@ -1239,7 +1239,7 @@ const coreHandlers = {
         }
       }
       delete s.buildHibernated?.[id]
-      log(s, `Sold back ${tier?.name ?? id} for $${refund.toFixed(2)}.`, 'info')
+      log(s, `Sold back ${tier?.name ?? id} for ${cashLabel(refund)}.`, 'info')
     },
   },
   setBuildVariant: {
@@ -1302,7 +1302,7 @@ const coreHandlers = {
           if ((s.builds[id] ?? 0) < def.minTier) delete s.buildVariants[key]
         }
       }
-      log(s, `Hibernated ${tier?.name ?? id} · +$${refund.toFixed(2)}. Effects parked.`, 'warn')
+      log(s, `Hibernated ${tier?.name ?? id} · +${cashLabel(refund)}. Effects parked.`, 'warn')
     },
   },
   buyEndcap: {
@@ -1374,7 +1374,7 @@ const coreHandlers = {
     run: (s, cmd) => {
       const id = (cmd as Extract<Command, { type: 'collectVenture' }>).id
       const got = collectVenture(s, id)
-      if (got > 0) log(s, `Collected $${got.toFixed(2)} from venture.`, 'sale')
+      if (got > 0) log(s, `Collected ${cashLabel(got)} from venture.`, 'sale')
     },
   },
   collectAllVentures: {
@@ -1389,7 +1389,7 @@ const coreHandlers = {
           n += 1
         }
       }
-      if (total > 0) log(s, `Collected $${total.toFixed(2)} from ${n} till${n === 1 ? '' : 's'}.`, 'sale')
+      if (total > 0) log(s, `Collected ${cashLabel(total)} from ${n} till${n === 1 ? '' : 's'}.`, 'sale')
     },
   },
   depositPassbook: {
@@ -1849,7 +1849,7 @@ const coreHandlers = {
       if (pay <= 0) return
       s.cash = round2(s.cash - pay)
       s.loyalty.liability = round2(Math.max(0, s.loyalty.liability - pay))
-      log(s, `Punch-card rewards paid: $${pay.toFixed(2)}. Regulars stay happy.`, 'good')
+      log(s, `Punch-card rewards paid: ${cashLabel(pay)}. Regulars stay happy.`, 'good')
     },
   },
 } satisfies Record<string, Handler>

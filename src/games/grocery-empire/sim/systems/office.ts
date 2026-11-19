@@ -98,7 +98,7 @@ export function rebalanceOffice(s: GameState, toward: OfficeRebalanceToward) {
     s.compute.archives += 1
     log(
       s,
-      `Rebalanced office (−$${cost.toFixed(0)}): Analyst → Archive. Cap now ${attentionCap(s)}.`,
+      `Rebalanced office (−${cashLabel(cost)}): Analyst → Archive. Cap now ${attentionCap(s)}.`,
       'memo',
     )
   } else {
@@ -108,7 +108,7 @@ export function rebalanceOffice(s: GameState, toward: OfficeRebalanceToward) {
     if (s.compute.attention > cap) s.compute.attention = cap
     log(
       s,
-      `Rebalanced office (−$${cost.toFixed(0)}): Archive → Analyst. Cap now ${cap}.`,
+      `Rebalanced office (−${cashLabel(cost)}): Archive → Analyst. Cap now ${cap}.`,
       'memo',
     )
   }

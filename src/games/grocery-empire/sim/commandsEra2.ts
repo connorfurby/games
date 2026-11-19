@@ -149,7 +149,7 @@ export const era2Handlers: { [K in Era2Cmd['type']]: Era2Handler<Extract<Era2Cmd
       s.board.nextMeetingAt = s.time + 90
       s.board.lastResolvedAt = s.time
       unlockMenu(s, 'books')
-      log(s, `Incorporated. Equity float ~$${s.equity.toFixed(0)}. Board calendar starts.`, 'era')
+      log(s, `Incorporated. Equity float ~${cashLabel(s.equity)}. Board calendar starts.`, 'era')
     },
   },
   depositInvest: {
