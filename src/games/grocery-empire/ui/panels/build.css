@@ -210,3 +210,273 @@
     }
   }
 }
+
+/* ── Build 1.0: upkeep strip, building cards, lot scene ─────────────── */
+@layer panels {
+  .bd-upkeep {
+    display: grid;
+    grid-template-columns: auto auto minmax(4rem, 1fr) auto;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--g2-r-md, 10px);
+    background: color-mix(in srgb, var(--ge-ink) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ge-ink) 10%, transparent);
+  }
+
+  .bd-upkeep strong {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bd-upkeep__k {
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+  }
+
+  .bd-upkeep__bar {
+    height: 6px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--ge-ink) 10%, transparent);
+    overflow: hidden;
+  }
+
+  .bd-upkeep__bar i {
+    display: block;
+    height: 100%;
+    background: var(--ge-success, #7cc47f);
+    transition: width 0.4s ease;
+  }
+
+  .bd-upkeep.is-warn {
+    border-color: color-mix(in srgb, var(--ge-warn, #e0a43a) 60%, transparent);
+  }
+
+  .bd-upkeep.is-warn .bd-upkeep__bar i {
+    background: var(--ge-warn, #e0a43a);
+  }
+
+  @media (max-width: 560px) {
+    .bd-upkeep {
+      grid-template-columns: auto 1fr;
+    }
+
+    .bd-upkeep__bar {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .bd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+    gap: var(--s-3);
+  }
+
+  .bd-card {
+    display: grid;
+    align-content: start;
+    gap: var(--s-2);
+    padding: var(--s-3);
+    border-radius: var(--g2-r-lg, 14px);
+    border: 1px solid color-mix(in srgb, var(--ge-ink) 12%, transparent);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ge-ink) 5%, transparent), transparent 60%),
+      color-mix(in srgb, var(--ge-ink) 2%, transparent);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    scroll-margin: 6rem;
+  }
+
+  .bd-card.is-sel {
+    border-color: var(--g2-tag, #f2c14e);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--g2-tag, #f2c14e) 40%, transparent), 0 10px 28px rgb(0 0 0 / 0.25);
+  }
+
+  .bd-card.is-choice {
+    border-color: color-mix(in srgb, var(--ge-accent, #e8583c) 70%, transparent);
+  }
+
+  .bd-card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .bd-card__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--g2-tag, #f2c14e) 16%, transparent);
+    color: var(--g2-tag, #f2c14e);
+  }
+
+  .bd-card__name {
+    flex: 1 1 auto;
+    font: 700 var(--t-md) / 1.2 var(--g2-display, var(--ge-font-ui));
+  }
+
+  .bd-pips {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  .bd-pips i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ge-ink) 14%, transparent);
+  }
+
+  .bd-pips i.is-on {
+    background: var(--g2-tag, #f2c14e);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--g2-tag, #f2c14e) 60%, transparent);
+  }
+
+  .bd-card__now,
+  .bd-card__next {
+    display: grid;
+    gap: 2px;
+    font-size: var(--t-sm);
+  }
+
+  .bd-card__now > span,
+  .bd-card__next > span:not(.bd-card__k) {
+    color: var(--ge-ink-muted);
+  }
+
+  .bd-card__now > em {
+    font-style: normal;
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+  }
+
+  .bd-card__next {
+    padding-top: var(--s-2);
+    border-top: 1px dashed color-mix(in srgb, var(--ge-ink) 14%, transparent);
+  }
+
+  .bd-card__next .gk-btn {
+    justify-self: start;
+    margin-top: var(--s-1);
+  }
+
+  .bd-card__k {
+    font: 700 var(--t-2xs, 0.6875rem) / 1.2 var(--ge-font-ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ge-ink-muted);
+  }
+
+  .bd-card__need {
+    margin: var(--s-1) 0 0;
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+  }
+
+  .bd-card__styles {
+    margin: 0;
+    font-size: var(--t-xs);
+    color: var(--g2-tag, #f2c14e);
+  }
+
+  .bd-card__choice {
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .bd-card__opts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-2);
+  }
+
+  .bd-opt {
+    display: grid;
+    gap: 2px;
+    padding: var(--s-2);
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--ge-ink) 16%, transparent);
+    background: color-mix(in srgb, var(--ge-ink) 4%, transparent);
+    color: inherit;
+    text-align: left;
+    font-size: var(--t-xs);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .bd-opt:hover {
+    transform: translateY(-2px);
+    border-color: var(--g2-tag, #f2c14e);
+  }
+
+  .bd-opt strong {
+    font-size: var(--t-sm);
+  }
+
+  .bd-opt__tag {
+    justify-self: start;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--ge-success, #7cc47f) 20%, transparent);
+  }
+
+  .bd-opt.is-bold .bd-opt__tag {
+    background: color-mix(in srgb, var(--ge-accent, #e8583c) 22%, transparent);
+  }
+
+  .bd-card__more summary {
+    cursor: pointer;
+    font-size: var(--t-xs);
+    color: var(--ge-ink-muted);
+    list-style: none;
+  }
+
+  .bd-card__more summary::before {
+    content: '⋯ ';
+  }
+
+  .bd-card__more-acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin-top: var(--s-2);
+  }
+
+  /* Lot scene */
+  .bs .bs-empty {
+    fill: none;
+    stroke: #8a8070;
+    stroke-dasharray: 5 4;
+  }
+
+  .bs .bs-part {
+    transition: filter 0.2s ease;
+  }
+
+  .bs .bs-sel {
+    filter: drop-shadow(0 0 6px rgb(242 193 78 / 0.8));
+  }
+
+  .bs .bs-win {
+    animation: bs-glow 2.6s ease-in-out infinite alternate;
+  }
+
+  .bs .bs-frost {
+    animation: bs-glow 1.8s ease-in-out infinite alternate;
+  }
+
+  @keyframes bs-glow {
+    from {
+      opacity: 0.6;
+    }
+    to {
+      opacity: 0.95;
+    }
+  }
+
+  .ge-reduced-motion .bs .bs-win,
+  .ge-reduced-motion .bs .bs-frost {
+    animation: none;
+  }
+}

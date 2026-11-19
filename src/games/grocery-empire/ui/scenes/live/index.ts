@@ -1,7 +1,6 @@
 export { LiveScene } from './LiveScene'
 export { BackroomScene } from './BackroomScene'
 export { BillboardScene } from './BillboardScene'
-export { BuildSiteScene } from './BuildSiteScene'
 export { CouncilScene } from './CouncilScene'
 export { LedgerScene } from './LedgerScene'
 export { TickerScene } from './TickerScene'
