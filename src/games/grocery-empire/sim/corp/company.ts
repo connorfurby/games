@@ -7,6 +7,7 @@ import type { GameState } from '../state'
 import { crimeOf } from '../systems/crime'
 import { cnorm, corpOf, cpick, crand, round2, salesRate } from './core'
 import { pushTape } from './market'
+import { companyAction } from './actions'
 import type { CompanyState } from './types'
 
 const N = () => CORP.sharesPerCompany
@@ -284,18 +285,12 @@ function applyProposal(s: GameState, p: ProposalDef) {
     else if (e.kind === 'cash') s.cash = round2(Math.max(0, s.cash + e.v * salesRate(s)))
     else if (e.kind === 'brand') s.brand = Math.max(0, Math.min(1, s.brand + e.v))
     else if (e.kind === 'price') co.walk = Math.min(CORP.walkMax, co.walk * e.v)
-    else if (e.kind === 'action' && e.act) companyActionHook?.(s, e.act)
+    else if (e.kind === 'action' && e.act) companyAction(s, e.act)
     else if (e.kind === 'heat') {
       const c = crimeOf(s)
       c.heat = Math.max(0, Math.min(CRIME.heatMax, c.heat + e.v))
     }
   }
-}
-
-/** Set by actions.ts (avoids an import cycle). */
-export let companyActionHook: ((s: GameState, a: 'lab' | 'execPool' | 'goodwill') => void) | null = null
-export function setCompanyActionHook(f: (s: GameState, a: 'lab' | 'execPool' | 'goodwill') => void) {
-  companyActionHook = f
 }
 
 export function castVote(s: GameState, yes: boolean | null) {

@@ -2,7 +2,7 @@ import { OWNERS } from '../../content/corp/owners'
 import { RIVALS } from '../../content/rivals'
 import { CO, CORP, RIVALRY } from '../balance'
 import type { GameState } from '../state'
-import { coOf, sellableShares, setCompanyActionHook, sharePrice } from './company'
+import { coOf, sellableShares, sharePrice } from './company'
 import { corpOf, cpick, crand } from './core'
 import { pushTape } from './market'
 import { moreOf } from './more'
@@ -62,7 +62,3 @@ export function newsAboutYou(s: GameState, good: boolean, line: string, size = g
   co.walk = Math.max(CORP.walkMin, Math.min(CORP.walkMax, co.walk * size))
   if (co.listed) pushTape(s, line, good)
 }
-
-setCompanyActionHook((s, a) => {
-  companyAction(s, a)
-})
