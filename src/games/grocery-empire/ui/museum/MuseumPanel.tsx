@@ -40,13 +40,14 @@ import {
   relicLevelPower,
   relicWorth,
   setAutoDust,
-  socketCapFor,
   socketRelic,
   unsocketRelic,
   wingOpen,
   type Chest,
   type MuseumSave,
 } from '../../sim/museum'
+import { socketCapOf } from '../../content/relicPerks'
+import { HORIZON } from '../../sim/balance'
 import { useGame } from '../GameContext'
 import { HubStage } from '../components/HubStage'
 import { Button, Select, Sheet, useConfirm, usePhone } from '../kit'
@@ -325,7 +326,7 @@ export function MuseumPanel() {
   const owned = relicCount(m)
   const total = RELICS.length
   const done = completedWings(m)
-  const cap = socketCapFor(!!gs.projects?.done?.['pj-fifth-socket'] || gs.horizon.socketsUnlocked >= 5)
+  const cap = socketCapOf(gs)
   const boost = relicSocketMul(gs)
 
   const byRarity = useMemo(() => {
@@ -423,7 +424,16 @@ export function MuseumPanel() {
         purpose={MENUS.relics.purpose}
         department={MENUS.relics.name}
         tray={tray}
-        scene={<MuseumGallery m={m} cap={cap} boost={boost} onSelect={setSelected} onFill={canFill ? fill : undefined} />}
+        scene={
+          <MuseumGallery
+            m={m}
+            cap={cap}
+            boost={boost}
+            onSelect={setSelected}
+            onFill={canFill ? fill : undefined}
+            nextCaseEra={HORIZON.relicSocketEras.find((e) => gs.era < e) ?? null}
+          />
+        }
       >
         {m.chests.length > 0 ? (
           <section className="mu-chests" aria-label="Chests" data-coach-id="museum-chests">

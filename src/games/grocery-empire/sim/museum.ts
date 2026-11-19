@@ -600,8 +600,9 @@ export function levelRelic(m: MuseumSave, id: string, count = 1): boolean {
   return stepped > 0
 }
 
-export function socketCapFor(projectDone: boolean): number {
-  return projectDone ? HORIZON.relicSocketsLater : HORIZON.relicSockets
+export function socketCapFor(projectDone: boolean, era = 0): number {
+  const base = projectDone ? HORIZON.relicSocketsLater : HORIZON.relicSockets
+  return base + HORIZON.relicSocketEras.filter((e) => era >= e).length
 }
 
 export function socketRelic(m: MuseumSave, id: string, cap: number = HORIZON.relicSockets): boolean {

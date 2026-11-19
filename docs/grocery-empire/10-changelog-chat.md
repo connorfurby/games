@@ -2,6 +2,12 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AM. Build street, real build tiers, growing showcase (2026-11-18, on `main`)
+
+- **Build page rebuilt** (`BuildPanel` + `scenes/live/BuildStreetScene`): a street where each track is a building that grows with its level; tap one to jump to its card. One card per track: what you have, the style choice, what's next, one Build button; Queue / Close / Sell live under **More**. Scene upkeep reads `upkeepPerSec` (matches the strip).
+- **Every build tier does what its card says** (`BUILD_TIERS` in `balance.ts`). Before, Regional DC, Cold Plant, Tank Farm, Cryo Hub, Pack Line, Factory, Truck→Barge and HQ Wing→Museum of Baskets did little or nothing beyond vague copy. Now: storage adds 2k/5k/8k/12k backroom, cold stretches perishable life up to 2.4×, transit keeps cutting delivery time (to −72%), Truck adds 12 per crate, Pack Line / Factory raise produce to 3/s and 8/s, civic copy states its real demand bonus.
+- **Museum showcase grows through the run**: base 3 (5 with the fifth-socket project) +1 case at Era 3, 6, 9 and 12, +1 for Museum of Baskets (civic 5). Only cases the run has opened pay (`relicEffects` ignores sockets past `socketCapOf`); a locked "Another case · Opens in Era N" tile shows what's coming.
+
 ## AL. Loading and motion pass (2026-11-18, on `main`)
 
 - **Boot splash** in `index.html` (pure CSS, compositor-only animation) so the first frame is never white.

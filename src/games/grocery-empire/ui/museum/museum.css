@@ -1377,3 +1377,31 @@
     gap: var(--s-2);
   }
 }
+
+@layer shell {
+  .mu-case__slot.is-locked {
+    position: relative;
+    min-height: 11rem;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: var(--s-1);
+    padding: var(--s-3) var(--s-2);
+    border-radius: var(--r-md, 10px);
+    border: 1px dashed rgb(244 234 210 / 0.14);
+    color: rgb(244 234 210 / 0.45);
+    text-align: center;
+  }
+
+  .mu-case__slot.is-locked .mu-case__glass {
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 560px) {
+    .mu-case__slot.is-locked {
+      min-height: 9rem;
+    }
+  }
+}

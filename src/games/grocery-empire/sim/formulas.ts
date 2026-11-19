@@ -1,4 +1,4 @@
-import { DAILY_RULES, type DailyRuleMods } from './balance'
+import { BUILD_TIERS, DAILY_RULES, type DailyRuleMods } from './balance'
 import { offworldSalesMul, wireAdActive } from './systems/late'
 import { hasFork } from './ventureForks'
 export { annexSeatCap } from './staffAnnex'
@@ -200,9 +200,7 @@ export function backroomCap(s: GameState) {
   let cap = BACKROOM.baseCap + up(s, 'racks') * BACKROOM.perRackLevel
   if (st >= 2) cap += 60
   if (st >= 3) cap += 400
-  if (st >= 5) cap += 2000
-  if (st >= 6) cap += 5000
-  if (st >= 7) cap += 8000
+  for (const [lvl, add] of Object.entries(BUILD_TIERS.storageCap)) if (st >= +lvl) cap += add
   if (s.expansions['side-yard']) cap += 40
   if (memo(s, 'dock-plate')) cap += 20
   const facing = buildVariantMul(s, 'backroom')
@@ -221,6 +219,7 @@ export function crateSize(s: GameState) {
   if (memo(s, 'hand-truck')) n += 12
   if (memo(s, 'crate-chisel')) n += 2
   if ((s.builds.transit ?? 0) >= 2) n += 12
+  if ((s.builds.transit ?? 0) >= 3) n += BUILD_TIERS.truckCrate
   return n
 }
 
@@ -320,8 +319,7 @@ export function deliveryTime(s: GameState, supplier: SupplierId) {
   // Many Docks: delivery asymptote; One Vendor barely moves short-ship/delivery.
   if (up(s, 'many-docks') > 0) t *= Math.max(0.5, 1 - upgradeMagnitude(s, 'many-docks') * 0.5)
   const transit = s.builds.transit ?? 0
-  if (transit >= 2) t *= 0.5
-  else if (transit >= 1) t *= 0.75
+  t *= BUILD_TIERS.transitTime[Math.min(transit, BUILD_TIERS.transitTime.length - 1)] ?? 1
   if (memo(s, 'dock-plate')) t *= 0.6
   if (hasDoctrine(s, 'route-density')) t *= DOCTRINE_EFFECTS.routeDensityDeliveryMul
   const receivers = roleCount(s, 'receiver')
@@ -984,8 +982,7 @@ export function coldBrownout(s: GameState) {
 export function lifeMul(s: GameState, cat: CategoryId) {
   let m = 1
   const cold = s.builds.cold ?? 0
-  if (cold >= 2) m *= 1.6
-  else if (cold >= 1) m *= 1.25
+  m *= BUILD_TIERS.coldLife[Math.min(cold, BUILD_TIERS.coldLife.length - 1)] ?? 1
   if (cat === 'produce' && memo(s, 'misting-bar')) m *= 1.4
   m *= 1 + up(s, 'cold-hands') * 0.04 + upgradeMagnitude(s, 'cold-chain-drill')
   if (memo(s, 'cold-vault')) m *= 1.04

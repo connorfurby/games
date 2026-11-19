@@ -27,9 +27,12 @@ export function MuseumGallery({
   boost,
   onSelect,
   onFill,
+  nextCaseEra,
 }: {
   m: MuseumSave
   cap: number
+  /** The era that opens the next case, if any. */
+  nextCaseEra?: number | null
   /** Case multiplier, e.g. 1.35. */
   boost: number
   onSelect: (id: string) => void
@@ -88,6 +91,15 @@ export function MuseumGallery({
             </li>
           )
         })}
+        {nextCaseEra != null ? (
+          <li className="mu-case__slot is-locked">
+            <span className="mu-case__glass" aria-hidden>
+              🔒
+            </span>
+            <span className="mu-case__name">Another case</span>
+            <span className="mu-case__perk">Opens in Era {nextCaseEra}.</span>
+          </li>
+        ) : null}
       </ol>
     </figure>
   )

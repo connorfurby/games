@@ -1,4 +1,4 @@
-import { HORIZON } from '../sim/balance'
+import { BUILD_TIERS, HORIZON } from '../sim/balance'
 import type { GameState, WeatherId } from '../sim/state'
 import { RELIC_BY_ID, relicSeed, type Glyph, type Rarity, type RelicDef } from './relics'
 import { STAT_INFO, type StatId } from './upgrades/stats'
@@ -132,7 +132,10 @@ export function relicLevelPower(level: number): number {
 /** Sockets the run can use: 3, or 5 after pj-fifth-socket (or once the museum mirrored 5). */
 export function socketCapOf(s: GameState): number {
   const later = !!s.projects?.done?.['pj-fifth-socket'] || (s.horizon?.socketsUnlocked ?? 0) >= 5
-  return later ? HORIZON.relicSocketsLater : HORIZON.relicSockets
+  const base = later ? HORIZON.relicSocketsLater : HORIZON.relicSockets
+  // One more case at each milestone era this run (Era 3, 6, 9, 12): the showcase grows with you.
+  const civicCase = (s.builds?.civic ?? 0) >= BUILD_TIERS.museumCaseCivic ? 1 : 0
+  return base + HORIZON.relicSocketEras.filter((e) => s.era >= e).length + civicCase
 }
 
 /** The wings whose bonus is on: finished wings that hold a socket (or the first `cap` when unset). */
@@ -187,7 +190,9 @@ export function relicEffects(
     const r = RELIC_BY_ID[id]
     if (!r) continue
     const p = relicPerk(r)
-    const socketed = sockets.includes(id)
+    // Only the cases this run has opened count (the museum is shared across runs; a Rebrand
+    // starts back at three, so cases past the cap sit dark until the run reaches them again).
+    const socketed = sockets.indexOf(id) > -1 && sockets.indexOf(id) < socketCapOf(s)
     // Socket fantasy: a Horizon relic in a socket pays a little extra once the Horizon is open.
     const horizonSocket = socketed && r.wing === 'horizon' && s.era >= 7 ? HORIZON.socketHorizonMul : 1
     const scale = relicLevelPower(levels[id] ?? 1) * (socketed ? relicSocketMul(s) * horizonSocket : 1)

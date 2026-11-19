@@ -1,7 +1,7 @@
 import { PROJECT_BY_ID } from '../../content/projects'
 import { EMPIRE_REWARDS, EMPIRE_REWARD_POINTS } from '../../content/empireRewards'
 import { VENTURE_BY_ID, ventureIncome, venturePolicyIncomeMul } from '../../content/ventures'
-import { EMPIRE, HORIZON, LATE } from '../balance'
+import { BUILD_TIERS, EMPIRE, HORIZON, LATE } from '../balance'
 import { hasFork } from '../ventureForks'
 import { backroomCap, empireXpToNext, perk, up } from '../formulas'
 import { addBatch, log, sumQty, takeUnits } from '../helpers'
@@ -16,7 +16,7 @@ export function tickGarden(s: GameState, dt: number) {
   if (room <= 0) return
 
   if (s.categories.produce) {
-    const rate = prod >= 2 ? 1 : 1 / 15
+    const rate = BUILD_TIERS.produceRate[Math.min(prod, BUILD_TIERS.produceRate.length - 1)] ?? 1
     s.acc.garden += rate * dt
     const n = Math.min(room, Math.floor(s.acc.garden))
     if (n > 0) {

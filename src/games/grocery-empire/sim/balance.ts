@@ -921,6 +921,25 @@ export const VALUE = {
  * Past-Era-6 horizon. Every new economy number for Eras 7–12 lives here.
  * Probe / greenhouse / relay / embassy scalars are retuned with LONG_HORIZON.
  */
+/**
+ * Mid-game build tiers: every tier on the Build page does what its card says.
+ * Index = the track's build level (see content/builds.ts).
+ */
+export const BUILD_TIERS = {
+  /** Extra backroom at storage level ≥ index (Regional DC, Orbital Cache, Bonded, Seed Vault). */
+  storageCap: { 4: 2000, 5: 5000, 6: 8000, 7: 12000 } as Record<number, number>,
+  /** Perishable life multiplier by cold level. */
+  coldLife: [1, 1.25, 1.6, 1.8, 2, 2.2, 2.4] as const,
+  /** Delivery time multiplier by transit level. */
+  transitTime: [1, 0.75, 0.5, 0.42, 0.36, 0.32, 0.28, 0.28, 0.28] as const,
+  /** Extra units per crate from a Truck (on top of the Van's 12). */
+  truckCrate: 12,
+  /** Garden produce per second by production level. */
+  produceRate: [0, 1 / 15, 1, 1, 3, 8, 8, 8] as const,
+  /** Civic level that opens one more museum case (Museum of Baskets). */
+  museumCaseCivic: 5,
+}
+
 export const HORIZON = {
   unsealStipend: 5e14,
   /** Floor every Horizon cash buy at N seconds of current revenue. */
@@ -1073,6 +1092,8 @@ export const HORIZON = {
   relicLevelCap: 10,
   relicSockets: 3,
   relicSocketsLater: 5,
+  /** Showcase cases open as the run grows: one more at each of these eras (on top of 3, or 5). */
+  relicSocketEras: [3, 6, 9, 12] as const,
   /** A socketed Horizon-wing relic (Era 7+) gets this on top of the socket multiplier. */
   socketHorizonMul: 1.1,
   deputyCooldown: 45,
