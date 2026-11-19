@@ -1,0 +1,59 @@
+@layer shell {
+  .ge-curtain {
+    position: fixed;
+    inset: 0;
+    z-index: 210;
+    display: grid;
+    place-items: center;
+    background: #2a2d33;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 0.6);
+  }
+
+  /* Roller-shutter slats. */
+  .ge-curtain__slats {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      180deg,
+      #3a3e46 0 18px,
+      #2b2e35 18px 20px,
+      #454a53 20px 22px
+    );
+  }
+
+  .ge-curtain__plate {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    justify-items: center;
+    padding: 14px 22px;
+    border-radius: 6px;
+    background: #efe6cf;
+    color: #2a1f15;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+    transform: rotate(-1.5deg);
+  }
+
+  .ge-curtain__plate strong {
+    font: 700 1.35rem / 1.1 var(--g2-display, Georgia, serif);
+  }
+
+  .ge-curtain__plate span {
+    font: 600 0.75rem / 1.2 var(--g2-ui, system-ui, sans-serif);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7a5a3a;
+  }
+
+  .ge-curtain__handle {
+    position: absolute;
+    bottom: 26px;
+    left: 50%;
+    width: 72px;
+    height: 10px;
+    margin-left: -36px;
+    border-radius: 5px;
+    background: #9aa1ad;
+    box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.25);
+  }
+}

@@ -33,6 +33,7 @@ import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
 import { DevModePanel } from '../components/DevModePanel'
 import { Panel } from '../components/Panel'
 import { Sparkline } from '../components/Sparkline'
+import { withCurtain } from '../components/curtainBus'
 import { RoadAhead } from '../shell/RoadAhead'
 import { RunStory } from '../shell/RunStory'
 
@@ -383,7 +384,10 @@ export function MoreSections({ only }: { only?: MoreSection }) {
                 body: `${label}. Your current run is kept as a backup too, so you can come back to it.`,
                 confirmLabel: 'Restore',
                 tone: 'danger',
-                onConfirm: () => setIoMsg(engine.restoreBackup(i) ? 'Backup restored.' : 'That backup could not be read.'),
+                onConfirm: () =>
+                  withCurtain('Rolling back', () =>
+                    setIoMsg(engine.restoreBackup(i) ? 'Backup restored.' : 'That backup could not be read.'),
+                  ),
               })
             }
           />

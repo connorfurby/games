@@ -57,6 +57,7 @@ import { StoreScene } from './scene/StoreScene'
 import { SceneStrip, useScenePref } from './shell/SceneStrip'
 import { HubNav } from './shell/HubNav'
 import { CatchUpScreen } from './components/CatchUpScreen'
+import { CurtainHost } from './components/Curtain'
 import { OverlayManager } from './shell/OverlayManager'
 import { CommandPalette } from './shell/CommandPalette'
 import { onInboxRequest, onAutopilotRequest, onWikiRequest } from './shell/uiBus'
@@ -875,6 +876,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
       <GameProvider value={ctx}>
         <CatchUpScreen info={engine.catchUp()} reducedMotion={reducedMotion} />
+        <CurtainHost />
         <div
           className={`ge-root g2-root ge-root--${meta.settings.presentation}${
             state.paused ? ' ge-root--paused' : ''

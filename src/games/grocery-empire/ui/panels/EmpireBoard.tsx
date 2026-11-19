@@ -4,6 +4,7 @@ import { PROJECTS } from '../../content/projects'
 import { STAT_IDS, STAT_INFO } from '../../content/upgrades/stats'
 import { REBRAND } from '../../sim/balance'
 import { can } from '../../sim/commands'
+import { withCurtain } from '../components/curtainBus'
 import { engine } from '../../sim/engine'
 import { empireXpToNext } from '../../sim/formulas'
 import { canCarry, canRebrand, pendingGoodwill, type RebrandCarry } from '../../sim/systems/prestige'
@@ -272,8 +273,9 @@ export function EmpireBoard() {
           confirmLabel: 'Rebrand',
           tone: 'danger',
           onConfirm: () => {
-            engine.rebrand(canCarry(s, carry) ? null : carry)
+            const keep = canCarry(s, carry) ? null : carry
             setCarry(null)
+            withCurtain('Under new management', () => engine.rebrand(keep), `Goodwill ${s.rebrand.goodwill + gain}`)
           },
         }}
         onClose={() => setConfirm(false)}
