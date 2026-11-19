@@ -15,6 +15,7 @@ import { ActionRow, PlayFrame } from '../play'
 import { useGame } from '../GameContext'
 import { clock, money } from '../format'
 import { RivalStreetScene } from '../scenes/live/RivalStreetScene'
+import { RivalBosses } from '../corp/RivalBosses'
 
 /** What a portrait needs. Keel is not a RivalDef (it is Horizon-only), so the portrait takes this shape. */
 export type PortraitDef = Pick<RivalDef, 'color' | 'accent' | 'initials' | 'founder' | 'title'>
@@ -313,6 +314,7 @@ export function RivalsPanel() {
                 )
               })}
           </div>
+          <RivalBosses />
         </PlayFrame>
       </section>
 

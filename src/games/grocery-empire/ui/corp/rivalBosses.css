@@ -1,0 +1,36 @@
+@layer panels {
+  .rb { margin-top: var(--s-4); display: grid; gap: var(--s-2); }
+  .rb-h { margin: 0; font-size: var(--t-md); }
+  .rb-note, .rb-muted { margin: 0; color: var(--ge-ink-muted); font-size: var(--t-xs); }
+  .rb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: var(--s-2); }
+  .rb-card {
+    display: grid;
+    gap: var(--s-2);
+    align-content: start;
+    padding: var(--s-3);
+    border-radius: var(--g2-r-md, 12px);
+    background: rgb(255 255 255 / 0.03);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+  .rb-card.is-angry { border-color: rgb(232 88 60 / 0.55); box-shadow: inset 0 0 30px rgb(232 88 60 / 0.08); }
+  .rb-head { display: flex; gap: var(--s-2); align-items: center; }
+  .rb-head h4 { margin: 0; font-size: var(--t-sm); }
+  .rb-sub { margin: 0; color: var(--ge-ink-muted); font-size: var(--t-xs); }
+  .rb-grudge { display: grid; gap: 3px; font-size: var(--t-xs); }
+  .rb-grudge__bar, .rb-stake, .rb-cover { position: relative; height: 7px; border-radius: 4px; background: rgb(255 255 255 / 0.07); overflow: hidden; }
+  .rb-grudge__bar i { display: block; height: 100%; background: linear-gradient(90deg, #f2c14e, #e8583c); transition: width 0.5s ease; }
+  .rb-grudge__bar b { position: absolute; top: 0; bottom: 0; width: 2px; background: rgb(255 255 255 / 0.5); }
+  .rb-stake i { display: block; height: 100%; background: linear-gradient(90deg, #5b8fd9, #5fd38a); transition: width 0.5s ease; }
+  .rb-cover i { display: block; height: 100%; background: #9b7ad9; transition: width 0.5s ease; }
+  .rb-line { margin: 0; font-style: italic; font-size: var(--t-sm); }
+  .rb-block { display: grid; gap: 5px; padding-top: var(--s-2); border-top: 1px solid rgb(255 255 255 / 0.06); }
+  .rb-row { display: flex; justify-content: space-between; gap: 8px; font-size: var(--t-xs); }
+  .rb-row strong { font-variant-numeric: tabular-nums; }
+  .rb-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .rb-war { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .rb-war button { width: 100%; }
+  .rb-intel { margin: 0; color: #c9b2ff; font-size: var(--t-xs); font-weight: 700; }
+  .rb-log { margin: 0; padding-left: 1.1rem; font-size: var(--t-xs); }
+  .rb-foot:empty { display: none; }
+}

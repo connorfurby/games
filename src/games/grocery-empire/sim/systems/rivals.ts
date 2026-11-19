@@ -202,6 +202,13 @@ export function buyout(s: GameState, id: RivalId) {
   const st = s.rivals[id]!
   const cost = buyoutCost(s, id)
   s.cash -= cost
+  foldRival(s, id)
+  log(s, `Bought ${def.name} (−${cashLabel(cost)}). ${st.stores} stores join the network. ${def.farewell}`, 'good')
+}
+
+/** A rival becomes yours (cash buyout or a share takeover): its stores join your network. */
+export function foldRival(s: GameState, id: RivalId) {
+  const st = s.rivals[id]!
   st.bought = true
   st.boughtStores = st.stores
   if (id === 'megamart' && s.depth) {
@@ -213,7 +220,6 @@ export function buyout(s: GameState, id: RivalId) {
   const levelXp = EMPIRE.levelBase * Math.pow(EMPIRE.levelGrowth, Math.max(0, s.empire.level - 1))
   s.empire.xp += st.stores * levelXp * RIVAL_CHAINS.buyoutLevelShare * statMul(s, 'xp')
   s.stats.rivalsBought = (s.stats.rivalsBought ?? 0) + 1
-  log(s, `Bought ${def.name} (−${cashLabel(cost)}). ${st.stores} stores join the network. ${def.farewell}`, 'good')
 }
 
 function tickPennyAisleLock(s: GameState) {

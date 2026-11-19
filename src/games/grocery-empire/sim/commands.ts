@@ -199,6 +199,13 @@ export type Command =
   | { type: 'resolveMeeting'; choice: import('./corp/company').MeetingChoice }
   | { type: 'castVote'; yes: boolean }
   | { type: 'lobbyOwner'; owner: string }
+  | { type: 'headToHead'; id: string }
+  | { type: 'playWar'; id: string; move: 'undercut' | 'match' | 'hold' }
+  | { type: 'makeTruce'; id: string }
+  | { type: 'plantMole'; id: string }
+  | { type: 'moleJob'; id: string; job: 'steal' | 'sabotage' }
+  | { type: 'takeoverRival'; id: string }
+  | { type: 'buyBackStake'; id: string }
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }

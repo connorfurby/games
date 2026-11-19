@@ -68,6 +68,23 @@ export interface CompanyState {
   lastScandal: number
 }
 
+export interface CeoState {
+  grudge: number
+  nextMoveAt: number
+  truceUntil: number
+  mole: { cover: number; nextIntelAt: number } | null
+  war: { round: number; you: number; them: number; next: 'undercut' | 'match' | 'hold'; log: { you: string; them: string; win: boolean | null }[] } | null
+  warReadyAt: number
+  /** Shares of YOUR company this rival has bought. */
+  stakeInYou: number
+  /** Your stake in them last seen (to notice you buying in). */
+  seenOwned: number
+  lastPillAt: number
+  wins: number
+  losses: number
+  lastLine: string
+}
+
 export interface CorpState {
   rng: number
   /** Seconds not yet ticked (the company layer ticks once a second). */
@@ -89,4 +106,7 @@ export interface CorpState {
   co: CompanyState
   /** Timed effects from meetings, votes and deals. */
   boosts: CorpBoost[]
+  /** Rival bosses, keyed by rival id. */
+  ceo: Record<string, CeoState>
+  takeovers: number
 }

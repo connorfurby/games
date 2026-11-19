@@ -1,5 +1,6 @@
 import { cashLabel } from '@/shared/bn'
 import { OWNER_BY_ID, OWNERS, PROPOSAL_BY_ID, PROPOSALS, type OwnerLever, type ProposalDef } from '../../content/corp/owners'
+import { RIVAL_BY_ID, type RivalId } from '../../content/rivals'
 import { CO, CORP, CRIME } from '../balance'
 import { log } from '../helpers'
 import type { GameState } from '../state'
@@ -54,7 +55,7 @@ export function alleyVetoed(s: GameState): string | null {
   return null
 }
 
-function addBoost(s: GameState, kind: 'demand' | 'wages' | 'ventures', mul: number, sec: number, label: string) {
+export function addBoost(s: GameState, kind: 'demand' | 'wages' | 'ventures', mul: number, sec: number, label: string) {
   corpOf(s).boosts.push({ kind, mul, until: s.time + sec, label })
 }
 
@@ -245,6 +246,9 @@ export function tally(s: GameState, youYes: boolean | null) {
     if (v!.lobbied.includes(id)) yes = youYes ?? yes
     rows.push({ who: def.name, shares: sh, yes })
   }
+  for (const [rid, st] of Object.entries(corpOf(s).ceo)) {
+    if (st.stakeInYou > 0) rows.push({ who: RIVAL_NAME(rid), shares: st.stakeInYou, yes: youYes == null ? false : !youYes })
+  }
   if (co.float > 0) {
     // The public votes for whatever lifts the price.
     const lifts = p.yes.some((e) => (e.kind === 'price' || e.kind === 'demand') && e.v > 1)
@@ -258,6 +262,8 @@ export function tally(s: GameState, youYes: boolean | null) {
   }
   return { rows, yes, no, pass: yes > no }
 }
+
+const RIVAL_NAME = (id: string) => RIVAL_BY_ID[id as RivalId]?.name ?? id
 
 export function lobbyCost(s: GameState): number {
   return round2(salesRate(s) * CO.lobbySec)

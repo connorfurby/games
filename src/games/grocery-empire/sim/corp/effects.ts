@@ -1,6 +1,7 @@
 import type { GameState } from '../state'
 import { companyBoost, ownerLever } from './company'
 import { hedgeCrateMul } from './market'
+import { rivalStakeDemandMul } from './rivalry'
 
 /**
  * Every way the company layer touches the store, in one place. Each later system adds its
@@ -8,7 +9,7 @@ import { hedgeCrateMul } from './market'
  */
 export function corpDemandMul(s: GameState): number {
   if (!s.corp) return 1
-  return (1 + ownerLever(s, 'demand')) * companyBoost(s, 'demand')
+  return (1 + ownerLever(s, 'demand')) * companyBoost(s, 'demand') * rivalStakeDemandMul(s)
 }
 
 export function corpWageMul(s: GameState): number {

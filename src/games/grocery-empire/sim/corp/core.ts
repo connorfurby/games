@@ -40,6 +40,8 @@ export function emptyCorp(seed = 1): CorpState {
       lastScandal: 0,
     },
     boosts: [],
+    ceo: {},
+    takeovers: 0,
   }
 }
 

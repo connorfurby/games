@@ -2,6 +2,7 @@ import { CORP } from '../balance'
 import type { GameState } from '../state'
 import { corpOf, salesRate } from './core'
 import { tickCompany } from './company'
+import { tickRivalry } from './rivalry'
 import { tickMarket } from './market'
 
 export function companyOpen(s: GameState): boolean {
@@ -20,6 +21,7 @@ export function tickCorp(s: GameState, dt: number) {
     steps++
     if (s.era >= 1) tickMarket(s)
     tickCompany(s)
+    tickRivalry(s)
   }
   if (c.acc > 1) c.acc = 0
 }

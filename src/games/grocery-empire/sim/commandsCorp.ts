@@ -1,10 +1,25 @@
 import { cashLabel } from '@/shared/bn'
 import { TICKER_BY_ID } from '../content/corp/tickers'
-import { CO, CORP } from './balance'
+import { CO, CORP, RIVALRY } from './balance'
 import type { Check, Command } from './commands'
 import { corpOf } from './corp/core'
 import { activeHedge, buyShares, hedgePremium, openFuture, sellShares, sharesFor } from './corp/market'
 import { companyOpen } from './corp/tick'
+import {
+  buyBackStake,
+  ceoOf,
+  makeTruce,
+  moleCost,
+  moleJob,
+  plantMole,
+  playWar,
+  rivalActive,
+  stakeBuybackCost,
+  startWar,
+  takeover,
+  truceCost,
+  warRoundCost,
+} from './corp/rivalry'
 import {
   acceptOffer,
   buyback,
@@ -43,12 +58,75 @@ export type CorpCmd =
   | Extract<Command, { type: 'resolveMeeting' }>
   | Extract<Command, { type: 'castVote' }>
   | Extract<Command, { type: 'lobbyOwner' }>
+  | Extract<Command, { type: 'headToHead' }>
+  | Extract<Command, { type: 'playWar' }>
+  | Extract<Command, { type: 'makeTruce' }>
+  | Extract<Command, { type: 'plantMole' }>
+  | Extract<Command, { type: 'moleJob' }>
+  | Extract<Command, { type: 'takeoverRival' }>
+  | Extract<Command, { type: 'buyBackStake' }>
 
 type H<C> = { can: (s: GameState, cmd: C) => Check; run: (s: GameState, cmd: C) => void }
 
 const needCash = (s: GameState, n: number): Check => (s.cash >= n ? ok : no(`Needs ${cashLabel(n)}.`))
 
 export const corpHandlers: { [K in CorpCmd['type']]: H<Extract<CorpCmd, { type: K }>> } = {
+  headToHead: {
+    can: (s, cmd) => {
+      if (!rivalActive(s, cmd.id)) return no('Not a live rival.')
+      const st = ceoOf(s, cmd.id)
+      if (st.war) return no('Already at war.')
+      if (st.warReadyAt > s.time) return no(`Ready in ${Math.ceil(st.warReadyAt - s.time)}s.`)
+      return ok
+    },
+    run: (s, cmd) => startWar(s, cmd.id),
+  },
+  playWar: {
+    can: (s, cmd) => {
+      if (!ceoOf(s, cmd.id).war) return no('No price war running.')
+      return needCash(s, warRoundCost(s, cmd.move))
+    },
+    run: (s, cmd) => playWar(s, cmd.id, cmd.move),
+  },
+  makeTruce: {
+    can: (s, cmd) => {
+      if (!rivalActive(s, cmd.id)) return no('Not a live rival.')
+      const st = ceoOf(s, cmd.id)
+      if (st.grudge <= 0) return no('They hold no grudge.')
+      if (st.truceUntil > s.time) return no('Already at peace.')
+      return needCash(s, truceCost(s))
+    },
+    run: (s, cmd) => makeTruce(s, cmd.id),
+  },
+  plantMole: {
+    can: (s, cmd) => {
+      if (!rivalActive(s, cmd.id)) return no('Not a live rival.')
+      if (ceoOf(s, cmd.id).mole) return no('You already have someone inside.')
+      return needCash(s, moleCost(s))
+    },
+    run: (s, cmd) => plantMole(s, cmd.id),
+  },
+  moleJob: {
+    can: (s, cmd) => (rivalActive(s, cmd.id) && ceoOf(s, cmd.id).mole ? ok : no('Nobody inside.')),
+    run: (s, cmd) => moleJob(s, cmd.id, cmd.job),
+  },
+  takeoverRival: {
+    can: (s, cmd) => {
+      if (!rivalActive(s, cmd.id)) return no('Not a live rival.')
+      const t = corpOf(s).tickers[cmd.id]
+      const need = RIVALRY.takeoverShares
+      if (!t?.listed || t.owned < need) return no(`Own ${need / 10}% of their shares first (you have ${((t?.owned ?? 0) / 10).toFixed(1)}%).`)
+      return ok
+    },
+    run: (s, cmd) => takeover(s, cmd.id),
+  },
+  buyBackStake: {
+    can: (s, cmd) => {
+      if (!(ceoOf(s, cmd.id).stakeInYou > 0)) return no('They own none of you.')
+      return needCash(s, stakeBuybackCost(s, cmd.id))
+    },
+    run: (s, cmd) => buyBackStake(s, cmd.id),
+  },
   answerOffer: {
     can: (s, cmd) => {
       const o = coOf(s).offer

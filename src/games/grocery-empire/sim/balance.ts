@@ -437,6 +437,59 @@ export const CORP = {
   futuresMax: 4,
 }
 
+/** Rival bosses: grudges, moves, head-to-head price wars, moles, takeovers. */
+export const RIVALRY = {
+  grudgeDecayPerMin: 1,
+  /** Bosses act on a grudge at or above this. */
+  actAt: 40,
+  moveGapMin: 240,
+  moveGapMax: 420,
+  smearDemand: 0.95,
+  poachWages: 1.06,
+  moveSec: 180,
+  buyInMin: 20,
+  buyInMax: 50,
+  /** Your demand falls this much at 100% rival ownership (scaled). */
+  stakeDemandCut: 0.15,
+  stakeBuybackPremium: 0.2,
+  truceSec: 600,
+  truceCostSec: 60,
+  truceCut: 35,
+  // Head-to-head price war
+  warCooldownSec: 480,
+  warRoundCostSec: { undercut: 30, match: 15, hold: 0 },
+  warGrudge: 12,
+  warWinDemand: 1.1,
+  warWinSec: 300,
+  warWinFreezeSec: 600,
+  warWinStock: 0.85,
+  warLoseDemand: 0.95,
+  warLoseSec: 180,
+  /** Chance the boss reads your last move and counters it. */
+  warReadOdds: 0.35,
+  // Moles
+  moleCostSec: 90,
+  moleCoverStart: 100,
+  moleCoverPerMin: 4,
+  stealCover: 25,
+  sabotageCover: 30,
+  stealVentures: 1.3,
+  stealSec: 300,
+  sabotageStock: 0.85,
+  sabotageFreezeSec: 300,
+  caughtGrudge: 40,
+  caughtBrand: 0.03,
+  caughtHeat: 20,
+  // Takeovers
+  takeoverShares: 510,
+  /** Holding this many of a rival's shares makes them nervous (poison pill every 5 min). */
+  pillAt: 300,
+  pillEverySec: 300,
+  pillCut: 0.1,
+  /** Grudge for every 10% of their company you buy. */
+  stakeGrudgePer10: 4,
+}
+
 /** Your company: valuation, listing, quarters, owners and the board. */
 export const CO = {
   /** Company value = minutes of current sales × this, before brand and momentum. */
