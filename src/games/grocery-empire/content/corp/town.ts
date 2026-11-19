@@ -86,7 +86,7 @@ export const OFFICES: OfficeDef[] = [
     candidates: [
       { id: 'thren', name: 'Councillor Thren', platform: 'One market, many moons.', levers: { demand: 0.05, ventures: 0.1 }, base: 0.45 },
       { id: 'quill', name: 'Ada Quill', platform: 'Seed for every colony.', levers: { crates: -0.05 }, base: 0.35 },
-      { id: 'mox', name: 'Mox the Elder', platform: 'Nobody knows. Mox knows.', levers: { demand: 0.08, heat: 0.3 }, base: 0.2 },
+      { id: 'mox', name: 'Mox the Elder', platform: 'Nobody knows. Mox knows.', levers: { demand: 0.05, heat: 0.3 }, base: 0.2 },
     ],
   },
 ]
@@ -109,9 +109,9 @@ export interface DemandDef {
 }
 
 export const UNION_DEMANDS: DemandDef[] = [
-  { id: 'pay', title: 'A raise', ask: '“Prices went up. So should we.”', yes: 'Wages +6%, shoppers +4% (better service)' },
-  { id: 'benefits', title: 'Health and a pension', ask: '“Look after us and we’ll look after the store.”', yes: 'Wages +3%; the crew ignores rival poaching; +2% shoppers' },
-  { id: 'hours', title: 'A four-day week', ask: '“Rested people sell more.”', yes: 'Wages −3%, shoppers +3%' },
+  { id: 'pay', title: 'A raise', ask: '“Prices went up. So should we.”', yes: 'Wages +5%, shoppers +2.5% (better service)' },
+  { id: 'benefits', title: 'Health and a pension', ask: '“Look after us and we’ll look after the store.”', yes: 'Wages +3%; the crew ignores rival poaching; +1.5% shoppers' },
+  { id: 'hours', title: 'A four-day week', ask: '“Rested people sell more.”', yes: 'Wages −3%, shoppers +2%' },
 ]
 
 // ── Press ────────────────────────────────────────────────────────────────
@@ -127,11 +127,11 @@ export interface OutletDef {
 }
 
 export const OUTLETS: OutletDef[] = [
-  { id: 'gazette', name: 'The Corner Gazette', kind: 'Newspaper', era: 2, costMin: 30, reach: 0.02 },
-  { id: 'radio', name: 'City Radio 88.1', kind: 'Radio', era: 3, costMin: 60, reach: 0.03 },
-  { id: 'ch9', name: 'Channel 9', kind: 'Television', era: 5, costMin: 120, reach: 0.04 },
-  { id: 'orbital', name: 'Orbital Newsfeed', kind: 'Feed', era: 7, costMin: 200, reach: 0.05 },
-  { id: 'galnet', name: 'The Galactic Network', kind: 'Network', era: 10, costMin: 300, reach: 0.06 },
+  { id: 'gazette', name: 'The Corner Gazette', kind: 'Newspaper', era: 2, costMin: 30, reach: 0.01 },
+  { id: 'radio', name: 'City Radio 88.1', kind: 'Radio', era: 3, costMin: 60, reach: 0.015 },
+  { id: 'ch9', name: 'Channel 9', kind: 'Television', era: 5, costMin: 120, reach: 0.02 },
+  { id: 'orbital', name: 'Orbital Newsfeed', kind: 'Feed', era: 7, costMin: 200, reach: 0.025 },
+  { id: 'galnet', name: 'The Galactic Network', kind: 'Network', era: 10, costMin: 300, reach: 0.03 },
 ]
 
 export const SPINS = [

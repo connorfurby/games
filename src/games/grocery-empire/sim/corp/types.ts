@@ -66,6 +66,8 @@ export interface CompanyState {
   nextOfferAt: number
   raised: number
   lastScandal: number
+  /** Dividends paid out to everyone who owns a slice that isn't you. */
+  paidOut: number
 }
 
 export interface CeoState {
@@ -143,6 +145,7 @@ export interface Stage6State {
   pool: { role: string; name: string; trait: string }[]
   nextPoolAt: number
   crisis: { id: string; until: number } | null
+  lastCrisis: { id: string; win: boolean; pick: number; t: number } | null
   nextCrisisAt: number
   crisesHandled: number
 }

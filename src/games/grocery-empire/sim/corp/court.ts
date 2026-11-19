@@ -9,6 +9,7 @@ import { shockTicker } from './market'
 import { addGrudge, ceoPeek, rivalActive, spySuers, suers } from './rivalry'
 import { insurePays } from './treasury'
 import { execPower } from './more'
+import { newsAboutYou } from './actions'
 import type { SuitState } from './types'
 
 const CUSTOMERS = ['Mrs. Abernathy', 'Gary Pruitt', 'A man named Todd', 'The Whitlock twins', 'Professor Lumm', 'Ms. Ferraro']
@@ -146,6 +147,7 @@ export function goToTrial(s: GameState, suitId: number) {
     log(s, `${judge?.name} rules for you in “${kind?.title}”. ${byName(suit.by)} pays your costs: ${cashLabel(got)}.`, 'good')
   } else {
     const paid = lose(s, suit, 1)
+    newsAboutYou(s, false, `${s.storeName || 'Your store'} loses in court.`, 0.96)
     log(s, `${judge?.name} rules against you in “${kind?.title}”. You pay ${cashLabel(paid)}.`, 'warn')
   }
   close(s, suit)

@@ -90,3 +90,7 @@
     .bd-decide { flex-direction: column; }
   }
 }
+@layer panels {
+  .bd-payout { margin: 0; font-size: var(--t-xs); color: #ffb39e; }
+  .bd-payout strong { color: #ff9a80; font-variant-numeric: tabular-nums; }
+}

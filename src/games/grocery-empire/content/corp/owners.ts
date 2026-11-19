@@ -127,7 +127,9 @@ export const OWNER_BY_ID: Record<string, OwnerDef> = Object.fromEntries(OWNERS.m
 
 /** Board proposals: each is voted on by everyone who owns a slice. */
 export interface ProposalEffect {
-  kind: 'demand' | 'wages' | 'ventures' | 'cash' | 'brand' | 'price' | 'heat'
+  kind: 'demand' | 'wages' | 'ventures' | 'cash' | 'brand' | 'price' | 'heat' | 'action'
+  /** For kind 'action': a company action (see sim/corp/actions.ts). */
+  act?: 'lab' | 'execPool' | 'goodwill'
   /** Multiplier (demand/wages/ventures/price), seconds of sales (cash), or a delta (brand, heat). */
   v: number
   sec?: number
@@ -227,5 +229,32 @@ export const PROPOSALS: ProposalDef[] = [
     era: 7,
   },
 ]
+
+PROPOSALS.push(
+  {
+    id: 'fund-lab',
+    title: 'Double the lab budget',
+    pitch: 'More beakers, more ideas, more small fires.',
+    leans: { growth: 1, risk: 0.4 },
+    yes: [{ kind: 'cash', v: -60 }, { kind: 'action', v: 0, act: 'lab' }, { kind: 'price', v: 1.03 }],
+    era: 2,
+  },
+  {
+    id: 'headhunt',
+    title: 'Bring in a headhunter',
+    pitch: 'New blood at the top. The old blood is nervous.',
+    leans: { growth: 0.6, people: -0.3 },
+    yes: [{ kind: 'cash', v: -30 }, { kind: 'action', v: 0, act: 'execPool' }],
+    era: 3,
+  },
+  {
+    id: 'match-giving',
+    title: 'Match every crew donation',
+    pitch: 'Whatever the crew gives to charity, the company doubles.',
+    leans: { giving: 1, people: 0.6, growth: -0.2 },
+    yes: [{ kind: 'cash', v: -40 }, { kind: 'action', v: 0, act: 'goodwill' }, { kind: 'brand', v: 0.02 }],
+    era: 1,
+  },
+)
 
 export const PROPOSAL_BY_ID: Record<string, ProposalDef> = Object.fromEntries(PROPOSALS.map((p) => [p.id, p]))

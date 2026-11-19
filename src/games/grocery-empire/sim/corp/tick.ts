@@ -7,6 +7,7 @@ import { tickCourt } from './court'
 import { tickTreasury } from './treasury'
 import { tickTown } from './town'
 import { tickMore } from './more'
+import './actions'
 import { tickMarket } from './market'
 
 export function companyOpen(s: GameState): boolean {

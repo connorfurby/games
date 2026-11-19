@@ -10,6 +10,7 @@ import {
   lobbyCost,
   meetingCost,
   ownerBuyoutCost,
+  payoutPerSec,
   sellableShares,
   tally,
   valuation,
@@ -22,6 +23,8 @@ import { Button } from '../kit'
 import { BoardroomScene } from './BoardroomScene'
 import { OWNER_COLOR, initialsOf } from './ownerLook'
 import { Spark } from './Spark'
+import { HowItWorks } from './HowItWorks'
+import { CompanyLedger } from './CompanyLedger'
 import './corp.css'
 import './boardroom.css'
 
@@ -43,6 +46,8 @@ function effectLine(e: ProposalEffect): string {
       return `share price ${e.v >= 1 ? 'up' : 'down'}`
     case 'heat':
       return `Heat ${e.v >= 0 ? '+' : '−'}${Math.abs(e.v)}`
+    case 'action':
+      return e.act === 'lab' ? 'the lab jumps ahead' : e.act === 'execPool' ? 'fresh executive candidates' : 'goodwill +15'
   }
 }
 
@@ -114,6 +119,7 @@ export function BoardroomPanel() {
   return (
     <section className="ge-panel bd-panel">
       <HubStage purpose={MENUS.boardroom.purpose} department={MENUS.boardroom.name} scene={<BoardroomScene />} tray={tray}>
+        <HowItWorks menu="boardroom" />
         {/* Decisions first: they expire. */}
         {offer && offerDef ? (
           <article className="bd-decide bd-decide--offer">
@@ -130,6 +136,9 @@ export function BoardroomPanel() {
               <ul className="bd-pc">
                 <li className="is-up">＋ {offerDef.perk}</li>
                 <li className="is-down">－ {offerDef.catch}</li>
+                <li className="is-down">
+                  － From then on they take {Math.round((offer.shares / CORP.sharesPerCompany) * CO.payoutShare * 1000) / 10}% of sales as their dividend
+                </li>
               </ul>
               <div className="bd-acts">
                 <Button tone="primary" disabled={!can(s, { type: 'answerOffer', accept: true }).ok} onClick={() => dispatch({ type: 'answerOffer', accept: true })}>
@@ -210,6 +219,8 @@ export function BoardroomPanel() {
           </article>
         ) : null}
 
+        <CompanyLedger />
+
         <div className="bd-grid">
           <article className="bd-card">
             <h3>Who owns the company</h3>
@@ -232,6 +243,12 @@ export function BoardroomPanel() {
                 ))}
               </ul>
             </div>
+            {co.you < CORP.sharesPerCompany ? (
+              <p className="bd-payout">
+                Outside owners take <strong>{m(payoutPerSec(s) * 60)}</strong> a minute ({Math.round((1 - co.you / CORP.sharesPerCompany) * CO.payoutShare * 1000) / 10}% of
+                sales). Paid so far {m(co.paidOut)}.
+              </p>
+            ) : null}
             <p className="bd-muted">
               {co.you > CORP.sharesPerCompany / 2
                 ? 'You hold a majority: every board vote goes your way.'
@@ -282,7 +299,7 @@ export function BoardroomPanel() {
             ) : (
               <>
                 <p className="bd-muted">
-                  Going public sells a slice to everyone at once. Big cash, but each {CO.quarterSec / 60}-minute quarter you must beat last quarter’s sales by about {Math.round(CO.targetGrowth * 100)}%.
+                  Selling 25% means {Math.round(0.25 * CO.payoutShare * 1000) / 10}% of every sale goes to the public as dividends. Going public sells a slice to everyone at once. Big cash, but each {CO.quarterSec / 60}-minute quarter you must beat last quarter’s sales by about {Math.round(CO.targetGrowth * 100)}%.
                 </p>
                 <div className="bd-acts">
                   {CO.ipoFloats.map((p) => {

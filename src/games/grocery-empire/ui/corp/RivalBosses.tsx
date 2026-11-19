@@ -8,6 +8,7 @@ import { useGame } from '../GameContext'
 import { clock, money } from '../format'
 import { Button } from '../kit'
 import { RivalPortrait } from '../panels/RivalsPanel'
+import { HowItWorks } from './HowItWorks'
 import './rivalBosses.css'
 
 const TEMPER: Record<string, string> = { hot: 'Hot-headed', proud: 'Proud', cold: 'Ice-cold', sly: 'Sly' }
@@ -18,7 +19,7 @@ const MOVE_NAME: Record<WarMove, string> = { undercut: 'Undercut', match: 'Match
  * a mole on the inside, and a share takeover once you own most of them.
  */
 export function RivalBosses() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, setActiveMenu } = useGame()
   const m = (n: number) => money(n, numberFormat)
   const live = RIVALS.filter((r) => rivalActive(s, r.id))
   if (!live.length || !s.corp) return null
@@ -26,6 +27,7 @@ export function RivalBosses() {
     <section className="rb" aria-label="Rival bosses">
       <h3 className="rb-h">The bosses</h3>
       <p className="rb-note">Leave them alone and they leave you alone. Price wars, spies and buying their shares all build a grudge; past {RIVALRY.actAt}, they hit back.</p>
+      <HowItWorks menu="rivals" />
       <div className="rb-grid">
         {live.map((def) => {
           const ceo = CEOS[def.id]
@@ -172,6 +174,16 @@ export function RivalBosses() {
               </div>
 
               <div className="rb-acts rb-foot">
+                {s.corp.suits.some((x) => x.by === def.id) ? (
+                  <Button size="sm" tone="ghost" onClick={() => setActiveMenu('court')}>
+                    In court with them
+                  </Button>
+                ) : null}
+                {t?.listed ? (
+                  <Button size="sm" tone="ghost" onClick={() => setActiveMenu('market')}>
+                    {def.name} on the Exchange
+                  </Button>
+                ) : null}
                 {st.grudge > 0 && st.truceUntil <= s.time ? (
                   <Button size="sm" tone="ghost" cost={m(truceCost(s))} disabled={!truce.ok} onClick={() => dispatch({ type: 'makeTruce', id: def.id })}>
                     Send a gift basket (truce)

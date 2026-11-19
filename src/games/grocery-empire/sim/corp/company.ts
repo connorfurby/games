@@ -284,11 +284,18 @@ function applyProposal(s: GameState, p: ProposalDef) {
     else if (e.kind === 'cash') s.cash = round2(Math.max(0, s.cash + e.v * salesRate(s)))
     else if (e.kind === 'brand') s.brand = Math.max(0, Math.min(1, s.brand + e.v))
     else if (e.kind === 'price') co.walk = Math.min(CORP.walkMax, co.walk * e.v)
+    else if (e.kind === 'action' && e.act) companyActionHook?.(s, e.act)
     else if (e.kind === 'heat') {
       const c = crimeOf(s)
       c.heat = Math.max(0, Math.min(CRIME.heatMax, c.heat + e.v))
     }
   }
+}
+
+/** Set by actions.ts (avoids an import cycle). */
+export let companyActionHook: ((s: GameState, a: 'lab' | 'execPool' | 'goodwill') => void) | null = null
+export function setCompanyActionHook(f: (s: GameState, a: 'lab' | 'execPool' | 'goodwill') => void) {
+  companyActionHook = f
 }
 
 export function castVote(s: GameState, yes: boolean | null) {
@@ -316,12 +323,30 @@ function hasBoard(s: GameState): boolean {
   return co.listed || Object.values(co.owners).some((n) => n > 0)
 }
 
+/** Share of the company held by anyone but you (owners, the public, rivals). */
+export function outsideShare(s: GameState): number {
+  if (!s.corp) return 0
+  return Math.max(0, 1 - coOf(s).you / N())
+}
+
+/** Profit share paid to outside owners, per second. */
+export function payoutPerSec(s: GameState): number {
+  return salesRate(s) * CO.payoutShare * outsideShare(s)
+}
+
 // ── Tick (once a second) ─────────────────────────────────────────────────
 
 export function tickCompany(s: GameState) {
   const c = corpOf(s)
   const co = c.co
   c.boosts = c.boosts.filter((b) => b.until > s.time)
+  // Everyone who owns a slice takes their share of the sales.
+  const out = payoutPerSec(s)
+  if (out > 0) {
+    const pay = Math.min(out, Math.max(0, s.cash))
+    s.cash = round2(s.cash - pay)
+    co.paidOut = round2(co.paidOut + pay)
+  }
   // The share price wanders, sags while a meeting waits, and keeps a chart.
   co.walk += (CORP.revertPerMin / 60) * (1 - co.walk) + (CO.walkVol / Math.sqrt(60)) * cnorm(s) * co.walk
   if (co.meeting) co.walk *= 1 - CO.meetingSagPerMin / 60

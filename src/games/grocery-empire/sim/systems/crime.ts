@@ -10,7 +10,8 @@ import { emptyCrime, type GameState } from '../state'
 import { alleyVetoed } from '../corp/company'
 import { corpHeatCoolMul } from '../corp/effects'
 import { insurePays } from '../corp/treasury'
-import { useWitnesses } from '../corp/town'
+import { callWitnesses, officeLever } from '../corp/town'
+import { newsAboutYou } from '../corp/actions'
 
 /**
  * The Back Alley. Optional schemes pay now and add Heat; Heat cools over time. Pulling a scheme
@@ -38,7 +39,9 @@ export function visibleSchemes(s: GameState): SchemeDef[] {
 /** Odds of being caught if you pull this scheme now. */
 export function catchOdds(s: GameState, def: SchemeDef): number {
   const c = crimeOf(s)
-  return Math.min(CRIME.catchCap, Math.max(0, (c.heat + def.heat * 0.5) / CRIME.catchDiv))
+  // A law-and-order mayor (or an auditing senator) makes the odds worse.
+  const law = 1 - Math.min(0, officeLever(s, 'heat')) * 0.5
+  return Math.min(CRIME.catchCap, Math.max(0, ((c.heat + def.heat * 0.5) / CRIME.catchDiv) * law))
 }
 
 const live = (s: GameState, until: number | undefined) => (until ?? 0) > s.time
@@ -118,7 +121,7 @@ export function punish(s: GameState, schemeId: string | null): PunishmentId {
     sec = CRIME.fineSec.severe
   }
   // Character witnesses from the foundation soften the sentence by one step.
-  if (p !== 'warning' && useWitnesses(s)) {
+  if (p !== 'warning' && callWitnesses(s)) {
     const softer: Record<PunishmentId, PunishmentId> = { warning: 'warning', fine: 'warning', padlock: 'fine', scandal: 'padlock', frozen: 'padlock', probation: 'padlock' }
     p = softer[p]
     sec = p === 'warning' ? CRIME.fineSec.warning : CRIME.fineSec.fine
@@ -141,6 +144,7 @@ export function punish(s: GameState, schemeId: string | null): PunishmentId {
   const what = schemeId ? SCHEME_BY_ID[schemeId]?.name ?? 'a scheme' : 'a surprise raid'
   log(s, `Caught: ${what}. ${PUNISHMENTS[p].name} — ${PUNISHMENTS[p].line} Fine ${cashLabel(fine)}.`, 'warn')
   record(s, schemeId ?? 'raid', p, fine)
+  newsAboutYou(s, false, `${s.storeName || 'A local grocer'} in trouble with the law.`, p === 'warning' ? 0.98 : 0.93)
   return p
 }
 

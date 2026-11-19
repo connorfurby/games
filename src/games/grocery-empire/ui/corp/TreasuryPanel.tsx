@@ -2,12 +2,16 @@ import { MENUS } from '../../content/menus'
 import { POLICIES } from '../../content/corp/legal'
 import { CREDIT } from '../../sim/balance'
 import { can } from '../../sim/commands'
+import { corpCashFlow } from '../../sim/corp/effects'
+import { salesRate } from '../../sim/corp/core'
+import './ledger.css'
 import { bondPrincipal, bondRate, couponOf, creditBand, earlyPayoff, premiumPerMin } from '../../sim/corp/treasury'
 import { useGame } from '../GameContext'
 import { clock, money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Button } from '../kit'
 import { ROOM_GROUND, RoomScene } from '../scenes/room'
+import { HowItWorks } from './HowItWorks'
 import './corp.css'
 import './treasury.css'
 
@@ -84,6 +88,37 @@ function TreasuryScene() {
   )
 }
 
+function CashFlow() {
+  const { state: s, numberFormat, setActiveMenu } = useGame()
+  const rows = corpCashFlow(s)
+  if (!rows.length) return null
+  const net = rows.reduce((a, r) => a + r.perMin, 0)
+  const m = (n: number) => money(Math.abs(n), numberFormat)
+  return (
+    <section className="lg" aria-label="Company cash flow">
+      <h3 className="lg-h">Company money, per minute</h3>
+      <ul className="lg-list">
+        {rows.map((r) => (
+          <li key={r.label} className={r.perMin >= 0 ? 'is-good' : 'is-bad'}>
+            <span className="lg-src">{r.label}</span>
+            <span className={`lg-text ${r.perMin >= 0 ? 'is-up' : 'is-down'}`}>
+              {r.perMin >= 0 ? '+' : '−'}
+              {m(r.perMin)}
+            </span>
+            <Button size="sm" tone="ghost" onClick={() => setActiveMenu(r.menu)}>
+              Open
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <p className={`lg-note ${net >= 0 ? 'is-up' : 'is-down'}`}>
+        Net {net >= 0 ? '+' : '−'}
+        {m(net)} a minute ({Math.round((Math.abs(net) / Math.max(1e-9, salesRate(s) * 60)) * 1000) / 10}% of sales {net >= 0 ? 'on top' : 'out'}).
+      </p>
+    </section>
+  )
+}
+
 export function TreasuryPanel() {
   const { state: s, dispatch, numberFormat } = useGame()
   const c = s.corp
@@ -104,12 +139,14 @@ export function TreasuryPanel() {
   return (
     <section className="ge-panel tr-panel">
       <HubStage purpose={MENUS.treasury.purpose} department={MENUS.treasury.name} scene={<TreasuryScene />} tray={tray}>
+        <HowItWorks menu="treasury" />
         {c.arrears > 0 ? (
           <article className="tr-alert">
             <strong>In arrears: {m(c.arrears)}</strong>
             <span>Creditors take {Math.round(CREDIT.garnishShare * 100)}% of sales until it’s paid. No new bonds until then.</span>
           </article>
         ) : null}
+        <CashFlow />
         <div className="tr-grid">
           <article className="tr-card">
             <h3>Credit score</h3>

@@ -64,7 +64,7 @@ export function goodwillDemand(s: GameState): number {
 }
 
 /** Character witnesses: goodwill buys a softer sentence. Returns true if it was used. */
-export function useWitnesses(s: GameState): boolean {
+export function callWitnesses(s: GameState): boolean {
   if (!s.corp) return false
   const t = s.corp.town
   if (t.goodwill < TOWN.witnessCost) return false
@@ -157,7 +157,7 @@ export function officeLever(s: GameState, lever: PlatformLever): number {
   return v
 }
 
-export function useFavor(s: GameState, id: string) {
+export function callFavor(s: GameState, id: string) {
   const t = townOf(s)
   t.favors -= 1
   if (id === 'zoning') addBoost(s, 'demand', 1.06, 600, 'Zoning favour')
@@ -208,8 +208,8 @@ export function endStrike(s: GameState) {
 export function unionLever(s: GameState, kind: 'demand' | 'wages'): number {
   if (!s.corp) return 0
   const u = s.corp.town.union
-  if (kind === 'wages') return u.pay * 0.06 + u.benefits * 0.03 - u.hours * 0.03
-  return u.pay * 0.04 + u.benefits * 0.02 + u.hours * 0.03
+  if (kind === 'wages') return u.pay * 0.05 + u.benefits * 0.03 - u.hours * 0.03
+  return u.pay * 0.025 + u.benefits * 0.015 + u.hours * 0.02
 }
 
 // ── Press ────────────────────────────────────────────────────────────────

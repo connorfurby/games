@@ -23,6 +23,8 @@ import { clock, money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Button } from '../kit'
 import { ROOM_GROUND, RoomScene } from '../scenes/room'
+import { HowItWorks } from './HowItWorks'
+import { CompanyLedger } from './CompanyLedger'
 import './corp.css'
 import './boardroom.css'
 import './town.css'
@@ -112,6 +114,7 @@ export function FoundationPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="foundation" />
         <div className="tw-grid">
           {open.map((c) => {
             const lvl = t.causes[c.id] ?? 0
@@ -232,6 +235,7 @@ export function CityHallPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="cityhall" />
         {e && office ? (
           <article className="bd-decide">
             <div className="bd-decide__body">
@@ -286,7 +290,7 @@ export function CityHallPanel() {
             <h3 className="mk-h">Favours owed ({t.favors})</h3>
             <div className="bd-acts">
               {FAVORS.map((f) => (
-                <Button key={f.id} tone="ghost" onClick={() => dispatch({ type: 'useFavor', id: f.id })} title={f.text}>
+                <Button key={f.id} tone="ghost" onClick={() => dispatch({ type: 'callFavor', id: f.id })} title={f.text}>
                   {f.name} · {f.text}
                 </Button>
               ))}
@@ -372,6 +376,7 @@ export function UnionPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="union" />
         {d && !striking ? (
           <article className="bd-decide">
             <div className="bd-decide__body">
@@ -491,6 +496,7 @@ export function PressPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="press" />
         <div className="tw-grid">
           {OUTLETS.filter((o) => s.era >= o.era).map((o) => (
             <article key={o.id} className={`tw-card${t.outlets.includes(o.id) ? ' is-on' : ''}`}>
@@ -627,6 +633,8 @@ export function CustomersPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="customers" />
+        <CompanyLedger compact />
         <div className="tw-grid">
           {open.map((x) => {
             const loyal = Math.round(t.loyalty[x.id] ?? TOWN.loyaltyStart)

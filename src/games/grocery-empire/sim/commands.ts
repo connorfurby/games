@@ -217,7 +217,7 @@ export type Command =
   | { type: 'donate'; cause: string; sec: number }
   | { type: 'openCampaign' }
   | { type: 'backCandidate'; cand: string; mins: number }
-  | { type: 'useFavor'; id: string }
+  | { type: 'callFavor'; id: string }
   | { type: 'answerUnion'; accept: boolean }
   | { type: 'endStrike' }
   | { type: 'buyOutlet'; id: string }

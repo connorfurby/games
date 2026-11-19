@@ -613,10 +613,10 @@ export const LAB = {
 
 export const PROPERTY = {
   /** Property values drift up this much a minute (plus brand). */
-  appreciatePerMin: 0.002,
+  appreciatePerMin: 0.0008,
   sellFee: 0.05,
   /** Owned lots near the store add shoppers; capped. */
-  nearCap: 0.12,
+  nearCap: 0.08,
 }
 
 export const FRANCHISE = {
@@ -625,9 +625,9 @@ export const FRANCHISE = {
   perEra: 2,
   maxTotal: 16,
   /** Fee up front, in minutes of sales. */
-  feeMin: 20,
+  feeMin: 10,
   /** Royalty a minute, in seconds of sales, at quality 100. */
-  royaltySec: 6,
+  royaltySec: 1,
   /** Quality below this sours your brand a little each minute. */
   badBelow: 35,
   brandDrainPerMin: 0.002,
@@ -697,6 +697,17 @@ export const CO = {
   lobbySec: 40,
   /** Owner lever caps (absolute, after scaling by stake). */
   leverCap: 0.35,
+  /**
+   * Profit sharing: this share of sales is paid out as dividends, split by ownership.
+   * You keep your own slice; everyone else's leaves the company every minute.
+   * Selling equity is cash now for a share of every future sale.
+   */
+  payoutShare: 0.15,
+  /**
+   * The company's stacked shopper bonus is soft-capped: bonus / (1 + bonus / softCap).
+   * Small bonuses count almost in full; a huge pile tapers off.
+   */
+  softCap: 1.5,
 }
 
 export const INSPECTION = {

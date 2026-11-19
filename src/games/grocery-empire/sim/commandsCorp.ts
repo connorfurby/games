@@ -41,7 +41,7 @@ import {
   spin,
   startElection,
   townOf,
-  useFavor,
+  callFavor,
 } from './corp/town'
 import {
   buyBackStake,
@@ -114,7 +114,7 @@ export type CorpCmd =
   | Extract<Command, { type: 'donate' }>
   | Extract<Command, { type: 'openCampaign' }>
   | Extract<Command, { type: 'backCandidate' }>
-  | Extract<Command, { type: 'useFavor' }>
+  | Extract<Command, { type: 'callFavor' }>
   | Extract<Command, { type: 'answerUnion' }>
   | Extract<Command, { type: 'endStrike' }>
   | Extract<Command, { type: 'buyOutlet' }>
@@ -283,9 +283,9 @@ export const corpHandlers: { [K in CorpCmd['type']]: H<Extract<CorpCmd, { type: 
     },
     run: (s, cmd) => backCandidate(s, cmd.cand, cmd.mins),
   },
-  useFavor: {
+  callFavor: {
     can: (s) => (townOf(s).favors > 0 ? ok : no('Nobody owes you.')),
-    run: (s, cmd) => useFavor(s, cmd.id),
+    run: (s, cmd) => callFavor(s, cmd.id),
   },
   answerUnion: {
     can: (s) => (townOf(s).union.demand ? ok : no('No demand on the table.')),

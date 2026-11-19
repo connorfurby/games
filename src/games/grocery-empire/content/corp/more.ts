@@ -20,16 +20,16 @@ export interface InventionDef {
 }
 
 export const INVENTIONS: InventionDef[] = [
-  { id: 'nowobble', name: 'The cart that doesn’t wobble', blurb: 'Four wheels that agree with each other.', era: 1, sec: 180, costSec: 90, lever: 'demand', size: 0.04, royaltySec: 2 },
-  { id: 'selfchill', name: 'Self-chilling cans', blurb: 'Pull the tab, it gets cold. Science!', era: 1, sec: 240, costSec: 120, lever: 'spoil', size: 0.1, royaltySec: 2 },
-  { id: 'flavours', name: 'Twelve new ice-cream flavours', blurb: 'Including “Tuesday”. Nobody knows what it tastes like.', era: 2, sec: 300, costSec: 200, lever: 'demand', size: 0.05, royaltySec: 3 },
-  { id: 'robobagger', name: 'Robo-bagger', blurb: 'Puts the eggs on top. Every time.', era: 2, sec: 360, costSec: 240, lever: 'wages', size: -0.06, royaltySec: 3 },
-  { id: 'foreverlettuce', name: 'Forever lettuce', blurb: 'Crisp for a month. Slightly smug about it.', era: 3, sec: 420, costSec: 300, lever: 'spoil', size: 0.15, royaltySec: 4 },
-  { id: 'smartshelf', name: 'Smart shelves', blurb: 'They order their own crates. Cheaper, too.', era: 4, sec: 480, costSec: 400, lever: 'crates', size: -0.05, royaltySec: 5 },
-  { id: 'zerogbread', name: 'Zero-gravity bread', blurb: 'Crumbs that float into the bin by themselves.', era: 6, sec: 540, costSec: 500, lever: 'ventures', size: 0.15, royaltySec: 6 },
-  { id: 'mooncheese', name: 'Real moon cheese', blurb: 'It was never cheese. Until now.', era: 7, sec: 600, costSec: 600, lever: 'demand', size: 0.06, royaltySec: 7 },
-  { id: 'starsoup', name: 'Starlight soup', blurb: 'Glows faintly. Tastes like optimism.', era: 9, sec: 660, costSec: 700, lever: 'ventures', size: 0.2, royaltySec: 8 },
-  { id: 'teleaisle', name: 'The teleporting aisle', blurb: 'Step in at cans, step out at checkout.', era: 11, sec: 720, costSec: 800, lever: 'demand', size: 0.08, royaltySec: 10 },
+  { id: 'nowobble', name: 'The cart that doesn’t wobble', blurb: 'Four wheels that agree with each other.', era: 1, sec: 180, costSec: 450, lever: 'demand', size: 0.03, royaltySec: 0.5 },
+  { id: 'selfchill', name: 'Self-chilling cans', blurb: 'Pull the tab, it gets cold. Science!', era: 1, sec: 240, costSec: 600, lever: 'spoil', size: 0.1, royaltySec: 0.5 },
+  { id: 'flavours', name: 'Twelve new ice-cream flavours', blurb: 'Including “Tuesday”. Nobody knows what it tastes like.', era: 2, sec: 300, costSec: 1000, lever: 'demand', size: 0.03, royaltySec: 0.75 },
+  { id: 'robobagger', name: 'Robo-bagger', blurb: 'Puts the eggs on top. Every time.', era: 2, sec: 360, costSec: 1200, lever: 'wages', size: -0.06, royaltySec: 0.75 },
+  { id: 'foreverlettuce', name: 'Forever lettuce', blurb: 'Crisp for a month. Slightly smug about it.', era: 3, sec: 420, costSec: 1500, lever: 'spoil', size: 0.15, royaltySec: 1.0 },
+  { id: 'smartshelf', name: 'Smart shelves', blurb: 'They order their own crates. Cheaper, too.', era: 4, sec: 480, costSec: 2000, lever: 'crates', size: -0.05, royaltySec: 1.25 },
+  { id: 'zerogbread', name: 'Zero-gravity bread', blurb: 'Crumbs that float into the bin by themselves.', era: 6, sec: 540, costSec: 2500, lever: 'ventures', size: 0.15, royaltySec: 1.5 },
+  { id: 'mooncheese', name: 'Real moon cheese', blurb: 'It was never cheese. Until now.', era: 7, sec: 600, costSec: 3000, lever: 'demand', size: 0.04, royaltySec: 1.75 },
+  { id: 'starsoup', name: 'Starlight soup', blurb: 'Glows faintly. Tastes like optimism.', era: 9, sec: 660, costSec: 3500, lever: 'ventures', size: 0.2, royaltySec: 2.0 },
+  { id: 'teleaisle', name: 'The teleporting aisle', blurb: 'Step in at cans, step out at checkout.', era: 11, sec: 720, costSec: 4000, lever: 'demand', size: 0.05, royaltySec: 2.5 },
 ]
 
 export const INVENTION_BY_ID: Record<string, InventionDef> = Object.fromEntries(INVENTIONS.map((x) => [x.id, x]))
@@ -49,14 +49,14 @@ export interface LotDef {
 }
 
 export const LOTS: LotDef[] = [
-  { id: 'corner', name: 'The empty corner lot', blurb: 'Weeds, a shopping cart, potential.', era: 1, priceMin: 15, rentPerMin: 0.002, near: 0.01 },
-  { id: 'mainstreet', name: 'Shops on Main Street', blurb: 'A barber, a florist, a vacant unit.', era: 2, priceMin: 40, rentPerMin: 0.0025, near: 0.015 },
-  { id: 'warehouserow', name: 'Warehouse Row', blurb: 'Brick, pallets and good light.', era: 3, priceMin: 80, rentPerMin: 0.003, near: 0.01 },
-  { id: 'pier', name: 'The harbour pier', blurb: 'Gulls, fish and tourists.', era: 4, priceMin: 140, rentPerMin: 0.0028, near: 0.015 },
-  { id: 'tower', name: 'Downtown tower', blurb: 'Forty floors, one great view.', era: 5, priceMin: 240, rentPerMin: 0.003, near: 0.02 },
-  { id: 'ringsegment', name: 'An orbital ring segment', blurb: 'Real estate with a view of everything.', era: 7, priceMin: 400, rentPerMin: 0.0032, near: 0.02 },
-  { id: 'moonplaza', name: 'Moon Plaza', blurb: 'Low gravity, high footfall.', era: 9, priceMin: 600, rentPerMin: 0.0034, near: 0.025 },
-  { id: 'lastblock', name: 'The last block on Earth', blurb: 'Everyone wants it. You can have it.', era: 12, priceMin: 900, rentPerMin: 0.0035, near: 0.03 },
+  { id: 'corner', name: 'The empty corner lot', blurb: 'Weeds, a shopping cart, potential.', era: 1, priceMin: 15, rentPerMin: 0.00067, near: 0.01 },
+  { id: 'mainstreet', name: 'Shops on Main Street', blurb: 'A barber, a florist, a vacant unit.', era: 2, priceMin: 40, rentPerMin: 0.00083, near: 0.015 },
+  { id: 'warehouserow', name: 'Warehouse Row', blurb: 'Brick, pallets and good light.', era: 3, priceMin: 80, rentPerMin: 0.001, near: 0.01 },
+  { id: 'pier', name: 'The harbour pier', blurb: 'Gulls, fish and tourists.', era: 4, priceMin: 140, rentPerMin: 0.00093, near: 0.015 },
+  { id: 'tower', name: 'Downtown tower', blurb: 'Forty floors, one great view.', era: 5, priceMin: 240, rentPerMin: 0.001, near: 0.02 },
+  { id: 'ringsegment', name: 'An orbital ring segment', blurb: 'Real estate with a view of everything.', era: 7, priceMin: 400, rentPerMin: 0.00107, near: 0.02 },
+  { id: 'moonplaza', name: 'Moon Plaza', blurb: 'Low gravity, high footfall.', era: 9, priceMin: 600, rentPerMin: 0.00113, near: 0.025 },
+  { id: 'lastblock', name: 'The last block on Earth', blurb: 'Everyone wants it. You can have it.', era: 12, priceMin: 900, rentPerMin: 0.00117, near: 0.03 },
 ]
 
 export const LOT_BY_ID: Record<string, LotDef> = Object.fromEntries(LOTS.map((x) => [x.id, x]))

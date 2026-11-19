@@ -18,13 +18,14 @@ import { Button } from '../kit'
 import { MarketScene } from './MarketScene'
 import { changePct, pctLabel } from './pct'
 import { Spark } from './Spark'
+import { HowItWorks } from './HowItWorks'
 import './corp.css'
 
 /** Cash presets for a buy, as a share of cash on hand. */
 const BUY_SHARES = [0.1, 0.25, 0.5] as const
 
 export function MarketPanel() {
-  const { state: s, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat, setActiveMenu } = useGame()
   const c = s.corp
   const [selected, setSelected] = useState<string | null>(null)
   const listed = TICKERS.filter((d) => c.tickers[d.id]?.listed)
@@ -93,6 +94,11 @@ export function MarketPanel() {
               </Button>
             )
           })}
+          {d.rivalId ? (
+            <Button size="sm" tone="ghost" onClick={() => setActiveMenu('rivals')}>
+              Their boss
+            </Button>
+          ) : null}
           {t.owned > 0 ? (
             <>
               <Button size="sm" tone="ghost" onClick={() => dispatch({ type: 'sellStock', id: d.id, shares: Math.max(1, Math.floor(t.owned / 2)) })}>
@@ -124,6 +130,7 @@ export function MarketPanel() {
         scene={<MarketScene selected={pick} onPick={setSelected} />}
         tray={tray}
       >
+        <HowItWorks menu="market" />
         <div className="mk-strip">
           <div>
             <span>Your shares</span>

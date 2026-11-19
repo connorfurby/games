@@ -228,6 +228,8 @@ export function answerCrisis(s: GameState, pick: number) {
   const odds = Math.min(0.97, o.odds + execPower(s, 'cmo') * 0.5)
   const win = crand(s) < odds
   applyOutcome(s, win ? o.win : o.lose, def.title)
+  m.lastCrisis = { id: def.id, win, pick, t: s.time }
+  corpOf(s).co.walk = Math.max(0.35, Math.min(3, corpOf(s).co.walk * (win ? 1.02 : 0.94)))
   if (def.id === 'space-bugs' && pick === 2) {
     const c = crimeOf(s)
     c.heat = Math.min(CRIME.heatMax, c.heat + 20)
@@ -254,6 +256,7 @@ export function tickMore(s: GameState) {
         lab.project = null
         lab.progress = 0
         pushTape(s, `${s.storeName || 'Your store'} unveils ${def.name}.`, true)
+        corpOf(s).co.walk = Math.min(1.8, corpOf(s).co.walk * 1.04)
         log(s, `Invented: ${def.name}! Patent it before a rival copies it.`, 'era')
       }
     } else lab.project = null

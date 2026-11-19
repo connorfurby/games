@@ -22,6 +22,7 @@ import { HubStage } from '../components/HubStage'
 import { Button } from '../kit'
 import { ROOM_GROUND, RoomScene } from '../scenes/room'
 import { initialsOf } from './ownerLook'
+import { HowItWorks } from './HowItWorks'
 import './corp.css'
 import './boardroom.css'
 import './town.css'
@@ -124,6 +125,7 @@ export function ExecsPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="execs" />
         <div className="tw-grid">
           {EXEC_ROLES.map((r) => {
             const e = more.execs[r.id]
@@ -256,6 +258,7 @@ export function LabPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="lab" />
         <div className="bd-acts">
           <Button
             tone="ghost"
@@ -387,6 +390,7 @@ export function PropertyPanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="property" />
         <div className="tw-grid">
           {open.map((x) => {
             const own = more.lots[x.id]
@@ -486,6 +490,7 @@ export function FranchisePanel() {
           </RoomScene>
         }
       >
+        <HowItWorks menu="franchise" />
         {s.era < FRANCHISE.era ? <p className="mk-note">Franchising opens in Era {FRANCHISE.era}.</p> : null}
         <div className="tw-grid">
           {more.franchises.map((f) => {

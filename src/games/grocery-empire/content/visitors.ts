@@ -12,6 +12,8 @@ export type VisitorEffect =
   | { kind: 'stock'; capShare: number }
   /** A coin flip: win or lose seconds of sales. */
   | { kind: 'gamble'; odds: number; winSec: number; loseSec: number }
+  /** Reach into the company layer (an investor, a headhunter, a defector…). */
+  | { kind: 'company'; action: 'offer' | 'execPool' | 'lab' | 'mole' | 'goodwill' }
   /** A bribe: with these odds Heat drops by `cut`, otherwise it rises by `backfire`. */
   | { kind: 'bribe'; odds: number; cut: number; backfire: number }
 
@@ -89,6 +91,20 @@ export const VISITORS: VisitorDef[] = [
       effects: [{ kind: 'cash', revenueSec: 20 }, { kind: 'brand', delta: 0.02 }],
     },
   },
+  {
+    id: 'angel',
+    era: 1,
+    lastEra: 5,
+    who: 'A woman in a very good coat',
+    says: '“I invest in places I like buying apples. I like buying apples here.”',
+    a: {
+      label: 'Hear her out',
+      hint: 'An investor offer lands in the Boardroom',
+      result: 'She left a card and an offer.',
+      effects: [{ kind: 'company', action: 'offer' }],
+    },
+    b: { label: 'Not for sale', hint: 'Brand up a little', result: '“Good answer,” she said, and bought apples.', effects: [{ kind: 'brand', delta: 0.01 }] },
+  },
   // ── Era 2 ────────────────────────────────────────────────────────────────
   {
     id: 'band',
@@ -141,6 +157,19 @@ export const VISITORS: VisitorDef[] = [
       effects: [{ kind: 'cash', revenueSec: -25 }, { kind: 'brand', delta: 0.025 }],
     },
   },
+  {
+    id: 'tinkerer',
+    era: 2,
+    who: 'A tinkerer with a toolbox and burnt eyebrows',
+    says: '“I have a blueprint. It is either brilliant or on fire.”',
+    a: {
+      label: 'Buy the blueprint',
+      hint: 'Costs 20s of sales · the lab jumps two minutes ahead (if it’s working on something)',
+      result: 'Brilliant. Slightly singed.',
+      effects: [{ kind: 'cash', revenueSec: -20 }, { kind: 'company', action: 'lab' }],
+    },
+    b: { label: 'Point him to the library', hint: 'Goodwill +15', result: 'He reads every cookbook. Twice.', effects: [{ kind: 'company', action: 'goodwill' }] },
+  },
   // ── Era 3 ────────────────────────────────────────────────────────────────
   {
     id: 'mayor',
@@ -192,6 +221,32 @@ export const VISITORS: VisitorDef[] = [
       result: 'A slow afternoon. Very slow.',
       effects: [{ kind: 'demand', mul: 0.92, sec: 120 }],
     },
+  },
+  {
+    id: 'defector',
+    era: 3,
+    who: 'A nervous clerk in a rival’s uniform',
+    says: '“They don’t pay me enough to stay loyal. You might.”',
+    a: {
+      label: 'Hire them back there',
+      hint: 'A free mole inside a rival · Heat +10',
+      result: 'They go back to work. For you.',
+      effects: [{ kind: 'company', action: 'mole' }, { kind: 'heat', delta: 10 }],
+    },
+    b: { label: 'Send them home', hint: 'Goodwill +15', result: 'Loyalty is its own reward. Sometimes.', effects: [{ kind: 'company', action: 'goodwill' }] },
+  },
+  {
+    id: 'headhunter',
+    era: 3,
+    who: 'A headhunter with a phone in each hand',
+    says: '“I have three executives who would kill to work here. Figuratively.”',
+    a: {
+      label: 'Show me',
+      hint: 'Fresh executive candidates',
+      result: 'Three résumés, all printed on heavy paper.',
+      effects: [{ kind: 'company', action: 'execPool' }],
+    },
+    b: { label: 'We promote from within', hint: 'Wages −5% for 4:00 (the crew is flattered)', result: 'The crew stands a little taller.', effects: [{ kind: 'wages', mul: 0.95, sec: 240 }] },
   },
   // ── Era 4 ────────────────────────────────────────────────────────────────
   {

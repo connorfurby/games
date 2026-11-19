@@ -7,6 +7,7 @@ import { addBatch, log, round2, sumQty } from '../helpers'
 import { nextRng } from '../rng'
 import type { GameState, VisitorsState } from '../state'
 import { crimeOf } from './crime'
+import { companyAction } from '../corp/actions'
 
 export function emptyVisitors(): VisitorsState {
   return { current: null, nextAt: VISITOR.firstAfterSec, boosts: [], met: {}, answered: 0 }
@@ -108,6 +109,8 @@ function apply(s: GameState, e: VisitorEffect): string | null {
       s.cash = round2(Math.max(0, s.cash + amt))
       return win ? `You won ${cashLabel(Math.abs(amt))}!` : `You lost ${cashLabel(Math.abs(amt))}.`
     }
+    case 'company':
+      return companyAction(s, e.action)
     case 'bribe': {
       const c = crimeOf(s)
       if (nextRng(s) < e.odds) {
