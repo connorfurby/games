@@ -1,7 +1,7 @@
 import { BUILD_TIERS, DAILY_RULES, type DailyRuleMods } from './balance'
 import { crimeDemandMul, crimeWageMul } from './systems/crime'
 import { visitorMul } from './systems/visitors'
-import { corpCrateMul, corpDemandMul, corpWageMul } from './corp/effects'
+import { corpCrateMul, corpDemandMul, corpLifeMul, corpWageMul } from './corp/effects'
 import { offworldSalesMul, wireAdActive } from './systems/late'
 import { hasFork } from './ventureForks'
 export { annexSeatCap } from './staffAnnex'
@@ -1002,6 +1002,7 @@ export function lifeMul(s: GameState, cat: CategoryId) {
   let m = 1
   const cold = s.builds.cold ?? 0
   m *= BUILD_TIERS.coldLife[Math.min(cold, BUILD_TIERS.coldLife.length - 1)] ?? 1
+  m *= corpLifeMul(s)
   if (cat === 'produce' && memo(s, 'misting-bar')) m *= 1.4
   m *= 1 + up(s, 'cold-hands') * 0.04 + upgradeMagnitude(s, 'cold-chain-drill')
   if (memo(s, 'cold-vault')) m *= 1.04

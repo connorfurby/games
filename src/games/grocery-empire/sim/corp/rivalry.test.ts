@@ -52,7 +52,8 @@ describe('rival bosses', () => {
     st.grudge = 90
     st.nextMoveAt = s.time
     tickCorp(s, 2)
-    expect(corpOf(s).boosts.length).toBeGreaterThan(0)
+    // Smear, poaching, a buy-in (falls back to a smear while private) or a lawsuit.
+    expect(corpOf(s).boosts.length + corpOf(s).suits.length).toBeGreaterThan(0)
     run(s, { type: 'makeTruce', id: 'penny' })
     expect(st.grudge).toBeLessThan(90)
     expect(st.truceUntil).toBeGreaterThan(s.time)

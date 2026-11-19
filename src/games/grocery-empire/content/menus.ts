@@ -34,6 +34,10 @@ export const MENU_IDS = [
   'union',
   'press',
   'customers',
+  'execs',
+  'lab',
+  'property',
+  'franchise',
   'coach',
   'more',
 ] as const
@@ -131,6 +135,30 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Customers',
     glyph: 'CU',
     purpose: 'Who shops with you, what they want, and who you court.',
+  },
+  execs: {
+    id: 'execs',
+    name: 'Executives',
+    glyph: 'EX',
+    purpose: 'Hire a C-suite. Each chair makes one part of the company stronger.',
+  },
+  lab: {
+    id: 'lab',
+    name: 'Lab',
+    glyph: 'LB',
+    purpose: 'Invent things, patent them, and license them to rivals for royalties.',
+  },
+  property: {
+    id: 'property',
+    name: 'Property',
+    glyph: 'PP',
+    purpose: 'Buy the buildings around you, rent them out, and watch them grow in value.',
+  },
+  franchise: {
+    id: 'franchise',
+    name: 'Franchises',
+    glyph: 'FR',
+    purpose: 'Sell your name to other grocers. Good ones pay royalties; bad ones hurt your brand.',
   },
   rivals: {
     id: 'rivals',

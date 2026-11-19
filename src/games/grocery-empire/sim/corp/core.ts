@@ -77,6 +77,19 @@ export function emptyCorp(seed = 1): CorpState {
       focus: null,
       loyalty: {},
     },
+    more: {
+      lab: { level: 1, project: null, progress: 0, invented: {} },
+      lots: {},
+      rentEarned: 0,
+      franchises: [],
+      royalties: 0,
+      execs: {},
+      pool: [],
+      nextPoolAt: 0,
+      crisis: null,
+      nextCrisisAt: 900,
+      crisesHandled: 0,
+    },
   }
 }
 

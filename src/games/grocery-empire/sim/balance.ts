@@ -598,6 +598,66 @@ export const TOWN = {
   focusDemand: 0.03,
 }
 
+/** The lab, property, franchising, executives and crises. */
+export const LAB = {
+  /** Each lab level researches this much faster. */
+  speedPerLevel: 0.35,
+  levelMax: 5,
+  levelCostSec: 240,
+  patentCostSec: 60,
+  /** An unpatented invention gets copied by rivals after this long (then counts half). */
+  copyAfterSec: 900,
+  /** Licensing an invention to rivals: royalties, but it counts half for you. */
+  licensedShare: 0.5,
+}
+
+export const PROPERTY = {
+  /** Property values drift up this much a minute (plus brand). */
+  appreciatePerMin: 0.002,
+  sellFee: 0.05,
+  /** Owned lots near the store add shoppers; capped. */
+  nearCap: 0.12,
+}
+
+export const FRANCHISE = {
+  era: 4,
+  /** Up to this many franchises per era past 3. */
+  perEra: 2,
+  maxTotal: 16,
+  /** Fee up front, in minutes of sales. */
+  feeMin: 20,
+  /** Royalty a minute, in seconds of sales, at quality 100. */
+  royaltySec: 6,
+  /** Quality below this sours your brand a little each minute. */
+  badBelow: 35,
+  brandDrainPerMin: 0.002,
+  inspectCostSec: 30,
+  inspectLift: 20,
+  driftPerMin: 1.5,
+}
+
+export const EXEC = {
+  era: 3,
+  /** Salary a minute, in seconds of sales, before traits. */
+  salarySec: 3,
+  poolSize: 3,
+  poolRefreshSec: 600,
+  /** Base strength of a role (before trait power and level). */
+  base: { cfo: 0.25, cmo: 0.05, coo: 0.05, counsel: 0.1, research: 0.35, hr: 0.5 },
+  levelEverySec: 600,
+  levelMax: 5,
+  perLevel: 0.12,
+  /** Risky traits: chance a minute of a scandal (or embezzling). */
+  incidentPerMin: 0.01,
+}
+
+export const CRISIS = {
+  /** Crises only find a company in the public eye (listed, owned, owning the press or execs). */
+  gapMin: 600,
+  gapMax: 1100,
+  waitSec: 120,
+}
+
 /** Your company: valuation, listing, quarters, owners and the board. */
 export const CO = {
   /** Company value = minutes of current sales × this, before brand and momentum. */

@@ -52,3 +52,6 @@
   .ge-reduced-motion .tw-room * { animation: none !important; }
   @media (prefers-reduced-motion: reduce) { .tw-room * { animation: none !important; } }
 }
+@layer panels {
+  .tw-card.is-bad { border-color: rgb(232 88 60 / 0.5); background: rgb(232 88 60 / 0.05); }
+}

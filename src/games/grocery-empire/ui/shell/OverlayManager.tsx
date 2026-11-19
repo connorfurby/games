@@ -1,3 +1,4 @@
+import { CrisisCard } from '../components/CrisisCard'
 import { VisitorCard } from '../components/VisitorCard'
 import { AnimatePresence, motion } from 'motion/react'
 import type { ComponentProps } from 'react'
@@ -127,9 +128,11 @@ export function OverlayManager({
         <ChapterCard era={chapterEra} reducedMotion={reducedMotion} onAccept={() => dispatch({ type: 'acceptChapter' })} />
       ) : null}
 
-      {clear && chapterEra == null && state.horizon.headlineId ? <HeadlineCard reducedMotion={reducedMotion} /> : null}
+      {clear && chapterEra == null && state.horizon.headlineId && !state.corp?.more.crisis ? <HeadlineCard reducedMotion={reducedMotion} /> : null}
 
-      {clear && chapterEra == null && !state.horizon.headlineId && !state.tutorials.active && state.visitors?.current ? (
+      {clear && chapterEra == null && !state.tutorials.active && state.corp?.more.crisis ? <CrisisCard reducedMotion={reducedMotion} /> : null}
+
+      {clear && chapterEra == null && !state.horizon.headlineId && !state.tutorials.active && !state.corp?.more.crisis && state.visitors?.current ? (
         <VisitorCard reducedMotion={reducedMotion} />
       ) : null}
 

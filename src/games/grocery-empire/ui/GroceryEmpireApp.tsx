@@ -106,6 +106,7 @@ import { MarketPanel } from './corp/MarketPanel'
 import { BoardroomPanel } from './corp/BoardroomPanel'
 import { TreasuryPanel } from './corp/TreasuryPanel'
 import { CourtPanel } from './corp/CourtPanel'
+import { ExecsPanel, FranchisePanel, LabPanel, PropertyPanel } from './corp/MorePanels'
 import { CityHallPanel, CustomersPanel, FoundationPanel, PressPanel, UnionPanel } from './corp/TownPanels'
 /* grocery.css + g2.css load via design/layers.css @import layer(legacy) */
 
@@ -128,6 +129,10 @@ const PANEL: Record<MenuId, () => ReactNode> = {
   boardroom: () => <BoardroomPanel />,
   treasury: () => <TreasuryPanel />,
   court: () => <CourtPanel />,
+  execs: () => <ExecsPanel />,
+  lab: () => <LabPanel />,
+  property: () => <PropertyPanel />,
+  franchise: () => <FranchisePanel />,
   foundation: () => <FoundationPanel />,
   cityhall: () => <CityHallPanel />,
   union: () => <UnionPanel />,

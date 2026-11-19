@@ -139,16 +139,22 @@ export function sharesFree(s: GameState, id: string): number {
   return t?.listed ? N() - t.owned : 0
 }
 
+/** The trading fee (a good CFO negotiates it down). */
+export function tradeFee(s: GameState): number {
+  const cfo = s.corp?.more.execs.cfo ? 0.5 : 0
+  return CORP.tradeFee * (1 - cfo)
+}
+
 export function sharesFor(s: GameState, id: string, cash: number): number {
   const t = corpOf(s).tickers[id]
   if (!t?.listed || t.price <= 0) return 0
-  return Math.max(0, Math.min(sharesFree(s, id), Math.floor(cash / (t.price * (1 + CORP.tradeFee)))))
+  return Math.max(0, Math.min(sharesFree(s, id), Math.floor(cash / (t.price * (1 + tradeFee(s))))))
 }
 
 export function buyShares(s: GameState, id: string, shares: number): number {
   const t = corpOf(s).tickers[id]!
   const n = Math.min(shares, sharesFree(s, id))
-  const cost = round2(n * t.price * (1 + CORP.tradeFee))
+  const cost = round2(n * t.price * (1 + tradeFee(s)))
   s.cash = round2(s.cash - cost)
   t.owned += n
   t.basis = round2(t.basis + cost)
@@ -161,7 +167,7 @@ export function sellShares(s: GameState, id: string, shares: number): number {
   const c = corpOf(s)
   const t = c.tickers[id]!
   const n = Math.min(shares, t.owned)
-  const got = round2(n * t.price * (1 - CORP.tradeFee))
+  const got = round2(n * t.price * (1 - tradeFee(s)))
   const basisOut = t.owned > 0 ? (t.basis * n) / t.owned : 0
   s.cash = round2(s.cash + got)
   t.owned -= n

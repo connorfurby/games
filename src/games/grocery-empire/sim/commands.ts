@@ -223,6 +223,19 @@ export type Command =
   | { type: 'buyOutlet'; id: string }
   | { type: 'spin'; kind: string; target?: string }
   | { type: 'setFocus'; id: string | null }
+  | { type: 'startResearch'; id: string }
+  | { type: 'upgradeLab' }
+  | { type: 'patentInvention'; id: string }
+  | { type: 'licenseInvention'; id: string }
+  | { type: 'buyLot'; id: string }
+  | { type: 'sellLot'; id: string }
+  | { type: 'setTenant'; id: string; tenant: string | null }
+  | { type: 'sellFranchise' }
+  | { type: 'inspectFranchise'; id: number }
+  | { type: 'pullLicense'; id: number }
+  | { type: 'hireExec'; idx: number }
+  | { type: 'fireExec'; role: string }
+  | { type: 'answerCrisis'; pick: number }
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }

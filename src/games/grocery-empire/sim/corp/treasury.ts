@@ -5,6 +5,7 @@ import { log } from '../helpers'
 import type { GameState } from '../state'
 import { corpOf, round2, salesRate } from './core'
 import { causePerk } from './town'
+import { execPower } from './more'
 
 // ── Credit ───────────────────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ function nudgeCredit(s: GameState, d: number) {
 /** Total interest over a bond's term at your score. */
 export function bondRate(s: GameState): number {
   const t = (corpOf(s).credit - CREDIT.min) / (CREDIT.max - CREDIT.min)
-  return CREDIT.rateWorst + (CREDIT.rateBest - CREDIT.rateWorst) * t
+  return (CREDIT.rateWorst + (CREDIT.rateBest - CREDIT.rateWorst) * t) * (1 - execPower(s, 'cfo'))
 }
 
 export function bondPrincipal(s: GameState, mins: number) {

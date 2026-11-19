@@ -6,6 +6,7 @@ import { tickRivalry } from './rivalry'
 import { tickCourt } from './court'
 import { tickTreasury } from './treasury'
 import { tickTown } from './town'
+import { tickMore } from './more'
 import { tickMarket } from './market'
 
 export function companyOpen(s: GameState): boolean {
@@ -28,6 +29,7 @@ export function tickCorp(s: GameState, dt: number) {
     tickCourt(s)
     tickTreasury(s)
     tickTown(s)
+    tickMore(s)
   }
   if (c.acc > 1) c.acc = 0
 }
@@ -43,6 +45,7 @@ export function companyAttention(s: GameState): { count: number; lines: string[]
   const suits = c.suits.filter((x) => !x.yours).length
   if (suits) lines.push(suits === 1 ? 'You are being sued' : `${suits} lawsuits waiting`)
   if (c.arrears > 0) lines.push('Creditors are taking a cut of sales')
+  if (c.more.crisis && c.more.crisis.until > s.time) lines.push('A crisis needs an answer')
   return { count: lines.length, lines }
 }
 

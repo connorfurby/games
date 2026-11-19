@@ -56,3 +56,8 @@ Relics ~25/wing, survives rebrand. Do not casually change wing size (tests pin i
 ## Build tracks (2026-11-19)
 
 Storefront, Storage, Cold, Production, Transit, Civic, **Signage**. Every tier's card states its real effect (`BUILD_TIERS` in `balance.ts`). Civic has no style choice (by design).
+
+
+## Company and Town hubs (2026-11-19)
+
+Company: Boardroom, Executives, Exchange, Treasury, Courthouse, Lab, Property, Franchises. Town: Customers, Foundation, City Hall, Union Hall, Press. Content: `content/corp/{tickers,owners,ceos,legal,town,more}.ts`. Balance: `CORP`, `CO`, `RIVALRY`, `LAW`, `CREDIT`, `INSURE`, `TOWN`, `LAB`, `PROPERTY`, `FRANCHISE`, `EXEC`, `CRISIS` in `balance.ts`.

@@ -8,6 +8,7 @@ import { addBoost } from './company'
 import { corpOf, crand, round2, salesRate } from './core'
 import { pushTape, shockTicker } from './market'
 import { addGrudge, rivalActive } from './rivalry'
+import { execPower } from './more'
 import type { TownState } from './types'
 
 export function townOf(s: GameState): TownState {
@@ -181,7 +182,11 @@ export function answerUnion(s: GameState, accept: boolean) {
     log(s, `You signed: ${def?.title}. The crew cheers.`, 'good')
   } else {
     u.refusals += 1
-    if (u.refusals >= TOWN.strikeAfterRefusals) {
+    // A good Head of People can talk them down once.
+    if (u.refusals >= TOWN.strikeAfterRefusals && crand(s) < execPower(s, 'hr')) {
+      u.refusals = 0
+      log(s, 'Your Head of People talked the union out of a strike.', 'good')
+    } else if (u.refusals >= TOWN.strikeAfterRefusals) {
       u.strikeUntil = s.time + TOWN.strikeSec
       u.refusals = 0
       log(s, 'STRIKE! The crew walks out. Only the regulars get served.', 'warn')
@@ -346,7 +351,7 @@ export function tickTown(s: GameState) {
     u.nextDemandAt = s.time + TOWN.demandGapSec
   }
   // The press regains its credibility.
-  if (t.cred < TOWN.credMax) t.cred = Math.min(TOWN.credMax, t.cred + TOWN.credRegenPerMin / 60)
+  if (t.cred < TOWN.credMax) t.cred = Math.min(TOWN.credMax, t.cred + (TOWN.credRegenPerMin * (1 + execPower(s, 'cmo') * 10)) / 60)
   // Customers drift toward how well you fit them (only once you start watching them).
   if (t.segmentsOn) {
     for (const x of openSegments(s)) {

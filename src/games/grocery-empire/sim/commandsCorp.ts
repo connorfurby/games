@@ -1,6 +1,25 @@
 import { cashLabel } from '@/shared/bn'
 import { TICKER_BY_ID } from '../content/corp/tickers'
-import { CO, CORP, CREDIT, RIVALRY, TOWN } from './balance'
+import { CO, CORP, CREDIT, EXEC, FRANCHISE, LAB, RIVALRY, TOWN } from './balance'
+import { CRISIS_BY_ID, INVENTION_BY_ID, LOT_BY_ID, TENANTS } from '../content/corp/more'
+import {
+  answerCrisis,
+  buyLot,
+  execSalary,
+  fireExec,
+  franchiseCap,
+  hireExec,
+  inspectFranchise,
+  labLevelCost,
+  lotPrice,
+  moreOf,
+  patentCost,
+  pullLicense,
+  sellFranchise,
+  sellLot,
+  setTenant,
+  startResearch,
+} from './corp/more'
 import { LAWYERS, POLICY_BY_ID } from '../content/corp/legal'
 import { canSue, goToTrial, hireLawyer, lawyerCost, settle, settleCost, sueRival } from './corp/court'
 import { buyPolicy, dropPolicy, earlyPayoff, insured, issueBond, premiumPerMin, repayEarly } from './corp/treasury'
@@ -101,6 +120,19 @@ export type CorpCmd =
   | Extract<Command, { type: 'buyOutlet' }>
   | Extract<Command, { type: 'spin' }>
   | Extract<Command, { type: 'setFocus' }>
+  | Extract<Command, { type: 'startResearch' }>
+  | Extract<Command, { type: 'upgradeLab' }>
+  | Extract<Command, { type: 'patentInvention' }>
+  | Extract<Command, { type: 'licenseInvention' }>
+  | Extract<Command, { type: 'buyLot' }>
+  | Extract<Command, { type: 'sellLot' }>
+  | Extract<Command, { type: 'setTenant' }>
+  | Extract<Command, { type: 'sellFranchise' }>
+  | Extract<Command, { type: 'inspectFranchise' }>
+  | Extract<Command, { type: 'pullLicense' }>
+  | Extract<Command, { type: 'hireExec' }>
+  | Extract<Command, { type: 'fireExec' }>
+  | Extract<Command, { type: 'answerCrisis' }>
 
 type H<C> = { can: (s: GameState, cmd: C) => Check; run: (s: GameState, cmd: C) => void }
 
@@ -290,6 +322,118 @@ export const corpHandlers: { [K in CorpCmd['type']]: H<Extract<CorpCmd, { type: 
   setFocus: {
     can: (s, cmd) => (cmd.id === null || openSegments(s).some((x) => x.id === cmd.id) ? ok : no('Not a customer group yet.')),
     run: (s, cmd) => setFocus(s, cmd.id),
+  },
+  startResearch: {
+    can: (s, cmd) => {
+      const def = INVENTION_BY_ID[cmd.id]
+      if (!def) return no('Unknown project.')
+      if (s.era < def.era) return no(`Opens in Era ${def.era}.`)
+      const m = moreOf(s)
+      if (m.lab.project) return no('The lab is busy.')
+      if (m.lab.invented[cmd.id]) return no('Already invented.')
+      return needCash(s, Math.round(salesRateOf(s) * def.costSec * 100) / 100)
+    },
+    run: (s, cmd) => startResearch(s, cmd.id),
+  },
+  upgradeLab: {
+    can: (s) => {
+      if (moreOf(s).lab.level >= LAB.levelMax) return no('The lab is as big as it gets.')
+      return needCash(s, labLevelCost(s))
+    },
+    run: (s) => {
+      s.cash = Math.round((s.cash - labLevelCost(s)) * 100) / 100
+      moreOf(s).lab.level += 1
+    },
+  },
+  patentInvention: {
+    can: (s, cmd) => {
+      const inv = moreOf(s).lab.invented[cmd.id]
+      if (!inv) return no('Not invented yet.')
+      if (inv.patented) return no('Already patented.')
+      if (inv.copied) return no('Too late: it has been copied.')
+      return needCash(s, patentCost(s))
+    },
+    run: (s, cmd) => {
+      s.cash = Math.round((s.cash - patentCost(s)) * 100) / 100
+      moreOf(s).lab.invented[cmd.id]!.patented = true
+    },
+  },
+  licenseInvention: {
+    can: (s, cmd) => {
+      const inv = moreOf(s).lab.invented[cmd.id]
+      if (!inv?.patented) return no('Patent it first.')
+      return ok
+    },
+    run: (s, cmd) => {
+      const inv = moreOf(s).lab.invented[cmd.id]!
+      inv.licensed = !inv.licensed
+    },
+  },
+  buyLot: {
+    can: (s, cmd) => {
+      const def = LOT_BY_ID[cmd.id]
+      if (!def) return no('Unknown lot.')
+      if (s.era < def.era) return no(`For sale from Era ${def.era}.`)
+      if (moreOf(s).lots[cmd.id]) return no('Already yours.')
+      return needCash(s, lotPrice(s, cmd.id))
+    },
+    run: (s, cmd) => buyLot(s, cmd.id),
+  },
+  sellLot: {
+    can: (s, cmd) => (moreOf(s).lots[cmd.id] ? ok : no('Not yours.')),
+    run: (s, cmd) => sellLot(s, cmd.id),
+  },
+  setTenant: {
+    can: (s, cmd) => {
+      if (!moreOf(s).lots[cmd.id]) return no('Not yours.')
+      if (cmd.tenant !== null && !TENANTS.some((t) => t.id === cmd.tenant)) return no('Unknown tenant.')
+      return ok
+    },
+    run: (s, cmd) => setTenant(s, cmd.id, cmd.tenant),
+  },
+  sellFranchise: {
+    can: (s) => {
+      if (s.era < FRANCHISE.era) return no(`Franchising opens in Era ${FRANCHISE.era}.`)
+      if (moreOf(s).franchises.length >= franchiseCap(s)) return no(`At most ${franchiseCap(s)} franchises this era.`)
+      return ok
+    },
+    run: (s) => sellFranchise(s),
+  },
+  inspectFranchise: {
+    can: (s, cmd) => {
+      if (!moreOf(s).franchises.some((f) => f.id === cmd.id)) return no('No such franchise.')
+      return needCash(s, Math.round(salesRateOf(s) * FRANCHISE.inspectCostSec * 100) / 100)
+    },
+    run: (s, cmd) => inspectFranchise(s, cmd.id),
+  },
+  pullLicense: {
+    can: (s, cmd) => (moreOf(s).franchises.some((f) => f.id === cmd.id) ? ok : no('No such franchise.')),
+    run: (s, cmd) => pullLicense(s, cmd.id),
+  },
+  hireExec: {
+    can: (s, cmd) => {
+      if (s.era < EXEC.era) return no(`Executives join from Era ${EXEC.era}.`)
+      const c = moreOf(s).pool[cmd.idx]
+      if (!c) return no('Nobody there.')
+      if (moreOf(s).execs[c.role]) return no('That chair is taken.')
+      return needCash(s, execSalary(s, c.trait))
+    },
+    run: (s, cmd) => hireExec(s, cmd.idx),
+  },
+  fireExec: {
+    can: (s, cmd) => (moreOf(s).execs[cmd.role] ? ok : no('Nobody in that chair.')),
+    run: (s, cmd) => fireExec(s, cmd.role),
+  },
+  answerCrisis: {
+    can: (s, cmd) => {
+      const cur = moreOf(s).crisis
+      const def = cur ? CRISIS_BY_ID[cur.id] : undefined
+      if (!def) return no('No crisis.')
+      const o = def.options[cmd.pick]
+      if (!o) return no('Pick an answer.')
+      return needCash(s, Math.round(salesRateOf(s) * o.costSec * 100) / 100)
+    },
+    run: (s, cmd) => answerCrisis(s, cmd.pick),
   },
   answerOffer: {
     can: (s, cmd) => {

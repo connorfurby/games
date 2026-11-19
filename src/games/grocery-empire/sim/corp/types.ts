@@ -133,6 +133,20 @@ export interface TownState {
   loyalty: Record<string, number>
 }
 
+export interface Stage6State {
+  lab: { level: number; project: string | null; progress: number; invented: Record<string, { at: number; patented: boolean; licensed: boolean; copied: boolean }> }
+  lots: Record<string, { value: number; tenant: string | null; boughtAt: number; paid: number }>
+  rentEarned: number
+  franchises: { id: number; name: string; trait: string; quality: number; openedAt: number; paid: number }[]
+  royalties: number
+  execs: Partial<Record<string, { name: string; trait: string; level: number; hiredAt: number }>>
+  pool: { role: string; name: string; trait: string }[]
+  nextPoolAt: number
+  crisis: { id: string; until: number } | null
+  nextCrisisAt: number
+  crisesHandled: number
+}
+
 export interface CorpState {
   rng: number
   /** Seconds not yet ticked (the company layer ticks once a second). */
@@ -177,4 +191,5 @@ export interface CorpState {
   premiumsPaid: number
   seenSpoiled: number
   town: TownState
+  more: Stage6State
 }

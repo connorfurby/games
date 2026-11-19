@@ -8,6 +8,7 @@ import { corpOf, cpick, crand, round2, salesRate } from './core'
 import { shockTicker } from './market'
 import { addGrudge, ceoPeek, rivalActive, spySuers, suers } from './rivalry'
 import { insurePays } from './treasury'
+import { execPower } from './more'
 import type { SuitState } from './types'
 
 const CUSTOMERS = ['Mrs. Abernathy', 'Gary Pruitt', 'A man named Todd', 'The Whitlock twins', 'Professor Lumm', 'Ms. Ferraro']
@@ -61,6 +62,7 @@ export function trialOdds(s: GameState, suit: SuitState): number {
   let o = (kind?.odds ?? 0.5) + (LAWYERS[suit.lawyer]?.odds ?? 0) + (judge?.lean ?? 0)
   if (judge?.id === 'haddock' && (s.stores?.length ?? 1) > 10) o -= 0.05
   if (judge?.id === 'okoro') o += (LAWYERS[suit.lawyer]?.odds ?? 0) * 0.5
+  o += execPower(s, 'counsel')
   return Math.max(0.05, Math.min(0.92, o))
 }
 
