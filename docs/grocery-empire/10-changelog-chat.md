@@ -2,6 +2,15 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AL. Loading and motion pass (2026-11-18, on `main`)
+
+- **Boot splash** in `index.html` (pure CSS, compositor-only animation) so the first frame is never white.
+- **Welcome-back loading screen** (`CatchUpScreen`): away gaps ≥ 60 s catch up a slice per frame via `beginOffline` (step/progress/finish) instead of freezing the page; saves wait until done; the receipt then prints in (CSS `g2-print`).
+- **Page transitions** (`PAGE_VARIANTS` in GroceryEmpireApp): direction-aware springs (sub-tab slides from the side you moved to; a new hub rises with a soft blur), page blocks rise in staggered. **Modals**: scrim fades, card springs. **Entering the game**: HUD drops, rail slides, room rises.
+- **Shop-shutter curtain** (`withCurtain` in `components/curtainBus.ts`) for Rebrand and restoring a backup.
+- **Money formatting**: "Upkeep $2.3000000000000003/min" fixed; ~40 sim strings now use `cashLabel`. `/home/claude/audit/nums.cjs` scans every page's text nodes, titles and labels at Era 1/2/4/7/10/12 for long decimals, NaN, Infinity, undefined, null, [object: 0 hits.
+- Everything respects reduced motion (OS setting and the in-game toggle via `.ge-reduced-motion`).
+
 ## AK. The bot follows the HUD now · SAVE **42**
 
 - **Sticky goals** (`goalsDone`, SAVE 42): `stampGoals` marks goals done once per sim second; `nextGoal` never shows a completed goal again. Found because "Run a wire ad" un-completed every 3 min (the ad's end reset `wireAdsUntil` to 0; it now keeps its timestamp).
