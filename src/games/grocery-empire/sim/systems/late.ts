@@ -5,7 +5,7 @@ import { cashLabel } from '@/shared/bn'
  */
 import { TRACK_BY_ID, type BuildFilter } from '../../content/builds'
 import { CATEGORIES, type CategoryId } from '../../content/categories'
-import { HORIZON, LATE, LOGISTICS, WHOLESALE } from '../balance'
+import { BUILD_TIERS, HORIZON, LATE, LOGISTICS, WHOLESALE } from '../balance'
 import { crateCost, crateSize, deliveryTime } from '../formulas'
 import { PLANET_BY_ID } from '../../content/horizon'
 import { log, round2 } from '../helpers'
@@ -106,7 +106,8 @@ export function seedVaultCap(s: GameState): number {
       : storage >= 6
         ? LATE.seedVaultPerStorage
         : Math.max(0, storage - 3) * Math.floor(LATE.seedVaultPerStorage / 2)
-  return (LATE.seedVaultCapBase + tier + vaultCapBonus(s)) * vaultCapMul(s)
+  const granary = storage >= 8 ? BUILD_TIERS.starGranaryVaultMul : 1
+  return (LATE.seedVaultCapBase + tier + vaultCapBonus(s)) * vaultCapMul(s) * granary
 }
 
 /**
@@ -126,6 +127,10 @@ export const BUILD_CLAIM_READERS: Record<string, (s: GameState) => number> = {
   'transit:Jump Berth': (s) => ((s.builds.transit ?? 0) >= 8 ? 1 : 0),
   'civic:Embassy Annex': (s) => ((s.builds.civic ?? 0) >= 6 ? 1 : 0),
   "civic:Ivo's Plaque": (s) => ((s.builds.civic ?? 0) >= 7 ? 1 : 0),
+  'storage:Star Granary': (s) => ((s.builds.storage ?? 0) >= 8 ? 1 : 0),
+  'cold:Frost Ring': (s) => ((s.builds.cold ?? 0) >= 7 ? 1 : 0),
+  'production:Harvest Spire': (s) => ((s.builds.production ?? 0) >= 8 ? 1 : 0),
+  'transit:Lightsail Dock': (s) => ((s.builds.transit ?? 0) >= 9 ? 1 : 0),
 }
 
 export function hasIvoPlaque(s: GameState): boolean {
@@ -447,6 +452,7 @@ export function tickLate(s: GameState, dt: number): void {
     s.seedVault.cap = seedVaultCap(s)
     let decay = LATE.seedDecayPerSec
     if ((s.builds.cold ?? 0) >= 6) decay *= LATE.cryoArkDecayMul
+    if ((s.builds.cold ?? 0) >= 7) decay *= BUILD_TIERS.frostRingDecayMul
     decay *= vaultDecayMul(s)
     if (s.cold?.plants) decay *= Math.max(0.5, 1 - s.cold.plants * 0.02)
     const free = Math.max(0, s.horizon.seed - s.seedVault.held)
@@ -477,6 +483,7 @@ export function offworldSalesMul(s: GameState): number {
   mean /= stocked.length
   let mul = (1 + LATE.offworldPerWorld * mean * stocked.length) * endcapMul(s)
   if ((s.builds.production ?? 0) >= 6) mul *= 1.1
+  if ((s.builds.production ?? 0) >= 8) mul *= BUILD_TIERS.harvestSpireSalesMul
   if (s.era >= 8 && s.horizon.circuits.length > 0) mul *= 1 + LATE.importedSalesBump
   if (s.era >= 9) mul *= 1 + LATE.seasonalPremium * 0.25
   // Broadcasts: each stocked world whose climate is on the air sells a little more.

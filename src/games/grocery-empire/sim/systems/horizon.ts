@@ -38,7 +38,7 @@ import {
   type TasterId,
   type TraitId,
 } from '../../content/horizon'
-import { DEPTH, NETWORK } from '../balance'
+import { BUILD_TIERS, DEPTH, NETWORK } from '../balance'
 import { cashLabel } from '@/shared/bn'
 import { upgradeEffect } from '../../content/upgrades'
 import { HORIZON, LATE, PRICE } from '../balance'
@@ -338,7 +338,7 @@ export function parsePackToken(token: string): { sku: string; size: number } | n
 
 export function bayCaps(s: GameState): number[] {
   const caps: number[] = [...HORIZON.bayCaps]
-  const bonus = Math.floor(upgradeEffect(s, 'bay-walls')) + ((s.builds.transit ?? 0) >= 7 ? 1 : 0) + empireBaySlots(s)
+  const bonus = Math.floor(upgradeEffect(s, 'bay-walls')) + ((s.builds.transit ?? 0) >= 7 ? 1 : 0) + ((s.builds.transit ?? 0) >= 9 ? BUILD_TIERS.lightsailBays : 0) + empireBaySlots(s)
   caps[caps.length - 1] = (caps[caps.length - 1] ?? 4) + bonus
   if (s.depth && s.depth.stolenBay >= 0 && s.depth.stolenBay < caps.length) {
     caps[s.depth.stolenBay] = 0

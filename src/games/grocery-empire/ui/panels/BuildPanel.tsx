@@ -246,11 +246,23 @@ function BuildCard({
   const canClose = can(s, { type: 'hibernateBuild', track: t.id }).ok
   const levels = t.tiers.length - 1
   const shown = lvl - (base === 1 ? 0 : 0)
+  // The card glows for a moment when its building grows.
+  const lastLvl = useRef(lvl)
+  const [fresh, setFresh] = useState(0)
+  useEffect(() => {
+    if (lvl > lastLvl.current) setFresh(Date.now())
+    lastLvl.current = lvl
+  }, [lvl])
+  useEffect(() => {
+    if (!fresh) return
+    const tm = window.setTimeout(() => setFresh(0), 1400)
+    return () => window.clearTimeout(tm)
+  }, [fresh])
 
   return (
     <article
       ref={setRef}
-      className={`bd-card${selected ? ' is-sel' : ''}${pending?.length ? ' is-choice' : ''}`}
+      className={`bd-card${selected ? ' is-sel' : ''}${pending?.length ? ' is-choice' : ''}${fresh ? ' is-fresh' : ''}`}
       onPointerDown={onSelect}
       data-coach-id={`build-${t.id}`}
     >

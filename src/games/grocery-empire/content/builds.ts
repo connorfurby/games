@@ -55,6 +55,7 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Orbital Cache', cost: 1e10, upkeepPerMin: 0, effect: '+5k backroom', era: 5 },
       { name: 'Bonded Warehouse', cost: 8e14, upkeepPerMin: 0, effect: '+8k backroom · imports keep', era: 8 },
       { name: 'Seed Vault', cost: 3e16, upkeepPerMin: 0, effect: '+12k backroom · vaulted seed never decays', era: 9 },
+      { name: 'Star Granary', cost: 1e18, upkeepPerMin: 0, effect: '+20k backroom · seed vault holds 25% more', era: 11 },
     ],
   },
   {
@@ -70,6 +71,7 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Tank Farm', cost: 5e7, upkeepPerMin: 2000, effect: 'Perishables last twice as long', era: 3 },
       { name: 'Cryo Hub', cost: 1e11, upkeepPerMin: 0, effect: 'Perishables last 120% longer', era: 5 },
       { name: 'Cryo Ark', cost: 4e16, upkeepPerMin: 0, effect: 'Perishables last 140% longer · seed decays far slower', era: 9 },
+      { name: 'Frost Ring', cost: 1.5e18, upkeepPerMin: 0, effect: 'Perishables last 3× as long · seed decays 25% slower again', era: 11 },
     ],
   },
   {
@@ -86,6 +88,7 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Factory', cost: 8e7, upkeepPerMin: 2000, effect: '8 produce / s · steady free dairy', era: 3 },
       { name: 'Orbital Mill', cost: 3e14, upkeepPerMin: 0, effect: 'Off-world sales +10%', era: 7 },
       { name: 'Relay Foundry', cost: 8e17, upkeepPerMin: 0, effect: 'Relay stations cast further', era: 10 },
+      { name: 'Harvest Spire', cost: 1e19, upkeepPerMin: 0, effect: 'Off-world sales +10% more', era: 12 },
     ],
   },
   {
@@ -103,6 +106,7 @@ export const BUILD_TRACKS: BuildTrack[] = [
       { name: 'Barge Berth', cost: 1e11, upkeepPerMin: 0, effect: 'Deliveries −72% time', era: 5 },
       { name: 'Convoy Gantry', cost: 1e15, upkeepPerMin: 0, effect: '+1 crate on the last convoy bay', era: 8 },
       { name: 'Jump Berth', cost: 6e17, upkeepPerMin: 0, effect: 'Jump lanes haul more freight', era: 10 },
+      { name: 'Lightsail Dock', cost: 8e18, upkeepPerMin: 0, effect: '+1 crate on the last convoy bay', era: 12 },
     ],
   },
   {

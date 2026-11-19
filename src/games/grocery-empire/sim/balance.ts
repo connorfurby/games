@@ -927,9 +927,9 @@ export const VALUE = {
  */
 export const BUILD_TIERS = {
   /** Extra backroom at storage level ≥ index (Regional DC, Orbital Cache, Bonded, Seed Vault). */
-  storageCap: { 4: 2000, 5: 5000, 6: 8000, 7: 12000 } as Record<number, number>,
+  storageCap: { 4: 2000, 5: 5000, 6: 8000, 7: 12000, 8: 20000 } as Record<number, number>,
   /** Perishable life multiplier by cold level. */
-  coldLife: [1, 1.25, 1.6, 1.8, 2, 2.2, 2.4] as const,
+  coldLife: [1, 1.25, 1.6, 1.8, 2, 2.2, 2.4, 3] as const,
   /** Delivery time multiplier by transit level. */
   transitTime: [1, 0.75, 0.5, 0.42, 0.36, 0.32, 0.28, 0.28, 0.28] as const,
   /** Extra units per crate from a Truck (on top of the Van's 12). */
@@ -938,6 +938,14 @@ export const BUILD_TIERS = {
   produceRate: [0, 1 / 15, 1, 1, 3, 8, 8, 8] as const,
   /** Civic level that opens one more museum case (Museum of Baskets). */
   museumCaseCivic: 5,
+  /** Star Granary (storage 8): seed vault holds this much more. */
+  starGranaryVaultMul: 1.25,
+  /** Frost Ring (cold 7): seed decays this much slower again. */
+  frostRingDecayMul: 0.75,
+  /** Harvest Spire (production 8): off-world sales. */
+  harvestSpireSalesMul: 1.1,
+  /** Lightsail Dock (transit 9): one more crate on the last convoy bay. */
+  lightsailBays: 1,
 }
 
 export const HORIZON = {
