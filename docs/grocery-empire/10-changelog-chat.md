@@ -2,11 +2,18 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
 
+## AK. The bot follows the HUD now · SAVE **42**
+
+- **Sticky goals** (`goalsDone`, SAVE 42): `stampGoals` marks goals done once per sim second; `nextGoal` never shows a completed goal again. Found because "Run a wire ad" un-completed every 3 min (the ad's end reset `wireAdsUntil` to 0; it now keeps its timestamp).
+- **Era 7 "Open the exchange" Do-it looped** refiling a world that already counted; the next step is now always another probe.
+- **Bot follows `nextGoal`** (the HUD's list; `botSpine.mode = 'hud'`). `_spine_debug.test.ts` (SPINE_DEBUG=1, BOT_SPINE, SPINE_FROM=fresh|era8…) prints the goal timeline. Seed 1: Era 6 ≈ 21.4 h, Era 12 ≈ 38.0 h.
+- **Targets moved, with reasons in `pacing.test.ts`:** Era 6 lower bound 22 h → 21 h; Era 12 window 40–50 h → 36–50 h. The old bot was slowed by a stuck HUD goal, not by the game.
+
 ## AJ. Waits debug, goal spine fixes (2026-11-18, on `main`)
 
 - **`_waits_debug.test.ts`** (WAITS_DEBUG=1, optional WAITS_FROM=era8 WAITS_HOURS=8): runs the bot and prints the longest stretches with nothing but churn, with the goal on screen. Found: Era 1 dock check-in taps every 2 min for an hour (now automatic after 5); Era 8–9 HUD showing an **Era 10** goal ("Run a wire ad") for hours.
 - **Goal spine**: `wire-ad-goal` moved into the Era 10 block; a test asserts goals are listed in era order. HUD `nextGoal` skips undone goals from past eras and never shows a future-era goal.
-- **Bot keeps the old spine** (`nextGoalInOrder`): the long pacing run showed the bot's late tuning depended on the HUD being stuck on Era 6's board agenda (Era 6 landed 0.6 h early, Era 12 missed 50 h when the bot followed the fixed HUD). Long pacing passes again. **Backlog:** retune the bot to follow `nextGoal`, then check the Era 6 lower bound and the Era 12 window.
+- ~~**Bot keeps the old spine**~~ (superseded the same day, see AK) (`nextGoalInOrder`): the long pacing run showed the bot's late tuning depended on the HUD being stuck on Era 6's board agenda (Era 6 landed 0.6 h early, Era 12 missed 50 h when the bot followed the fixed HUD). Long pacing passes again. **Backlog:** retune the bot to follow `nextGoal`, then check the Era 6 lower bound and the Era 12 window.
 - Every cooldown reason reads as a wait ("21m 37s", `waitLabel`), in the sim and the UI.
 
 ## AI. Designer round — autopilot, story, safety, the late game (2026-11-17/18, on `main`) · SAVE **41**

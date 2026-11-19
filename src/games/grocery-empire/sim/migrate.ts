@@ -1478,6 +1478,12 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
           .slice(0, 40)
       }
 
+      // SAVE 42: sticky goal completions.
+      base.goalsDone = {}
+      if (isObject(raw.goalsDone)) {
+        for (const [k, v] of Object.entries(raw.goalsDone)) if (v === true) base.goalsDone[k] = true
+      }
+
       // Existing saves skip the opening cutscene; brand-new runs keep introSeen false.
       base.introSeen = bool(raw.introSeen, raw != null)
       // Migrated / resumed runs already past the strip opener — do not block coach.

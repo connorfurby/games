@@ -459,7 +459,8 @@ export function tickLate(s: GameState, dt: number): void {
     if (left <= 0) delete s.late.broadcasts[key]
     else s.late.broadcasts[key] = left
   }
-  if (s.late.wireAdsUntil > 0 && s.time >= s.late.wireAdsUntil) s.late.wireAdsUntil = 0
+  // wireAdsUntil keeps its past timestamp when the ad ends: "active" is `> s.time`, and the
+  // Era 10 goal reads "> 0" as "has ever run one" (resetting it un-did the goal every 3 min).
   if (s.late.futuresUntil > 0 && s.time >= s.late.futuresUntil) {
     s.late.futuresUntil = 0
     s.late.futuresSku = null

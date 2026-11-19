@@ -1152,9 +1152,8 @@ export const GOALS: GoalDef[] = [
       if (stocked && (s.depth?.practice?.planogram.left ?? 0) > 0) {
         return { type: 'fileStandardPlanogram', planetId: stocked.id }
       }
-      if (stocked && (s.depth?.practice?.planogram.credited ?? 0) < HORIZON.slowWorlds) {
-        return { type: 'fileStandardPlanogram', planetId: stocked.id }
-      }
+      // Credit only comes from a new world: refiling one that already counts does nothing, so
+      // the next step is always another probe (the old action looped on the same shelf forever).
       return { type: 'launchProbe' }
     },
     opensEra: 8,
@@ -1583,6 +1582,7 @@ export function nextGoal(s: GameState): GoalDef | null {
     if (g.era < s.era && g.opensEra == null) continue
     // Never show a goal from an era you haven't reached.
     if (g.era > s.era) continue
+    if (s.goalsDone?.[g.id]) continue
     try {
       if (!g.done(s)) return g
     } catch {
@@ -1606,6 +1606,20 @@ export function nextGoalInOrder(s: GameState): GoalDef | null {
     }
   }
   return null
+}
+
+/** Mark goals done once they first complete (tick, once per second). Cheap: stops at the era. */
+export function stampGoals(s: GameState) {
+  if (!s.goalsDone) s.goalsDone = {}
+  for (const g of GOALS) {
+    if (g.era > s.era) break
+    if (s.goalsDone[g.id]) continue
+    try {
+      if (g.done(s)) s.goalsDone[g.id] = true
+    } catch {
+      /* never break the tick */
+    }
+  }
 }
 
 export function goalCash(s: GameState, g: GoalDef | null): number {

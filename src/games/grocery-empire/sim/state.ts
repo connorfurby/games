@@ -624,6 +624,8 @@ export interface GameState {
 
   /** Opening cutscene finished (once per save). */
   introSeen: boolean
+  /** SAVE 42: goals that have been completed once. A goal never un-completes on the HUD. */
+  goalsDone: Record<string, true>
 
   /** Gallery of notable spoilage events (top 12 by qty). */
   museum: { exhibits: { t: number; qty: number; note: string }[] }
@@ -1043,6 +1045,7 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     seenLines: {},
     dialogueQueue: [],
     introSeen: false,
+    goalsDone: {},
 
     museum: { exhibits: [] },
 

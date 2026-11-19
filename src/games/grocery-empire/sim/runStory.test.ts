@@ -42,3 +42,15 @@ describe('goal spine order', () => {
     for (let i = 1; i < GOALS.length; i++) expect(GOALS[i]!.era).toBeGreaterThanOrEqual(GOALS[i - 1]!.era)
   })
 })
+
+describe('sticky goals', () => {
+  it('a completed goal stays done even if its condition later fails', async () => {
+    const { GOALS, nextGoal, stampGoals } = await import('../content/goals')
+    const s = createInitialState(4)
+    const first = nextGoal(s)!
+    s.goalsDone[first.id] = true
+    expect(nextGoal(s)?.id).not.toBe(first.id)
+    stampGoals(s)
+    expect(Object.keys(s.goalsDone).every((id) => GOALS.some((g) => g.id === id))).toBe(true)
+  })
+})

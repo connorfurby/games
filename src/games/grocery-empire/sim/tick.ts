@@ -1,3 +1,4 @@
+import { stampGoals } from '../content/goals'
 import { HISTORY, OFFLINE_CAP_SEC, OFFLINE_STEP_SEC } from './balance'
 import { tickAutoRestock, tickAutoTournament } from './commands'
 import {
@@ -133,7 +134,9 @@ export function applyTick(s: GameState, dt: number) {
 
   const step = dt
   const cashBefore = s.cash
+  const secBefore = Math.floor(s.time)
   s.time += step
+  if (Math.floor(s.time) !== secBefore) stampGoals(s)
 
   tickWholesale(s, step)
   tickWeather(s, step)

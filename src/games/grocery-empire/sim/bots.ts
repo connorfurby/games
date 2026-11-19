@@ -1,4 +1,4 @@
-import { goalCash, goalNeeds, nextGoalInOrder as nextGoal } from '../content/goals'
+import { goalCash, goalNeeds, nextGoal as nextGoalHud, nextGoalInOrder } from '../content/goals'
 import { STORE_TRAIT_BY_ID, policyMatchesTrait, type PlaceTraitId } from '../content/depth'
 import { RIVALS } from '../content/rivals'
 import { MEMOS } from '../content/memos'
@@ -51,6 +51,13 @@ export type { BotFn, BotResult, EraTimes, FuzzResult, PacingResult } from './bot
  * Plays like a steady casual player: keeps the floor stocked, saves for the next
  * campaign goal, and spends the surplus on whatever is affordable.
  */
+/** Which goal list the bot follows: the HUD's ('hud') or the old in-order spine. */
+export const botSpine: { mode: 'hud' | 'inOrder' } = { mode: 'hud' }
+
+export function nextGoal(s: GameState) {
+  return botSpine.mode === 'hud' ? nextGoalHud(s) : nextGoalInOrder(s)
+}
+
 export function campaignCommands(s: GameState, step: number): Command[] {
   const goal = nextGoal(s)
   const holdAtt = goalNeeds(s, goal).attention > 0
