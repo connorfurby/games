@@ -130,6 +130,8 @@ export const BUILD_CLAIM_READERS: Record<string, (s: GameState) => number> = {
   'storage:Star Granary': (s) => ((s.builds.storage ?? 0) >= 8 ? 1 : 0),
   'cold:Frost Ring': (s) => ((s.builds.cold ?? 0) >= 7 ? 1 : 0),
   'production:Harvest Spire': (s) => ((s.builds.production ?? 0) >= 8 ? 1 : 0),
+  'signage:Aurora Sign': (s) => ((s.builds.signage ?? 0) >= 7 ? 1 : 0),
+  'signage:Orbital Billboard': (s) => ((s.builds.signage ?? 0) >= 8 ? 1 : 0),
   'transit:Lightsail Dock': (s) => ((s.builds.transit ?? 0) >= 9 ? 1 : 0),
 }
 

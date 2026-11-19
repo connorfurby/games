@@ -590,3 +590,38 @@
     .bd-card.is-fresh, .bd-card.is-fresh .bd-pips { animation: none; }
   }
 }
+
+@layer panels {
+  .bs-neon {
+    animation: bs-neon 3.6s ease-in-out infinite;
+  }
+  .bs-video {
+    animation: bs-video 3s ease-in-out infinite;
+  }
+  .bs-aurora {
+    animation: bs-twinkle 7s ease-in-out infinite;
+  }
+  .bs-blimp {
+    animation: bs-blimp 9s ease-in-out infinite alternate;
+  }
+  /* A slow neon hum — never a flicker. */
+  @keyframes bs-neon {
+    50% { opacity: 0.78; }
+  }
+  @keyframes bs-video {
+    50% { filter: hue-rotate(80deg) brightness(1.15); }
+  }
+  @keyframes bs-blimp {
+    from { transform: translateX(-30px); }
+    to { transform: translateX(30px); }
+  }
+  .ge-reduced-motion .bs-neon,
+  .ge-reduced-motion .bs-video,
+  .ge-reduced-motion .bs-aurora,
+  .ge-reduced-motion .bs-blimp {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bs-neon, .bs-video, .bs-aurora, .bs-blimp { animation: none; }
+  }
+}

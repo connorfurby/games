@@ -422,6 +422,11 @@ export function storefrontMul(s: GameState) {
   return [1, 1, 1.15, 1.25, 1.4, 1.6, 1.8, 2, 2.15, 2.3, 2.5][f] ?? 2.5
 }
 
+export function signageMul(s: GameState) {
+  const l = s.builds.signage ?? 0
+  return BUILD_TIERS.signageDemand[Math.min(l, BUILD_TIERS.signageDemand.length - 1)] ?? 1
+}
+
 export function civicMul(s: GameState) {
   const c = s.builds.civic ?? 0
   return [1, 1.08, 1.15, 1.18, 1.22, 1.25, 1.3, 1.35][Math.min(c, 7)] ?? 1.35
@@ -522,6 +527,7 @@ export function demandBreakdown(s: GameState) {
     weather: weatherDemand(s),
     storefront: storefrontMul(s),
     civic: civicMul(s),
+    signage: signageMul(s),
     loyalty: loyaltyMul(s) * (s.loyalty.tier > 0 ? 1 + perk(s, 'regulars') * 0.04 : 1),
     memos: memoDemandMul(s),
     upgrades:

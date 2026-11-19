@@ -1,6 +1,6 @@
 import type { GameState } from '../sim/state'
 
-export const BUILD_FILTERS = ['storefront', 'storage', 'cold', 'production', 'transit', 'civic'] as const
+export const BUILD_FILTERS = ['storefront', 'storage', 'cold', 'production', 'transit', 'civic', 'signage'] as const
 export type BuildFilter = (typeof BUILD_FILTERS)[number]
 
 export interface BuildTier {
@@ -126,6 +126,24 @@ export const BUILD_TRACKS: BuildTrack[] = [
     ],
   },
 ]
+
+BUILD_TRACKS.push({
+  id: 'signage',
+  name: 'Signage',
+  blurb: 'Tell the street you are open. Every sign pulls a few more shoppers through the door.',
+  visible: (s) => s.lifetimeRevenue >= 150,
+  tiers: [
+    { name: 'None', cost: 0, upkeepPerMin: 0, effect: '', era: 0 },
+    { name: 'Chalkboard', cost: 120, upkeepPerMin: 0, effect: '+4% demand', era: 1 },
+    { name: 'Painted Sign', cost: 2_500, upkeepPerMin: 0.5, effect: '+7% demand', era: 1 },
+    { name: 'Neon Sign', cost: 60_000, upkeepPerMin: 8, effect: '+10% demand', era: 2 },
+    { name: 'Billboard', cost: 3e6, upkeepPerMin: 150, effect: '+13% demand', era: 3 },
+    { name: 'Video Tower', cost: 5e8, upkeepPerMin: 0, effect: '+16% demand', era: 4 },
+    { name: 'Sky Banner', cost: 5e12, upkeepPerMin: 0, effect: '+19% demand', era: 6 },
+    { name: 'Aurora Sign', cost: 5e15, upkeepPerMin: 0, effect: '+22% demand', era: 8 },
+    { name: 'Orbital Billboard', cost: 3e18, upkeepPerMin: 0, effect: '+26% demand', era: 11 },
+  ],
+})
 
 export const TRACK_BY_ID = Object.fromEntries(BUILD_TRACKS.map((t) => [t.id, t])) as Record<BuildFilter, BuildTrack>
 

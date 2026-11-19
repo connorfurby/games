@@ -946,6 +946,8 @@ export const BUILD_TIERS = {
   harvestSpireSalesMul: 1.1,
   /** Lightsail Dock (transit 9): one more crate on the last convoy bay. */
   lightsailBays: 1,
+  /** Demand multiplier by signage level. */
+  signageDemand: [1, 1.04, 1.07, 1.1, 1.13, 1.16, 1.19, 1.22, 1.26] as const,
 }
 
 export const HORIZON = {

@@ -739,12 +739,21 @@ export function BuildStreetScene({
   );
 
   const anchor: Record<BuildFilter, [number, number]> = {
-    production: [105, G - (lv("production") >= 6 ? 170 : lv("production") >= 3 ? 110 : 50)],
-    storage: [275, G - (40 + Math.min(7, lv("storage")) * 14) - (lv("storage") >= 8 ? 80 : 30)],
+    production: [
+      105,
+      G - (lv("production") >= 6 ? 170 : lv("production") >= 3 ? 110 : 50),
+    ],
+    storage: [
+      275,
+      G -
+        (40 + Math.min(7, lv("storage")) * 14) -
+        (lv("storage") >= 8 ? 80 : 30),
+    ],
     storefront: [480, G - sfH - 30],
     cold: [sfX + sfW + 60, G - 70],
     civic: [870, G - 90],
     transit: [420, G - 4],
+    signage: [sfX + sfW * 0.3, G - sfH - (lv("signage") >= 4 ? 110 : 70)],
   };
   const burstAt = (id: BuildFilter) => {
     if (!burst || burst.id !== id) return null;
@@ -768,7 +777,11 @@ export function BuildStreetScene({
                   width="6"
                   height="6"
                   rx="1"
-                  fill={["#f2c14e", "#e8583c", "#8fc4e0", "#5aa85a", "#efe6cf"][i % 5]}
+                  fill={
+                    ["#f2c14e", "#e8583c", "#8fc4e0", "#5aa85a", "#efe6cf"][
+                      i % 5
+                    ]
+                  }
                   style={{ animationDelay: `${(i % 4) * 0.03}s` }}
                 />
               </g>
@@ -843,8 +856,184 @@ export function BuildStreetScene({
     </>
   );
 
+  // Signage: a chalkboard by the door, then boards on the roof, then the sky itself.
+  const sg = lv("signage");
+  const boardX = sfX + sfW * 0.28;
+  const boardW = sg >= 4 ? 120 : 84;
+  const boardH = sg >= 4 ? 40 : 22;
+  // Tall stores: the board mounts on the upper facade instead of floating off the top.
+  const roomAbove = G - sfH - (sg >= 4 ? 74 : 56) >= 8;
+  // Rooftop boards sit behind the name plate; facade and pavement signs sit in front.
+  const signBehind = sg >= 2 && roomAbove;
+  const boardY = roomAbove ? G - sfH - (sg >= 4 ? 74 : 56) : G - sfH + 8;
+  const signageArt = vis("signage") ? (
+    <Hit
+      x={sg >= 2 ? boardX - boardW / 2 : sfX + sfW - 72}
+      y={sg >= 2 ? boardY - 4 : G - 26}
+      w={sg >= 2 ? boardW : 26}
+      h={sg >= 2 ? Math.max(boardH + 8, G - sfH - boardY + 4) : 26}
+      label={`Signage: ${name("signage") || "none yet"}`}
+      onActivate={() => onPick("signage")}
+    >
+      <g className={`bs-part${sel("signage")}`}>
+        {sg === 0 ? (
+          <rect
+            x={sfX + sfW - 70}
+            y={G - 22}
+            width="20"
+            height="20"
+            rx="3"
+            className="bs-empty"
+          />
+        ) : sg === 1 ? (
+          <g>
+            <path
+              d={`M${sfX + sfW - 70} ${G} L${sfX + sfW - 62} ${G - 22} L${sfX + sfW - 54} ${G} Z`}
+              fill="#3a2c22"
+            />
+            <rect
+              x={sfX + sfW - 68}
+              y={G - 18}
+              width="12"
+              height="12"
+              fill="#26302a"
+            />
+            <path
+              d={`M${sfX + sfW - 66} ${G - 14} h8 M${sfX + sfW - 66} ${G - 10} h6`}
+              stroke="#efe6cf"
+              strokeWidth="1"
+            />
+          </g>
+        ) : (
+          <g>
+            <rect
+              x={boardX - boardW / 2 + 8}
+              y={boardY + boardH}
+              width="4"
+              height={Math.max(0, G - sfH - boardY - boardH)}
+              fill="#5a4a3a"
+            />
+            <rect
+              x={boardX + boardW / 2 - 12}
+              y={boardY + boardH}
+              width="4"
+              height={Math.max(0, G - sfH - boardY - boardH)}
+              fill="#5a4a3a"
+            />
+            <rect
+              x={boardX - boardW / 2}
+              y={boardY}
+              width={boardW}
+              height={boardH}
+              rx="3"
+              fill={sg === 2 ? "#efe6cf" : "#1b1626"}
+              stroke={sg >= 5 ? "#8fc4e0" : sg >= 3 ? "#e85aa0" : "#a08a6a"}
+              strokeWidth={sg >= 3 ? 2 : 1}
+              className={sg >= 5 ? "bs-video" : sg >= 3 ? "bs-neon" : undefined}
+            />
+            {sg >= 4 ? (
+              <g className={sg >= 5 ? "bs-video" : undefined}>
+                {["#e8583c", "#f2c14e", "#5aa85a", "#8fc4e0"].map((c, i) => (
+                  <rect
+                    key={c}
+                    x={boardX - boardW / 2 + 6 + i * ((boardW - 12) / 4)}
+                    y={boardY + 6}
+                    width={(boardW - 12) / 4 - 3}
+                    height={boardH - 20}
+                    fill={c}
+                    opacity="0.8"
+                  />
+                ))}
+              </g>
+            ) : null}
+            <text
+              x={boardX}
+              y={boardY + boardH - (sg >= 4 ? 4 : 7)}
+              textAnchor="middle"
+              fontSize={sg >= 4 ? 10 : 11}
+              fontWeight="800"
+              fill={
+                sg === 2 ? "#6b3f2f" : sg >= 3 && sg < 5 ? "#ff8ac4" : "#efe6cf"
+              }
+              className={sg === 3 ? "bs-neon" : undefined}
+            >
+              {sg >= 4 ? "FRESH · OPEN LATE" : "OPEN"}
+            </text>
+          </g>
+        )}
+      </g>
+    </Hit>
+  ) : null;
+  // The sky tiers sit in the far sky, behind everything.
+  const skySigns =
+    sg >= 6 ? (
+      <g aria-hidden>
+        {sg >= 7 ? (
+          <path
+            d="M0 70 Q160 30 320 66 T640 58 T960 62 L960 90 Q800 70 640 88 T320 92 T0 100 Z"
+            fill="#5aa85a"
+            opacity="0.18"
+            className="bs-aurora"
+          />
+        ) : null}
+        <g className="bs-blimp">
+          <ellipse cx="700" cy="46" rx="40" ry="13" fill="#d9d4c7" />
+          <rect x="690" y="57" width="20" height="6" rx="2" fill="#6c6a62" />
+          <rect x="744" y="38" width="70" height="16" fill="#e8583c" />
+          <text
+            x="779"
+            y="50"
+            textAnchor="middle"
+            fontSize="9"
+            fontWeight="800"
+            fill="#efe6cf"
+          >
+            OPEN NOW
+          </text>
+        </g>
+        {sg >= 8 ? (
+          <g>
+            <rect
+              x="850"
+              y="14"
+              width="56"
+              height="18"
+              rx="2"
+              fill="#1b1626"
+              stroke="#f2c14e"
+              className="bs-beacon"
+            />
+            <text
+              x="878"
+              y="27"
+              textAnchor="middle"
+              fontSize="8"
+              fontWeight="800"
+              fill="#f2c14e"
+            >
+              GROCERY
+            </text>
+          </g>
+        ) : null}
+      </g>
+    ) : null;
+  const signage = (
+    <>
+      {signageArt}
+      {burstAt("signage")}
+    </>
+  );
+
+  const bgPlain = (
+    <>
+      {stars}
+      {skyline}
+      {road}
+    </>
+  );
   const bg = (
     <>
+      {skySigns}
       {stars}
       {skyline}
       {road}
@@ -854,7 +1043,10 @@ export function BuildStreetScene({
   // the bottom row is the garden, the storage block and the civic lot.
   // Each row is cropped to its tallest building so the phone shows buildings, not sky.
   const stL = lv("storage");
-  const top1 = Math.max(0, G - sfH - (sf >= 8 ? 72 : 34) - 14);
+  const top1 = Math.max(
+    0,
+    G - sfH - Math.max(sf >= 8 ? 72 : 34, sg >= 4 ? 84 : sg >= 2 ? 62 : 0) - 14,
+  );
   const top2 = Math.max(
     0,
     G -
@@ -893,12 +1085,14 @@ export function BuildStreetScene({
           <g transform={`translate(-180 ${-top1})`}>
             {bg}
             {walkers}
+            {signBehind ? signage : null}
             {storefront}
+            {signBehind ? null : signage}
             {cold}
             {transit}
           </g>
           <g transform={`translate(0 ${ROW - top2})`}>
-            <g transform="translate(-180 0)">{bg}</g>
+            <g transform="translate(-180 0)">{bgPlain}</g>
             {production}
             {storage}
             <g transform="translate(-400 0)">{civic}</g>
@@ -910,7 +1104,9 @@ export function BuildStreetScene({
           {walkers}
           {production}
           {storage}
+          {signBehind ? signage : null}
           {storefront}
+          {signBehind ? null : signage}
           {cold}
           {civic}
           {transit}

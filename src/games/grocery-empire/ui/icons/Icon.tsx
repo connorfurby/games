@@ -27,6 +27,7 @@ export type ExtraIcon =
   | 'build-production'
   | 'build-transit'
   | 'build-civic'
+  | 'build-signage'
   | 'venture'
   | 'charter'
   | 'doctrine'
@@ -102,6 +103,7 @@ const PATHS: Record<IconName, string> = {
   'build-production': 'M4 18V9l4-4h8l4 4v9M8 18v-5h8v5',
   'build-transit': TRUCK,
   'build-civic': 'M4 20h16M6 20V8l6-4 6 4v12M10 12h4',
+  'build-signage': 'M4 5h16v9H4zM8 14v6M16 14v6M7 9h10',
   venture: 'M12 4v3M8 8h8l1 12H7L8 8zm0 0L6 5M16 8l2-3',
   charter: 'M6 4h9l3 3v13H6V4zm9 0v3h3M9 12h6M9 16h4',
   doctrine: 'M12 3l2 4 4 .6-3 3 .8 4.4L12 13.5 8.2 15l.8-4.4-3-3L10 7l2-4z',

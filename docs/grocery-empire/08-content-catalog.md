@@ -51,3 +51,8 @@ Traits: quick / dreamy / frugal / picky (±5%).
 Relics ~25/wing, survives rebrand. Do not casually change wing size (tests pin it): **25 per wing, Oddities 26**.
 
 **Wing sockets (SAVE 36):** the museum's sockets (3, or 5 once `pj-fifth-socket` is done / `socketsUnlocked ≥ 5`) also light *finished wings*. A finished wing's bonus counts only while it is lit, so lighting wing A at full sockets means leaving another wing dark. `MuseumSave.litWings: WingId[] | null` (mirrored to `state.relics.litWings` by `syncRelics`); `null` = the first `cap` finished wings in wing order, so nobody has to touch it. Pure helpers `effectiveLitWings` / `wingLightBlock` in `content/relicPerks.ts` back `museum.ts` (`litWingsOf`, `canLightWing`, `lightWing(m, wing, cap, swapOut?)`, `darkenWing`), the `setWingSocket { wing, on, swapOut? }` command and `litWingIds(s)` (read by `stats.ts` instead of every finished wing). Relic sockets (×1.35 / ×1.45) are a separate pool and unchanged. MuseumPanel "Wing sockets" section: Light / Leave dark per finished wing, Light disabled at full with the reason in its title. **No new relics or feats this phase** — the Horizon wing is already 25 and a feat for the Phase 8 verbs (ban, carry) would resize it; revisit in a later content phase.
+
+
+## Build tracks (2026-11-19)
+
+Storefront, Storage, Cold, Production, Transit, Civic, **Signage**. Every tier's card states its real effect (`BUILD_TIERS` in `balance.ts`). Civic has no style choice (by design).

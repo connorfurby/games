@@ -11,6 +11,12 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 - **Level-up moment**: confetti and a "Grand opening!" / "Built!" sign over the building that grew; the card itself glows. Reduced motion: sign only.
 - **Museum showcase grows through the run**: base 3 (5 with the fifth-socket project) +1 case at Era 3, 6, 9 and 12, +1 for Museum of Baskets (civic 5). Only cases the run has opened pay (`relicEffects` ignores sockets past `socketCapOf`); a locked "Another case · Opens in Era N" tile shows what's coming.
 
+## AN. Signage track (2026-11-19, on `main`)
+
+- **Seventh build track, Signage** (`content/builds.ts`, `BUILD_TIERS.signageDemand`, `signageMul` in `demandBreakdown`): Chalkboard ($120, Era 1) → Painted Sign → Neon Sign → Billboard → Video Tower → Sky Banner → Aurora Sign → Orbital Billboard (Era 11), +4% to +26% demand. Opens after $150 lifetime revenue. Bots buy it like any track (`BUILD_FILTERS`); late tiers have claim readers.
+- **Street art**: chalkboard by the door, rooftop board (behind the name plate) or facade board on tall stores, neon hum, video board, blimp with banner, aurora, a billboard in orbit. No flicker (owner rule: never flash).
+- Locked chips are muted by colour, not opacity, so their "go there" link keeps full contrast.
+
 ## AL. Loading and motion pass (2026-11-18, on `main`)
 
 - **Boot splash** in `index.html` (pure CSS, compositor-only animation) so the first frame is never white.

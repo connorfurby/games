@@ -459,8 +459,13 @@
     color: var(--ge-warn, #e0a43a);
   }
 
+  /* Muted by colour, not opacity, so a "go there" link inside stays readable. */
   .pf-chip--locked {
-    opacity: 0.7;
+    color: var(--ge-ink-muted);
+    border-style: dashed;
+  }
+  .pf-chip--locked .pf-chip__link {
+    color: var(--ge-ink);
   }
 
   .pf-chip--warn {

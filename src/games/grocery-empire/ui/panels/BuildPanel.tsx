@@ -29,6 +29,7 @@ const BUILD_ICON: Record<BuildFilter, ExtraIcon> = {
   production: 'build-production',
   transit: 'build-transit',
   civic: 'build-civic',
+  signage: 'build-signage',
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100
