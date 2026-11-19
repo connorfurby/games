@@ -15,6 +15,7 @@ Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**
 
 - **Seventh build track, Signage** (`content/builds.ts`, `BUILD_TIERS.signageDemand`, `signageMul` in `demandBreakdown`): Chalkboard ($120, Era 1) → Painted Sign → Neon Sign → Billboard → Video Tower → Sky Banner → Aurora Sign → Orbital Billboard (Era 11), +4% to +26% demand. Opens after $150 lifetime revenue. Bots buy it like any track (`BUILD_FILTERS`); late tiers have claim readers.
 - **Street art**: chalkboard by the door, rooftop board (behind the name plate) or facade board on tall stores, neon hum, video board, blimp with banner, aurora, a billboard in orbit. No flicker (owner rule: never flash).
+- **Suppliers dock redrawn** (`DockScene`): price board on a pole (▼ Low / ● Normal / ▲ High), road with trucks placed by their real arrival time and an ETA pill each, a RECEIVING warehouse whose bay door rolls up as a truck pulls in, crates stacked inside by backroom fill and a fill bar on the wall; a parked forklift when nothing is on the road. Replaced the doubled ticker and the empty tally box.
 - Locked chips are muted by colour, not opacity, so their "go there" link keeps full contrast.
 
 ## AL. Loading and motion pass (2026-11-18, on `main`)

@@ -2926,3 +2926,26 @@
   opacity: 0.6;
   margin-left: var(--s-1);
 }
+/* Dock scene (Suppliers): doors roll, trucks glide between ticks, prices breathe. */
+@layer panels {
+  .dk .dk-door {
+    transition: height 0.8s ease;
+  }
+  .dk .dk-truck {
+    transition: transform 1s linear;
+  }
+  .rm.is-live.dk .dk-price {
+    animation: dk-price 3s ease-in-out infinite;
+  }
+  @keyframes dk-price {
+    50% { opacity: 0.75; }
+  }
+  .ge-reduced-motion .dk .dk-door,
+  .ge-reduced-motion .dk .dk-truck {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dk .dk-door, .dk .dk-truck { transition: none; }
+    .dk .dk-price { animation: none; }
+  }
+}
