@@ -103,6 +103,12 @@ export function ChapterCard({
                 <dt>Time played</dt>
                 <dd>{clock(s.stats.playSec ?? 0)}</dd>
               </div>
+              {era > 0 && typeof s.stats.eraAt?.[era] === 'number' && typeof s.stats.eraAt?.[era - 1] === 'number' ? (
+                <div>
+                  <dt>Last chapter took</dt>
+                  <dd>{clock(Math.max(0, s.stats.eraAt[era]! - s.stats.eraAt[era - 1]!))}</dd>
+                </div>
+              ) : null}
             </dl>
             <ul className="ge-chapter__recap">
               {def.lines.slice(0, 3).map((line) => (
