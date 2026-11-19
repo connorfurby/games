@@ -107,6 +107,32 @@ export interface BondState {
   coupons: number
 }
 
+export interface TownState {
+  // Foundation
+  goodwill: number
+  donated: number
+  causes: Record<string, number>
+  causeGiven: Record<string, number>
+  awards: number
+  nextAwardAt: number
+  witnesses: number
+  // City hall
+  election: { office: string; dayAt: number; sway: Record<string, number>; backed: Record<string, number> } | null
+  officeHolders: Record<string, { cand: string; until: number }>
+  favors: number
+  wins: number
+  // Union
+  union: { formed: boolean; pay: number; benefits: number; hours: number; refusals: number; demand: { id: string; until: number } | null; nextDemandAt: number; strikeUntil: number }
+  // Press
+  outlets: string[]
+  cred: number
+  spinReadyAt: number
+  // Customers
+  segmentsOn: boolean
+  focus: string | null
+  loyalty: Record<string, number>
+}
+
 export interface CorpState {
   rng: number
   /** Seconds not yet ticked (the company layer ticks once a second). */
@@ -150,4 +176,5 @@ export interface CorpState {
   claimsPaid: number
   premiumsPaid: number
   seenSpoiled: number
+  town: TownState
 }

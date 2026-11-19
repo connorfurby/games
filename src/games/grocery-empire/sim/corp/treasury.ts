@@ -4,6 +4,7 @@ import { CREDIT, INSURE, WHOLESALE } from '../balance'
 import { log } from '../helpers'
 import type { GameState } from '../state'
 import { corpOf, round2, salesRate } from './core'
+import { causePerk } from './town'
 
 // ── Credit ───────────────────────────────────────────────────────────────
 
@@ -175,8 +176,12 @@ export function tickTreasury(s: GameState) {
   }
   const spoiled = s.stats?.spoiled ?? 0
   if (c.seenSpoiled < 0) c.seenSpoiled = spoiled
-  if (spoiled > c.seenSpoiled && insured(s, 'spoil')) {
-    insurePays(s, 'spoil', (spoiled - c.seenSpoiled) * WHOLESALE.baseCanCost * (s.wholesale?.index ?? 1))
+  if (spoiled > c.seenSpoiled) {
+    const loss = (spoiled - c.seenSpoiled) * WHOLESALE.baseCanCost * (s.wholesale?.index ?? 1)
+    if (insured(s, 'spoil')) insurePays(s, 'spoil', loss)
+    // The food bank takes what's left and the donation writes some of it back.
+    const refund = causePerk(s, 'spoilRefund')
+    if (refund > 0) s.cash = round2(s.cash + loss * refund)
   }
   c.seenSpoiled = spoiled
   if (insured(s, 'weather') && s.weather?.now && s.weather.now !== 'fair') {

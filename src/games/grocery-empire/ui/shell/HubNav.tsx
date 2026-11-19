@@ -1,4 +1,4 @@
-import { companyAttention } from '../../sim/corp/tick'
+import { companyAttention, townAttention } from '../../sim/corp/tick'
 import { LayoutGroup, motion } from 'motion/react'
 import { useState, type ReactNode } from 'react'
 import { doctrinesAtEra } from '../../content/era2'
@@ -71,7 +71,15 @@ export function HubNav({
   if (HUB_BY_ID.worlds.menus.some((m) => state.menus[m]) && worldsReady(state)) readyHubs.add('worlds')
 
   const companyNeeds = companyAttention(state)
+  const townNeeds = townAttention(state)
   const badgeFor = (h: HubDef, hit: boolean): ReactNode => {
+    if (h.id === 'town' && townNeeds.count > 0) {
+      return (
+        <span className="g2-hub__badge" aria-label={townNeeds.lines.join(', ')} title={townNeeds.lines.join(' · ')}>
+          {townNeeds.count}
+        </span>
+      )
+    }
     if (h.id === 'company' && companyNeeds.count > 0) {
       return (
         <span className="g2-hub__badge" aria-label={companyNeeds.lines.join(', ')} title={companyNeeds.lines.join(' · ')}>

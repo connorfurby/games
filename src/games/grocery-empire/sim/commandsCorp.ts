@@ -1,6 +1,6 @@
 import { cashLabel } from '@/shared/bn'
 import { TICKER_BY_ID } from '../content/corp/tickers'
-import { CO, CORP, CREDIT, RIVALRY } from './balance'
+import { CO, CORP, CREDIT, RIVALRY, TOWN } from './balance'
 import { LAWYERS, POLICY_BY_ID } from '../content/corp/legal'
 import { canSue, goToTrial, hireLawyer, lawyerCost, settle, settleCost, sueRival } from './corp/court'
 import { buyPolicy, dropPolicy, earlyPayoff, insured, issueBond, premiumPerMin, repayEarly } from './corp/treasury'
@@ -8,6 +8,22 @@ import type { Check, Command } from './commands'
 import { corpOf } from './corp/core'
 import { activeHedge, buyShares, hedgePremium, openFuture, sellShares, sharesFor } from './corp/market'
 import { companyOpen } from './corp/tick'
+import { CAUSE_BY_ID, OFFICE_BY_ID, OFFICES, OUTLETS } from '../content/corp/town'
+import { salesRate as salesRateOf } from './corp/core'
+import {
+  answerUnion,
+  backCandidate,
+  buyOutlet,
+  donate,
+  endStrike,
+  openSegments,
+  outletCost,
+  setFocus,
+  spin,
+  startElection,
+  townOf,
+  useFavor,
+} from './corp/town'
 import {
   buyBackStake,
   ceoOf,
@@ -76,6 +92,15 @@ export type CorpCmd =
   | Extract<Command, { type: 'repayBond' }>
   | Extract<Command, { type: 'buyPolicy' }>
   | Extract<Command, { type: 'dropPolicy' }>
+  | Extract<Command, { type: 'donate' }>
+  | Extract<Command, { type: 'openCampaign' }>
+  | Extract<Command, { type: 'backCandidate' }>
+  | Extract<Command, { type: 'useFavor' }>
+  | Extract<Command, { type: 'answerUnion' }>
+  | Extract<Command, { type: 'endStrike' }>
+  | Extract<Command, { type: 'buyOutlet' }>
+  | Extract<Command, { type: 'spin' }>
+  | Extract<Command, { type: 'setFocus' }>
 
 type H<C> = { can: (s: GameState, cmd: C) => Check; run: (s: GameState, cmd: C) => void }
 
@@ -197,6 +222,74 @@ export const corpHandlers: { [K in CorpCmd['type']]: H<Extract<CorpCmd, { type: 
   dropPolicy: {
     can: (s, cmd) => (insured(s, cmd.id) ? ok : no('Not covered.')),
     run: (s, cmd) => dropPolicy(s, cmd.id),
+  },
+  donate: {
+    can: (s, cmd) => {
+      const def = CAUSE_BY_ID[cmd.cause]
+      if (!def) return no('Unknown cause.')
+      if (s.era < def.era) return no(`Opens in Era ${def.era}.`)
+      if (!(TOWN.donateSec as readonly number[]).includes(cmd.sec)) return no('Pick an amount.')
+      return needCash(s, Math.round(salesRateOf(s) * cmd.sec * 100) / 100)
+    },
+    run: (s, cmd) => donate(s, cmd.cause, cmd.sec),
+  },
+  openCampaign: {
+    can: (s) => {
+      const t = townOf(s)
+      if (t.election) return no('A race is already on.')
+      if (!OFFICES.some((o) => s.era >= o.era && (t.officeHolders[o.id]?.until ?? 0) <= s.time)) return no('No seat is up for election right now.')
+      return ok
+    },
+    run: (s) => startElection(s),
+  },
+  backCandidate: {
+    can: (s, cmd) => {
+      const e = townOf(s).election
+      if (!e) return no('No race is on.')
+      if (!OFFICE_BY_ID[e.office]?.candidates.some((c) => c.id === cmd.cand)) return no('Not on the ballot.')
+      return needCash(s, Math.round(salesRateOf(s) * 60 * cmd.mins * 100) / 100)
+    },
+    run: (s, cmd) => backCandidate(s, cmd.cand, cmd.mins),
+  },
+  useFavor: {
+    can: (s) => (townOf(s).favors > 0 ? ok : no('Nobody owes you.')),
+    run: (s, cmd) => useFavor(s, cmd.id),
+  },
+  answerUnion: {
+    can: (s) => (townOf(s).union.demand ? ok : no('No demand on the table.')),
+    run: (s, cmd) => answerUnion(s, cmd.accept),
+  },
+  endStrike: {
+    can: (s) => (townOf(s).union.strikeUntil > s.time ? ok : no('Nobody is on strike.')),
+    run: (s) => endStrike(s),
+  },
+  buyOutlet: {
+    can: (s, cmd) => {
+      const o = OUTLETS.find((x) => x.id === cmd.id)
+      if (!o) return no('Unknown outlet.')
+      if (s.era < o.era) return no(`For sale from Era ${o.era}.`)
+      if (townOf(s).outlets.includes(cmd.id)) return no('Already yours.')
+      return needCash(s, outletCost(s, cmd.id))
+    },
+    run: (s, cmd) => buyOutlet(s, cmd.id),
+  },
+  spin: {
+    can: (s, cmd) => {
+      const t = townOf(s)
+      if (!t.outlets.length) return no('Buy a newspaper first.')
+      if (t.spinReadyAt > s.time) return no('The newsroom is still on the last story.')
+      if ((cmd.kind === 'attack' || cmd.kind === 'pump' || cmd.kind === 'endorse') && !cmd.target) return no('Pick a target.')
+      if (cmd.kind === 'attack' && !rivalActive(s, cmd.target ?? '')) return no('Not a live rival.')
+      if (cmd.kind === 'pump' && !corpOf(s).tickers[cmd.target ?? '']?.listed) return no('Not on the exchange.')
+      if (cmd.kind === 'endorse' && !t.election) return no('No race is on.')
+      if (cmd.kind === 'bury' && s.crime.scandalUntil <= s.time && s.crime.heat <= 0) return no('Nothing to bury.')
+      return ok
+    },
+    run: (s, cmd) => spin(s, cmd.kind, cmd.target),
+  },
+  setFocus: {
+    can: (s, cmd) => (cmd.id === null || openSegments(s).some((x) => x.id === cmd.id) ? ok : no('Not a customer group yet.')),
+    run: (s, cmd) => setFocus(s, cmd.id),
   },
   answerOffer: {
     can: (s, cmd) => {

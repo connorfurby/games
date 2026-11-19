@@ -5,6 +5,7 @@ import { tickCompany } from './company'
 import { tickRivalry } from './rivalry'
 import { tickCourt } from './court'
 import { tickTreasury } from './treasury'
+import { tickTown } from './town'
 import { tickMarket } from './market'
 
 export function companyOpen(s: GameState): boolean {
@@ -26,6 +27,7 @@ export function tickCorp(s: GameState, dt: number) {
     tickRivalry(s)
     tickCourt(s)
     tickTreasury(s)
+    tickTown(s)
   }
   if (c.acc > 1) c.acc = 0
 }
@@ -41,5 +43,16 @@ export function companyAttention(s: GameState): { count: number; lines: string[]
   const suits = c.suits.filter((x) => !x.yours).length
   if (suits) lines.push(suits === 1 ? 'You are being sued' : `${suits} lawsuits waiting`)
   if (c.arrears > 0) lines.push('Creditors are taking a cut of sales')
+  return { count: lines.length, lines }
+}
+
+/** Decisions waiting in the Town hub. */
+export function townAttention(s: GameState): { count: number; lines: string[] } {
+  const lines: string[] = []
+  const t = s.corp?.town
+  if (!t) return { count: 0, lines }
+  if (t.union.demand) lines.push('The union has a demand')
+  if (t.union.strikeUntil > s.time) lines.push('Your crew is on strike')
+  if (t.election && Object.keys(t.election.backed).length === 0) lines.push('An election is coming')
   return { count: lines.length, lines }
 }

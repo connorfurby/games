@@ -394,6 +394,14 @@ export function tickCompany(s: GameState) {
   }
 }
 
+/** Like companyBoost, but ignoring boosts whose label mentions `skip`. */
+export function companyBoostExcept(s: GameState, kind: 'demand' | 'wages' | 'ventures', skip: string): number {
+  if (!s.corp) return 1
+  let m = 1
+  for (const b of corpOf(s).boosts) if (b.kind === kind && b.until > s.time && !b.label.toLowerCase().includes(skip)) m *= b.mul
+  return m
+}
+
 export function companyBoost(s: GameState, kind: 'demand' | 'wages' | 'ventures'): number {
   if (!s.corp) return 1
   let m = 1

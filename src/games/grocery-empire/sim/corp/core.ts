@@ -57,6 +57,26 @@ export function emptyCorp(seed = 1): CorpState {
     claimsPaid: 0,
     premiumsPaid: 0,
     seenSpoiled: -1,
+    town: {
+      goodwill: 0,
+      donated: 0,
+      causes: {},
+      causeGiven: {},
+      awards: 0,
+      nextAwardAt: 900,
+      witnesses: 0,
+      election: null,
+      officeHolders: {},
+      favors: 0,
+      wins: 0,
+      union: { formed: false, pay: 0, benefits: 0, hours: 0, refusals: 0, demand: null, nextDemandAt: 0, strikeUntil: 0 },
+      outlets: [],
+      cred: 100,
+      spinReadyAt: 0,
+      segmentsOn: false,
+      focus: null,
+      loyalty: {},
+    },
   }
 }
 

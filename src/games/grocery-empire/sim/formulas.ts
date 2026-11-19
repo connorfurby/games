@@ -285,7 +285,7 @@ export function unitCost(s: GameState, cat: CategoryId, supplier: SupplierId = s
     wholesaleMul(s) *
     valueMul(s) *
     statCut(s, 'crateCut') *
-    corpCrateMul(s)
+    corpCrateMul(s, cat)
   if (supplier === 'b') base *= WHOLESALE.supplierB.discount
   if (
     cat === DEPTH.greengrocer.cat &&

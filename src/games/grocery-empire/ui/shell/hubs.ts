@@ -7,7 +7,7 @@ import type { IconName } from '../icons/Icon'
  * Eras 7+ add Worlds (Museum is always the last hub once unlocked).
  * Coach and More live in the HUD menu; Memos live in the Inbox drawer.
  */
-export type HubId = 'store' | 'supply' | 'team' | 'money' | 'company' | 'empire' | 'worlds' | 'museum'
+export type HubId = 'store' | 'supply' | 'team' | 'money' | 'company' | 'town' | 'empire' | 'worlds' | 'museum'
 
 export interface HubDef {
   id: HubId
@@ -53,6 +53,13 @@ export const HUBS: HubDef[] = [
     purpose: 'Markets, owners, rivals’ bosses, the courts, the community and the lab.',
     icon: 'books',
     menus: ['boardroom', 'market', 'treasury', 'court'],
+  },
+  {
+    id: 'town',
+    name: 'Town',
+    purpose: 'The foundation, city hall, the union, the press and your customers.',
+    icon: 'cityhall',
+    menus: ['customers', 'foundation', 'cityhall', 'union', 'press'],
   },
   {
     id: 'empire',
@@ -110,7 +117,7 @@ export function phoneBarHubs(unlocked: readonly HubId[]): HubId[] {
 export function overflowHubs(unlocked: readonly HubId[]): HubId[] {
   const have = new Set(unlocked)
   const out: HubId[] = []
-  for (const id of ['company', 'empire', 'worlds', 'museum'] as const) {
+  for (const id of ['company', 'town', 'empire', 'worlds', 'museum'] as const) {
     if (have.has(id)) out.push(id)
   }
   return out

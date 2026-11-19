@@ -29,6 +29,11 @@ export const MENU_IDS = [
   'boardroom',
   'treasury',
   'court',
+  'foundation',
+  'cityhall',
+  'union',
+  'press',
+  'customers',
   'coach',
   'more',
 ] as const
@@ -96,6 +101,36 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Courthouse',
     glyph: 'CT',
     purpose: 'Lawsuits against you and the ones you file. Settle, lawyer up or roll the dice.',
+  },
+  foundation: {
+    id: 'foundation',
+    name: 'Foundation',
+    glyph: 'FD',
+    purpose: 'Give to good causes. Goodwill brings shoppers, cools Heat and speaks up for you in court.',
+  },
+  cityhall: {
+    id: 'cityhall',
+    name: 'City Hall',
+    glyph: 'CH',
+    purpose: 'Back a candidate. Whoever wins sets the rules you trade under.',
+  },
+  union: {
+    id: 'union',
+    name: 'Union Hall',
+    glyph: 'UN',
+    purpose: 'Your crew’s union brings demands. Sign them, or risk a strike.',
+  },
+  press: {
+    id: 'press',
+    name: 'Press',
+    glyph: 'PR',
+    purpose: 'Own the news, then use it: praise yourself, slam a rival, bury a scandal.',
+  },
+  customers: {
+    id: 'customers',
+    name: 'Customers',
+    glyph: 'CU',
+    purpose: 'Who shops with you, what they want, and who you court.',
   },
   rivals: {
     id: 'rivals',

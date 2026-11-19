@@ -10,6 +10,7 @@ import { emptyCrime, type GameState } from '../state'
 import { alleyVetoed } from '../corp/company'
 import { corpHeatCoolMul } from '../corp/effects'
 import { insurePays } from '../corp/treasury'
+import { useWitnesses } from '../corp/town'
 
 /**
  * The Back Alley. Optional schemes pay now and add Heat; Heat cools over time. Pulling a scheme
@@ -115,6 +116,13 @@ export function punish(s: GameState, schemeId: string | null): PunishmentId {
     const roll = nextRng(s)
     p = roll < 0.34 ? 'scandal' : roll < 0.67 ? 'frozen' : 'probation'
     sec = CRIME.fineSec.severe
+  }
+  // Character witnesses from the foundation soften the sentence by one step.
+  if (p !== 'warning' && useWitnesses(s)) {
+    const softer: Record<PunishmentId, PunishmentId> = { warning: 'warning', fine: 'warning', padlock: 'fine', scandal: 'padlock', frozen: 'padlock', probation: 'padlock' }
+    p = softer[p]
+    sec = p === 'warning' ? CRIME.fineSec.warning : CRIME.fineSec.fine
+    log(s, 'Character witnesses from the community speak up for you. The judge goes easier.', 'info')
   }
   const fine = fineFor(s, sec)
   s.cash = round2(s.cash - fine)

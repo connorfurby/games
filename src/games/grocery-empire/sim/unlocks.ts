@@ -57,6 +57,15 @@ function tickMenus(s: GameState) {
   if (companyOpen(s) && (s.lifetimeRevenue >= CO.offerRevenue || s.era >= 2)) unlockMenu(s, 'boardroom')
   if (companyOpen(s)) unlockMenu(s, 'treasury')
   if (s.era >= 2 || (s.corp?.suits.length ?? 0) > 0) unlockMenu(s, 'court')
+  if (companyOpen(s)) {
+    unlockMenu(s, 'customers')
+    unlockMenu(s, 'foundation')
+  }
+  if (s.era >= 2) {
+    unlockMenu(s, 'cityhall')
+    unlockMenu(s, 'press')
+  }
+  if (s.corp?.town.union.formed) unlockMenu(s, 'union')
   if (s.era >= 7) unlockMenu(s, 'planets')
   if (s.era >= 8) unlockMenu(s, 'exchange')
   if (s.era >= 9) unlockMenu(s, 'cultivars')

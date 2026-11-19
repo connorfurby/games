@@ -543,6 +543,61 @@ export const INSURE = {
   /** Spoiled units are valued at the can price for the claim. */
 }
 
+/** The Town hub: foundation, city hall, union, press, customers. */
+export const TOWN = {
+  // Foundation
+  donateSec: [60, 300, 900] as const,
+  /** Goodwill per donated second of sales. */
+  goodwillPerSec: 0.05,
+  goodwillDecayPerMin: 0.01,
+  /** Demand per goodwill point, capped. */
+  goodwillDemand: 0.0015,
+  goodwillDemandCap: 0.08,
+  /** Character witnesses: this much goodwill softens a punishment by one step. */
+  witnessCost: 25,
+  /** Cause level n costs n × this many seconds of sales in donations. */
+  causeLevelSec: 120,
+  causeMax: 6,
+  perkAt: 3,
+  awardEverySec: 900,
+  awardGoodwill: 40,
+  // Elections
+  termSec: 1200,
+  campaignSec: 300,
+  /** Each donated minute of sales moves this much of the vote. */
+  donationSwayPerMin: 0.01,
+  swayCap: 0.35,
+  favorsPerWin: 2,
+  loserGrudgeHeat: 15,
+  // Union
+  unionStaff: 8,
+  unionEra: 2,
+  demandGapSec: 900,
+  demandWaitSec: 300,
+  strikeAfterRefusals: 2,
+  strikeSec: 180,
+  strikeDemand: 0.5,
+  // Press
+  credMax: 100,
+  credRegenPerMin: 4,
+  spinCooldownSec: 120,
+  puffDemandPer: 0.04,
+  puffSec: 300,
+  attackStock: 0.88,
+  attackFreezeSec: 180,
+  pumpStock: 1.15,
+  pumpHeat: 15,
+  endorseSway: 0.08,
+  // Customers
+  loyaltyStart: 50,
+  /** Loyalty moves this share of the way to its target each minute. */
+  loyaltyPull: 0.08,
+  focusPull: 1.6,
+  /** Demand: (loyalty − 50) / this, weighted by share; focus adds a flat bonus. */
+  loyaltyDiv: 500,
+  focusDemand: 0.03,
+}
+
 /** Your company: valuation, listing, quarters, owners and the board. */
 export const CO = {
   /** Company value = minutes of current sales × this, before brand and momentum. */

@@ -214,6 +214,15 @@ export type Command =
   | { type: 'repayBond'; id: number }
   | { type: 'buyPolicy'; id: string }
   | { type: 'dropPolicy'; id: string }
+  | { type: 'donate'; cause: string; sec: number }
+  | { type: 'openCampaign' }
+  | { type: 'backCandidate'; cand: string; mins: number }
+  | { type: 'useFavor'; id: string }
+  | { type: 'answerUnion'; accept: boolean }
+  | { type: 'endStrike' }
+  | { type: 'buyOutlet'; id: string }
+  | { type: 'spin'; kind: string; target?: string }
+  | { type: 'setFocus'; id: string | null }
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
