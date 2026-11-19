@@ -1,6 +1,7 @@
 import type { GameDefinition } from '@/shared/types'
 import { templateDefinition } from '@/games/_template/definition'
 import { GroceryEmpireApp } from '@/games/grocery-empire/ui/GroceryEmpireApp'
+import { SignalDecayApp } from '@/games/signal-decay/ui/SignalDecayApp'
 
 /** Locked shelf placeholders — copy `_template` when promoting one to playable. */
 function comingSoon(
@@ -29,14 +30,17 @@ export const GAMES: GameDefinition[] = [
     achievementNamespace: 'grocery-empire',
     component: GroceryEmpireApp,
   },
-  comingSoon({
-    id: 'coming-soon-a',
+  {
+    id: 'signal-decay',
     title: 'Signal Decay',
-    tagline: 'A radio idle. Coming soon.',
+    tagline: 'From one dial in a basement to the last hour of a broadcast that is already dying.',
     accent: '#2ec4b6',
     coverKey: 'signal',
+    status: 'playable',
+    defaultTexturePack: 'receipt-classic',
     achievementNamespace: 'signal',
-  }),
+    component: SignalDecayApp,
+  },
   comingSoon({
     id: 'coming-soon-b',
     title: 'Yard Sale Heist',

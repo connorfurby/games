@@ -1,0 +1,119 @@
+@layer motion {
+  .sd-fx {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 90;
+    overflow: hidden;
+  }
+
+  .sd-fx__floater {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-family: var(--sd-font-mono);
+    font-size: var(--t-xl);
+    font-weight: 600;
+    white-space: nowrap;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--sd-accent) 50%, transparent);
+    animation: sd-fx-float 0.9s ease-out forwards;
+  }
+
+  .sd-fx__floater--accent {
+    color: var(--sd-accent-hot);
+  }
+  .sd-fx__floater--tag {
+    color: var(--sd-tag);
+  }
+  .sd-fx__floater--warn {
+    color: var(--sd-warn);
+  }
+  .sd-fx__floater--danger {
+    color: var(--sd-danger);
+  }
+
+  .sd-fx__burst {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .sd-fx__spark {
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sd-accent-hot);
+    animation: sd-fx-spark 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  }
+
+  .sd-fx__spark--tag {
+    background: var(--sd-tag);
+  }
+  .sd-fx__spark--warn {
+    background: var(--sd-warn);
+  }
+  .sd-fx__spark--danger {
+    background: var(--sd-danger);
+  }
+
+  .is-flash-up {
+    animation: sd-fx-flash-up 0.6s ease-out;
+  }
+  .is-flash-down {
+    animation: sd-fx-flash-down 0.6s ease-out;
+  }
+
+  @keyframes sd-fx-float {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, calc(-50% - 44px));
+    }
+  }
+
+  @keyframes sd-fx-spark {
+    from {
+      opacity: 1;
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(var(--dx), var(--dy)) scale(0.3);
+    }
+  }
+
+  @keyframes sd-fx-flash-up {
+    from {
+      color: var(--sd-accent-hot);
+      text-shadow: 0 0 10px var(--sd-accent);
+    }
+  }
+
+  @keyframes sd-fx-flash-down {
+    from {
+      color: var(--sd-danger);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sd-fx__floater {
+      animation: sd-fx-fade 0.9s linear forwards;
+    }
+    .sd-fx__spark,
+    .is-flash-up,
+    .is-flash-down {
+      animation: none;
+    }
+  }
+
+  @keyframes sd-fx-fade {
+    to {
+      opacity: 0;
+    }
+  }
+}

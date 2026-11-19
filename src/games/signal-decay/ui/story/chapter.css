@@ -1,0 +1,80 @@
+@layer motion {
+  .sd-chapter {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: grid;
+    place-items: end center;
+    padding: 16px 16px calc(var(--sd-hubs-h, 64px) + 16px);
+    background: color-mix(in srgb, #000 62%, transparent);
+  }
+
+  .sd-chapter__card {
+    width: min(440px, 100%);
+    padding: 16px 16px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--sd-line-strong);
+    background: color-mix(in srgb, var(--sd-raised) 96%, #000);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+    color: var(--sd-ink);
+  }
+
+  .sd-chapter__card.is-in {
+    animation: sd-chapter-in 0.28s ease-out;
+  }
+
+  @keyframes sd-chapter-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .sd-chapter__kicker {
+    margin: 8px 0 0;
+    color: var(--sd-tag);
+    font-size: var(--t-2xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sd-chapter__card h2 {
+    margin: 4px 0 6px;
+    font-family: var(--sd-font-display, Fraunces, Georgia, serif);
+    font-size: var(--t-lg, 1.45rem);
+  }
+
+  .sd-chapter__epi,
+  .sd-chapter__body {
+    margin: 0 0 8px;
+    font-size: var(--t-sm);
+  }
+
+  .sd-chapter__epi {
+    color: var(--sd-muted);
+    font-family: var(--sd-font-display, Fraunces, Georgia, serif);
+  }
+
+  .sd-chapter__mission {
+    margin: 0 0 12px;
+    padding-left: 1.1rem;
+    font-size: var(--t-sm);
+  }
+
+  .sd-chapter__acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sd-chapter__card.is-in {
+      animation: none;
+    }
+  }
+}

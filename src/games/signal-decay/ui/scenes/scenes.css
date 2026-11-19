@@ -1,0 +1,81 @@
+@layer scenes {
+  .sd-plate {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    background: var(--sd-sunken);
+    overflow: hidden;
+  }
+  .sd-plate__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+  }
+  .sd-plate__veil {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, #05090c calc(var(--sd-plate-dim, 0.55) * 60%), transparent),
+      color-mix(in srgb, #05090c calc(var(--sd-plate-dim, 0.55) * 100%), transparent)
+    );
+  }
+  .sd-plate.is-solid .sd-plate__veil {
+    background: var(--sd-sunken);
+  }
+  .sd-plate__body {
+    position: relative;
+    min-width: 0;
+  }
+
+  /* Air + Plant: the shack art lets the plate bleed through the sky and wall. */
+  .sd-plate--air .sd-shack__art,
+  .sd-plate--plant .sd-shack__art {
+    opacity: 0.88;
+  }
+
+  /* Crew: translucent shift cards over the plate. */
+  .sd-plate--crew .sd-shift {
+    background: color-mix(in srgb, var(--sd-panel) 72%, transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  /* Net: rings float over the plate. */
+  .sd-plate--net .sd-rings {
+    background: transparent;
+  }
+
+  /* Books: the ledger keeps its ruled lines but lets the plate show at the edges. */
+  .sd-plate--books .sd-ledger {
+    background:
+      repeating-linear-gradient(
+        180deg,
+        transparent 0 1.6rem,
+        color-mix(in srgb, var(--sd-line) 55%, transparent) 1.6rem calc(1.6rem + 1px)
+      ),
+      color-mix(in srgb, var(--sd-raised) 78%, transparent);
+  }
+
+  .sd-shack__props {
+    pointer-events: none;
+  }
+
+  .sd-portrait {
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--sd-line-strong, var(--sd-line));
+    background: var(--sd-sunken);
+  }
+  .sd-portrait.is-letter {
+    display: grid;
+    place-items: center;
+    font-family: var(--sd-font-display);
+    color: var(--sd-accent-hot);
+  }
+}

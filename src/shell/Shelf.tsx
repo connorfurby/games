@@ -5,6 +5,9 @@ import { ACHIEVEMENTS } from '@/achievements/registry'
 import { TEXTURE_PACKS } from '@/cosmetics/packs'
 import { GAMES } from '@/games/registry'
 import { GE_COVER, PLATES } from '@/games/grocery-empire/art/cast'
+import { SD_COVER } from '@/games/signal-decay/art/cast'
+import { ERA_TITLES as SD_ERA_TITLES } from '@/games/signal-decay/sim/balance'
+import { PRIMARY_SAVE_ID as SD_PRIMARY_SAVE_ID } from '@/games/signal-decay/sim/saveKey'
 import { ERA_STORY } from '@/games/grocery-empire/content/lore'
 import { latestNews, newsArt } from '@/games/grocery-empire/content/news'
 import { LESSON_COUNT, nextLesson } from '@/games/grocery-empire/content/wiki/lessons'
@@ -33,8 +36,22 @@ interface SaveGlance {
   era?: number
   cash?: number
   stats?: { sold?: number; playSec?: number }
-  rates?: { soldPerSec?: number }
+  rates?: { soldPerSec?: number; revenuePerSec?: number }
   tutorials?: { done?: Record<string, boolean> }
+  depth?: { stars?: number; cleanLogsLifetime?: number }
+  time?: number
+}
+
+function coverForGame(id: string): string | null {
+  if (id === 'grocery-empire') return GE_COVER
+  if (id === 'signal-decay') return SD_COVER
+  return null
+}
+
+function loadGlance(gameId: string): SaveGlance | null {
+  if (gameId === 'grocery-empire') return loadGame<SaveGlance>('grocery-empire')
+  if (gameId === 'signal-decay') return loadGame<SaveGlance>(SD_PRIMARY_SAVE_ID)
+  return null
 }
 
 function formatAge(ms: number): string {
@@ -62,7 +79,9 @@ export function Shelf() {
   const nav = useNavigate()
   const game = GAMES.find((g) => g.id === selected) ?? GAMES[0]
   const playable = game.status === 'playable'
-  const save = playable ? loadGame<SaveGlance>('grocery-empire') : null
+  const isGe = game.id === 'grocery-empire'
+  const isSd = game.id === 'signal-decay'
+  const save = playable ? loadGlance(game.id) : null
   const bulletin = latestNews()
 
   const continuePlay = useCallback(() => {
@@ -115,13 +134,23 @@ export function Shelf() {
 
   const age = save && typeof save.lastSavedAt === 'number' && save.lastSavedAt > 0 ? formatAge(now - save.lastSavedAt) : null
   const era = typeof save?.era === 'number' ? Math.max(0, Math.floor(save.era)) : null
-  const eraTitle = era != null ? ERA_STORY[era]?.title : null
+  const eraTitle =
+    era != null ? (isSd ? SD_ERA_TITLES[era] : ERA_STORY[era]?.title) : null
   const baskets = typeof save?.baskets === 'number' ? Math.floor(save.baskets) : null
-  const soldRate = save?.rates?.soldPerSec
-  const rateText = typeof soldRate === 'number' && Number.isFinite(soldRate) ? `${soldRate < 100 ? soldRate.toFixed(1) : qty(soldRate, 'named')}/s` : '—'
-  const playSec = save?.stats?.playSec ?? 0
-  const lesson = nextLesson(era ?? 0, save?.tutorials?.done ?? {})
-  const lessonsDone = Object.values(save?.tutorials?.done ?? {}).filter(Boolean).length
+  const cash = typeof save?.cash === 'number' ? save.cash : null
+  const stars = typeof save?.depth?.stars === 'number' ? save.depth.stars : null
+  const soldRate = isSd ? save?.rates?.revenuePerSec : save?.rates?.soldPerSec
+  const rateText =
+    typeof soldRate === 'number' && Number.isFinite(soldRate)
+      ? `${soldRate < 100 ? soldRate.toFixed(1) : qty(soldRate, 'named')}/s`
+      : '—'
+  const playSec = isSd
+    ? Math.floor(typeof save?.time === 'number' ? save.time : 0)
+    : (save?.stats?.playSec ?? 0)
+  const lesson = isGe ? nextLesson(era ?? 0, save?.tutorials?.done ?? {}) : null
+  const lessonsDone = isGe
+    ? Object.values(save?.tutorials?.done ?? {}).filter(Boolean).length
+    : 0
   const awards = Object.keys(meta.achievements).length
   const relicCount = Object.keys(museumStore.get().relics ?? {}).length
   const pack = TEXTURE_PACKS.find((p) => p.id === meta.equippedPack) ?? TEXTURE_PACKS[0]
@@ -130,6 +159,14 @@ export function Shelf() {
   const [newGameOpen, setNewGameOpen] = useState(false)
   const [dailyAsk, setDailyAsk] = useState(false)
   const newGame = () => {
+    if (isSd) {
+      if (save && !window.confirm('Start a new Signal Decay? This wipes the current local save.')) return
+      import('@/games/signal-decay/sim/engine').then(({ getSignalEngine }) => {
+        getSignalEngine().newGame()
+        nav(`/play/${game.id}`)
+      })
+      return
+    }
     if (!save && relicCount === 0 && awards === 0) {
       // Nothing to lose and nothing to keep: just start.
       engine.newGame()
@@ -155,7 +192,7 @@ export function Shelf() {
     else beginDaily()
   }
 
-  const cover = game.id === 'grocery-empire' ? GE_COVER : null
+  const cover = coverForGame(game.id)
   const bulletinArt = newsArt(bulletin)
   const bulletinPlate = bulletinArt === 'worlds' || bulletinArt === 'desk' ? null : PLATES[bulletinArt]
 
@@ -206,9 +243,11 @@ export function Shelf() {
                     <Button tone="free" size="lg" className="hm-play" onClick={continuePlay}>
                       {save ? 'Continue' : 'Start'}
                     </Button>
-                    <Button tone="secondary" size="lg" onClick={startDaily} title={save ? 'A fresh start shared by everyone today. Your run is kept in save slot 3.' : 'A fresh start shared by everyone today.'}>
-                      Today&apos;s corner
-                    </Button>
+                    {isGe ? (
+                      <Button tone="secondary" size="lg" onClick={startDaily} title={save ? 'A fresh start shared by everyone today. Your run is kept in save slot 3.' : 'A fresh start shared by everyone today.'}>
+                        Today&apos;s corner
+                      </Button>
+                    ) : null}
                     {save ? (
                       <Button tone="ghost" size="lg" onClick={newGame}>
                         New game
@@ -229,53 +268,80 @@ export function Shelf() {
                         <span className="hm-save__n">{era ?? 0}</span>
                         <div>
                           <span className="sd-eyebrow">Your run{age ? ` · saved ${age}` : ''}</span>
-                          <strong>{eraTitle ?? 'The Counter'}</strong>
+                          <strong>{eraTitle ?? (isSd ? 'The Shack' : 'The Counter')}</strong>
                         </div>
                       </div>
                       <div className="sd-stats">
-                        <div className="sd-stat">
-                          <span>Baskets</span>
-                          <strong title={baskets != null ? String(baskets) : undefined}>{baskets != null ? qty(baskets, 'named') : '—'}</strong>
-                        </div>
-                        <div className="sd-stat">
-                          <span>Selling</span>
-                          <strong>{rateText}</strong>
-                        </div>
-                        <div className="sd-stat">
-                          <span>Played</span>
-                          <strong>{playTime(playSec)}</strong>
-                        </div>
+                        {isSd ? (
+                          <>
+                            <div className="sd-stat">
+                              <span>Cash</span>
+                              <strong>{cash != null ? `$${Math.floor(cash)}` : '—'}</strong>
+                            </div>
+                            <div className="sd-stat">
+                              <span>Air</span>
+                              <strong>{rateText}</strong>
+                            </div>
+                            <div className="sd-stat">
+                              <span>Stars</span>
+                              <strong>{stars != null ? stars.toFixed(1) : '—'}</strong>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="sd-stat">
+                              <span>Baskets</span>
+                              <strong title={baskets != null ? String(baskets) : undefined}>{baskets != null ? qty(baskets, 'named') : '—'}</strong>
+                            </div>
+                            <div className="sd-stat">
+                              <span>Selling</span>
+                              <strong>{rateText}</strong>
+                            </div>
+                            <div className="sd-stat">
+                              <span>Played</span>
+                              <strong>{playTime(playSec)}</strong>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   ) : (
                     <p className="hm-first">
-                      A neighbourhood shelf, one price and a stack of crates. See how far one counter can go.
+                      {isSd
+                        ? 'One dial in a basement. Hold the lock, log a clean copy, and grow a Net that is already dying.'
+                        : 'A neighbourhood shelf, one price and a stack of crates. See how far one counter can go.'}
                     </p>
                   )}
-                  <div className="hm-daily" aria-label="Today's corner">
-                    <div className="hm-daily__copy">
-                      <strong>Today&apos;s corner · {dailyTheme(dailyToday.seed)}</strong>
-                      <span>
-                        {bestToday ? `Best today: ${qty(bestToday.baskets, 'named')} baskets.` : 'No run yet today.'}{' '}
-                        {(meta.dailyStreak ?? 0) > 0 ? `Streak: ${meta.dailyStreak} day${meta.dailyStreak === 1 ? '' : 's'}.` : 'Play any day to start a streak.'}
-                      </span>
-                    </div>
-                    <ol className="hm-week" aria-label="This week">
-                      {streakWeek(meta.lastDailyStamp ?? null, meta.dailyStreak ?? 0).map((d) => (
-                        <li
-                          key={d.day}
-                          className={`hm-week__day${d.stamped ? ' is-on' : ''}${d.today ? ' is-today' : ''}${d.future ? ' is-future' : ''}`}
-                          title={`${d.day}${d.stamped ? ' · played' : d.future ? '' : ' · missed'}`}
-                        >
-                          <span>{d.letter}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                  <p className="hm-note">
-                    Today&apos;s corner is the same fresh start for everyone, new each day.{save ? ' Your current run waits safely in save slot 3.' : ''}
-                    {dailyActive ? ' You are playing it now.' : ''}
-                  </p>
+                  {isGe ? (
+                    <>
+                      <div className="hm-daily" aria-label="Today's corner">
+                        <div className="hm-daily__copy">
+                          <strong>Today&apos;s corner · {dailyTheme(dailyToday.seed)}</strong>
+                          <span>
+                            {bestToday ? `Best today: ${qty(bestToday.baskets, 'named')} baskets.` : 'No run yet today.'}{' '}
+                            {(meta.dailyStreak ?? 0) > 0 ? `Streak: ${meta.dailyStreak} day${meta.dailyStreak === 1 ? '' : 's'}.` : 'Play any day to start a streak.'}
+                          </span>
+                        </div>
+                        <ol className="hm-week" aria-label="This week">
+                          {streakWeek(meta.lastDailyStamp ?? null, meta.dailyStreak ?? 0).map((d) => (
+                            <li
+                              key={d.day}
+                              className={`hm-week__day${d.stamped ? ' is-on' : ''}${d.today ? ' is-today' : ''}${d.future ? ' is-future' : ''}`}
+                              title={`${d.day}${d.stamped ? ' · played' : d.future ? '' : ' · missed'}`}
+                            >
+                              <span>{d.letter}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                      <p className="hm-note">
+                        Today&apos;s corner is the same fresh start for everyone, new each day.{save ? ' Your current run waits safely in save slot 3.' : ''}
+                        {dailyActive ? ' You are playing it now.' : ''}
+                      </p>
+                    </>
+                  ) : isSd ? (
+                    <p className="hm-note">Clarity decays. Antenna raises the window. The Next Goal strip never strands you.</p>
+                  ) : null}
                 </>
               ) : (
                 <p className="hm-first">This game is not ready yet. Check back later.</p>
@@ -306,7 +372,13 @@ export function Shelf() {
                     transition={{ type: 'spring', stiffness: 380, damping: 28 }}
                     onClick={() => setSelected(g.id)}
                   >
-                    {g.id === 'grocery-empire' ? <span className="hm-spine__cover" style={{ backgroundImage: `url(${GE_COVER})` }} aria-hidden /> : null}
+                    {coverForGame(g.id) ? (
+                      <span
+                        className="hm-spine__cover"
+                        style={{ backgroundImage: `url(${coverForGame(g.id)})` }}
+                        aria-hidden
+                      />
+                    ) : null}
                     <span className="hm-spine__band" aria-hidden />
                     <span className="hm-spine__title">{g.title}</span>
                     <span className="hm-spine__status">{g.status === 'playable' ? 'Playable' : 'Coming soon'}</span>

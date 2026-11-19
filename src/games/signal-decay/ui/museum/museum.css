@@ -1,0 +1,114 @@
+@layer panels {
+  .sd-museum {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+  .sd-museum__purpose {
+    margin: 0;
+    font-size: var(--t-sm);
+    color: var(--sd-muted);
+  }
+  .sd-museum__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .sd-museum__title {
+    margin: 0.25rem 0 0;
+    font-family: var(--sd-font-display);
+    font-size: var(--t-md);
+  }
+  .sd-museum__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+  .sd-relic,
+  .sd-rivalcase {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--sd-line);
+    background: var(--sd-sunken);
+    font-size: var(--t-sm);
+  }
+  .sd-relic span,
+  .sd-rivalcase span {
+    font-size: var(--t-2xs);
+    color: var(--sd-muted);
+  }
+  .sd-relic:not(.is-owned),
+  .sd-rivalcase.is-locked {
+    opacity: 0.5;
+  }
+  .sd-relic.is-owned {
+    border-color: var(--sd-tag);
+  }
+  .sd-relic.is-owned strong {
+    color: var(--sd-tag);
+  }
+  .sd-museum__rivals {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .sd-rivalcase > div:first-child {
+    display: flex;
+    flex-direction: column;
+  }
+  .sd-museum__facings {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .sd-museum__facings li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--sd-line);
+    font-size: var(--t-sm);
+  }
+  .sd-museum__facings span {
+    color: var(--sd-muted);
+    text-align: right;
+  }
+
+  .sd-museum__tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .sd-rivalcase__row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .sd-rivalcase__row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+  .sd-chest {
+    display: block;
+  }
+  .sd-chest summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  .sd-chest__items {
+    margin: 0.35rem 0 0;
+    padding-left: 1rem;
+    font-size: var(--t-2xs);
+    color: var(--sd-muted);
+  }
+}
