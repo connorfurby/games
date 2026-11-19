@@ -179,7 +179,7 @@ export function RivalBosses() {
                     In court with them
                   </Button>
                 ) : null}
-                {t?.listed ? (
+                {t?.listed && s.menus.market ? (
                   <Button size="sm" tone="ghost" onClick={() => setActiveMenu('market')}>
                     {def.name} on the Exchange
                   </Button>

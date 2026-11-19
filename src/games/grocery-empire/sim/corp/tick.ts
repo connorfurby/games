@@ -1,4 +1,5 @@
-import { CORP } from '../balance'
+import type { MenuId } from '../../content/menus'
+import { CO, CORP } from '../balance'
 import type { GameState } from '../state'
 import { corpOf, salesRate } from './core'
 import { tickCompany } from './company'
@@ -8,9 +9,35 @@ import { tickTreasury } from './treasury'
 import { tickTown } from './town'
 import { tickMore } from './more'
 import { tickMarket } from './market'
+import { tickAmbitions } from './ambitions'
 
 export function companyOpen(s: GameState): boolean {
   return s.era >= 2 || (s.era >= 1 && s.lifetimeRevenue >= CORP.openRevenue)
+}
+
+/**
+ * When each company and town screen opens. Early eras get the friendly ones (giving,
+ * customers, a first investor); the sharp tools (bonds, executives, franchises) come
+ * once the store can carry them.
+ */
+export const CORP_OPENS: { id: MenuId; when: (s: GameState) => boolean; why: string }[] = [
+  { id: 'foundation', when: (s) => s.era >= 1 && s.lifetimeRevenue >= CORP.openRevenue, why: `Era 1, after ${CORP.openRevenue} in sales` },
+  { id: 'customers', when: (s) => s.era >= 1 && s.lifetimeRevenue >= CORP.openRevenue * 4, why: 'Era 1, a little later' },
+  { id: 'boardroom', when: (s) => s.era >= 2 || (s.era >= 1 && s.lifetimeRevenue >= CO.offerRevenue), why: 'when investors start to notice (late Era 1)' },
+  { id: 'market', when: (s) => s.era >= 2, why: 'Era 2' },
+  { id: 'court', when: (s) => s.era >= 2 || (s.corp?.suits.length ?? 0) > 0, why: 'Era 2 (or your first lawsuit)' },
+  { id: 'cityhall', when: (s) => s.era >= 3 || (s.era >= 2 && s.lifetimeRevenue >= CO.offerRevenue * 200), why: 'early Era 2' },
+  { id: 'press', when: (s) => s.era >= 3 || (s.era >= 2 && s.lifetimeRevenue >= CO.offerRevenue * 1e4), why: 'mid Era 2, once the papers care' },
+  { id: 'lab', when: (s) => s.era >= 3 || (s.era >= 2 && s.lifetimeRevenue >= CO.offerRevenue * 1e6), why: 'later in Era 2' },
+  { id: 'union', when: (s) => !!s.corp?.town.union.formed, why: 'when your crew reaches eight' },
+  { id: 'treasury', when: (s) => s.era >= 3 || (s.era >= 2 && s.lifetimeRevenue >= CO.offerRevenue * 1e7), why: 'late Era 2' },
+  { id: 'execs', when: (s) => s.era >= 3, why: 'Era 3' },
+  { id: 'property', when: (s) => s.era >= 4 || (s.era >= 3 && s.lifetimeRevenue >= CO.offerRevenue * 2e9), why: 'later in Era 3' },
+  { id: 'franchise', when: (s) => s.era >= 4, why: 'Era 4' },
+]
+
+export function corpMenusOpen(s: GameState): MenuId[] {
+  return CORP_OPENS.filter((o) => o.when(s)).map((o) => o.id)
 }
 
 /** The company layer ticks once per simulated second. */
@@ -30,6 +57,7 @@ export function tickCorp(s: GameState, dt: number) {
     tickTreasury(s)
     tickTown(s)
     tickMore(s)
+    tickAmbitions(s)
   }
   if (c.acc > 1) c.acc = 0
 }

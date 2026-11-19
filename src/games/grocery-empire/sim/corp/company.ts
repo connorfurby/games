@@ -1,3 +1,4 @@
+import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import { OWNER_BY_ID, OWNERS, PROPOSAL_BY_ID, PROPOSALS, type OwnerLever, type ProposalDef } from '../../content/corp/owners'
 import { RIVAL_BY_ID, type RivalId } from '../../content/rivals'
@@ -267,7 +268,7 @@ export function tally(s: GameState, youYes: boolean | null) {
 const RIVAL_NAME = (id: string) => RIVAL_BY_ID[id as RivalId]?.name ?? id
 
 export function lobbyCost(s: GameState): number {
-  return round2(salesRate(s) * CO.lobbySec)
+  return round2(salesRate(s) * CO.lobbySec * (1 - upgradeEffect(s, 'proxy-advisors')))
 }
 
 export function lobby(s: GameState, owner: string) {
@@ -326,7 +327,7 @@ export function outsideShare(s: GameState): number {
 
 /** Profit share paid to outside owners, per second. */
 export function payoutPerSec(s: GameState): number {
-  return salesRate(s) * CO.payoutShare * outsideShare(s)
+  return salesRate(s) * CO.payoutShare * outsideShare(s) * (1 - upgradeEffect(s, 'ir-desk')) * ((s.memos['shareholder-letter'] ?? 0) > 0 ? 0.9 : 1)
 }
 
 // ── Tick (once a second) ─────────────────────────────────────────────────

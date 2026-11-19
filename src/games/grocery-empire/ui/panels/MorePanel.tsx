@@ -1,3 +1,4 @@
+import type { MenuId } from '../../content/menus'
 import { DAILY_RULE_TEXT, dailyRuleForSeed } from '../../content/dailyRules'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -35,6 +36,7 @@ import { Panel } from '../components/Panel'
 import { Sparkline } from '../components/Sparkline'
 import { withCurtain } from '../components/curtainBus'
 import { RoadAhead } from '../shell/RoadAhead'
+import { SideRoads } from '../shell/SideRoads'
 import { RunStory } from '../shell/RunStory'
 
 export type MoreSection = 'run' | 'settings' | 'saves' | 'progress' | 'go'
@@ -48,7 +50,7 @@ export function MorePanel() {
   )
 }
 
-export function MoreSections({ only }: { only?: MoreSection }) {
+export function MoreSections({ only, onOpenMenu }: { only?: MoreSection; onOpenMenu?: (m: MenuId) => void }) {
   const show = (sec: MoreSection) => !only || only === sec
   const { state: s, tick, dispatch, photoMode, setPhotoMode, reducedMotion } = useGame()
   const { meta, updateSettings } = useMeta()
@@ -424,6 +426,7 @@ export function MoreSections({ only }: { only?: MoreSection }) {
         ) : null}
 
         {show('progress') ? <RoadAhead /> : null}
+        {show('progress') ? <SideRoads onOpen={onOpenMenu} /> : null}
         {show('progress') ? <RunStory /> : null}
         {show('progress') ? (
         <section className="ge-more-block">

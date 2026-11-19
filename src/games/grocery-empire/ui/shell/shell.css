@@ -2494,3 +2494,30 @@
     }
   }
 }
+
+@layer shell {
+  .sr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .sr-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 8px 12px;
+    border: 1px solid rgb(95 211 138 / 0.25);
+    border-radius: var(--g2-r-sm, 8px);
+    background: rgb(95 211 138 / 0.06);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .sr-row:hover { background: rgb(95 211 138 / 0.12); }
+  .sr-row:focus-visible { outline: 2px solid #5fd38a; outline-offset: 2px; }
+  .sr-row > svg { flex: none; margin-top: 2px; color: #5fd38a; }
+  .sr-body { display: grid; gap: 2px; min-width: 0; flex: 1; }
+  .sr-body > span { color: var(--ge-muted); font-size: var(--t-xs); overflow-wrap: anywhere; }
+  .sr-bar { display: block; height: 4px; border-radius: 2px; background: rgb(255 255 255 / 0.08); overflow: hidden; margin-top: 2px; }
+  .sr-bar i { display: block; height: 100%; background: #5fd38a; }
+  .sr-next { margin: var(--s-2) 0 0; font-size: var(--t-sm); color: var(--ge-muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+}

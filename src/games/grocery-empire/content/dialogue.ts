@@ -33,6 +33,19 @@ const MENU_SPEAKER: Partial<Record<MenuId, SpeakerId>> = {
   empire: 'operations',
   coach: 'operations',
   more: 'operations',
+  foundation: 'clerk',
+  customers: 'clerk',
+  boardroom: 'operations',
+  market: 'operations',
+  cityhall: 'lobbyist',
+  court: 'lobbyist',
+  press: 'lobbyist',
+  lab: 'cold',
+  union: 'clerk',
+  treasury: 'operations',
+  execs: 'operations',
+  property: 'guardian',
+  franchise: 'guardian',
 }
 
 function menuLine(id: MenuId): DialogueLine | null {
@@ -782,6 +795,20 @@ const MENU_IDS_FOR_DIALOGUE: MenuId[] = [
   'fleet',
   'empire',
   'coach',
+  // Company and town screens (opened a few at a time; see CORP_OPENS).
+  'foundation',
+  'customers',
+  'boardroom',
+  'market',
+  'cityhall',
+  'court',
+  'press',
+  'lab',
+  'union',
+  'treasury',
+  'execs',
+  'property',
+  'franchise',
 ]
 
 const MENU_LINES: DialogueLine[] = MENU_IDS_FOR_DIALOGUE.map(menuLine).filter(

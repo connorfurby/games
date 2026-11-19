@@ -102,7 +102,7 @@ export function ToolsDrawer({
         ) : active === 'run' ? (
           <>
             <MoreSections only="run" />
-            <MoreSections only="progress" />
+            <MoreSections only="progress" onOpenMenu={onOpenMenu} />
             <MoreSections only="go" />
           </>
         ) : (

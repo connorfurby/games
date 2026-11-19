@@ -195,4 +195,8 @@ export interface CorpState {
   seenSpoiled: number
   town: TownState
   more: Stage6State
+  /** Ambition id → company clock when it paid out. */
+  ambitions: Record<string, number>
+  /** Cash paid by ambitions this run. */
+  ambitionCash: number
 }

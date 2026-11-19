@@ -1,3 +1,4 @@
+import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import { CEOS, warBeats, type CeoMove, type WarMove } from '../../content/corp/ceos'
 import { RIVAL_BY_ID, RIVALS, type RivalId } from '../../content/rivals'
@@ -123,7 +124,7 @@ export function buyBackStake(s: GameState, id: string) {
 // ── Head-to-head price war ───────────────────────────────────────────────
 
 export function warRoundCost(s: GameState, move: WarMove) {
-  return round2(salesRate(s) * RIVALRY.warRoundCostSec[move])
+  return round2(salesRate(s) * RIVALRY.warRoundCostSec[move] * (1 - upgradeEffect(s, 'war-room')))
 }
 
 function rollNext(s: GameState, id: string, lastYou: WarMove | null): WarMove {

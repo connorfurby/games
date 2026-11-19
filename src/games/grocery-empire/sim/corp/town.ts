@@ -1,3 +1,4 @@
+import { upgradeEffect } from '../../content/upgrades'
 import { CAUSE_BY_ID, CAUSES, OFFICE_BY_ID, OFFICES, OUTLETS, SEGMENTS, UNION_DEMANDS, type CausePerk, type PlatformLever } from '../../content/corp/town'
 import { RIVAL_BY_ID, type RivalId } from '../../content/rivals'
 import { CRIME, TOWN } from '../balance'
@@ -19,7 +20,7 @@ export function townOf(s: GameState): TownState {
 
 export function causeLevelCost(s: GameState, id: string): number {
   const lvl = townOf(s).causes[id] ?? 0
-  return round2(salesRate(s) * TOWN.causeLevelSec * (lvl + 1))
+  return round2(salesRate(s) * TOWN.causeLevelSec * (lvl + 1) * (1 - upgradeEffect(s, 'grant-writers')))
 }
 
 /** Perk strength from a cause (0 below level 3, then growing slowly). */
@@ -60,7 +61,8 @@ export function levelThreshold(s: GameState, lvl: number): number {
 
 export function goodwillDemand(s: GameState): number {
   if (!s.corp) return 0
-  return Math.min(TOWN.goodwillDemandCap, s.corp.town.goodwill * TOWN.goodwillDemand)
+  const charter = (s.memos['giving-charter'] ?? 0) > 0
+  return Math.min(TOWN.goodwillDemandCap * (charter ? 1.2 : 1), s.corp.town.goodwill * TOWN.goodwillDemand * (charter ? 1.15 : 1))
 }
 
 /** Character witnesses: goodwill buys a softer sentence. Returns true if it was used. */
@@ -228,7 +230,8 @@ export function buyOutlet(s: GameState, id: string) {
 
 export function pressReach(s: GameState): number {
   if (!s.corp) return 0
-  return s.corp.town.outlets.reduce((a, id) => a + (OUTLETS.find((o) => o.id === id)?.reach ?? 0), 0)
+  const base = s.corp.town.outlets.reduce((a, id) => a + (OUTLETS.find((o) => o.id === id)?.reach ?? 0), 0)
+  return base * (1 + upgradeEffect(s, 'newsroom'))
 }
 
 function credMul(s: GameState) {
@@ -351,7 +354,7 @@ export function tickTown(s: GameState) {
     u.nextDemandAt = s.time + TOWN.demandGapSec
   }
   // The press regains its credibility.
-  if (t.cred < TOWN.credMax) t.cred = Math.min(TOWN.credMax, t.cred + (TOWN.credRegenPerMin * (1 + execPower(s, 'cmo') * 10)) / 60)
+  if (t.cred < TOWN.credMax) t.cred = Math.min(TOWN.credMax, t.cred + (TOWN.credRegenPerMin * (1 + execPower(s, 'cmo') * 10) * ((s.memos['open-books'] ?? 0) > 0 ? 2 : 1)) / 60)
   // Customers drift toward how well you fit them (only once you start watching them).
   if (t.segmentsOn) {
     for (const x of openSegments(s)) {

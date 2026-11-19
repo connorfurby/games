@@ -169,6 +169,7 @@ const TREE_TINT: Record<TreeId, string> = {
   exchange: '#7eb0d4',
   cultivar: '#8fd39a',
   signal: '#d7a4e8',
+  company: '#e0a96f',
 }
 
 function toTreeNode(v: NodeView, fmt: Parameters<typeof money>[1]): TreeNode {

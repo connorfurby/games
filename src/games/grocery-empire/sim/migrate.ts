@@ -1482,6 +1482,7 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       }
 
       // SAVE 44: the company layer (deep-filled onto defaults; junk dropped).
+      // SAVE 45: ambitions + ambitionCash under corp (filled the same way).
       base.corp = fillDefaults(emptyCorp(base.seed), raw.corp)
 
       // SAVE 43: the Back Alley.

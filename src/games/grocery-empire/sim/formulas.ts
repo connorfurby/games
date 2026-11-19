@@ -1290,10 +1290,16 @@ export function ideasPerSec(s: GameState) {
   return COMPUTE.ideasBase * Math.pow(s.compute.analysts, COMPUTE.ideasExp) * statMul(s, 'ideas')
 }
 
+/** One rank's price, including the node's economy scale (Company nodes). */
+function pricedRank(s: GameState, def: (typeof UPGRADE_BY_ID)[string], level: number) {
+  const raw = upgradeCostWithToll(def, level)
+  return def.costScale ? Math.ceil(raw * def.costScale(s)) : raw
+}
+
 export function nextUpgradeCost(s: GameState, id: string) {
   const def = UPGRADE_BY_ID[id]
   if (!def) return 0
-  return upgradeCostWithToll(def, up(s, id))
+  return pricedRank(s, def, up(s, id))
 }
 
 /** Sum of geometric upgrade costs for the next `count` levels from current. */
@@ -1304,7 +1310,7 @@ export function upgradeBulkCost(s: GameState, id: string, count: number) {
   const rankCap = upgradeRankCap(s, id)
   const n = Math.min(Math.floor(count), Math.max(0, Math.min(def.max, rankCap) - lvl))
   let total = 0
-  for (let i = 0; i < n; i++) total += upgradeCostWithToll(def, lvl + i)
+  for (let i = 0; i < n; i++) total += pricedRank(s, def, lvl + i)
   return total
 }
 
@@ -1318,7 +1324,7 @@ export function maxAffordableUpgrades(s: GameState, id: string, hardCap = 50) {
   let cash = s.cash
   let bought = 0
   for (let i = 0; i < room; i++) {
-    const cost = upgradeCostWithToll(def, lvl + i)
+    const cost = pricedRank(s, def, lvl + i)
     if (cash < cost) break
     cash -= cost
     bought += 1

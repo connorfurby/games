@@ -1,3 +1,4 @@
+import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import { NEWS_DOWN, NEWS_UP, TICKER_BY_ID, TICKERS, type TickerDef } from '../../content/corp/tickers'
 import { RIVAL_BY_ID } from '../../content/rivals'
@@ -142,7 +143,7 @@ export function sharesFree(s: GameState, id: string): number {
 /** The trading fee (a good CFO negotiates it down). */
 export function tradeFee(s: GameState): number {
   const cfo = s.corp?.more.execs.cfo ? 0.5 : 0
-  return CORP.tradeFee * (1 - cfo)
+  return CORP.tradeFee * (1 - cfo) * (1 - upgradeEffect(s, 'quant-desk'))
 }
 
 export function sharesFor(s: GameState, id: string, cash: number): number {
@@ -197,7 +198,7 @@ export function dividendRate(s: GameState): number {
     const t = corpOf(s).tickers[def.id]
     if (t?.listed && t.owned > 0) v += t.owned * t.price * def.divPerMin
   }
-  return v
+  return v * (1 + upgradeEffect(s, 'dividend-club'))
 }
 
 // ── Futures on the wholesale crate price ──────────────────────────────────
@@ -234,7 +235,8 @@ export function openFuture(s: GameState, kind: 'hedge' | 'rise' | 'fall', stake:
 export function betPayout(s: GameState, f: { kind: string; strike: number; stake: number }): number {
   const move = (s.wholesale?.index ?? 1) / f.strike - 1
   const signed = f.kind === 'rise' ? move : -move
-  return round2(Math.max(0, Math.min(CORP.betMaxPayout, 1 + CORP.betLeverage * signed)) * f.stake)
+  const rules = (s.memos['trading-rules'] ?? 0) > 0 && signed > 0 ? 1.1 : 1
+  return round2(Math.max(0, Math.min(CORP.betMaxPayout, 1 + CORP.betLeverage * signed)) * f.stake * rules)
 }
 
 function tickFutures(s: GameState) {

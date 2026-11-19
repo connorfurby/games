@@ -16,6 +16,7 @@ export const TREE_IDS = [
   'exchange',
   'cultivar',
   'signal',
+  'company',
 ] as const
 export type TreeId = (typeof TREE_IDS)[number]
 
@@ -34,6 +35,7 @@ export const TREES: Record<TreeId, { name: string; blurb: string; tint: 'accent'
   exchange: { name: 'Exchange', blurb: 'Circuits, bays, and the route you pin.', tint: 'ink' },
   cultivar: { name: 'Cultivar', blurb: 'Seasons, beds, and the bell before the turn.', tint: 'success' },
   signal: { name: 'Signal', blurb: 'Phrases, handlers, and the fair copy of the charter.', tint: 'accent' },
+  company: { name: 'Company', blurb: 'Desks for the boardroom, the courthouse and the town. Each opens once you use it.', tint: 'ink' },
 }
 
 export const BAND_IDS = [0, 1, 2, 3] as const
@@ -90,6 +92,8 @@ export interface UpgradeDef {
   effects?: StatEffect[]
   /** Optional visibility gate. Hidden nodes never block a tree. */
   visible?: (s: GameState) => boolean
+  /** Multiplies the price (e.g. by the size of the economy) so late buys still cost something real. */
+  costScale?: (s: GameState) => number
   /** Override band rank unlock for this node. */
   rankGate?: (s: GameState) => number
 }

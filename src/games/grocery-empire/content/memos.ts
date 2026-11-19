@@ -9,6 +9,7 @@ import { acceptEnding, rejectEnding } from '../sim/systems/endings'
 import { applyGuardianPreset, rebootFleet, startDriftWar } from '../sim/systems/fleet'
 import { leaveRegion, openPolitics } from '../sim/systems/politics'
 import { ERA2_MEMOS } from './era2'
+import { COMPANY_MEMOS } from './corp/memos'
 import { HORIZON_MEMOS } from './horizonMemos'
 import { FLAVOR_MEMOS } from './flavorMemos'
 import { FLAVOR_MEMOS_MORE } from './flavorMemosMore'
@@ -1308,6 +1309,9 @@ export const MEMOS: MemoDef[] = [
 
   // Standing orders — repeatable operational ranks
   ...STANDING_ORDER_MEMOS,
+
+  // Company and town desks — filed once you use each system
+  ...COMPANY_MEMOS,
 ]
 
 // Ghost lateEras doctrine-* memos removed (they were a Read faucet with no effects).

@@ -1,3 +1,4 @@
+import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import {
   CRISES,
@@ -40,7 +41,7 @@ export function execPower(s: GameState, role: ExecRole): number {
 
 export function execSalary(s: GameState, trait: string): number {
   const t = EXEC_TRAITS.find((x) => x.id === trait)
-  return round2(salesRate(s) * EXEC.salarySec * (t?.salary ?? 1))
+  return round2(salesRate(s) * EXEC.salarySec * (t?.salary ?? 1) * (1 - upgradeEffect(s, 'talent-pipeline')))
 }
 
 function refreshPool(s: GameState) {
@@ -79,7 +80,7 @@ export function fireExec(s: GameState, role: string) {
 // ── Lab ──────────────────────────────────────────────────────────────────
 
 export function labSpeed(s: GameState): number {
-  return (1 + LAB.speedPerLevel * (moreOf(s).lab.level - 1)) * (1 + causePerk(s, 'research') + execPower(s, 'research'))
+  return (1 + LAB.speedPerLevel * (moreOf(s).lab.level - 1)) * (1 + causePerk(s, 'research') + execPower(s, 'research') + upgradeEffect(s, 'skunkworks'))
 }
 
 export function labLevelCost(s: GameState) {
@@ -96,7 +97,7 @@ export function startResearch(s: GameState, id: string) {
 }
 
 export function patentCost(s: GameState) {
-  return round2(salesRate(s) * LAB.patentCostSec)
+  return round2(salesRate(s) * LAB.patentCostSec * ((s.memos['patent-pool'] ?? 0) > 0 ? 0.7 : 1))
 }
 
 /** How strong an invention is for you right now (copied or licensed counts half). */
@@ -161,7 +162,7 @@ export function rentPerMin(s: GameState, id: string): number {
   const def = LOT_BY_ID[id]
   if (!lot || !def) return 0
   const t = TENANTS.find((x) => x.id === lot.tenant)
-  return lot.value * def.rentPerMin * (t?.rentMul ?? 0)
+  return lot.value * def.rentPerMin * (t?.rentMul ?? 0) * (1 + upgradeEffect(s, 'property-managers')) * ((s.memos['standard-lease'] ?? 0) > 0 ? 1.1 : 1)
 }
 
 // ── Franchising ──────────────────────────────────────────────────────────
@@ -171,7 +172,7 @@ export function franchiseCap(s: GameState): number {
 }
 
 export function franchiseFee(s: GameState) {
-  return round2(salesRate(s) * 60 * FRANCHISE.feeMin)
+  return round2(salesRate(s) * 60 * FRANCHISE.feeMin * (1 + upgradeEffect(s, 'franchise-academy')))
 }
 
 export function sellFranchise(s: GameState) {
@@ -217,15 +218,25 @@ function applyOutcome(s: GameState, o: { demand: number; sec: number; brand: num
   s.brand = Math.max(0, Math.min(1, s.brand + o.brand))
 }
 
+/** Odds an option works, after your marketer and crisis team. */
+export function crisisOdds(s: GameState, base: number): number {
+  return Math.min(0.97, base + execPower(s, 'cmo') * 0.5 + upgradeEffect(s, 'crisis-pr'))
+}
+
+/** What answering a crisis option costs right now. */
+export function crisisCost(s: GameState, costSec: number): number {
+  return salesRate(s) * costSec * ((s.memos['crisis-playbook'] ?? 0) > 0 ? 0.75 : 1)
+}
+
 export function answerCrisis(s: GameState, pick: number) {
   const m = moreOf(s)
   const cur = m.crisis
   const def = cur ? CRISIS_BY_ID[cur.id] : undefined
   if (!def) return
   const o = def.options[pick]!
-  s.cash = round2(s.cash - salesRate(s) * o.costSec)
+  s.cash = round2(s.cash - crisisCost(s, o.costSec))
   // A good Head of People or marketer tilts the odds a little.
-  const odds = Math.min(0.97, o.odds + execPower(s, 'cmo') * 0.5)
+  const odds = crisisOdds(s, o.odds)
   const win = crand(s) < odds
   applyOutcome(s, win ? o.win : o.lose, def.title)
   m.lastCrisis = { id: def.id, win, pick, t: s.time }

@@ -1,3 +1,4 @@
+import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import { JUDGES, JUDGE_BY_ID, LAWYERS, SUIT_BY_ID, SUIT_KINDS, YOUR_SUITS, type SuitKind } from '../../content/corp/legal'
 import { RIVAL_BY_ID, type RivalId } from '../../content/rivals'
@@ -63,12 +64,12 @@ export function trialOdds(s: GameState, suit: SuitState): number {
   let o = (kind?.odds ?? 0.5) + (LAWYERS[suit.lawyer]?.odds ?? 0) + (judge?.lean ?? 0)
   if (judge?.id === 'haddock' && (s.stores?.length ?? 1) > 10) o -= 0.05
   if (judge?.id === 'okoro') o += (LAWYERS[suit.lawyer]?.odds ?? 0) * 0.5
-  o += execPower(s, 'counsel')
+  o += execPower(s, 'counsel') + upgradeEffect(s, 'in-house-counsel')
   return Math.max(0.05, Math.min(0.92, o))
 }
 
 export function lawyerCost(s: GameState, tier: number) {
-  return round2(salesRate(s) * (LAWYERS[tier]?.costSec ?? 0))
+  return round2(salesRate(s) * (LAWYERS[tier]?.costSec ?? 0) * ((s.memos['retainer-letter'] ?? 0) > 0 ? 0.8 : 1))
 }
 
 export function hireLawyer(s: GameState, suitId: number, tier: number) {

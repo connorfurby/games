@@ -38,6 +38,26 @@
   .lg-src { font-weight: 700; }
   .lg-text { color: var(--ge-ink-muted); }
   .hiw { margin-bottom: var(--s-3); }
+  .amb {
+    display: grid;
+    gap: 6px;
+    padding: 10px 12px;
+    margin-bottom: var(--s-2);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgb(95 211 138 / 0.08), rgb(255 255 255 / 0.02));
+    border: 1px solid rgb(95 211 138 / 0.28);
+  }
+  .amb.is-done { display: flex; align-items: center; gap: 8px; color: #5fd38a; }
+  .amb.is-done .amb-title { color: var(--ge-ink-muted); font-weight: 500; flex: 1; }
+  .amb-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .amb-kicker { font-size: var(--t-2xs, 0.6875rem); text-transform: uppercase; letter-spacing: 0.06em; color: #5fd38a; font-weight: 700; }
+  .amb-title { font-weight: 700; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .amb-hint { margin: 0; font-size: var(--t-sm); color: var(--ge-ink-muted); }
+  .amb-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+  .amb-pay { font-weight: 700; color: #5fd38a; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .amb-pips { display: inline-flex; gap: 4px; flex: none; }
+  .amb-pips i { width: 8px; height: 8px; border-radius: 50%; background: rgb(255 255 255 / 0.14); }
+  .amb-pips i.is-on { background: #5fd38a; }
   .hiw-list { margin: 0; padding-left: 1.1rem; display: grid; gap: 4px; font-size: var(--t-sm); line-height: 1.45; }
   @media (max-width: 720px) {
     .lg-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }

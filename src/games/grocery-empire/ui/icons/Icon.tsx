@@ -28,6 +28,8 @@ export type ExtraIcon =
   | 'build-transit'
   | 'build-civic'
   | 'build-signage'
+  | 'company'
+  | 'ambition'
   | 'venture'
   | 'charter'
   | 'doctrine'
@@ -63,7 +65,7 @@ const PATHS: Record<IconName, string> = {
   upgrades: 'M12 4v12M8 10l4-4 4 4M6 20h12',
   ventures: 'M5 19V8l7-4 7 4v11M9 19v-5h6v5M12 8v3',
   market: 'M3 20h18M5 16l4-5 3 3 5-7 3 3M17 7h3v3',
-  treasury: 'M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18',
+  treasury: 'M4 5h16v13H4zM6 18v2M18 18v2M15 11.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12 8.5v1M12 13.5v1M17 9v5',
   court: 'M12 3v18M5 7h14M5 7l-3 7h6l-3-7M19 7l-3 7h6l-3-7M8 21h8',
   foundation: 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z',
   cityhall: 'M4 20h16M6 20v-8M10 20v-8M14 20v-8M18 20v-8M4 12h16L12 5 4 12zM12 3v2',
@@ -74,6 +76,8 @@ const PATHS: Record<IconName, string> = {
   lab: 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8',
   property: 'M3 21h18M5 21V9l5-4 5 4v12M15 21V12h5v9M8 12h4M8 16h4',
   franchise: 'M3 10l2-5h14l2 5M3 10h18v10H3zM3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 20v-5h4v5',
+  ambition: 'M5 12.5l4.5 4.5L19 7.5',
+  company: 'M4 21V8h16v13M4 21h16M9 8V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M4 13h16M11 13v2h2v-2',
   boardroom: 'M3 14h18M5 14v6M19 14v6M7 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
   land: 'M3 17l5-8 4 5 3-4 6 7H3zM5 20h14',
   strategy: STAR,
@@ -83,14 +87,14 @@ const PATHS: Record<IconName, string> = {
   fleet: 'M4 15c2-4 5-6 8-6s6 2 8 6M6 15l2 4h8l2-4M12 5v4M9 7h6',
   empire: 'M4 20h16M6 20V10l6-5 6 5v10M10 20v-5h4v5',
   relics: 'M12 3l4 4-4 6-4-6 4-4zM8 7h8M6 21h12M8 21v-4h8v4M10 17v-2h4v2',
-  map: ORBIT,
+  map: 'M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14',
   coach:
     'M12 4a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V8a4 4 0 0 1 4-4z',
   more: 'M6 12h.01M12 12h.01M18 12h.01',
   planets: ORBIT,
-  exchange: TRUCK,
+  exchange: 'M4 8h14l-3-3M20 16H6l3 3',
   cultivars: PLANT,
-  signal: STAR,
+  signal: 'M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8',
   lastaisle: SHELF,
   unpack: 'M4 8h16v11H4zM8 8V6h8v2M12 12v5M10 14h4',
   price:

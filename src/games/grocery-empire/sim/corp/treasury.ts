@@ -1,3 +1,4 @@
+import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import { POLICIES, POLICY_BY_ID } from '../../content/corp/legal'
 import { CREDIT, INSURE, WHOLESALE } from '../balance'
@@ -26,7 +27,7 @@ function nudgeCredit(s: GameState, d: number) {
 /** Total interest over a bond's term at your score. */
 export function bondRate(s: GameState): number {
   const t = (corpOf(s).credit - CREDIT.min) / (CREDIT.max - CREDIT.min)
-  return (CREDIT.rateWorst + (CREDIT.rateBest - CREDIT.rateWorst) * t) * (1 - execPower(s, 'cfo'))
+  return (CREDIT.rateWorst + (CREDIT.rateBest - CREDIT.rateWorst) * t) * (1 - execPower(s, 'cfo')) * (1 - upgradeEffect(s, 'credit-desk'))
 }
 
 export function bondPrincipal(s: GameState, mins: number) {
@@ -81,7 +82,7 @@ export function premiumPerMin(s: GameState, id: string): number {
   const p = POLICY_BY_ID[id]
   const pol = corpOf(s).policies[id]
   if (!p) return 0
-  return round2(salesRate(s) * p.premiumSec * (1 + (pol?.bump ?? 0)))
+  return round2(salesRate(s) * p.premiumSec * (1 + (pol?.bump ?? 0)) * (1 - upgradeEffect(s, 'claims-adjuster')))
 }
 
 export function insured(s: GameState, id: string): boolean {

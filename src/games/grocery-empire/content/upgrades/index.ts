@@ -11,6 +11,7 @@ import { HORIZON_UPGRADES } from './horizon'
 import { LATE_HUB_UPGRADES } from './lateHubs'
 import { DEEP_UPGRADES } from './deep'
 import { V2_UPGRADES } from './v2'
+import { COMPANY_UPGRADES } from './company'
 import {
   BAND_IDS,
   BAND_LABELS,
@@ -50,6 +51,7 @@ export const UPGRADES: UpgradeDef[] = [
   ...HORIZON_UPGRADES,
   ...LATE_HUB_UPGRADES,
   ...DEEP_UPGRADES,
+  ...COMPANY_UPGRADES,
 ]
 
 export const UPGRADE_BY_ID: Record<string, UpgradeDef> = Object.fromEntries(

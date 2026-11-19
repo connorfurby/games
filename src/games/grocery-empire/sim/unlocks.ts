@@ -1,4 +1,4 @@
-import { companyOpen } from './corp/tick'
+import { corpMenusOpen } from './corp/tick'
 import { DIALOGUE_LINES } from '../content/dialogue'
 import { BASKET_MILESTONES } from '../content/lore'
 import { MEMOS } from '../content/memos'
@@ -53,25 +53,8 @@ function tickMenus(s: GameState) {
   if (s.era >= 5 || s.memos['barge-berth'] || s.fleet.launched || s.fleet.barges > 0) {
     unlockMenu(s, 'fleet')
   }
-  if (companyOpen(s)) unlockMenu(s, 'market')
-  if (companyOpen(s) && (s.lifetimeRevenue >= CO.offerRevenue || s.era >= 2)) unlockMenu(s, 'boardroom')
-  if (companyOpen(s)) unlockMenu(s, 'treasury')
-  if (s.era >= 2 || (s.corp?.suits.length ?? 0) > 0) unlockMenu(s, 'court')
-  if (companyOpen(s)) {
-    unlockMenu(s, 'customers')
-    unlockMenu(s, 'foundation')
-  }
-  if (s.era >= 2) {
-    unlockMenu(s, 'cityhall')
-    unlockMenu(s, 'press')
-  }
-  if (s.corp?.town.union.formed) unlockMenu(s, 'union')
-  if (companyOpen(s)) {
-    unlockMenu(s, 'lab')
-    unlockMenu(s, 'property')
-  }
-  if (s.era >= 3) unlockMenu(s, 'execs')
-  if (s.era >= 4) unlockMenu(s, 'franchise')
+  // The company layer opens a piece at a time (see docs: progression of the company layer).
+  for (const id of corpMenusOpen(s)) unlockMenu(s, id)
   if (s.era >= 7) unlockMenu(s, 'planets')
   if (s.era >= 8) unlockMenu(s, 'exchange')
   if (s.era >= 9) unlockMenu(s, 'cultivars')

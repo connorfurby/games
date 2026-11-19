@@ -1,7 +1,7 @@
 import { CRISIS_BY_ID } from '../../content/corp/more'
 import { CRISIS } from '../../sim/balance'
 import { can } from '../../sim/commands'
-import { salesRate } from '../../sim/corp/core'
+import { crisisCost, crisisOdds } from '../../sim/corp/more'
 import { useGame } from '../GameContext'
 import { clock, money } from '../format'
 import { Button } from '../kit'
@@ -28,14 +28,14 @@ export function CrisisCard({ reducedMotion }: { reducedMotion: boolean }) {
         <div className="vz-opts">
           {def.options.map((o, i) => {
             const ok = can(s, { type: 'answerCrisis', pick: i }).ok
-            const cost = salesRate(s) * o.costSec
+            const cost = crisisCost(s, o.costSec)
             return (
               <div key={o.label} className="vz-opt">
                 <Button tone={i === 0 ? 'primary' : 'ghost'} disabled={!ok} cost={o.costSec > 0 ? money(cost, numberFormat) : undefined} onClick={() => dispatch({ type: 'answerCrisis', pick: i })}>
                   {o.label}
                 </Button>
                 <span className="vz-opt__hint">
-                  {o.hint} · {Math.round(o.odds * 100)}%
+                  {o.hint} · {Math.round(crisisOdds(s, o.odds) * 100)}%
                 </span>
               </div>
             )

@@ -1,6 +1,18 @@
 # Changelog — this chat arc (2026-11)
 
-Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36).
+Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
+
+## AR. Company layer woven into progression (2026-11-19, on `main`, SAVE 45)
+
+- **Icons**: Company hub gets its own briefcase icon (was the Money ledger). Treasury is now a vault (looked like City Hall/Town). Exchange (Era 8), Signal and Map stop borrowing Truck, Star and Orbit.
+- **Staggered opening** (`CORP_OPENS` in `sim/corp/tick.ts`, one list with a plain "why"): Foundation → Boardroom → Customers in Era 1; Exchange + Courthouse at Era 2, then City Hall, Press, Lab and Treasury across Era 2 by sales; Executives at Era 3, Property later in Era 3, Franchises at Era 4; Union when the crew organises. Bot probe (seed 1): 41m, 49m, 52m, 3.5h, 3.9h, 4.2h, 4.8h, 5.9h, 8.6h…
+- **Story beats**: every company/town screen now has a `MENU_LORE` line and a speaker, so opening one plays a strip line like the store screens.
+- **Ambitions** (`content/corp/ambitions.ts`, `sim/corp/ambitions.ts`): three optional goals per screen (39), shown at the top of each screen and in **Side roads** under Road ahead (Tools → Game). Pay automatically, priced in seconds of best sales (2/5/12 min). Every step needs a player choice, so the bots and pacing never touch them. Not on the HUD spine.
+- **Company upgrade tree** (`content/upgrades/company.ts`, 15 nodes): one desk per system (Grant writers, Investor relations, Quant desk, In-house counsel, Proxy advisors, Dividend club, Newsroom, Skunkworks, Credit desk, Claims adjuster, Property managers, Talent pipeline, War room, Crisis team, Franchise academy). Each shows only once you've used its system; prices scale with best sales (new `UpgradeDef.costScale`); two ranks open per era from the system's era (`rankGate`). All read through `upgradeEffect` in `sim/corp/*`.
+- **Company memos** (`content/corp/memos.ts`, 11): Giving Charter, Letter to Owners, Trading Rules, Retainer Letter, Campaign Office, Open Books, Patent Pool, Credit Policy, Standard Lease, Crisis Playbook, Franchise Manual. Same engagement gates, priced by best sales.
+- Crisis card shows the real odds and cost (after exec, Crisis team and Playbook) via `crisisOdds`/`crisisCost`.
+- Wiki glossary: Ambitions, Town goodwill, Crowds, Owners, Shares, Lawsuits, Elections, Press trust, Inventions, Credit, Executives, Franchises, Company upgrades.
+- SAVE 45: `corp.ambitions`, `corp.ambitionCash` (deep-filled). Tests: `sim/corp/integration.test.ts`.
 
 ## AM. Build street, real build tiers, growing showcase (2026-11-18, on `main`)
 

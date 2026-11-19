@@ -61,3 +61,5 @@ Storefront, Storage, Cold, Production, Transit, Civic, **Signage**. Every tier's
 ## Company and Town hubs (2026-11-19)
 
 Company: Boardroom, Executives, Exchange, Treasury, Courthouse, Lab, Property, Franchises. Town: Customers, Foundation, City Hall, Union Hall, Press. Content: `content/corp/{tickers,owners,ceos,legal,town,more}.ts`. Balance: `CORP`, `CO`, `RIVALRY`, `LAW`, `CREDIT`, `INSURE`, `TOWN`, `LAB`, `PROPERTY`, `FRANCHISE`, `EXEC`, `CRISIS` in `balance.ts`.
+
+Integration: screens open on `CORP_OPENS` (`sim/corp/tick.ts`). Each screen has three ambitions (`content/corp/ambitions.ts`), a Company-tree node (`content/upgrades/company.ts`) and most have a memo (`content/corp/memos.ts`); all appear only after the player uses that system.
