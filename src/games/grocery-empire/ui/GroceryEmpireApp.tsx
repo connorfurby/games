@@ -104,6 +104,8 @@ import { CharterPanel } from './panels/CharterPanel'
 import { LastAislePanel } from './panels/LastAislePanel'
 import { MarketPanel } from './corp/MarketPanel'
 import { BoardroomPanel } from './corp/BoardroomPanel'
+import { TreasuryPanel } from './corp/TreasuryPanel'
+import { CourtPanel } from './corp/CourtPanel'
 /* grocery.css + g2.css load via design/layers.css @import layer(legacy) */
 
 /** Complete map — EmptyMenu is unreachable for any MenuId. */
@@ -123,6 +125,8 @@ const PANEL: Record<MenuId, () => ReactNode> = {
   ventures: () => <VenturesPanel />,
   market: () => <MarketPanel />,
   boardroom: () => <BoardroomPanel />,
+  treasury: () => <TreasuryPanel />,
+  court: () => <CourtPanel />,
   land: () => <LandPanel />,
   empire: () => <EmpireBoard />,
   strategy: () => <StrategyPanel />,

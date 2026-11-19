@@ -490,6 +490,59 @@ export const RIVALRY = {
   stakeGrudgePer10: 4,
 }
 
+/** The courthouse. */
+export const LAW = {
+  /** Answer a suit within this, or lose by default (claim × defaultMul). */
+  answerSec: 240,
+  defaultMul: 1.5,
+  settleShare: 0.5,
+  /** Win at trial and the other side pays this share of the claim. */
+  winShare: 0.4,
+  loseBrand: 0.02,
+  /** Customer suits need a busy store: one per this many seconds on average, from Era 2. */
+  customerGapSec: 1500,
+  customerEra: 2,
+  /** Suing a rival needs a grudge from them (they wronged you recently). */
+  sueGrudge: 40,
+  sueCooldownSec: 600,
+  moleSuitOdds: 0.6,
+}
+
+/** Credit, bonds and insurance. */
+export const CREDIT = {
+  start: 650,
+  min: 300,
+  max: 850,
+  /** Points a minute while nothing is late. */
+  creepPerMin: 1,
+  onTimeBonus: 12,
+  missedHit: 80,
+  defaultHit: 150,
+  /** Bond sizes in minutes of sales, and the term. */
+  bondMins: [10, 30, 60] as const,
+  bondTermSec: 900,
+  couponEverySec: 300,
+  /** Total interest over the term at a 850 score and a 300 score. */
+  rateBest: 0.06,
+  rateWorst: 0.35,
+  /** In default, creditors take this share of sales until the debt is paid. */
+  garnishShare: 0.12,
+  /** Prime credit (750+): crates cost a little less. */
+  primeAt: 750,
+  primeCrateMul: 0.97,
+  bondsMax: 3,
+  bondEra: 3,
+}
+
+export const INSURE = {
+  /** Each claim raises that premium by this much (up to the cap). */
+  claimBump: 0.15,
+  bumpCap: 3,
+  /** Premium bumps ease back this much per minute. */
+  bumpDecayPerMin: 0.02,
+  /** Spoiled units are valued at the can price for the claim. */
+}
+
 /** Your company: valuation, listing, quarters, owners and the board. */
 export const CO = {
   /** Company value = minutes of current sales × this, before brand and momentum. */

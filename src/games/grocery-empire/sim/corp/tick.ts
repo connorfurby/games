@@ -3,6 +3,8 @@ import type { GameState } from '../state'
 import { corpOf, salesRate } from './core'
 import { tickCompany } from './company'
 import { tickRivalry } from './rivalry'
+import { tickCourt } from './court'
+import { tickTreasury } from './treasury'
 import { tickMarket } from './market'
 
 export function companyOpen(s: GameState): boolean {
@@ -22,6 +24,8 @@ export function tickCorp(s: GameState, dt: number) {
     if (s.era >= 1) tickMarket(s)
     tickCompany(s)
     tickRivalry(s)
+    tickCourt(s)
+    tickTreasury(s)
   }
   if (c.acc > 1) c.acc = 0
 }
@@ -34,5 +38,8 @@ export function companyAttention(s: GameState): { count: number; lines: string[]
   if (c.co.offer && c.co.offer.until > s.time) lines.push('An investor is waiting')
   if (c.co.vote) lines.push('The board is voting')
   if (c.co.meeting) lines.push('Shareholders want a meeting')
+  const suits = c.suits.filter((x) => !x.yours).length
+  if (suits) lines.push(suits === 1 ? 'You are being sued' : `${suits} lawsuits waiting`)
+  if (c.arrears > 0) lines.push('Creditors are taking a cut of sales')
   return { count: lines.length, lines }
 }

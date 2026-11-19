@@ -9,6 +9,7 @@ import { nextRng } from '../rng'
 import { emptyCrime, type GameState } from '../state'
 import { alleyVetoed } from '../corp/company'
 import { corpHeatCoolMul } from '../corp/effects'
+import { insurePays } from '../corp/treasury'
 
 /**
  * The Back Alley. Optional schemes pay now and add Heat; Heat cools over time. Pulling a scheme
@@ -117,6 +118,7 @@ export function punish(s: GameState, schemeId: string | null): PunishmentId {
   }
   const fine = fineFor(s, sec)
   s.cash = round2(s.cash - fine)
+  insurePays(s, 'fines', fine)
   c.finesPaid = round2(c.finesPaid + fine)
   c.caught += 1
   if (schemeId && p !== 'warning') delete c.active[schemeId]

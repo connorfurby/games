@@ -42,6 +42,21 @@ export function emptyCorp(seed = 1): CorpState {
     boosts: [],
     ceo: {},
     takeovers: 0,
+    suits: [],
+    nextCustomerSuitAt: 1200,
+    suitsWon: 0,
+    suitsLost: 0,
+    settled: 0,
+    sueReadyAt: 0,
+    credit: 650,
+    bonds: [],
+    arrears: 0,
+    bondsRepaid: 0,
+    missed: 0,
+    policies: {},
+    claimsPaid: 0,
+    premiumsPaid: 0,
+    seenSpoiled: -1,
   }
 }
 

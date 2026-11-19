@@ -207,7 +207,11 @@ function moleCaught(s: GameState, id: string) {
   const line = CEOS[id as RivalId]?.caughtSpy ?? ''
   say(s, id, line)
   log(s, `Your mole at ${RIVAL_BY_ID[id as RivalId]?.name} was caught. ${line}`, 'warn')
+  for (const f of spySuers) f(s, id)
 }
+
+/** The courts may follow a caught mole (registered by court.ts). */
+export const spySuers: ((s: GameState, rival: string) => void)[] = []
 
 /** A mole job: the cover it burns, and whether they get caught doing it. */
 export function moleJob(s: GameState, id: string, job: 'steal' | 'sabotage') {

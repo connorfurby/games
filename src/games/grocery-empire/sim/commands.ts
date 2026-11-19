@@ -206,6 +206,14 @@ export type Command =
   | { type: 'moleJob'; id: string; job: 'steal' | 'sabotage' }
   | { type: 'takeoverRival'; id: string }
   | { type: 'buyBackStake'; id: string }
+  | { type: 'hireLawyer'; suit: number; tier: number }
+  | { type: 'settleSuit'; suit: number }
+  | { type: 'goToTrial'; suit: number }
+  | { type: 'sueRival'; id: string }
+  | { type: 'issueBond'; mins: number }
+  | { type: 'repayBond'; id: number }
+  | { type: 'buyPolicy'; id: string }
+  | { type: 'dropPolicy'; id: string }
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }

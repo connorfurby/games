@@ -85,6 +85,28 @@ export interface CeoState {
   lastLine: string
 }
 
+export interface SuitState {
+  id: number
+  kind: string
+  /** Rival id, a customer's name, or 'regulator'. */
+  by: string
+  /** You are suing them. */
+  yours: boolean
+  claim: number
+  judge: string
+  lawyer: number
+  answerBy: number
+}
+
+export interface BondState {
+  id: number
+  principal: number
+  interest: number
+  nextCouponAt: number
+  dueAt: number
+  coupons: number
+}
+
 export interface CorpState {
   rng: number
   /** Seconds not yet ticked (the company layer ticks once a second). */
@@ -109,4 +131,23 @@ export interface CorpState {
   /** Rival bosses, keyed by rival id. */
   ceo: Record<string, CeoState>
   takeovers: number
+  // Courthouse
+  suits: SuitState[]
+  nextCustomerSuitAt: number
+  suitsWon: number
+  suitsLost: number
+  settled: number
+  sueReadyAt: number
+  // Treasury
+  credit: number
+  bonds: BondState[]
+  /** Debt in default, paid off by garnished sales. */
+  arrears: number
+  bondsRepaid: number
+  missed: number
+  // Insurance
+  policies: Record<string, { bump: number; since: number }>
+  claimsPaid: number
+  premiumsPaid: number
+  seenSpoiled: number
 }

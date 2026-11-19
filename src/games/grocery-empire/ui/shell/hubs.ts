@@ -52,7 +52,7 @@ export const HUBS: HubDef[] = [
     name: 'Company',
     purpose: 'Markets, owners, rivals’ bosses, the courts, the community and the lab.',
     icon: 'books',
-    menus: ['boardroom', 'market'],
+    menus: ['boardroom', 'market', 'treasury', 'court'],
   },
   {
     id: 'empire',

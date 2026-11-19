@@ -1,6 +1,9 @@
 import { cashLabel } from '@/shared/bn'
 import { TICKER_BY_ID } from '../content/corp/tickers'
-import { CO, CORP, RIVALRY } from './balance'
+import { CO, CORP, CREDIT, RIVALRY } from './balance'
+import { LAWYERS, POLICY_BY_ID } from '../content/corp/legal'
+import { canSue, goToTrial, hireLawyer, lawyerCost, settle, settleCost, sueRival } from './corp/court'
+import { buyPolicy, dropPolicy, earlyPayoff, insured, issueBond, premiumPerMin, repayEarly } from './corp/treasury'
 import type { Check, Command } from './commands'
 import { corpOf } from './corp/core'
 import { activeHedge, buyShares, hedgePremium, openFuture, sellShares, sharesFor } from './corp/market'
@@ -65,6 +68,14 @@ export type CorpCmd =
   | Extract<Command, { type: 'moleJob' }>
   | Extract<Command, { type: 'takeoverRival' }>
   | Extract<Command, { type: 'buyBackStake' }>
+  | Extract<Command, { type: 'hireLawyer' }>
+  | Extract<Command, { type: 'settleSuit' }>
+  | Extract<Command, { type: 'goToTrial' }>
+  | Extract<Command, { type: 'sueRival' }>
+  | Extract<Command, { type: 'issueBond' }>
+  | Extract<Command, { type: 'repayBond' }>
+  | Extract<Command, { type: 'buyPolicy' }>
+  | Extract<Command, { type: 'dropPolicy' }>
 
 type H<C> = { can: (s: GameState, cmd: C) => Check; run: (s: GameState, cmd: C) => void }
 
@@ -126,6 +137,66 @@ export const corpHandlers: { [K in CorpCmd['type']]: H<Extract<CorpCmd, { type: 
       return needCash(s, stakeBuybackCost(s, cmd.id))
     },
     run: (s, cmd) => buyBackStake(s, cmd.id),
+  },
+  hireLawyer: {
+    can: (s, cmd) => {
+      const suit = corpOf(s).suits.find((x) => x.id === cmd.suit)
+      if (!suit) return no('No such case.')
+      if (cmd.tier <= suit.lawyer || cmd.tier >= LAWYERS.length) return no('Pick a better lawyer.')
+      return needCash(s, lawyerCost(s, cmd.tier))
+    },
+    run: (s, cmd) => hireLawyer(s, cmd.suit, cmd.tier),
+  },
+  settleSuit: {
+    can: (s, cmd) => {
+      if (!corpOf(s).suits.some((x) => x.id === cmd.suit)) return no('No such case.')
+      return needCash(s, settleCost(s, cmd.suit))
+    },
+    run: (s, cmd) => settle(s, cmd.suit),
+  },
+  goToTrial: {
+    can: (s, cmd) => (corpOf(s).suits.some((x) => x.id === cmd.suit) ? ok : no('No such case.')),
+    run: (s, cmd) => goToTrial(s, cmd.suit),
+  },
+  sueRival: {
+    can: (s, cmd) => {
+      const why = canSue(s, cmd.id)
+      return why ? no(why) : ok
+    },
+    run: (s, cmd) => sueRival(s, cmd.id),
+  },
+  issueBond: {
+    can: (s, cmd) => {
+      const c = corpOf(s)
+      if (s.era < CREDIT.bondEra) return no(`Bonds open in Era ${CREDIT.bondEra}.`)
+      if (!(CREDIT.bondMins as readonly number[]).includes(cmd.mins)) return no('Pick a size.')
+      if (c.bonds.length >= CREDIT.bondsMax) return no(`At most ${CREDIT.bondsMax} bonds at once.`)
+      if (c.arrears > 0) return no('Nobody lends to you while you are in arrears.')
+      return ok
+    },
+    run: (s, cmd) => issueBond(s, cmd.mins),
+  },
+  repayBond: {
+    can: (s, cmd) => {
+      const b = corpOf(s).bonds.find((x) => x.id === cmd.id)
+      if (!b) return no('No such bond.')
+      return needCash(s, earlyPayoff(b))
+    },
+    run: (s, cmd) => repayEarly(s, cmd.id),
+  },
+  buyPolicy: {
+    can: (s, cmd) => {
+      const p = POLICY_BY_ID[cmd.id]
+      if (!p) return no('Unknown policy.')
+      if (s.era < p.era) return no(`Opens in Era ${p.era}.`)
+      if (insured(s, cmd.id)) return no('Already covered.')
+      return needCash(s, premiumPerMin(s, cmd.id))
+    },
+    run: (s, cmd) => buyPolicy(s, cmd.id),
+  },
+  dropPolicy: {
+    can: (s, cmd) => (insured(s, cmd.id) ? ok : no('Not covered.')),
+    run: (s, cmd) => dropPolicy(s, cmd.id),
   },
   answerOffer: {
     can: (s, cmd) => {

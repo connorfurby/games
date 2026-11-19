@@ -27,6 +27,8 @@ export const MENU_IDS = [
   'lastaisle',
   'market',
   'boardroom',
+  'treasury',
+  'court',
   'coach',
   'more',
 ] as const
@@ -82,6 +84,18 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Boardroom',
     glyph: 'BD',
     purpose: 'Who owns your company, what it is worth, and what the board decides.',
+  },
+  treasury: {
+    id: 'treasury',
+    name: 'Treasury',
+    glyph: 'TR',
+    purpose: 'Your credit score, the bonds you owe and the insurance you carry.',
+  },
+  court: {
+    id: 'court',
+    name: 'Courthouse',
+    glyph: 'CT',
+    purpose: 'Lawsuits against you and the ones you file. Settle, lawyer up or roll the dice.',
   },
   rivals: {
     id: 'rivals',
