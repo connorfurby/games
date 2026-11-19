@@ -7,6 +7,8 @@ import { backroomCap } from '../formulas'
 import { addBatch, log, round2, sumQty } from '../helpers'
 import { nextRng } from '../rng'
 import { emptyCrime, type GameState } from '../state'
+import { alleyVetoed } from '../corp/company'
+import { corpHeatCoolMul } from '../corp/effects'
 
 /**
  * The Back Alley. Optional schemes pay now and add Heat; Heat cools over time. Pulling a scheme
@@ -220,7 +222,7 @@ export function lieLow(s: GameState) {
 
 export function tickCrime(s: GameState, dt: number) {
   const c = crimeOf(s)
-  const cool = CRIME.coolPerSec * (c.lieLowUntil > s.time ? CRIME.lieLowMul : 1)
+  const cool = CRIME.coolPerSec * (c.lieLowUntil > s.time ? CRIME.lieLowMul : 1) * corpHeatCoolMul(s)
   if (c.heat > 0) c.heat = Math.max(0, c.heat - cool * dt)
   for (const [id, until] of Object.entries(c.active)) if (until <= s.time) delete c.active[id]
   // Too hot: the law can drop by on its own. Lying low keeps the door shut.
@@ -233,6 +235,8 @@ export function alleyBlock(s: GameState): string | null {
   const c = crimeOf(s)
   if (!alleyOpen(s)) return 'The alley opens with your first venture.'
   if (c.probationUntil > s.time) return 'On probation.'
+  const veto = alleyVetoed(s)
+  if (veto) return veto
   if (c.lieLowUntil > s.time) return 'Lying low.'
   return null
 }

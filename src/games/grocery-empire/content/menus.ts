@@ -26,6 +26,7 @@ export const MENU_IDS = [
   'charter',
   'lastaisle',
   'market',
+  'boardroom',
   'coach',
   'more',
 ] as const
@@ -75,6 +76,12 @@ export const MENUS: Record<MenuId, MenuDef> = {
     name: 'Exchange',
     glyph: 'EX',
     purpose: 'Buy and sell shares, collect dividends and bet on crate prices.',
+  },
+  boardroom: {
+    id: 'boardroom',
+    name: 'Boardroom',
+    glyph: 'BD',
+    purpose: 'Who owns your company, what it is worth, and what the board decides.',
   },
   rivals: {
     id: 'rivals',

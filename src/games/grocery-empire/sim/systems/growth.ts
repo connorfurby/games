@@ -1,3 +1,4 @@
+import { corpVentureMul } from '../corp/effects'
 import { tickCorp } from '../corp/tick'
 import { tickVisitors, visitorMul } from './visitors'
 import { rushLine } from '../../content/ventureRushes'
@@ -95,6 +96,7 @@ export function tickVentures(s: GameState, dt: number) {
     const fillMul =
       crimeVentureMul(s) *
       visitorMul(s, 'ventures') *
+      corpVentureMul(s) *
       (s.ventureRush?.id === id && s.ventureRush.until > s.time ? VENTURE_RUSH.fillMul : 1)
     if (cap <= 0) continue
     const before = vs.stored

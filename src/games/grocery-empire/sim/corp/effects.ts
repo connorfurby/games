@@ -1,4 +1,5 @@
 import type { GameState } from '../state'
+import { companyBoost, ownerLever } from './company'
 import { hedgeCrateMul } from './market'
 
 /**
@@ -7,12 +8,24 @@ import { hedgeCrateMul } from './market'
  */
 export function corpDemandMul(s: GameState): number {
   if (!s.corp) return 1
-  return 1
+  return (1 + ownerLever(s, 'demand')) * companyBoost(s, 'demand')
 }
 
 export function corpWageMul(s: GameState): number {
   if (!s.corp) return 1
-  return 1
+  return Math.max(0.4, 1 + ownerLever(s, 'wages')) * companyBoost(s, 'wages')
+}
+
+/** Venture till speed from owners and board decisions. */
+export function corpVentureMul(s: GameState): number {
+  if (!s.corp) return 1
+  return (1 + ownerLever(s, 'ventures')) * companyBoost(s, 'ventures')
+}
+
+/** How much faster Heat cools (pension-fund owners). */
+export function corpHeatCoolMul(s: GameState): number {
+  if (!s.corp) return 1
+  return 1 + ownerLever(s, 'heatCool')
 }
 
 export function corpCrateMul(s: GameState): number {

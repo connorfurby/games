@@ -17,7 +17,7 @@ export function tickerListed(s: GameState, def: TickerDef): boolean {
   return s.era >= def.era
 }
 
-function listEra(def: TickerDef, s: GameState): number {
+function listEra(def: TickerDef): number {
   return def.rivalId ? Math.max(def.era, RIVAL_BY_ID[def.rivalId]?.era ?? def.era) : def.era
 }
 
@@ -93,7 +93,7 @@ export function tickMarket(s: GameState) {
       delist(s, def, t)
       continue
     }
-    const young = s.era <= listEra(def, s) + CORP.youngEras
+    const young = s.era <= listEra(def) + CORP.youngEras
     t.fund *= 1 + (young ? def.growPerMin : def.growPerMin * 0.1) / 60
     const sd = def.vol / Math.sqrt(60)
     t.walk += (CORP.revertPerMin / 60) * (1 - t.walk) + sd * cnorm(s) * t.walk

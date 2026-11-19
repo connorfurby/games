@@ -437,6 +437,47 @@ export const CORP = {
   futuresMax: 4,
 }
 
+/** Your company: valuation, listing, quarters, owners and the board. */
+export const CO = {
+  /** Company value = minutes of current sales × this, before brand and momentum. */
+  valMin: 120,
+  walkVol: 0.03,
+  /** Investors start knocking (private stakes) once the store earns this much. */
+  offerRevenue: 5000,
+  offerGapSec: 300,
+  offerWaitSec: 150,
+  /** Offers are for 5–15% at a 4–18% premium to the share price. */
+  offerMinPct: 0.05,
+  offerMaxPct: 0.15,
+  offerPremiumMin: 0.04,
+  offerPremiumMax: 0.18,
+  /** You keep at least this share of your company. */
+  minYou: 0.3,
+  ipoEra: 3,
+  ipoDiscount: 0.05,
+  ipoFloats: [0.1, 0.25, 0.4] as const,
+  quarterSec: 600,
+  /** Quarterly target: this much more sales than last quarter (owners shift it). */
+  targetGrowth: 0.08,
+  beatWalk: 1.06,
+  missWalk: 0.9,
+  streakValue: 0.04,
+  streakCap: 8,
+  /** While a shareholder meeting waits, the price sags this much a minute. */
+  meetingSagPerMin: 0.01,
+  buybackPremium: 0.02,
+  buybackPct: 0.05,
+  privatePremium: 0.15,
+  issuePct: 0.05,
+  issueDiscount: 0.03,
+  voteGapSec: 420,
+  voteWaitSec: 150,
+  /** Lobbying one owner to flip their vote costs this many seconds of sales. */
+  lobbySec: 40,
+  /** Owner lever caps (absolute, after scaling by stake). */
+  leverCap: 0.35,
+}
+
 export const INSPECTION = {
   decayPerSec: 0.002,
   lowMoraleThreshold: 0.7,

@@ -3,7 +3,7 @@ import { DIALOGUE_LINES } from '../content/dialogue'
 import { BASKET_MILESTONES } from '../content/lore'
 import { MEMOS } from '../content/memos'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
-import { COMPUTE, DEPTH } from './balance'
+import { CO, COMPUTE, DEPTH } from './balance'
 import {
   advanceTutorialStep,
   beginTutorial,
@@ -54,6 +54,7 @@ function tickMenus(s: GameState) {
     unlockMenu(s, 'fleet')
   }
   if (companyOpen(s)) unlockMenu(s, 'market')
+  if (companyOpen(s) && (s.lifetimeRevenue >= CO.offerRevenue || s.era >= 2)) unlockMenu(s, 'boardroom')
   if (s.era >= 7) unlockMenu(s, 'planets')
   if (s.era >= 8) unlockMenu(s, 'exchange')
   if (s.era >= 9) unlockMenu(s, 'cultivars')

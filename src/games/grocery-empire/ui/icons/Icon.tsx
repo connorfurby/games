@@ -63,6 +63,7 @@ const PATHS: Record<IconName, string> = {
   upgrades: 'M12 4v12M8 10l4-4 4 4M6 20h12',
   ventures: 'M5 19V8l7-4 7 4v11M9 19v-5h6v5M12 8v3',
   market: 'M3 20h18M5 16l4-5 3 3 5-7 3 3M17 7h3v3',
+  boardroom: 'M3 14h18M5 14v6M19 14v6M7 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
   land: 'M3 17l5-8 4 5 3-4 6 7H3zM5 20h14',
   strategy: STAR,
   cold: 'M12 3v18M6.5 6.5l11 11M17.5 6.5l-11 11M5 12h14',

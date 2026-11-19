@@ -1,3 +1,4 @@
+import { companyAttention } from '../../sim/corp/tick'
 import { LayoutGroup, motion } from 'motion/react'
 import { useState, type ReactNode } from 'react'
 import { doctrinesAtEra } from '../../content/era2'
@@ -69,7 +70,15 @@ export function HubNav({
   if (HUB_BY_ID.empire.menus.some((m) => state.menus[m]) && empireReady(state)) readyHubs.add('empire')
   if (HUB_BY_ID.worlds.menus.some((m) => state.menus[m]) && worldsReady(state)) readyHubs.add('worlds')
 
+  const companyNeeds = companyAttention(state)
   const badgeFor = (h: HubDef, hit: boolean): ReactNode => {
+    if (h.id === 'company' && companyNeeds.count > 0) {
+      return (
+        <span className="g2-hub__badge" aria-label={companyNeeds.lines.join(', ')} title={companyNeeds.lines.join(' · ')}>
+          {companyNeeds.count}
+        </span>
+      )
+    }
     if (h.id === 'museum' && chests > 0) {
       return (
         <span className="g2-hub__badge" aria-label={`${chests} chests to open`}>

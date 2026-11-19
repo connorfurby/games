@@ -190,6 +190,15 @@ export type Command =
   | { type: 'buyStock'; id: string; cash: number }
   | { type: 'sellStock'; id: string; shares: number }
   | { type: 'openFuture'; kind: 'hedge' | 'rise' | 'fall'; stake: number }
+  | { type: 'answerOffer'; accept: boolean }
+  | { type: 'buyOutOwner'; owner: string }
+  | { type: 'goPublic'; pct: number }
+  | { type: 'buyback' }
+  | { type: 'issueShares' }
+  | { type: 'goPrivate' }
+  | { type: 'resolveMeeting'; choice: import('./corp/company').MeetingChoice }
+  | { type: 'castVote'; yes: boolean }
+  | { type: 'lobbyOwner'; owner: string }
   | { type: 'depositPassbook'; amount: number }
   | { type: 'withdrawPassbook'; amount: number }
   | { type: 'buyPerk'; id: string }
