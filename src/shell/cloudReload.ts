@@ -1,7 +1,17 @@
-/** After cloud hydrate writes disk, engines must re-read without double offline. */
+/** After cloud hydrate writes memory, engines / museum / meta must re-read. */
 
-export function wireCloudReload(handlers: { grocery: () => void; signal: () => void; meta?: () => void }) {
+export function wireCloudReload(handlers: {
+  grocery: () => void
+  signal: () => void
+  meta?: () => void
+  museum?: () => void
+}) {
   const onReload = () => {
+    try {
+      handlers.museum?.()
+    } catch (e) {
+      console.error('museum cloud reload', e)
+    }
     try {
       handlers.grocery()
     } catch (e) {

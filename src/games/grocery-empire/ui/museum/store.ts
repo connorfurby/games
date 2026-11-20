@@ -6,6 +6,9 @@ import { isDevSave } from '../../sim/saveKey'
 /**
  * The museum's own save. Separate from the run (and from site meta) so relics survive
  * New Game and Rebrand. A reset clears it only when the player ticks Museum. The DevMode sandbox gets its own copy.
+ *
+ * Must reload after cloud hydrate — an early empty `get()` (e.g. Shelf) must not stick
+ * forever, or `earn()` re-grants every claim-keyed chest and overwrites the account.
  */
 const KEY = () => (isDevSave() ? 'grocery-museum-dev' : 'grocery-museum')
 
@@ -26,7 +29,9 @@ function ensure() {
   }
   const before = raw && typeof raw === 'object' ? (raw as { v?: unknown }).v : 0
   current = normalizeMuseum(raw)
-  if (before !== 2) {
+  // Only write when migrating an existing older payload — never invent an empty
+  // `grocery-museum` slot before cloud hydrate (that can race and clobber the account).
+  if (raw != null && before !== 2) {
     try {
       saveGame(k, current)
     } catch {
@@ -34,6 +39,10 @@ function ensure() {
     }
   }
   version++
+}
+
+function notify() {
+  for (const s of subs) s()
 }
 
 export const museumStore = {
@@ -49,11 +58,11 @@ export const museumStore = {
     current = next
     version++
     try {
-      saveGame(loadedKey, current)
+      saveGame(loadedKey || KEY(), current)
     } catch {
       /* storage full or blocked: keep going in memory */
     }
-    for (const s of subs) s()
+    notify()
   },
   /** Empty the museum (relics, chests, progress) and save the empty copy. */
   reset() {
@@ -61,11 +70,27 @@ export const museumStore = {
     current = emptyMuseum()
     version++
     try {
-      saveGame(loadedKey, current)
+      saveGame(loadedKey || KEY(), current)
     } catch {
       /* storage blocked: the empty copy still holds for this visit */
     }
-    for (const s of subs) s()
+    notify()
+  },
+  /**
+   * Drop the in-memory cache and re-read from the account Map.
+   * Call after cloud hydrate and on sign-out.
+   */
+  reload() {
+    loadedKey = ''
+    ensure()
+    notify()
+  },
+  /** Forget cached museum without reading (sign-out). */
+  invalidate() {
+    loadedKey = ''
+    current = emptyMuseum()
+    version++
+    notify()
   },
   subscribe(cb: () => void) {
     subs.add(cb)

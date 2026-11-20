@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-20 — 1.2.1 pause clock
+
+- Opening a save clears a player pause, including a Quiet sign-off, so the station starts on air. Time away while paused is not caught up. A double reject stays parked.
+- After 30 real seconds of pause, a clock hangs under the header with Resume.
+- `GAME_VERSION` **1.2.1**. No save or economy change.
+
 ## 2026-11-17 — 1.2 trees and the mission
 
 - Plant · Trees is a pannable board (Grocery’s tree grammar, Signal’s own files): ten families, era tiers, path links, rank rings, a detail pane on desktop and a sheet on a phone. Links do not gate buys, so the campaign bot’s purchase order is unchanged.

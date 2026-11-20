@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
+import { museumStore } from '@/games/grocery-empire/ui/museum/store'
 import { flushNow, hydrateForUser, setSyncUser, signOutClear, subscribeHydrate } from '@/shared/cloudSync'
 import type { ProfileRow } from '@/shared/database.types'
 import { getSupabase, supabaseConfigured } from '@/shared/supabase'
@@ -137,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(next)
       if (event === 'SIGNED_OUT') {
         signOutClear()
+        museumStore.invalidate()
         setProfile(null)
         setSavesReady(false)
         lastHydrated.current = null
@@ -186,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!sb) return
     await sb.auth.signOut()
     signOutClear()
+    museumStore.invalidate()
     setSyncUser(null)
     setProfile(null)
     setSavesReady(false)

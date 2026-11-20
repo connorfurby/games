@@ -21,10 +21,12 @@
 | [13-release-1.0-plan.md](13-release-1.0-plan.md) | **Active:** the 1.0 release plan — audit, gates, phases P0–P12 |
 | [12-expansion-megaplan.md](12-expansion-megaplan.md) | **Shipped (2026-11-14):** lengthen to ~40–50h. Live generation work is **40.0** (Phases 0–12 below). |
 
-**Current snapshot (update when wrong):** `SAVE_VERSION` **42** · display `GAME_VERSION` **1.0** (launch numbering; pre-1.0 bulletins erased) · default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
+**Current snapshot (update when wrong):** `SAVE_VERSION` **42** · display `GAME_VERSION` **1.0.1** (launch numbering; pre-1.0 bulletins erased) · default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
 
-**Accounts:** Google sign-in is required to play. Saves live on the account in Supabase (in-memory cache only while the tab is open — no localStorage persistence). DevMode slots stay ephemeral and never rank.
+**Accounts:** Google sign-in for cloud play. Builds without Supabase env play as a local player (demo Social + `localStorage` mirror). DevMode slots stay ephemeral and never rank.
 
-**Shell chrome:** Profile is global — `AccountChrome` + `ProfileSheet` mount on the shelf bar and both in-play HUDs (avatar menu: Profile / Social / Shelf / Sign out). Social rooms are URL-routed: `/social` (Floor), `/social/friends`, `/social/boards`, `/social/you`. Soft-gated (in-place sign-in CTA) rather than bounced to Home.
+**Shell chrome:** Profile is global — `AccountChrome` + `ProfileSheet` on the shelf bar and both HUDs. Social rooms: `/social`, `/compete`, `/boards`, `/friends`, `/you`, `/u/:handle`. Store name links home (`meta-shelf`); pause reminder after 30s.
 
-Last pack review: 2026-11-20 (Social rooms + global profile chrome). Earlier: 2026-11-19 (Google accounts + cloud sync + Social).
+**Museum save:** Chests/relics live in the `grocery-museum` cloud slot (not the campaign run). `museumStore` must `reload()` on `games:cloud-reloaded` — an early empty read used to stick, let `earn()` re-grant every claim, and overwrite opened chests.
+
+Last pack review: 2026-11-20 (rebase: Social overhaul + pause/museum fixes).

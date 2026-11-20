@@ -7,6 +7,12 @@ export interface NewsArticle {
 
 export const NEWS: NewsArticle[] = [
   {
+    id: 'sd-1.2.1',
+    title: 'A paused broadcast tells you',
+    body: 'Opening the station starts the broadcast, even if you had paused before you left. Time you were away while paused stays where you left it. Stay paused and a clock appears after half a minute, with Resume. GAME_VERSION 1.2.1.',
+    atVersion: '1.2.1',
+  },
+  {
     id: 'sd-1.2',
     title: 'Trees, chapters, and the walkthrough',
     body: 'Plant · Trees is now a board you pan and tap, one family at a time, with the path drawn between ranks. Each era opens as a chapter: a voice, an epigraph, and the three things the door asks. After the chapter, the walkthrough for that era offers itself. The Next strip carries the mission when a goal has no closer hint. GAME_VERSION 1.2.',

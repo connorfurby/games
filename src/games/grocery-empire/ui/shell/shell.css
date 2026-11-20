@@ -2546,3 +2546,57 @@
   .sr-bar i { display: block; height: 100%; background: #5fd38a; }
   .sr-next { margin: var(--s-2) 0 0; font-size: var(--t-sm); color: var(--ge-muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 }
+
+@layer shell {
+  /* Hangs under the real header, so a wrapped phone bar does not cover it. */
+  .g2-pause-note {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: var(--s-3);
+    z-index: 6;
+    width: min(15rem, calc(100vw - 1.5rem));
+    display: grid;
+    justify-items: stretch;
+    gap: 0.2rem;
+    padding: 0.65rem 0.75rem 0.7rem;
+    border: 1px solid var(--g2-line-strong);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--ge-bg) 94%, #000);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    text-align: center;
+  }
+
+  .g2-pause-note__kicker,
+  .g2-pause-note__line {
+    margin: 0;
+  }
+
+  .g2-pause-note__kicker {
+    font-size: var(--t-2xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ge-muted);
+  }
+
+  .g2-pause-note__clock {
+    margin: 0;
+    font-family: var(--g2-display);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.75rem;
+    line-height: 1.05;
+  }
+
+  .g2-pause-note__line {
+    font-size: var(--t-xs);
+    color: var(--ge-muted);
+  }
+
+  .g2-pause-note .gk-btn {
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+
+  .ge-root--photo .g2-pause-note {
+    display: none;
+  }
+}

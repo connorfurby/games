@@ -19,10 +19,10 @@
 | [10-changelog-chat.md](10-changelog-chat.md) | What this ship landed |
 | [11-backlog.md](11-backlog.md) | Known gaps |
 
-**Current snapshot:** `SAVE_VERSION` **4** · `GAME_VERSION` **1.2** · **308** upgrades on 10 pannable trees · 12 shows · 6 doctrines · 13 era chapters · 51 tours · 53 tips · 89 memos · 156 whispers · 24 staff roles · 4 rival faces (all live). Default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `SD_LONG=1` Eras 3–6. `SD_HORIZON=1` Era 12 **>40h ≤50h**. Measured seed 1 (see [07-pacing.md](07-pacing.md)): Era1 ~37m · Era2 ~4.0h · Era3 ~8.5h · Era4 ~14.0h · Era5 ~17.5h · Era6 ~22.1h · Era12 ~40.7h. 1.2 does not change the bot's economy path.
+**Current snapshot:** `SAVE_VERSION` **4** · `GAME_VERSION` **1.2.1** · **308** upgrades on 10 pannable trees · 12 shows · 6 doctrines · 13 era chapters · 51 tours · 53 tips · 89 memos · 156 whispers · 24 staff roles · 4 rival faces (all live). Default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `SD_LONG=1` Eras 3–6. `SD_HORIZON=1` Era 12 **>40h ≤50h**. Measured seed 1 (see [07-pacing.md](07-pacing.md)): Era1 ~37m · Era2 ~4.0h · Era3 ~8.5h · Era4 ~14.0h · Era5 ~17.5h · Era6 ~22.1h · Era12 ~40.7h. 1.2 does not change the bot's economy path.
 
 **Accounts:** Google sign-in is required to play. Campaign saves live on the account in Supabase (no localStorage). DevMode (`signal-decay-dev`) is ephemeral and never ranks.
 
 **Shell chrome:** Profile is global — same `AccountChrome` / `ProfileSheet` as Grocery (HUD chip beside the waffle). Explicit **Shelf** control in the HUD; More sheet has **Home · Shelf**. Social rooms are URL-routed (`/social`, `/social/friends`, `/social/boards`, `/social/you`).
 
-Last pack review: 2026-11-20 (Social rooms + global profile chrome). Earlier: 2026-11-19 (Google accounts + cloud sync + Social).
+Last pack review: 2026-11-20 (Pause clock + open on air). Earlier: 2026-11-20 (Social rooms + global profile chrome).

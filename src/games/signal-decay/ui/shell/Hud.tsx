@@ -7,8 +7,10 @@ import type { GameState } from '../../sim/state'
 import { useFlash, useTween } from '../fx'
 import { money, pct, qty } from '../format'
 import { AccountChrome } from '@/shell/AccountChrome'
+import { storySilence } from '../../sim/pause'
 import { useGame } from '../GameContext'
 import { NextGoal } from './NextGoal'
+import { PauseReminder } from './PauseReminder'
 
 const SPEEDS = [1, 2, 4, 8] as const
 const HEAT_HIGH = DECAY.heatMax * 0.7
@@ -113,6 +115,7 @@ export function Hud({ onMore }: { onMore?: () => void }) {
             className={`sd-icon-btn${state.paused ? ' is-on' : ''}`}
             onClick={() => dispatch({ type: 'setPaused', paused: !state.paused })}
             title={state.paused ? 'Resume' : 'Pause'}
+            aria-label={state.paused ? 'Resume' : 'Pause'}
             aria-pressed={state.paused}
           >
             {state.paused ? '▶' : '❚❚'}
@@ -163,6 +166,11 @@ export function Hud({ onMore }: { onMore?: () => void }) {
         ) : null}
         <AccountChrome tone="play" className="sd-hud__account" />
       </div>
+      <PauseReminder
+        paused={state.paused}
+        quiet={storySilence(state)}
+        onResume={() => dispatch({ type: 'setPaused', paused: false })}
+      />
     </header>
   )
 }

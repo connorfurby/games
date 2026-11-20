@@ -129,7 +129,7 @@ const RICH: Record<string, { blocks: WikiBlock[]; blurb?: string; title?: string
         type: 'defs',
         items: [
           { term: 'K or /', def: 'Command palette — jump to any department, upgrade, memo or role.' },
-          { term: 'Space', def: 'Pause / resume.' },
+          { term: 'Space', def: 'Pause or resume. Stay paused and a clock appears with Resume.' },
           { term: 'Ctrl+Z', def: 'Undo the last purchase while its timer runs.' },
           { term: 'U', def: 'Unpack.' },
           { term: 'M', def: 'Memos drawer.' },

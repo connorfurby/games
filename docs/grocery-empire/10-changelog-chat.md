@@ -2,6 +2,12 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## AW. Pause clock + museum cloud reload (2026-11-20)
+
+- Opening a save clears a player pause, so the store starts running. Time you were away while paused stays frozen (no catch-up). Reject, and the Last Aisle refusal, stay parked.
+- After 30 real seconds of pause, a clock hangs under the header: how long it has been paused, and Resume.
+- **Museum hydrate:** `museumStore.reload()` on `games:cloud-reloaded`; Shelf waits for `savesReady` before reading relics; cloud sync enables uploads only after slots replace. Stops opened chests from reappearing after refresh.
+
 ## AV. Social overhaul: names, competitions, leaderboards, friends (2026-11-20, on `main`)
 
 No `SAVE_VERSION` bump (no sim state changed). **Server step:** apply `supabase/migrations/20261120100000_social_v2.sql`. Until it is applied the client falls back to v1 tables: boards, friends and the feed work; cups, challenges, leagues, settings and onboarding switch on after.

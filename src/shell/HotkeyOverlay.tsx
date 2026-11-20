@@ -4,7 +4,7 @@ import { subscribeHotkeyOpen } from './AppMenu'
 const ROWS: { keys: string; action: string }[] = [
   { keys: 'U', action: 'Unpack' },
   { keys: '[ ] or − +', action: 'Nudge price' },
-  { keys: 'Space', action: 'Pause / resume' },
+  { keys: 'Space', action: 'Pause or resume. A clock offers Resume if you stay paused.' },
   { keys: 'Ctrl/Cmd+Z', action: 'Undo your last action (within 5 seconds)' },
   { keys: '1–7', action: 'Jump to Store, Supply, Team, Money, Empire, Worlds or Museum' },
   { keys: 'M', action: 'Open Memos' },

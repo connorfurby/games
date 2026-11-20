@@ -27,6 +27,7 @@ import { YouRoom } from '@/shell/social/YouRoom'
 import { setPlayingGame, startPresence, stopPresence } from '@/shell/social/presence'
 import { publishPublicStats } from '@/shell/social/stats'
 import type { SocialGameId } from '@/shared/database.types'
+import { museumStore } from '@/games/grocery-empire/ui/museum/store'
 import { loadMeta } from '@/shared/save'
 import { DEFAULT_META } from '@/shared/types'
 
@@ -35,6 +36,7 @@ function CloudReloadBridge() {
   const { hydrating, session, savesReady } = useAuth()
   useEffect(() => {
     return wireCloudReload({
+      museum: () => museumStore.reload(),
       grocery: () => groceryEngine.reloadFromDisk(),
       signal: () => getSignalEngine().reloadFromDisk(),
       meta: () => replaceMeta(loadMeta(DEFAULT_META)),

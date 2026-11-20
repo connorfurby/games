@@ -5,7 +5,7 @@
  * Protocol: bump GAME_VERSION (patch/minor), prepend a NEWS article, keep newest first.
  */
 
-export const GAME_VERSION = '1.0'
+export const GAME_VERSION = '1.0.1'
 
 /** Era bands the News filter offers. `meta` is shell/site news that isn't about an era. */
 export type NewsBand = 'e01' | 'e23' | 'e46' | 'e712' | 'meta'
@@ -53,6 +53,20 @@ export function newsArt(a: NewsArticle): NewsArt {
 
 /** Newest first. Agents: prepend — never bury the latest bulletin. */
 export const NEWS: NewsArticle[] = [
+  {
+    id: '2026-11-20-pause-clock',
+    bands: ['meta'],
+    date: '2026-11-20',
+    version: '1.0.1',
+    kicker: 'Desk',
+    art: 'desk',
+    headline: 'A paused store tells you',
+    dek: 'The store opens running. Leave it paused and a clock offers Resume.',
+    body: [
+      'Opening the store starts the day moving, even if you had paused before you left. Time you were away while paused stays where you left it.',
+      'If you pause and stay there, a small clock appears after half a minute, with a Resume button.',
+    ],
+  },
   {
     id: '2026-11-16-grocery-empire-1-0',
     bands: ['meta', 'e01', 'e23', 'e46', 'e712'],

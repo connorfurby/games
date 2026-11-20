@@ -6,7 +6,7 @@ export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 10_000
 export const SAVE_VERSION = 4
-export const GAME_VERSION = '1.2'
+export const GAME_VERSION = '1.2.1'
 
 export const PUZZLE_SLOW = 0.72
 export const PUZZLE_FAST = 0.85

@@ -13,6 +13,7 @@ import {
 import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
 import { can as canCmd, run as runCmd, tickAutoRestock, type Check, type Command } from './commands'
 import { migrate } from './migrate'
+import { openUnpaused } from './pause'
 import { getActiveSaveId } from './saveKey'
 import { createInitialState, type GameState } from './state'
 import { applyOffline, applyTick, beginOffline, type OfflineRun } from './tick'
@@ -131,7 +132,7 @@ export class GroceryEngine {
     const state = raw == null ? createInitialState() : migrate(raw)
     if (raw && typeof (raw as { lastSavedAt?: unknown }).lastSavedAt === 'number') {
       const elapsed = (Date.now() - (raw as { lastSavedAt: number }).lastSavedAt) / 1000
-      // Paused stays paused across a reload. Short refreshes catch up quietly;
+      // A pause freezes the away gap (no catch-up). Short refreshes catch up quietly;
       // the away-receipt only appears once the gap is long enough to matter.
       if (elapsed > 2 && !state.paused) {
         if (elapsed >= ASYNC_CATCHUP_SEC) {
@@ -146,6 +147,9 @@ export class GroceryEngine {
         }
       }
     }
+    // Open running. A saved pause is easy to miss; story silences stay parked.
+    // The away gap above already treated a pause as frozen.
+    openUnpaused(state)
     state.lastSavedAt = Date.now()
     return state
   }
@@ -341,6 +345,7 @@ export class GroceryEngine {
   replaceState(next: GameState) {
     this.cancelCatchUp()
     this.state = next
+    openUnpaused(this.state)
     this.state.lastSavedAt = Date.now()
     this.bump()
     this.save()

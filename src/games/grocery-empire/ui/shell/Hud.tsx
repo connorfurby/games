@@ -11,7 +11,9 @@ import { useMeta } from '@/shell/MetaContext'
 import { sfx } from '@/shared/audio'
 import { canUndo, undoLabel, undoSecondsLeft } from '../../sim/undo'
 import { computeHudAlert } from './hudAlert'
+import { PauseReminder } from './PauseReminder'
 import { performUndo } from './undoAction'
+import { storySilence } from '../../sim/pause'
 import { PopLayer, type PopItem } from '../components/Pop'
 import { useFlash, useTween } from '../fx'
 import { money, qty, shortFigure } from '../format'
@@ -132,7 +134,7 @@ export function Hud({
             className={`g2-icon-btn${s.paused ? ' is-on' : ''}`}
             onClick={() => dispatch({ type: 'setPaused', paused: !s.paused })}
             title={s.paused ? 'Resume (Space)' : 'Pause (Space)'}
-            aria-label="Pause"
+            aria-label={s.paused ? 'Resume' : 'Pause'}
             aria-pressed={s.paused}
           >
             <span aria-hidden>{s.paused ? '▶' : '❚❚'}</span>
@@ -186,6 +188,11 @@ export function Hud({
         </button>
         <AccountChrome tone="play" className="g2-hud__account" />
       </div>
+      <PauseReminder
+        paused={s.paused}
+        quiet={storySilence(s)}
+        onResume={() => dispatch({ type: 'setPaused', paused: false })}
+      />
     </header>
   )
 }

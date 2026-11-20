@@ -58,7 +58,7 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
           </Link>
           <div className="sd-more-tile sd-more-tile--static">
             <strong>Keys</strong>
-            <span>1–5 hubs · Space pause</span>
+            <span>1–5 hubs · Space pause · a clock offers Resume</span>
           </div>
           <p className="sd-act__fact sd-more-ver">Signal Decay v{GAME_VERSION}</p>
         </div>

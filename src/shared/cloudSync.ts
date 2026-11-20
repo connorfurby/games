@@ -122,7 +122,7 @@ export async function hydrateForUser(userId: string): Promise<{ reloaded: boolea
   }
 
   emit({ type: 'start' })
-  setSyncUser(userId)
+  // Keep syncUser off until slots are replaced so an early empty write cannot mark dirty.
 
   try {
     const { data, error } = await sb.from('saves').select('slot_id, payload, updated_at').eq('user_id', userId)
@@ -139,12 +139,20 @@ export async function hydrateForUser(userId: string): Promise<{ reloaded: boolea
       }
     }
     replaceAllSlots(payloads)
+    dirty.clear()
+    if (flushTimer) {
+      clearTimeout(flushTimer)
+      flushTimer = null
+    }
+    setSyncUser(userId)
     emit({ type: 'done', reloaded: true })
     return { reloaded: true }
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Could not open your account saves.'
     emit({ type: 'error', message })
     clearAllSlots()
+    dirty.clear()
+    setSyncUser(null)
     emit({ type: 'done', reloaded: false })
     return { reloaded: false }
   }
@@ -153,6 +161,11 @@ export async function hydrateForUser(userId: string): Promise<{ reloaded: boolea
 export function signOutClear() {
   setSyncUser(null)
   clearAllSlots()
+  dirty.clear()
+  if (flushTimer) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
 }
 
 /** Call on visibility hidden / beforeunload. */

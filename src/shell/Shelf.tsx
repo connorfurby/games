@@ -163,7 +163,8 @@ export function Shelf() {
   const lesson = isGe ? nextLesson(era ?? 0, save?.tutorials?.done ?? {}) : null
   const lessonsDone = isGe ? Object.values(save?.tutorials?.done ?? {}).filter(Boolean).length : 0
   const awards = Object.keys(meta.achievements).length
-  const relicCount = Object.keys(museumStore.get().relics ?? {}).length
+  // Wait for cloud hydrate — an early empty museumStore.get() used to stick and re-grant chests.
+  const relicCount = readyToPlay ? Object.keys(museumStore.get().relics ?? {}).length : 0
   const pack = TEXTURE_PACKS.find((p) => p.id === meta.equippedPack) ?? TEXTURE_PACKS[0]
   const affordablePacks = TEXTURE_PACKS.filter((p) => !meta.unlockedPacks.includes(p.id) && p.tokenCost <= meta.shelfTokens).length
 

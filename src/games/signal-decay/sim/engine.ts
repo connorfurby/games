@@ -3,6 +3,7 @@ import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
 import { can as canCmd, run as runCmd, type Check, type Command } from './commands'
 import { repair } from './invariants'
 import { migrate } from './migrate'
+import { openUnpaused } from './pause'
 import { getActiveSaveId } from './saveKey'
 import { createInitialState, type GameState } from './state'
 import { applyOffline, applyTick } from './tick'
@@ -52,6 +53,9 @@ export class SignalEngine {
         }
       }
     }
+    // Open on air. A saved pause is easy to miss; a double reject stays parked.
+    // The away gap above already treated a pause as frozen.
+    openUnpaused(state)
     state.lastSavedAt = Date.now()
     return state
   }
@@ -191,6 +195,7 @@ export class SignalEngine {
   replaceState(next: GameState) {
     this.state = next
     repair(this.state)
+    openUnpaused(this.state)
     this.state.lastSavedAt = Date.now()
     this.bump()
     this.save()
