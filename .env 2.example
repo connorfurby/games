@@ -1,0 +1,10 @@
+# Supabase (project "games") — copy to .env.local for Vite.
+# Also set these on Vercel for production builds.
+VITE_SUPABASE_URL=https://xfolpeegsguifkyewdvx.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-or-publishable-key
+
+# Google OAuth must be enabled in the Supabase dashboard (Authentication → Providers → Google)
+# with a Google Cloud OAuth Web client. Redirect URI:
+#   https://xfolpeegsguifkyewdvx.supabase.co/auth/v1/callback
+# Site URL / redirect allow-list: local Vite origin + your Vercel origin.
+# Disable email signups so Google is the only login path.
