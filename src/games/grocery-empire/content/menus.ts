@@ -84,8 +84,8 @@ export const MENUS: Record<MenuId, MenuDef> = {
   },
   market: {
     id: 'market',
-    name: 'Exchange',
-    glyph: 'EX',
+    name: 'Stock Market',
+    glyph: 'SM',
     purpose: 'Buy and sell shares, collect dividends and bet on crate prices.',
   },
   boardroom: {
@@ -144,8 +144,8 @@ export const MENUS: Record<MenuId, MenuDef> = {
   },
   lab: {
     id: 'lab',
-    name: 'Lab',
-    glyph: 'LB',
+    name: 'Inventions',
+    glyph: 'IN',
     purpose: 'Invent things, patent them, and license them to rivals for royalties.',
   },
   property: {
@@ -156,9 +156,9 @@ export const MENUS: Record<MenuId, MenuDef> = {
   },
   franchise: {
     id: 'franchise',
-    name: 'Franchises',
-    glyph: 'FR',
-    purpose: 'Sell your name to other grocers. Good ones pay royalties; bad ones hurt your brand.',
+    name: 'Licensing',
+    glyph: 'LI',
+    purpose: 'License your house brand to independent grocers. Good ones pay royalties; sloppy ones hurt your brand.',
   },
   rivals: {
     id: 'rivals',

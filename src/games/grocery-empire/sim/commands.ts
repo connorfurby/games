@@ -835,7 +835,7 @@ const coreHandlers = {
       } else {
         const seats = staffSeatCap(s)
         if (floorHeadcount(s) >= seats) {
-          return no(`Staff seats full (${seats}). Grow the storefront, take the Shift Lead upgrade, or let someone go.`)
+          return no(`Staff seats full (${seats}). Grow the storefront, take the Scheduling Desk upgrade, or let someone go.`)
         }
       }
       const cost = hireCost(s, role)

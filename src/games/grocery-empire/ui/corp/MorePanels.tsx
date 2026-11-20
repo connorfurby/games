@@ -22,7 +22,7 @@ import { HubStage } from '../components/HubStage'
 import { Button } from '../kit'
 import { ROOM_GROUND, RoomScene } from '../scenes/room'
 import { initialsOf } from './ownerLook'
-import { HowItWorks } from './HowItWorks'
+import { Ambition } from './Ambition'
 import './corp.css'
 import './boardroom.css'
 import './town.css'
@@ -125,7 +125,7 @@ export function ExecsPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="execs" />
+        <Ambition menu="execs" />
         <div className="tw-grid">
           {EXEC_ROLES.map((r) => {
             const e = more.execs[r.id]
@@ -258,7 +258,7 @@ export function LabPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="lab" />
+        <Ambition menu="lab" />
         <div className="bd-acts">
           <Button
             tone="ghost"
@@ -390,7 +390,7 @@ export function PropertyPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="property" />
+        <Ambition menu="property" />
         <div className="tw-grid">
           {open.map((x) => {
             const own = more.lots[x.id]
@@ -440,14 +440,14 @@ export function FranchisePanel() {
   const sell = can(s, { type: 'sellFranchise' })
   const tray = {
     primary: {
-      label: `Sell a franchise for ${m(franchiseFee(s))}`,
+      label: `Sign a licensee for ${m(franchiseFee(s))}`,
       tone: 'primary' as const,
       size: 'lg' as const,
       disabled: !sell.ok,
       onClick: () => dispatch({ type: 'sellFranchise' }),
     },
     failReason: sell.ok ? undefined : sell.reason,
-    hint: 'Each franchisee pays a fee now and royalties every minute, by how well they run it.',
+    hint: 'Each licensee pays a fee now and royalties every minute, by how well they handle your brand.',
   }
   return (
     <section className="ge-panel tw-panel">
@@ -457,9 +457,9 @@ export function FranchisePanel() {
         tray={tray}
         scene={
           <RoomScene
-            label="Franchises"
+            label="Licensees"
             chips={[
-              { label: 'Franchises', value: `${more.franchises.length} of ${franchiseCap(s)}` },
+              { label: 'Licensees', value: `${more.franchises.length} of ${franchiseCap(s)}` },
               { label: 'Royalties', value: m(more.royalties) },
             ]}
             skyTop="#2a3a52"
@@ -490,8 +490,8 @@ export function FranchisePanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="franchise" />
-        {s.era < FRANCHISE.era ? <p className="mk-note">Franchising opens in Era {FRANCHISE.era}.</p> : null}
+        <Ambition menu="franchise" />
+        {s.era < FRANCHISE.era ? <p className="mk-note">Licensing opens in Era {FRANCHISE.era}.</p> : null}
         <div className="tw-grid">
           {more.franchises.map((f) => {
             const trait = FRANCHISE_TRAITS.find((t) => t.id === f.trait)

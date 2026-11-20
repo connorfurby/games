@@ -117,7 +117,7 @@ const NOTES: Partial<Record<RoleId, string>> = {
   bookkeeper: 'Also cuts the interest on new bonds.',
   hrManager: 'The union brings demands less often.',
   spokesperson: 'Your outlets reach further and crises go better.',
-  franchiseScout: 'New franchises open better run and pay a bigger fee.',
+  franchiseScout: 'New licensees handle your brand better and pay a bigger fee.',
   trainer: 'The whole crew levels faster and can climb higher.',
   greeter: 'Crowds become regulars faster.',
 }
@@ -189,7 +189,7 @@ export function supportNeed(s: GameState, role: RoleId): string | null {
     case 'spokesperson':
       return !have && (c?.town.outlets.length ?? 0) > 0 ? 'You own a paper. A spokesperson makes every story reach further.' : null
     case 'franchiseScout':
-      return !have && (c?.more.franchises.length ?? 0) > 0 ? 'You sell franchises. A scout finds better owners.' : null
+      return !have && (c?.more.franchises.length ?? 0) > 0 ? 'You license your brand. A scout finds better licensees.' : null
     case 'produceLead':
       return !have && s.categories.produce ? 'Nobody runs produce, so Fresh rules can’t be set.' : null
     default:

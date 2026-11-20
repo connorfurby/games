@@ -3,7 +3,7 @@ import { DIALOGUE_LINES } from '../content/dialogue'
 import { BASKET_MILESTONES } from '../content/lore'
 import { MEMOS } from '../content/memos'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
-import { CO, COMPUTE, DEPTH } from './balance'
+import { COMPUTE, DEPTH } from './balance'
 import {
   advanceTutorialStep,
   beginTutorial,

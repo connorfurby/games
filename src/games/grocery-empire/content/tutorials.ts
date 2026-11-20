@@ -378,9 +378,10 @@ export const TUTORIALS: TutorialDef[] = [
     steps: [
       {
         id: 'rent-spot',
-        coachId: 'floor-rent',
+        coachId: 'floor-cash',
+        present: 'look',
         title: 'Rent',
-        body: 'Rent is taken a little at a time. If you run short, it becomes unpaid rent that sales pay off later. There is no game over.',
+        body: 'Rent comes out of your cash a little at a time; the rate under your cash already counts it. If you run short, it becomes unpaid rent that sales pay off later. There is no game over.',
         recovery: 'If cash runs out, a free crate or a bailout gets you going again.',
         doneWhen: { kind: 'stat', key: 'rentPaid', min: 1 },
       },
@@ -917,9 +918,9 @@ export const TUTORIALS: TutorialDef[] = [
     steps: [
       {
         id: 'e2-board-spot',
-        coachId: 'books-board',
+        coachId: 'boardroom-agenda',
         title: 'Face the board',
-        body: 'Once you go public, the board meets every so often. Answer them in Books. Ignoring them slowly costs Reputation, but never ends your run.',
+        body: 'Once you incorporate, the directors meet every so often. Pick their agenda in the Boardroom. Ignoring them slowly costs Reputation, but never ends your run.',
         recovery: 'A missed meeting only costs a little Reputation.',
         action: { type: 'resolveBoard' },
         doneWhen: { kind: 'stat', key: 'boardMeetings', min: 1 },
@@ -1205,8 +1206,9 @@ export const TUTORIALS: TutorialDef[] = [
       {
         id: 'weather-spot',
         coachId: 'floor-weather',
+        present: 'look',
         title: 'Read the sky',
-        body: 'The weather tile on the Floor shows today’s weather. Rain sells more cans, heat sells more dairy, and cold makes produce go off faster. The Weather Radio memo shows tomorrow too.',
+        body: 'The sky over your street shows today’s weather. Rain sells more cans, heat sells more dairy, and cold makes produce go off faster. The Weather Radio memo shows tomorrow too.',
         recovery: 'Weather only nudges sales and spoilage. It never ruins a run.',
         action: { type: 'openMenu', params: { menu: 'floor' } },
         doneWhen: { kind: 'always' },

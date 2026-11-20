@@ -172,8 +172,8 @@ const CHAINS: Record<string, Row[]> = {
     ],
   ],
   franchise: [
-    ['franchise', 'Your name, their door', 'Sell a franchise.', (s) => [Math.min(1, c(s)?.more.franchises.length ?? 0), 1]],
-    ['franchise', 'Chain of chains', 'Have three franchises open.', (s) => [c(s)?.more.franchises.length ?? 0, 3]],
+    ['franchise', 'Your label, their shelf', 'Sign a licensee.', (s) => [Math.min(1, c(s)?.more.franchises.length ?? 0), 1]],
+    ['franchise', 'House brand everywhere', 'Have three licensees signed.', (s) => [c(s)?.more.franchises.length ?? 0, 3]],
     [
       'franchise',
       'Royalty',

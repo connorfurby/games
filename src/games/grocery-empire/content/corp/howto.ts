@@ -11,6 +11,7 @@ export const HOWTO: Record<string, string[]> = {
     'Each owner also changes how the store runs, more strongly the bigger their slice. You always keep at least 30%.',
     `Going public (Era ${CO.ipoEra}+) sells to everyone at once. Every ${CO.quarterSec / 60}-minute quarter you must beat last quarter's sales by about ${Math.round(CO.targetGrowth * 100)}%; miss it and shareholders want a meeting.`,
     'Owners and the public vote on board proposals. Over half the shares wins; lunch can win an owner over.',
+    'Once you incorporate, your directors meet here too: pick one agenda at each meeting.',
   ],
   execs: [
     `Six chairs. Each executive earns a salary every minute (a few seconds of sales) and improves one part of the company.`,
@@ -49,9 +50,9 @@ export const HOWTO: Record<string, string[]> = {
     'Let a lot to a café for steady rent, to a rival for top rent (they take a few shoppers), or keep it as your own annex (more shoppers, no rent).',
   ],
   franchise: [
-    `From Era ${FRANCHISE.era}, sell up to ${FRANCHISE.perEra} franchises an era. Each pays ${FRANCHISE.feeMin} minutes of sales up front.`,
+    `From Era ${FRANCHISE.era}, sign up to ${FRANCHISE.perEra} licensees an era. Each pays ${FRANCHISE.feeMin} minutes of sales up front.`,
     'Royalties come in every minute, by how well they run the store. Some get better, some get sloppy.',
-    `Below ${FRANCHISE.badBelow}% quality a franchise sours your brand. Inspect it to lift quality, or pull the licence.`,
+    `Below ${FRANCHISE.badBelow}% quality a licensee sours your brand. Inspect it to lift quality, or pull the licence.`,
   ],
   customers: [
     'Seven groups shop with you. Each wants a price level, certain aisles and sometimes certain hours or causes.',
@@ -82,7 +83,7 @@ export const HOWTO: Record<string, string[]> = {
     `Bosses only hold a grudge for what you do: price wars, moles, lawsuits, buying their shares. Past ${RIVALRY.actAt} they hit back.`,
     'A price war is best of three: undercut beats hold, match beats undercut, hold beats match. Bosses learn your last move.',
     'A mole loses cover over time and with every job. A caught mole costs Heat, brand and a lawsuit.',
-    `Own ${RIVALRY.takeoverShares / 10}% of a rival on the Exchange to take them over. Past ${RIVALRY.pillAt / 10}% they dilute you.`,
+    `Own ${RIVALRY.takeoverShares / 10}% of a rival on the Stock Market to take them over. Past ${RIVALRY.pillAt / 10}% they dilute you.`,
   ],
   crisis: [`Crises only find a company in the public eye (listed, with owners, press or executives). Answer within ${CRISIS.waitSec / 60} minutes.`],
 }

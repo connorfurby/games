@@ -6,7 +6,7 @@ import { HORIZON_ROLE_IDS, ROLES, type HorizonRoleId } from '../../content/staff
 import type { MenuId } from '../../content/menus'
 import { useGame } from '../GameContext'
 import { money, pct, qty, rate } from '../format'
-import { SHIRT } from './StaffPortrait'
+import { SHIRT } from './shirts'
 
 /** Each Worlds annex desk: its short name and the screen it works for. */
 const DESK: Record<HorizonRoleId, { label: string; menu: string }> = {

@@ -120,7 +120,10 @@ export function SceneStrip({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [growth.era, growth.builds, growth.stores, growth.staff])
   return (
-    <div className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}${bump ? ' is-bumped' : ''}${away ? ' g2-scenewrap--away' : ''}`}>
+    <div
+      data-coach-id="floor-weather"
+      className={`g2-scenewrap${expanded ? '' : ' g2-scenewrap--band'}${bump ? ' is-bumped' : ''}${away ? ' g2-scenewrap--away' : ''}`}
+    >
       {bump ? (
         <span className="g2-scenewrap__new" role="status">
           {bump}

@@ -19,12 +19,11 @@ import {
   voteShare,
 } from '../../sim/corp/town'
 import { useGame } from '../GameContext'
-import { clock, money } from '../format'
+import { clock, money, qty } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Button } from '../kit'
 import { ROOM_GROUND, RoomScene } from '../scenes/room'
-import { HowItWorks } from './HowItWorks'
-import { CompanyLedger } from './CompanyLedger'
+import { Ambition } from './Ambition'
 import './corp.css'
 import './boardroom.css'
 import './town.css'
@@ -75,7 +74,7 @@ export function FoundationPanel() {
           <RoomScene
             label={`Foundation: goodwill ${Math.round(t.goodwill)}`}
             chips={[
-              { label: 'Goodwill', value: String(Math.round(t.goodwill)) },
+              { label: 'Town goodwill', value: qty(t.goodwill, numberFormat) },
               { label: 'Given', value: m(t.donated) },
               { label: 'Awards', value: String(t.awards) },
             ]}
@@ -114,7 +113,7 @@ export function FoundationPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="foundation" />
+        <Ambition menu="foundation" />
         <div className="tw-grid">
           {open.map((c) => {
             const lvl = t.causes[c.id] ?? 0
@@ -235,7 +234,7 @@ export function CityHallPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="cityhall" />
+        <Ambition menu="cityhall" />
         {e && office ? (
           <article className="bd-decide">
             <div className="bd-decide__body">
@@ -376,7 +375,7 @@ export function UnionPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="union" />
+        <Ambition menu="union" />
         {d && !striking ? (
           <article className="bd-decide">
             <div className="bd-decide__body">
@@ -496,7 +495,7 @@ export function PressPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="press" />
+        <Ambition menu="press" />
         <div className="tw-grid">
           {OUTLETS.filter((o) => s.era >= o.era).map((o) => (
             <article key={o.id} className={`tw-card${t.outlets.includes(o.id) ? ' is-on' : ''}`}>
@@ -633,8 +632,7 @@ export function CustomersPanel() {
           </RoomScene>
         }
       >
-        <HowItWorks menu="customers" />
-        <CompanyLedger compact />
+        <Ambition menu="customers" />
         <div className="tw-grid">
           {open.map((x) => {
             const loyal = Math.round(t.loyalty[x.id] ?? TOWN.loyaltyStart)

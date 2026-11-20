@@ -1,3 +1,4 @@
+import { corpCashFlow } from '../../sim/corp/effects'
 import { memo, useState } from 'react'
 import { BUILD_TRACKS } from '../../content/builds'
 import { MENUS } from '../../content/menus'
@@ -7,17 +8,13 @@ import {
   demandBreakdown,
   rentPerSec,
   reputationEtaSec,
-  salesBottleneck,
   unitCost,
   up,
   upkeepPerSec,
   wagesPerSec,
 } from '../../sim/formulas'
 import { StatusChip, type VerbTrayProps } from '../play'
-import { sumQty } from '../../sim/helpers'
 import { canResolveBoard } from '../../sim/systems/capital'
-import type { BoardAgenda } from '../../sim/state'
-import type { GameState, SalesBottleneck } from '../../sim/state'
 import { useGame } from '../GameContext'
 import { money, qty } from '../format'
 import { Button, Card, DataTable, Disclosure, Meter, Sparkline, Stat, Tabs } from '../kit'
@@ -26,12 +23,6 @@ import { LedgerScene } from '../scenes/live/LedgerScene'
 import { HubCallout, LateHubShell, Rows } from './LateHubShell'
 import { CurrencyFlowTable, IncomeWaterfall } from './BooksLate'
 
-const BOARD_AGENDAS: { id: BoardAgenda; label: string; tip: string }[] = [
-  { id: 'expand', label: 'Expand', tip: 'The next store costs 10% less. A little equity is set aside.' },
-  { id: 'dividend', label: 'Dividend', tip: 'Turn some equity into cash. Brand takes a nick.' },
-  { id: 'rnd', label: 'Shelf R&D', tip: 'Perishables last longer until the next meeting. Costs up to $400.' },
-  { id: 'hours', label: 'Cut hours', tip: 'Hours snap to 1× for a short stretch. Wages ease and demand softens.' },
-]
 
 function etaLabel(sec: number): string {
   if (!Number.isFinite(sec)) return '—'
@@ -41,27 +32,6 @@ function etaLabel(sec: number): string {
   return `~${(sec / 3600).toFixed(1)} hr`
 }
 
-/** Where to send the player for each kind of bottleneck (only menus already unlocked). */
-function bottleneckTarget(
-  s: GameState,
-  kind: SalesBottleneck,
-): { menu: string; label: string } | null {
-  const pick = (menu: string, label: string) => (s.menus[menu as keyof GameState['menus']] ? { menu, label } : null)
-  switch (kind) {
-    case 'shelf':
-      return sumQty(s.backroom) > 0
-        ? pick('floor', 'Floor')
-        : (pick('suppliers', 'Suppliers') ?? pick('floor', 'Floor'))
-    case 'unpack':
-      return pick('staff', 'Staff') ?? pick('floor', 'Floor')
-    case 'checkout':
-      return pick('staff', 'Staff') ?? pick('floor', 'Floor')
-    case 'demand':
-      return pick('marketing', 'Marketing') ?? pick('floor', 'Floor')
-    default:
-      return null
-  }
-}
 
 /** Memoized: re-renders from its own context reads, not from unrelated parent renders. */
 export const BooksPanel = memo(BooksPanelInner)
@@ -76,7 +46,6 @@ function BooksPanelInner() {
   const soldHist = s.history?.sold ?? []
   const revHist = s.history?.revenue ?? []
   const meetingDue = canResolveBoard(s) === null
-  const nextMeetingInSec = Math.max(0, Math.ceil(s.board.nextMeetingAt - s.time))
   const rent = rentPerSec(s)
   const wages = wagesPerSec(s)
   const burn = s.rates.costPerSec
@@ -84,11 +53,11 @@ function BooksPanelInner() {
   const buildUpkeepSec = upkeepPerSec(s, BUILD_TRACKS)
   const buildUpkeepMin = buildUpkeepSec * 60
   const upkeepWarn = buildUpkeepSec > 0 && (s.rates.cashPerSec ?? 0) + 1e-9 < buildUpkeepSec
-  const bottleneck = salesBottleneck(s)
   const repEta = reputationEtaSec(s)
   const storeRev = Math.max(0, s.rates.revenuePerSec)
   const ventureRate = s.rates.venturePerSec ?? 0
   const investYield = s.rates.investYieldPerSec ?? 0
+  const companyFlow = corpCashFlow(s).reduce((a, r) => a + r.perMin, 0) / 60
   const incorporateBlocked =
     s.incorporated
       ? 'Already incorporated'
@@ -110,7 +79,6 @@ function BooksPanelInner() {
   const debtOwed = s.debt?.owed ?? 0
   const debtShare = DEBT.revenueShare * (1 + up(s, 'debt-plan') * DEBT.planBonusPerLevel)
 
-  const target = bottleneckTarget(s, bottleneck.kind)
 
   const aisles = CATEGORY_IDS.filter(
     (c) => s.categories[c] || (s.stats.soldByCat?.[c] ?? 0) > 0,
@@ -134,48 +102,23 @@ function BooksPanelInner() {
   // The HUD raises the same alert (Hud.tsx): when the board is waiting, it leads the panel.
   const boardLifted = s.era >= 2 && s.incorporated && meetingDue
 
-  const boardCard = s.incorporated ? (
-    <Card
-      className={`lh-board${meetingDue ? '' : ' lh-board--calm'}`}
-      data-coach-id="books-board"
-      header={
-        <div className="lh-card-title">
-          <strong>Board meeting</strong>
-          <span>
-            {meetingDue
-              ? 'One choice. The others wait until the next meeting.'
-              : `Next meeting ${etaLabel(nextMeetingInSec)}.`}
-          </span>
-        </div>
-      }
-    >
-      <ul className="lh-board__list">
-        {BOARD_AGENDAS.map((a) => (
-          <li key={a.id} className={meetingDue ? 'is-due' : ''}>
-            <div>
-              <strong>{a.label}</strong>
-              <span>{a.tip}</span>
-            </div>
-            <Button
-              size="sm"
-              tone={meetingDue ? 'primary' : 'ghost'}
-              disabled={!meetingDue}
-              title={meetingDue ? a.tip : `Next meeting ${etaLabel(nextMeetingInSec)}`}
-              onClick={() => dispatch({ type: 'resolveBoard', agenda: a.id })}
-            >
-              {meetingDue ? 'Choose' : 'Waiting'}
-            </Button>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  ) : null
 
   type FlowRow = { key: string; label: string; value: string; title?: string; neg?: boolean }
   const flowRows: FlowRow[] = [
     { key: 'store', label: 'Sales', value: `${money(storeRev, numberFormat)}/s` },
     ...(ventureRate > 0 ? [{ key: 'venture', label: 'Ventures', value: `${money(ventureRate, numberFormat)}/s` }] : []),
     ...(investYield > 0 ? [{ key: 'invest', label: 'Investments', value: `${money(investYield, numberFormat)}/s` }] : []),
+    ...(Math.abs(companyFlow) > 1e-6
+      ? [
+          {
+            key: 'company',
+            label: 'Company and town',
+            value: `${companyFlow < 0 ? '−' : ''}${money(Math.abs(companyFlow), numberFormat)}/s`,
+            title: 'Dividends, rent, royalties, owners’ share, salaries, premiums and bonds. Line by line in Treasury.',
+            neg: companyFlow < 0,
+          },
+        ]
+      : []),
     { key: 'rent', label: 'Rent', value: `−${money(rent, numberFormat)}/s`, neg: true },
     { key: 'wages', label: 'Wages', value: `−${money(wages, numberFormat)}/s`, neg: true },
     { key: 'burn', label: 'All costs', value: `−${money(burn, numberFormat)}/s`, title: 'Stock, rent and wages together', neg: true },
@@ -231,7 +174,7 @@ function BooksPanelInner() {
   // The tray primary is the bottleneck jump; with no bottleneck it falls back to the next free move.
   const incorporateOpen = s.era >= 2 && !s.incorporated
   const incorporateCost = `${money(CAPITAL.incorporateCash, numberFormat)} + ${CAPITAL.incorporateRep} Reputation`
-  // A real action only: incorporating when it is possible. Advice lives in the callout below.
+  // A real action only: incorporating when it is possible. The sales limit lives in the HUD tab.
   const tray: VerbTrayProps | undefined =
     incorporateOpen && !incorporateBlocked
       ? {
@@ -254,20 +197,19 @@ function BooksPanelInner() {
     >
       {kpiChips}
 
-      {target ? (
+
+      {boardLifted ? (
         <HubCallout
-          title={bottleneck.label}
-          tone={bottleneck.kind !== 'demand' ? 'warn' : undefined}
-          coachId="books-bottleneck"
+          title="The directors are waiting on an agenda."
+          tone="warn"
+          coachId="books-board"
           action={
-            <Button tone="secondary" onClick={() => setActiveMenu(target.menu)}>
-              Open {target.label}
+            <Button tone="primary" onClick={() => setActiveMenu('boardroom')}>
+              Open the Boardroom
             </Button>
           }
         />
       ) : null}
-
-      {boardLifted ? boardCard : null}
 
       {buildUpkeepSec > 0 ? (
         <StatusChip tone={upkeepWarn ? 'warn' : 'ready'} title="Building upkeep">
@@ -408,11 +350,7 @@ function BooksPanelInner() {
               )}
             </div>
             {s.incorporated ? (
-              boardLifted ? (
-                <p className="lh-note">The board meeting is open at the top of this page.</p>
-              ) : (
-                boardCard
-              )
+              <p className="lh-note">The directors meet in the Boardroom.</p>
             ) : (
               <p className="lh-note" data-coach-id="books-board">
                 Board agenda opens after you incorporate.

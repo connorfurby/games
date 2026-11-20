@@ -239,10 +239,10 @@ export function corpCashFlow(s: GameState): { label: string; perMin: number; men
   add('Rent from your lots', rent, 'property')
   let fr = 0
   for (const f of c.more.franchises) fr += salesRate(s) * FRANCHISE.royaltySec * (f.quality / 100) * (f.trait === 'greedy' ? 0.6 : 1)
-  add('Franchise royalties', fr, 'franchise')
+  add('Licence royalties', fr, 'franchise')
   let lic = 0
   for (const [id, inv] of Object.entries(c.more.lab.invented)) if (inv.licensed) lic += salesRate(s) * (INVENTION_BY_ID[id]?.royaltySec ?? 0)
-  add('Licence royalties', lic, 'lab')
+  add('Patent royalties', lic, 'lab')
   add('Dividends to outside owners', -payoutPerSec(s) * 60, 'boardroom')
   let sal = 0
   for (const e of Object.values(c.more.execs)) if (e) sal += execSalary(s, e.trait)

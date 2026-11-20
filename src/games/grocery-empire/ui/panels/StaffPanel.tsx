@@ -148,7 +148,7 @@ export function StaffPanel() {
         </div>
         <p className="sh-days">Days with the opening covered: {s.depth?.shifts?.daysCoveredOpen ?? 0}</p>
         <div className="p6-row">
-          <div className="p6-hours">
+          <div className="p6-hours" data-coach-id="hours">
             <label htmlFor="ge-hours">
               Store hours <strong>{s.hours.toFixed(1)}×</strong> (up to {maxH.toFixed(1)}×) · longer hours sell more and cost more wages
             </label>

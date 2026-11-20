@@ -211,12 +211,21 @@ export function FloorRoom() {
         <g transform="translate(-350 38)">{priceTag}</g>
         <g transform="translate(-486 120)">{registers}</g>
         {bnLabel && !(shelf <= 0 && back <= 0) ? (
-          <g>
-            <rect x={PORTRAIT_W / 2 - 120} y={PORTRAIT_H - 34} width="240" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
-            <text x={PORTRAIT_W / 2} y={PORTRAIT_H - 17} textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
-              {bnLabel}
-            </text>
-          </g>
+          bn.kind === 'checkout' && s.menus.staff ? (
+            <Hit x={PORTRAIT_W / 2 - 120} y={PORTRAIT_H - 34} w={240} h={26} label="Open Staff" menu="staff">
+              <rect x={PORTRAIT_W / 2 - 120} y={PORTRAIT_H - 34} width="240" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
+              <text x={PORTRAIT_W / 2} y={PORTRAIT_H - 17} textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
+                {bnLabel} →
+              </text>
+            </Hit>
+          ) : (
+            <g>
+              <rect x={PORTRAIT_W / 2 - 120} y={PORTRAIT_H - 34} width="240" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
+              <text x={PORTRAIT_W / 2} y={PORTRAIT_H - 17} textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
+                {bnLabel}
+              </text>
+            </g>
+          )
         ) : null}
         <g transform="translate(-210 -40)">{emptyCard}</g>
       </RoomScene>
@@ -262,12 +271,22 @@ export function FloorRoom() {
 
       {/* Bottleneck sits above the ground strip — never on the annex/ground seam */}
       {bnLabel && !(shelf <= 0 && back <= 0) ? (
-        <g>
-          <rect x="290" y="214" width="260" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
-          <text x="420" y="231" textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
-            {bnLabel}
-          </text>
-        </g>
+        bn.kind === 'checkout' && s.menus.staff ? (
+          // The only place on the Floor that names the till limit; it opens Staff.
+          <Hit x={290} y={214} w={260} h={26} label="Open Staff" menu="staff">
+            <rect x="290" y="214" width="260" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
+            <text x="420" y="231" textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
+              {bnLabel} →
+            </text>
+          </Hit>
+        ) : (
+          <g>
+            <rect x="290" y="214" width="260" height="26" rx="13" fill="#2a2414" stroke="#e8c262" strokeOpacity="0.6" />
+            <text x="420" y="231" textAnchor="middle" fill="#f3dc9a" fontSize="12" fontWeight="700">
+              {bnLabel}
+            </text>
+          </g>
+        )
       ) : null}
 
       {emptyCard}

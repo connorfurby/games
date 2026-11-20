@@ -2,6 +2,15 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## AU. Loose ends: help, tours, names, one place for each thing (2026-11-19, on `main`)
+
+- **One name per thing.** The company **Exchange** is now **Stock Market** (Era 8's Exchange keeps its name). The company **Franchises** screen is now **Licensing**: independent grocers stocking your house brand. Logistics franchises are your own stores and keep the name. The company **Lab** is now **Inventions** (the Lab upgrade tree keeps its name). The People upgrade **Shift Lead** is now **Scheduling Desk** (Shift Lead is the promoted role). Foundation shows **Town goodwill** (the reset currency is Goodwill). The two "Licence royalties" rows in Treasury are now Licence and Patent royalties.
+- **Help in one place.** The inline "How this works" boxes on every company and town screen are gone; their rules now feed the wiki (`content/guideCompany.ts`, topic "Company & town"), so each screen's `?` opens its own page: rules, ambitions, and the desk, memo and crew role that help it. The pages are built from the same lines the game uses (`content/corp/howto.ts`), so help can't drift. New pages: Ambitions, Company upgrades and memos, Back Alley and visitors. Staff, Era 1 and Era 2 walkthroughs updated; the era atlas lists when each company and town screen opens.
+- **Board in one place.** The directors' agenda (from Incorporate) moved from Books to the Boardroom, with the owners and votes. Books shows a short "directors are waiting" callout that opens the Boardroom; the HUD alert goes there too. The Era 2 board tour points at the Boardroom and no longer says "go public" (that's the IPO).
+- **Sales limit said once per screen.** The HUD tab carries it everywhere. The Floor's banner in the scene now opens Staff (the separate line under it is gone), and Books no longer repeats it. Customers no longer repeats the Boardroom's company ledger.
+- **Tours point at real things.** Rent now points at the cash rate in the HUD, and weather at the street scene (the old Floor tiles are long gone). The hours slider and the Logistics franchise desk got their tour targets back. A new test fails if any tour step points at an id no screen draws.
+- Books' cash flow gains a "Company and town" row, so "You keep" adds up.
+
 ## AT. Staff overhaul: every role earns its seat (2026-11-19, on `main`)
 
 - **Page rebuilt** (`StaffPanel`, `ui/staff/{CrewFlow,HireDesk,CrewDesk,crewModel,StaffPortrait}.tsx`, `crew.css`). The tall floor drawing (`StaffFloor`) is gone; a flow strip shows Unpack → Shelf → Checkout ← Shoppers with the limit lit, seats, wages, morale and Shift Lead lift, plus clickable Worlds annex desks from Era 7.

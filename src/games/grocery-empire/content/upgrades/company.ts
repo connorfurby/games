@@ -203,9 +203,9 @@ const ROWS: Row[] = [
   // Institution — your name on other doors (Era 4+).
   [
     'franchise-academy',
-    'Franchise academy',
-    'Train the owners before they open, and they pay more to join.',
-    'Bigger franchise fees',
+    'Licensee academy',
+    'Train licensees before they sign, and they pay more to join.',
+    'Bigger licence fees',
     0.5,
     360,
     3,

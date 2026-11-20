@@ -1,50 +1,6 @@
 import type { RoleId } from '../../content/staff'
+import { SHIRT } from './shirts'
 
-/** Shirt colour per role: the crew reads at a glance in portraits and the floor strip. */
-export const SHIRT: Record<RoleId, string> = {
-  clerk: '#c9a15a',
-  receiver: '#b8956a',
-  stocker: '#7cc47f',
-  cashier: '#7fa3c9',
-  security: '#3a4048',
-  night: '#6d5a8a',
-  shiftLead: '#d4b06a',
-  produceLead: '#6fbf73',
-  dairyClerk: '#8fb6e0',
-  butcher: '#d9665b',
-  storeManager: '#b8a070',
-  plantOperator: '#6a9bb8',
-  coldDriver: '#5a8fa8',
-  lobbyistPerson: '#c9a070',
-  dispatcher: '#6a90b0',
-  franchiseLiaison: '#c4a878',
-  purser: '#b89860',
-  pilot: '#7a9ab8',
-  steward: '#c8b890',
-  hullTech: '#8a9aa8',
-  surveyor: '#d7c4a1',
-  planogramClerk: '#cbb896',
-  broker: '#8fb6e0',
-  stevedore: '#6a90b0',
-  grower: '#6fbf73',
-  seasonHand: '#5aaa70',
-  taster: '#e0a060',
-  translator: '#c9a0d4',
-  nightOperator: '#6d5a8a',
-  handler: '#7aa0b8',
-  diplomat: '#e8d7a0',
-  minutesClerk: '#c9a070',
-  whip: '#b89860',
-  greeter: '#e8a87c',
-  buyer: '#a0b86a',
-  communityRep: '#e07a8a',
-  trainer: '#e0b84a',
-  bookkeeper: '#8a9a7a',
-  paralegal: '#7a8ab8',
-  hrManager: '#b88ac0',
-  spokesperson: '#d98a5a',
-  franchiseScout: '#7ab8a8',
-}
 
 /** A small portrait: shirt colour plus one prop that says the job. */
 export function RolePortrait({ role }: { role: RoleId }) {

@@ -8,7 +8,6 @@ import { useGame } from '../GameContext'
 import { clock, money } from '../format'
 import { Button } from '../kit'
 import { RivalPortrait } from '../panels/RivalsPanel'
-import { HowItWorks } from './HowItWorks'
 import './rivalBosses.css'
 
 const TEMPER: Record<string, string> = { hot: 'Hot-headed', proud: 'Proud', cold: 'Ice-cold', sly: 'Sly' }
@@ -27,7 +26,6 @@ export function RivalBosses() {
     <section className="rb" aria-label="Rival bosses">
       <h3 className="rb-h">The bosses</h3>
       <p className="rb-note">Leave them alone and they leave you alone. Price wars, spies and buying their shares all build a grudge; past {RIVALRY.actAt}, they hit back.</p>
-      <HowItWorks menu="rivals" />
       <div className="rb-grid">
         {live.map((def) => {
           const ceo = CEOS[def.id]
@@ -181,7 +179,7 @@ export function RivalBosses() {
                 ) : null}
                 {t?.listed && s.menus.market ? (
                   <Button size="sm" tone="ghost" onClick={() => setActiveMenu('market')}>
-                    {def.name} on the Exchange
+                    {def.name} on the Stock Market
                   </Button>
                 ) : null}
                 {st.grudge > 0 && st.truceUntil <= s.time ? (

@@ -12,6 +12,17 @@ describe('coach id coverage', () => {
     expect(missing, `Add missing coachIds to COACH_TARGETS: ${missing.join(', ')}`).toEqual([])
   })
 
+  it('every tutorial step points at something the UI actually draws', () => {
+    // Walk ui/ for the ids the screens mount: static data-coach-id / coachId strings,
+    // plus the few built from a template (menu-*, hire-*, build-*, venture-collect-*).
+    const src = Object.values(
+      import.meta.glob(['./**/*.ts', './**/*.tsx', '!./**/*.test.ts', '!./**/*.test.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>,
+    ).join('\n')
+    const templated = [/^menu-/, /^hire-/, /^build-/, /^venture-collect-/, /^venture-open-/, /^staff-policy-/, /^logistics-stance-/]
+    const dead = tutorialIds.filter((id) => !templated.some((r) => r.test(id)) && !src.includes(`'${id}'`) && !src.includes(`"${id}"`))
+    expect(dead, `Tutorial steps point at ids no screen mounts: ${dead.join(', ')}`).toEqual([])
+  })
+
   it('allows UI-only coach targets beyond tutorial steps', () => {
     // ending-reject / fleet-endings / etc. can live on panels without a tour step.
     const used = new Set(tutorialIds)

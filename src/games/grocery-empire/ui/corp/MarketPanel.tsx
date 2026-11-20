@@ -18,7 +18,7 @@ import { Button } from '../kit'
 import { MarketScene } from './MarketScene'
 import { changePct, pctLabel } from './pct'
 import { Spark } from './Spark'
-import { HowItWorks } from './HowItWorks'
+import { Ambition } from './Ambition'
 import './corp.css'
 
 /** Cash presets for a buy, as a share of cash on hand. */
@@ -130,7 +130,7 @@ export function MarketPanel() {
         scene={<MarketScene selected={pick} onPick={setSelected} />}
         tray={tray}
       >
-        <HowItWorks menu="market" />
+        <Ambition menu="market" />
         <div className="mk-strip">
           <div>
             <span>Your shares</span>

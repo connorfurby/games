@@ -15,7 +15,6 @@ import {
   effectiveLife,
   featuredCategories,
   manualUnpackAmount,
-  salesBottleneck,
   shelfPrice,
   unitCost,
   up,
@@ -29,9 +28,8 @@ import { clock, money, qty, rate } from '../format'
 import { Icon } from '../icons/Icon'
 import { Button, Chip, Meter, Sheet, Stepper, Toggle, SegmentedControl } from '../kit'
 import { MENUS } from '../../content/menus'
-import { FailReason, PlayFrame, StatusChip, Field } from '../play'
+import { PlayFrame, StatusChip, Field } from '../play'
 import { activeFacingBan } from '../../sim/systems/horizonVerbs'
-import { useStable } from '../useStable'
 import { FloorRoom } from '../scenes/room'
 import './floor.css'
 import { pct } from '../format'
@@ -77,10 +75,6 @@ function FloorPanelInner() {
     const next = Math.round((s.price + delta) * 10) / 10
     dispatch({ type: 'setPrice', price: Math.max(PRICE.min, Math.min(PRICE.max, next)) })
   }
-
-  const checkoutLimitRaw = s.era >= 1 && s.stats.sold > 0 && salesBottleneck(s).kind === 'checkout'
-  // The bottleneck flips with every crate; only change the callout once it settles.
-  const checkoutLimit = useStable(checkoutLimitRaw, String, 2000, 5000)
   const tight = shelf + back <= 0 || s.cash < 2
   const suppliersOpen = !!s.menus.suppliers
   const featured = featuredCategories(s)
@@ -447,11 +441,6 @@ function FloorPanelInner() {
           <p className="fp-daily" title={dailyRuleFigures(s.dailyRule)}>
             <strong>Today: {DAILY_RULE_TEXT[s.dailyRule].name}.</strong> {DAILY_RULE_TEXT[s.dailyRule].line}
           </p>
-        ) : null}
-        {checkoutLimit && s.menus.staff ? (
-          <FailReason action={{ label: 'Open Staff', onClick: () => setActiveMenu('staff') }}>
-            The checkout line is the limit — more cashiers would sell more.
-          </FailReason>
         ) : null}
         {heatHot ? (
           <div className="fp-callout is-hot" data-coach-id="floor-inspection">

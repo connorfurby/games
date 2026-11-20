@@ -127,16 +127,16 @@ export const COMPANY_MEMOS: MemoDef[] = [
   },
   {
     id: 'franchise-manual',
-    name: 'Franchise Manual',
+    name: 'Licensee Manual',
     voice: 'Three hundred pages on how to stack a shelf your way.',
-    effect: 'Every franchise gains 10 quality now.',
+    effect: 'Every licensee gains 10 quality now.',
     era: 4,
     cost: sec(600),
     visible: (s) => (c(s)?.more.franchises.length ?? 0) > 0,
     run: (s) => {
       for (const f of c(s)?.more.franchises ?? []) f.quality = Math.min(100, f.quality + 10)
-      log(s, 'Franchise manual shipped. The shelves out there look like yours now.', 'good')
+      log(s, 'Licensee manual shipped. Their shelves look like yours now.', 'good')
     },
-    done: 'Manual shipped to every franchise.',
+    done: 'Manual shipped to every licensee.',
   },
 ]

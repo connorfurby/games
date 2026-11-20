@@ -11,7 +11,7 @@ import { clock, money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Button } from '../kit'
 import { ROOM_GROUND, RoomScene } from '../scenes/room'
-import { HowItWorks } from './HowItWorks'
+import { Ambition } from './Ambition'
 import './corp.css'
 import './treasury.css'
 
@@ -139,7 +139,7 @@ export function TreasuryPanel() {
   return (
     <section className="ge-panel tr-panel">
       <HubStage purpose={MENUS.treasury.purpose} department={MENUS.treasury.name} scene={<TreasuryScene />} tray={tray}>
-        <HowItWorks menu="treasury" />
+        <Ambition menu="treasury" />
         {c.arrears > 0 ? (
           <article className="tr-alert">
             <strong>In arrears: {m(c.arrears)}</strong>

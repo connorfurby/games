@@ -186,7 +186,7 @@ export function sellFranchise(s: GameState) {
   for (let k = 0; k < 6 && used.has(name); k++) name = cpick(s, FRANCHISEE_NAMES)
   m.franchises.push({ id: c.nextId++, name, trait: trait.id, quality: Math.min(100, 50 + Math.round(crand(s) * 30 + crewEffect(s, 'franchiseScout', STAFF_POWER.scoutQuality))), openedAt: s.time, paid: 0 })
   s.cash = round2(s.cash + fee)
-  log(s, `${name} opened a franchise and paid ${cashLabel(fee)}. (${trait.name}: ${trait.blurb})`, 'good')
+  log(s, `${name} signed on as a licensee and paid ${cashLabel(fee)}. (${trait.name}: ${trait.blurb})`, 'good')
 }
 
 export function inspectFranchise(s: GameState, id: number) {

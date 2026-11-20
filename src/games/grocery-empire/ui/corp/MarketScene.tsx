@@ -37,7 +37,7 @@ export function MarketScene({ selected, onPick }: { selected: string | null; onP
 
   return (
     <RoomScene
-      label={`Exchange: ${listed.length} companies listed, your shares worth ${money(value, numberFormat)}`}
+      label={`Stock Market: ${listed.length} companies listed, your shares worth ${money(value, numberFormat)}`}
       chips={[
         { label: 'Your shares', value: money(value, numberFormat) },
         { label: 'Gain', value: `${gain >= 0 ? '+' : '−'}${money(Math.abs(gain), numberFormat)}` },

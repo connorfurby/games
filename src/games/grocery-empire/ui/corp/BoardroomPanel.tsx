@@ -23,7 +23,9 @@ import { Button } from '../kit'
 import { BoardroomScene } from './BoardroomScene'
 import { OWNER_COLOR, initialsOf } from './ownerLook'
 import { Spark } from './Spark'
-import { HowItWorks } from './HowItWorks'
+import { Ambition } from './Ambition'
+import { BoardAgendaCard } from './BoardAgenda'
+import { boardDue } from '../../sim/systems/capital'
 import { CompanyLedger } from './CompanyLedger'
 import './corp.css'
 import './boardroom.css'
@@ -119,8 +121,9 @@ export function BoardroomPanel() {
   return (
     <section className="ge-panel bd-panel">
       <HubStage purpose={MENUS.boardroom.purpose} department={MENUS.boardroom.name} scene={<BoardroomScene />} tray={tray}>
-        <HowItWorks menu="boardroom" />
-        {/* Decisions first: they expire. */}
+        {/* Decisions first: they expire. The directors' agenda (from incorporating) leads. */}
+        {boardDue(s) ? <BoardAgendaCard /> : null}
+        <Ambition menu="boardroom" />
         {offer && offerDef ? (
           <article className="bd-decide bd-decide--offer">
             <span className="bd-avatar" style={{ background: OWNER_COLOR[offerDef.id] }}>
@@ -219,6 +222,7 @@ export function BoardroomPanel() {
           </article>
         ) : null}
 
+        {s.incorporated && !boardDue(s) ? <BoardAgendaCard /> : null}
         <CompanyLedger />
 
         <div className="bd-grid">

@@ -9,7 +9,7 @@ import { clock, money } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Button } from '../kit'
 import { ROOM_GROUND, RoomScene } from '../scenes/room'
-import { HowItWorks } from './HowItWorks'
+import { Ambition } from './Ambition'
 import './corp.css'
 import './treasury.css'
 
@@ -89,7 +89,7 @@ export function CourtPanel() {
   return (
     <section className="ge-panel ct-panel">
       <HubStage purpose={MENUS.court.purpose} department={MENUS.court.name} scene={<CourtScene />} tray={tray}>
-        <HowItWorks menu="court" />
+        <Ambition menu="court" />
         {c.suits.length === 0 ? <p className="mk-note">No open cases. Keep it that way, or go looking for one.</p> : null}
         <div className="ct-cases">
           {c.suits.map((suit) => {

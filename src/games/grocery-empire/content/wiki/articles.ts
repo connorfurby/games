@@ -1,3 +1,4 @@
+import { COMPANY_GUIDE_MENUS, EXTRA_GUIDE_MENUS } from '../guideCompany'
 /**
  * Ops Wiki articles. Hand-written rich articles replace the plain "Start here" pages; every
  * other guide entry is parsed from `content/guide.ts` so authors keep one place to write.
@@ -212,6 +213,8 @@ const MENUS_FOR: Record<string, MenuId[]> = {
   'late-worlds-bed': ['cultivars'],
   'late-worlds-table': ['charter'],
   'late-worlds-endless': ['lastaisle'],
+  ...COMPANY_GUIDE_MENUS,
+  ...EXTRA_GUIDE_MENUS,
 }
 
 /** Coach lesson that pairs with an article. */

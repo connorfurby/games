@@ -184,6 +184,11 @@ export function tickCapital(s: GameState, dt: number) {
   }
 }
 
+/** The directors are waiting on an agenda right now. */
+export function boardDue(s: GameState): boolean {
+  return !!s.incorporated && canResolveBoard(s) === null
+}
+
 export function canResolveBoard(s: GameState): string | null {
   if (!s.incorporated) return 'Incorporate first.'
   if (!meetingDue(s)) return 'No board meeting due.'

@@ -396,7 +396,7 @@ export const GLOSSARY: GlossEntry[] = [
     kind: 'currency',
     era: 2,
     icon: 'market',
-    short: 'Pieces of a company on the Exchange. Prices wander; some pay dividends every minute.',
+    short: 'Pieces of a company on the Stock Market. Prices wander; some pay dividends every minute.',
     more: 'Own over half of a rival to take it over.',
   },
   {
@@ -449,11 +449,11 @@ export const GLOSSARY: GlossEntry[] = [
   },
   {
     id: 'franchises',
-    term: 'Franchises',
+    term: 'Licensees',
     kind: 'place',
     era: 4,
     icon: 'franchise',
-    short: 'Other grocers pay to use your name, then pay royalties. Poor ones hurt your brand.',
+    short: 'Independent grocers pay to stock your house brand, then pay royalties. Sloppy ones hurt your brand. Not the same as Logistics franchises, which are your own stores.',
   },
   {
     id: 'company-tree',

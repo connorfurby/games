@@ -10,6 +10,8 @@ import { CORP_OPENS, corpMenusOpen } from './tick'
 import { currentAmbition, tickAmbitions } from './ambitions'
 import { premiumPerMin } from './treasury'
 import { migrate } from '../migrate'
+import { ATLAS } from '../../content/wiki/atlas'
+import { wikiForMenu } from '../../content/wiki/articles'
 
 function fresh(era = 2) {
   const s = createInitialState(7)
@@ -97,5 +99,13 @@ describe('company layer is part of the progression', () => {
     const m = migrate(raw)
     expect(m.corp?.ambitions).toEqual({})
     expect(m.corp?.ambitionCash).toBe(0)
+  })
+
+  it('every company and town screen is in the era atlas and has its own help page', () => {
+    const opened = new Set(ATLAS.flatMap((e) => e.opens))
+    for (const o of CORP_OPENS) {
+      expect(opened.has(o.id), o.id).toBe(true)
+      expect(wikiForMenu(o.id), o.id).toBe(`sys-co-${o.id}`)
+    }
   })
 })

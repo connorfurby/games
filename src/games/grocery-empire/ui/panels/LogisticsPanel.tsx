@@ -178,7 +178,7 @@ export function LogisticsPanel() {
         title={`Franchises · ${s.fleet.franchises}`}
         reducedMotion={reducedMotion}
       >
-        <div className="p6-stack">
+        <div className="p6-stack" data-coach-id="logistics-franchise">
           <ActionRow
             label="Open a franchise"
             fact={defected > 0 ? `${defected} left you` : undefined}

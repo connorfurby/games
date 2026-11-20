@@ -21,7 +21,7 @@ const LIMIT_COPY: Record<string, string> = {
 /** One alert at a time, most urgent first. Shared by the HUD banner and hidden-tab notifications. */
 export function computeHudAlert(s: GameState): HudAlert | null {
   if (s.era >= 2 && canResolveBoard(s) === null) {
-    return { text: 'The board is waiting on an agenda', menu: 'books', tone: 'danger', kind: 'board' }
+    return { text: 'The board is waiting on an agenda', menu: 'boardroom', tone: 'danger', kind: 'board' }
   }
   if (s.era >= 2 && s.stores.some((st) => (st.drift ?? 0) >= 0.55)) {
     return { text: 'A store needs a visit', menu: 'land', tone: 'warn', kind: 'drift' }

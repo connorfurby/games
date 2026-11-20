@@ -1,4 +1,5 @@
 /** Ops Wiki — strategy + walkthroughs. Spoiler-gated by `era`; GuidePage opens to save era (or spoilers). */
+import { COMPANY_GUIDE, EXTRA_GUIDE } from './guideCompany'
 
 export interface GuideSection {
   id: string
@@ -15,6 +16,7 @@ export const GUIDE_TOPICS: { id: string; label: string }[] = [
   { id: 'walk', label: 'Walkthroughs' },
   { id: 'faq', label: 'How do I…' },
   { id: 'systems', label: 'Systems' },
+  { id: 'company', label: 'Company & town' },
   { id: 'ops', label: 'Standing orders' },
   { id: 'choices', label: 'Decisions' },
   { id: 'era2', label: 'Chain & capital' },
@@ -166,6 +168,10 @@ INVOICE BOOK · PLANOGRAM
   Pay invoices on time (Suppliers / Books). Practice the flagship planogram twice,
   then file at 72% or better for credit before the side yard.
 
+TOWN AND FIRST INVESTOR (OPTIONAL)
+  Foundation and Customers open with your first sales; the Boardroom when an investor calls.
+  Each screen has three optional ambitions that pay on their own. See Company & town.
+
 LAND
   Survey memo → Land menu → Side Yard when regulars, invoices, Open days, and planogram clear.
   Side yard / lot gate Era 2.
@@ -195,7 +201,11 @@ DEPOT
 
 CAPITAL
   Incorporate when expansion cash is the bottleneck (cash + Reputation).
-  Board meetings: resolve them; neglect taxes Reputation slowly.
+  The directors then meet in the Boardroom: pick an agenda; neglect taxes Reputation slowly.
+
+COMPANY AND TOWN (OPTIONAL)
+  Stock Market and Courthouse open with Era 2; City Hall, Press, Inventions and Treasury
+  follow as sales grow. None of it is required. See Company & town.
   If you owe too much, the bank blocks new stores until you pay some back.
 
 INVEST BOOK
@@ -458,21 +468,35 @@ ORDER OF OPERATIONS (EARLY)
     era: 1,
     topic: 'systems',
     blurb: 'Hands, wages, soft meters.',
-    body: `ROLES
-  Clerk — Unpack. Cashier — checkout cap. Stocker — perishables. Security — shrink.
-  Hire when wage share fits revenue. Overstaffing idles cash.
+    body: `READ THE STRIP
+  Unpack → Shelf → Checkout ← Shoppers. The lit box is what holds sales back.
+  The Hire desk measures what one more of each role would change, and marks the best pick.
+  When every seat is taken, the big button offers a swap for the least useful hire.
+
+FLOOR ROLES
+  Clerk — Unpack. Cashier — checkout. Stocker — slows spoilage, unpacks a little.
+  Security — theft. Receiver — faster trucks, checks deliveries in. Night Clerk — longer hours.
+  Shift Lead — a clerk you promote (level 3, costs a raise). Still unpacks, adds a seat,
+  and lifts the floor crew 4% each, up to three.
+
+OFFICE AND TOWN
+  Greeter, Buyer, Community Rep (Era 1); Trainer, Bookkeeper, Paralegal (Era 2);
+  HR Manager, Spokesperson (Era 3); Licensing Scout (Era 4). They take floor seats
+  and work for the rest of the business: crates, wages, goodwill, court, press, licensing.
+
+DEPARTMENTS
   Department roles (Fresh, Chain, Cold…) sit in their own seat pools — they do not
   eat floor seats. Wages soft-cap near 30% of recent revenue.
 
 XP / LEVELS
-  Staff level with time on the job. Training upgrades accelerate.
+  Staff level with time on the job. Training upgrades accelerate; each Trainer adds +2 to the top level.
 
 MORALE
   Soft target from wages / room / pizza. Low morale frays the day; recover, don’t reset.
 
 TRAITS
   Some hires carry a soft trait: Quick (+5% pace), Dreamy (−5% pace), Frugal (−5% wage),
-  Picky (+5% wage). Shown on the roster. Never worth firing over.`,
+  Picky (+5% wage). Shown under Who on each crew row. Never worth letting go over.`,
   },
   {
     id: 'sys-build-up',
@@ -854,4 +878,7 @@ last stretch of the season; the Bed Glass project lifts it a little earlier. The
 pressure from the Last Aisle. Endless Edit Pad stretches the gap between mutations; Mutation Clear Pad
 restores a scarred line when you clear it. More under Decisions.`,
   },
+  // Company and town screens, generated from the game's own rule lines.
+  ...COMPANY_GUIDE,
+  ...EXTRA_GUIDE,
 ]

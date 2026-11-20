@@ -161,10 +161,6 @@ export function roleCount(s: GameState, role: RoleId) {
   return n
 }
 
-function traitStrength(id: StaffTraitId | undefined) {
-  return id && STAFF_TRAITS[id] ? STAFF_TRAITS[id].strengthMul : 1
-}
-
 function traitWage(id: StaffTraitId | undefined) {
   return id && STAFF_TRAITS[id] ? STAFF_TRAITS[id].wageMul : 1
 }
