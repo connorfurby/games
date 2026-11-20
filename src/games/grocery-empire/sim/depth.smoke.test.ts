@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { GOALS } from '../content/goals'
 import { COLD, DEPTH } from './balance'
 import { can, run } from './commands'
 import { demandBreakdown, demandPerSec } from './formulas'
@@ -44,7 +45,7 @@ describe('depth smoke', () => {
     expect(s.era).toBe(1)
   })
 
-  it('era 1 opens on facing + 3 bells + regulars + slips + stars + 800 baskets without hire', () => {
+  it('era 1 opens on facing + 3 bells + regulars + slips + stars + the solo basket gate without hire', () => {
     const s = createInitialState(7)
     s.baskets = DEPTH.ERA1_BASKETS_GATE
     s.depth.marketBellDipAt = 1
@@ -57,6 +58,26 @@ describe('depth smoke', () => {
     run(s, { type: 'setFacing', cat: 'cans', facingId: 'soup' })
     tickUnlocks(s, 1)
     expect(s.era).toBe(1)
+  })
+
+  it('corner store goal still names baskets after the slips are cleared', () => {
+    const s = createInitialState(1)
+    s.depth.facings.cans = 'tomatoes'
+    s.depth.marketBellDips = DEPTH.marketBellNeed
+    s.depth.regularSatisfied = DEPTH.era1RegularNeed
+    s.depth.layawaySlips = DEPTH.layawaySlipNeed
+    s.depth.stars = DEPTH.era1StarMin
+    s.baskets = 100
+    const g = GOALS.find((goal) => goal.id === 'corner-store')!
+    expect(g.counts?.(s)).toContain(`Baskets 100/${DEPTH.ERA1_BASKETS_GATE}`)
+    expect(g.action?.(s)).toEqual({ type: 'hire', role: 'clerk' })
+    s.staff.push({ id: 1, role: 'clerk', name: 'Ada', level: 1, xp: 0, hiredAt: 0 })
+    s.depth.shifts.open = [1]
+    s.backroom = []
+    expect(g.counts?.(s)).toContain(`Baskets 100/${DEPTH.ERA1_HIRE_BASKETS}`)
+    expect(g.action?.(s)).toEqual({ type: 'buyWholesale' })
+    s.backroom.push({ cat: 'cans', qty: 4, age: 0 })
+    expect(g.action?.(s)).toEqual({ type: 'unpack' })
   })
 
   it('era1 needs 3 bells; invoice pay; planogram practice; side yard blocked without regulars', () => {

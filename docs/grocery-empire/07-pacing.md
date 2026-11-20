@@ -10,7 +10,7 @@ The campaign bot is a steady, unhurried player. Real players who solve puzzles b
 
 | Door | Assert | Suite |
 | --- | --- | --- |
-| Era 1 | `> 35 min` and `≤ 55 min` | Default `npm test` (seeds 1, 42) |
+| Era 1 | `> 22 min` and `≤ 35 min` | Default `npm test` (seeds 1, 42) |
 | Era 2 | `> 3.5 h` and `≤ 5 h` | Default |
 | Era 3 | `> 8 h` and `≤ 11 h` | `LONG=1` |
 | Era 4 | `> 13 h` and `≤ 16 h` | `LONG=1` |
@@ -24,7 +24,7 @@ Landings held through Phases 5–7 decisions (bot still takes the slow legal bra
 
 | Era | Measured |
 | --- | --- |
-| 1 | ~40.5 min (layaway slips) |
+| 1 | ~25.8 min (baskets; layaway finishes at 13.5 min) |
 | 2 | ~3.50 h (open days + dock check-ins; band lock / hot-trait) |
 | 3 | ~8.57 h |
 | 4 | ~13.21 h |
@@ -36,6 +36,8 @@ Landings held through Phases 5–7 decisions (bot still takes the slow legal bra
 | 10 | ~35.1 h |
 | 11 | ~39.1 h (SAVE 35) |
 | 12 | ~40.1 h (clause seating pad; still ≤50 h) |
+
+**Note (2026-11-20):** Layaway was a dead tail. Seeds 1 and 42 both had facing, bells, stars, regulars (23.0 min) and the hire-path baskets (27.5 min) done, then sat on slips until 40.5 min. `layawaySlipNeed` 16 → 8 and `layawayVisitGapSec` 150 → 90. Slips now clear at 13.5 min, while regulars (15.0) and baskets are still moving. The door is the basket gate: seed 1 **1546s** (~25.8 min), seed 42 **1553s**. Era 2 did not move (both seeds **12601s**, still just over 3.5 h). CI window lowered on purpose — 35–55 min was the slip wall, and putting it back would restore the idle. Ceiling dropped to 35 min so a return to that wall fails. No `SAVE_VERSION` bump (constants only).
 
 **Note (2026-11-14 Phase 3–5):** Raised LONG windows to plan targets after exam hold, berth turnaround, ration ledger, climate neighbor, stop settlement, yield haul, habit watch, clause seating, accept rehearsal. `SAVE_VERSION` **26**.
 
@@ -55,7 +57,8 @@ Landings held through Phases 5–7 decisions (bot still takes the slow legal bra
 | After era-depth content | ~9–15 min | ~75–80 min | still short of 18–22 |
 | After pacing stretch | ~26 min | ~2.65 h | ~19 h |
 | After 2.0 expansion (SAVE 26) | ~40.5 min | ~3.50 h | ~23.5 h |
-| Target | 35–55 min | 3.5–5 h | 22–27 h |
+| After layaway shorten (2026-11-20) | ~25.8 min | ~3.50 h | (unchanged) |
+| Target | 22–35 min | 3.5–5 h | 22–27 h |
 
 Lesson: **one-shot checkboxes do not create length.** Counts + cooldowns + travel ETAs + practice gaps do.
 
@@ -80,7 +83,7 @@ After measuring: update **this file**, `pacing.test.ts` header comment, and `doc
 
 | Symptom | Prefer |
 | --- | --- |
-| Era 1 too fast | earlyDemandMul, regular need/gap, bell need, basket gates |
+| Era 1 too fast | basket gates (`ERA1_HIRE_BASKETS`), earlyDemandMul. Slips should finish first — do not lengthen the slip gap to pad the door |
 | Era 2 too fast | regular need, Open days, invoice on-time need, write-off CD, lot lifetime |
 | Era 3 too fast | flyer cooldown/weeks, matched stores, Attention, hot-trait gap |
 | Era 4–5 too fast | exam hold need, dispatch cycle, trip/dispatch counts |

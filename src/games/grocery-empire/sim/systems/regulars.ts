@@ -1,6 +1,7 @@
 import { tickAutoDock } from './dock'
 import { payInvoicesWhileCash } from './invoices'
-import { REGULAR_BY_ID, pickNextRegular, type ShiftSlot } from '../../content/depth'
+import { CATEGORIES } from '../../content/categories'
+import { FACING_BY_ID, REGULAR_BY_ID, pickNextRegular, type ShiftSlot } from '../../content/depth'
 import { DEPTH } from '../balance'
 import { log, round2, sumQty } from '../helpers'
 import type { GameState } from '../state'
@@ -99,7 +100,7 @@ export function resolveRegular(s: GameState, satisfied: boolean) {
   const wasLayaway = !!r.layaway
   settleVisit(s, id, satisfied, wasLayaway)
   clearActive(s)
-  // Layaway visits use the longer gap so slips cannot skim beside auto traffic.
+  // Layaway visits wait on their own gap so a slip is a click, not an auto-serve.
   const gap = wasLayaway ? DEPTH.layawayVisitGapSec : DEPTH.regularVisitGapSec
   r.arrivesAt = s.time + gap
   // Second shopper steps up with whatever patience they have left.
@@ -136,10 +137,31 @@ export function swapRegularFocus(s: GameState): boolean {
   return true
 }
 
+/** Why Serve would do nothing, or null when the active regular can be cleared. */
+export function regularServeBlock(s: GameState): string | null {
+  const id = s.depth?.regulars?.activeId
+  if (!id) return 'No regular waiting.'
+  const def = REGULAR_BY_ID[id]
+  if (!def) return 'No regular waiting.'
+  for (const cat of def.wants) {
+    const name = CATEGORIES[cat]?.name ?? cat
+    if (!s.categories[cat]) return `${name} is not open yet.`
+    if (sumQty(s.shelf, cat) <= 0) return `Stock ${name.toLowerCase()} on the shelf.`
+  }
+  if (def.facingId) {
+    const facingOk = def.wants.some((cat) => s.depth?.facings?.[cat] === def.facingId)
+    if (!facingOk) {
+      const facing = FACING_BY_ID[def.facingId]?.name ?? def.facingId
+      return `Feature ${facing} for ${def.name}.`
+    }
+  }
+  return null
+}
+
 /** Manual or auto serve when shelf + facing match. */
 export function tryServeRegular(s: GameState): boolean {
   if (!s.depth?.regulars?.activeId) return false
-  if (!regularWantsMet(s, s.depth.regulars.activeId)) return false
+  if (regularServeBlock(s)) return false
   resolveRegular(s, true)
   return true
 }

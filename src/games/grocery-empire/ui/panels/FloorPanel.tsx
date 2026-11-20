@@ -172,7 +172,13 @@ function FloorPanelInner() {
                 {layaway ? ' · slip' : ''} ·{' '}
                 {Math.max(0, Math.ceil((s.depth?.regulars?.patienceUntil ?? 0) - s.time))}s
               </Chip>
-              <Button size="sm" tone="free" disabled={!serveOk} onClick={() => dispatch({ type: 'serveRegular' })}>
+              <Button
+                size="sm"
+                tone="free"
+                disabled={!serveOk}
+                title={serveOk ? undefined : serveCheck.reason}
+                onClick={() => dispatch({ type: 'serveRegular' })}
+              >
                 {layaway ? 'Clear slip' : 'Serve'}
               </Button>
             </div>

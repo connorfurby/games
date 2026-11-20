@@ -237,7 +237,7 @@ function tickEra(s: GameState) {
   const slips = (s.depth?.layawaySlips ?? 0) >= DEPTH.layawaySlipNeed
   const stars = (s.depth?.stars ?? 0) >= DEPTH.era1StarMin
   const openStaffed = (s.depth?.shifts?.open?.length ?? 0) > 0
-  // Hire path needs Open coverage + volume; solo path is 800 baskets.
+  // Hire path needs Open coverage + volume; solo path is ERA1_BASKETS_GATE.
   const hireOrBaskets =
     (s.staff.length > 0 && openStaffed && s.baskets >= DEPTH.ERA1_HIRE_BASKETS) ||
     s.baskets >= DEPTH.ERA1_BASKETS_GATE

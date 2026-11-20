@@ -21,7 +21,7 @@
 | [13-release-1.0-plan.md](13-release-1.0-plan.md) | **Active:** the 1.0 release plan — audit, gates, phases P0–P12 |
 | [12-expansion-megaplan.md](12-expansion-megaplan.md) | **Shipped (2026-11-14):** lengthen to ~40–50h. Live generation work is **40.0** (Phases 0–12 below). |
 
-**Current snapshot (update when wrong):** `SAVE_VERSION` **42** · display `GAME_VERSION` **1.0.1** (launch numbering; pre-1.0 bulletins erased) · default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
+**Current snapshot (update when wrong):** `SAVE_VERSION` **45** · display `GAME_VERSION` **1.0.4** (launch numbering; pre-1.0 bulletins erased) · default CI Era 1 **>22m ≤35m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
 
 **Accounts:** Google sign-in for cloud play. Builds without Supabase env play as a local player (demo Social + `localStorage` mirror). DevMode slots stay ephemeral and never rank.
 
@@ -29,4 +29,4 @@
 
 **Museum save:** Chests/relics live in the `grocery-museum` cloud slot (not the campaign run). `museumStore` must `reload()` on `games:cloud-reloaded` — an early empty read used to stick, let `earn()` re-grant every claim, and overwrite opened chests.
 
-Last pack review: 2026-11-20 (rebase: Social overhaul + pause/museum fixes).
+Last pack review: 2026-11-20 (corner-store goal lists baskets after slips; Do it no longer no-ops).

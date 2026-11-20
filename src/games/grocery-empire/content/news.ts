@@ -5,7 +5,7 @@
  * Protocol: bump GAME_VERSION (patch/minor), prepend a NEWS article, keep newest first.
  */
 
-export const GAME_VERSION = '1.0.1'
+export const GAME_VERSION = '1.0.4'
 
 /** Era bands the News filter offers. `meta` is shell/site news that isn't about an era. */
 export type NewsBand = 'e01' | 'e23' | 'e46' | 'e712' | 'meta'
@@ -53,6 +53,48 @@ export function newsArt(a: NewsArticle): NewsArt {
 
 /** Newest first. Agents: prepend — never bury the latest bulletin. */
 export const NEWS: NewsArticle[] = [
+  {
+    id: '2026-11-20-corner-store-line',
+    bands: ['e01'],
+    date: '2026-11-20',
+    version: '1.0.4',
+    kicker: 'Desk',
+    art: 'corner',
+    headline: 'The corner store says what is left',
+    dek: 'After the slips, the next goal still names the baskets you have to sell.',
+    body: [
+      'Clearing the layaway slips does not change the sign. The corner store opens on its own once cans are featured, three low prices are bought, the regulars are served, the slips are cleared, the stars hold, and enough baskets have sold. A clerk on the Open shift lowers that basket number.',
+      'The next-goal line keeps that list, including baskets. Do it only appears when the click will take the next step. If it cannot, the card says why — feature the can they asked for, or stock the shelf — instead of a button that does nothing.',
+    ],
+  },
+  {
+    id: '2026-11-20-back-office-card',
+    bands: ['e01'],
+    date: '2026-11-20',
+    version: '1.0.3',
+    kicker: 'Desk',
+    art: 'counter',
+    headline: 'The back office has a desk',
+    dek: 'Attention and Reputation stay on the card, even when the desk is folded.',
+    body: [
+      'The back office was a thin line in the memo column, and it hid itself. The numbers beside it were cut off.',
+      'It now sits at the top of Memos. The header names the office and shows Attention and Reputation. Open it to hire an Analyst or open an Archive.',
+    ],
+  },
+  {
+    id: '2026-11-20-layaway-shorter',
+    bands: ['e01'],
+    date: '2026-11-20',
+    version: '1.0.2',
+    kicker: 'Desk',
+    art: 'counter',
+    headline: 'Layaway is a short lesson',
+    dek: 'Eight slips, and the next neighbor comes back sooner.',
+    body: [
+      'Clearing sixteen layaway slips was a long wait after the rest of the opening was already done. You now need eight, and the next neighbor shows up sooner.',
+      'A slip still will not clear itself. The stack finishes while you are stocking and hiring. The corner-store door waits on baskets.',
+    ],
+  },
   {
     id: '2026-11-20-pause-clock',
     bands: ['meta'],

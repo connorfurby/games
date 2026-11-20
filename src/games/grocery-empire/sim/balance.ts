@@ -21,10 +21,13 @@ export const DEPTH = {
   earlyDemandMulEnd: 1,
   marketBellNeed: 3,
   era1RegularNeed: 10,
-  /** Layaway slips (manual serve of layaway visits) — separate Era 1 gate. */
-  layawaySlipNeed: 16,
-  /** Extra visit gap when the active regular is on a layaway slip. */
-  layawayVisitGapSec: 150,
+  /**
+   * Layaway slips (manual serve). An opening lesson, not the Era 1 clock:
+   * 8 slips at the shorter gap finish while baskets and regulars are still moving.
+   */
+  layawaySlipNeed: 8,
+  /** Visit gap after a layaway slip. Shorter than the old 150s idle between clicks. */
+  layawayVisitGapSec: 90,
   /** Dock check-in cooldown shortener unit (read via upgradeEffect('dock-check-pad')). */
   dockCheckPadPerRank: 0.08,
   /** Side-yard path: receiver check-ins at the dock. */

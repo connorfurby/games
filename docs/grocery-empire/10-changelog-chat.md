@@ -2,6 +2,28 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## AY. Back office is a card (2026-11-20)
+
+No `SAVE_VERSION` bump. `GAME_VERSION` **1.0.3**.
+
+- The Back office lived in the 280px memo column as a one-line disclosure, and it folded itself away after three story memos. Four stat tiles in that width clipped “Analysts” to “AN”.
+- It is now the first card in the memo column. The header always reads Back office plus Attention and Reputation, with an amber edge when an Archive should come first. The body says what Analysts and Archives do, in two columns, with Hire Analyst and Open Archive. The tray button always says Back office and opens the card.
+
+## AY. Corner-store card tells the truth (2026-11-20)
+
+No `SAVE_VERSION` bump. `GAME_VERSION` **1.0.4**.
+
+- After the 8 slips, "Become a corner store" dropped its checklist. Baskets (1,050 with someone on Open, otherwise 1,350) were still the door, and Do it stayed up. An empty backroom made that click a dead button. A neighbor whose featured can did not match made Serve succeed without serving.
+- The line under the goal now keeps every gap, including baskets. Do it features their can or stocks the shelf before it tries to serve. A free click that cannot run is a "Not yet" plate plus the reason, not a Do it button.
+
+## AX. Shorter opening layaway (2026-11-20)
+
+No `SAVE_VERSION` bump (constants only). `GAME_VERSION` **1.0.2**.
+
+- The opening asked for 16 layaway slips at a 150s gap. Everything else on the counter was done by ~27 min; slips held the corner-store door until 40.5 min. That tail was only waiting.
+- `layawaySlipNeed` 16 → 8, `layawayVisitGapSec` 150 → 90. Slips clear at 13.5 min, while regulars and baskets are still moving. Baskets close Era 1 at ~25.8 min (seed 1: 1546s, seed 42: 1553s).
+- Era 2 unchanged (12601s, still just over 3.5 h). Era 1 CI window is now **>22m ≤35m** so the old idle wall fails the ceiling. Slips still never auto-serve.
+
 ## AW. Pause clock + museum cloud reload (2026-11-20)
 
 - Opening a save clears a player pause, so the store starts running. Time you were away while paused stays frozen (no catch-up). Reject, and the Last Aisle refusal, stay parked.

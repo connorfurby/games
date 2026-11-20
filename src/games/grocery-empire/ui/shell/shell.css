@@ -1009,6 +1009,24 @@
     filter: none;
   }
 
+  /* A free click that cannot run is a plate, not a button that says Do it. */
+  .g2-goal__wait {
+    margin: 0;
+    min-height: 2.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: var(--g2-ui);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ge-ink-muted);
+    border: 1px dashed color-mix(in srgb, var(--ge-free, #e85d4c) 60%, transparent);
+    border-radius: var(--g2-r-sm, 7px);
+    padding: 0.2rem 0.35rem;
+  }
+
   /* Alert chip: the in-controls one is desktop; a compact full-width one shows on phones. */
   .g2-alert--compact {
     display: none;

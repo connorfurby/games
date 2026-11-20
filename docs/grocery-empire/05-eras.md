@@ -6,7 +6,7 @@
 
 | Era | Title | Hard door (summary) | Opens |
 | --- | --- | --- | --- |
-| 0 | The Counter | Start · **layaway slips** (manual serve) | Flagship loop |
+| 0 | The Counter | Feature, bells, regulars, **8 layaway slips**, stars · **baskets** close the door | Flagship loop |
 | 1 | Corner Store | Facing + bells + regulars + **dock check-ins** + stars + baskets/Open | Build, upgrades, Fresh |
 | 2 | Chain | Side yard + invoices + planogram + Open days · **flyer band lock** | Stores, Attention, Penny |
 | 3 | Cold Chain | Cold permit after flyers + matched stores + **hot-trait walks** + stars | Cold, politics, FreshWay |
@@ -24,7 +24,7 @@ There is **no Era 13**.
 
 ## Early gates (code pointers)
 
-- **0→1:** `sim/unlocks.ts` → `tickEra` — featured cans, `marketBellDips`, regulars, stars, basket/hire rules from `DEPTH`.
+- **0→1:** `sim/unlocks.ts` → `tickEra` — featured cans, `marketBellDips`, regulars, 8 layaway slips (90s gap; finishes ~13.5 min), stars, basket/hire rules from `DEPTH`. Baskets are the clock (~26 min). The Next Goal line keeps that list after the slips, including baskets (1,050 with Open covered, otherwise `ERA1_BASKETS_GATE`). The era opens on the tick; there is no separate button.
 - **1→2:** `expandLot` side-yard/lot in `commands.ts` — write-offs, Produce Lead, Corner Store, dairy, regulars, on-time invoices, flagship planogram credit, Open days (`openDaysNeedSideYard`), stars.
 - **2→3:** `cold-plant-permit` memo — flyer weeks, matched stores, stars, depot/commissary, chain planogram credit.
 - **3→4:** `leaveRegion` — yield empty (blast-only), bills passed, cooler logs, plants, shift coverage, stars.

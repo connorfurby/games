@@ -56,7 +56,7 @@
 | G2 | **Every screen size works.** 360, 390, 430 (phones), 768 (tablet portrait), 1024, 1280, 1440, 1920 (desktop), and phone landscape (844×390). | Crawler matrix + one human pass per size. No horizontal scroll; all primary verbs reachable without scrolling the page. |
 | G3 | **One visual language.** One type scale, one spacing scale, one button system, one card, one chip, one empty state, one disabled look. | ≤ 8 font sizes per screen (today 14–22). Zero raw styled `<button>` outside the kit (today ~25 classes). |
 | G4 | **One voice of guidance.** The player always knows the next step, and is never told it three ways at once. | Next Goal is the spine; tips/suggestions/toasts/alerts follow the guidance rules in §3. |
-| G5 | **First hour is lovable.** A new player reaches the corner store (Era 1) without reading the wiki and without a "what now?" moment. | 5 fresh human playtests; bot Era 1 still 35–55 min. |
+| G5 | **First hour is lovable.** A new player reaches the corner store (Era 1) without reading the wiki and without a "what now?" moment. | 5 fresh human playtests; bot Era 1 in 22–35 min (baskets, not an idle slip wall). |
 | G6 | **Comfort.** Accessibility (contrast, focus, keyboard, screen reader labels, reduced motion), offline return, save safety, settings that matter. | Checklist in Phase 8. |
 | G7 | **Fast.** First load < 2.5 s on a mid phone (4G), 60 fps in rooms, no jank opening drawers. | Bundle ≤ 600 kB initial JS (today 2.2 MB single chunk), Lighthouse perf ≥ 85 mobile. |
 | G8 | **Green CI.** `npm run build`, `npm test`, `npm run lint` (0 new warnings), full e2e (today 7 stale failures), `LONG=1`, `LONG_HORIZON=1`. | CI. |

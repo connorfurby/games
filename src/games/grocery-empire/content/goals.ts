@@ -1,4 +1,4 @@
-import { BILL_IDS, STORE_TRAIT_BY_ID, policyMatchesTrait, type BillId, type PlaceTraitId } from './depth'
+import { BILL_IDS, REGULAR_BY_ID, STORE_TRAIT_BY_ID, policyMatchesTrait, type BillId, type PlaceTraitId } from './depth'
 import { DEPTH, HORIZON, LOT_SURVEY_LIFETIME } from '../sim/balance'
 import type { Command } from '../sim/commands'
 import { hireCost } from '../sim/formulas'
@@ -58,6 +58,54 @@ const memoCash = (s: GameState, id: string) => {
 }
 const frac = (have: number, need: number) => (need <= 0 ? 1 : Math.max(0, Math.min(1, have / need)))
 const matchedLaneDone = (s: GameState) => matchedLaneCount(s) >= 1
+
+/** Next click that can actually clear the neighbor at the counter. */
+function serveOrPrep(s: GameState): Command {
+  const id = s.depth?.regulars?.activeId
+  const def = id ? REGULAR_BY_ID[id] : null
+  if (def) {
+    for (const cat of def.wants) {
+      if (!s.categories[cat] || sumQty(s.shelf, cat) > 0) continue
+      if (sumQty(s.backroom) > 0) return { type: 'unpack' }
+      return { type: 'buyWholesale', cat, crates: 1 }
+    }
+    if (def.facingId) {
+      for (const cat of def.wants) {
+        if (!s.categories[cat] || s.depth?.facings?.[cat] === def.facingId) continue
+        return { type: 'setFacing', cat, facingId: def.facingId }
+      }
+    }
+  }
+  return { type: 'serveRegular' }
+}
+
+/** Put something on the shelf. An empty backroom means buy a crate first. */
+function restockCommand(s: GameState): Command {
+  if (sumQty(s.backroom) > 0) return { type: 'unpack' }
+  return { type: 'buyWholesale' }
+}
+
+/** Live gaps for the corner-store door. Baskets stay listed after the slips are gone. */
+function era1Left(s: GameState): string[] {
+  const d = s.depth
+  const left: string[] = []
+  if (!d?.facings?.cans) left.push('Feature cans')
+  if ((d?.marketBellDips ?? 0) < DEPTH.marketBellNeed) left.push(`Price dips ${d?.marketBellDips ?? 0}/${DEPTH.marketBellNeed}`)
+  if ((d?.regularSatisfied ?? 0) < DEPTH.era1RegularNeed) left.push(`Regulars ${d?.regularSatisfied ?? 0}/${DEPTH.era1RegularNeed}`)
+  if ((d?.layawaySlips ?? 0) < DEPTH.layawaySlipNeed) left.push(`Layaway ${d?.layawaySlips ?? 0}/${DEPTH.layawaySlipNeed}`)
+  if ((d?.stars ?? 0) < DEPTH.era1StarMin) left.push(`Stars ${(d?.stars ?? 0).toFixed(1)}/${DEPTH.era1StarMin}`)
+  const open = s.staff.length > 0 && (d?.shifts?.open?.length ?? 0) > 0
+  const need = open ? DEPTH.ERA1_HIRE_BASKETS : DEPTH.ERA1_BASKETS_GATE
+  if (s.baskets < need) {
+    const have = Math.floor(s.baskets)
+    left.push(
+      open
+        ? `Baskets ${have}/${DEPTH.ERA1_HIRE_BASKETS}`
+        : `Baskets ${have}/${DEPTH.ERA1_BASKETS_GATE} (or ${DEPTH.ERA1_HIRE_BASKETS} with someone on Open)`,
+    )
+  }
+  return left
+}
 
 /** Era 10: post the habit — claim an unheld post, wait out a live watch, else file. */
 function postHabitAction(s: GameState): Command | null {
@@ -127,7 +175,7 @@ export const GOALS: GoalDef[] = [
     hint: 'Keep cans featured and the shelf stocked when neighbors visit.',
     done: (s) => (s.depth?.regularSatisfied ?? 0) >= DEPTH.era1RegularNeed,
     progress: (s) => frac(s.depth?.regularSatisfied ?? 0, DEPTH.era1RegularNeed),
-    action: () => ({ type: 'serveRegular' }),
+    action: (s) => serveOrPrep(s),
   },
   {
     id: 'layaway-slips',
@@ -136,22 +184,16 @@ export const GOALS: GoalDef[] = [
     hint: 'Serve the neighbor before patience runs out — the slip will not auto-clear.',
     done: (s) => (s.depth?.layawaySlips ?? 0) >= DEPTH.layawaySlipNeed,
     progress: (s) => frac(s.depth?.layawaySlips ?? 0, DEPTH.layawaySlipNeed),
-    action: () => ({ type: 'serveRegular' }),
+    action: (s) => serveOrPrep(s),
   },
   {
     id: 'corner-store',
     era: 0,
     title: 'Become a corner store',
-    hint: 'Feature cans, 3 bells, regulars, layaway slips, Open shift or baskets, stars ≥ 3.5.',
+    hint: 'The sign changes on its own. The line under this is everything still in the way.',
     done: (s) => s.era >= 1,
     counts: (s) => {
-      const d = s.depth
-      const left: string[] = []
-      if (!d?.facings?.cans) left.push('Feature cans')
-      if ((d?.marketBellDips ?? 0) < DEPTH.marketBellNeed) left.push(`Price dips ${d?.marketBellDips ?? 0}/${DEPTH.marketBellNeed}`)
-      if ((d?.regularSatisfied ?? 0) < DEPTH.era1RegularNeed) left.push(`Regulars ${d?.regularSatisfied ?? 0}/${DEPTH.era1RegularNeed}`)
-      if ((d?.layawaySlips ?? 0) < DEPTH.layawaySlipNeed) left.push(`Layaway ${d?.layawaySlips ?? 0}/${DEPTH.layawaySlipNeed}`)
-      if ((d?.stars ?? 0) < DEPTH.era1StarMin) left.push(`Stars ${(d?.stars ?? 0).toFixed(1)}/${DEPTH.era1StarMin}`)
+      const left = era1Left(s)
       return left.length ? `Still to do: ${left.join(' · ')}` : ''
     },
     progress: (s) => {
@@ -173,12 +215,12 @@ export const GOALS: GoalDef[] = [
           ? { type: 'buyWholesale' }
           : (s.depth?.layawaySlips ?? 0) < DEPTH.layawaySlipNeed ||
               (s.depth?.regularSatisfied ?? 0) < DEPTH.era1RegularNeed
-            ? { type: 'serveRegular' }
+            ? serveOrPrep(s)
             : s.staff.length === 0
               ? { type: 'hire', role: 'clerk' }
               : (s.depth?.shifts?.open?.length ?? 0) <= 0 && s.staff[0]
                 ? { type: 'assignShift', slot: 'open', staffId: s.staff[0]!.id }
-                : { type: 'unpack' },
+                : restockCommand(s),
     opensEra: 1,
   },
   // ── Era 1 · Corner Store
@@ -310,7 +352,7 @@ export const GOALS: GoalDef[] = [
     hint: 'Satisfy twelve regulars before the side yard.',
     done: (s) => (s.depth?.regularSatisfied ?? 0) >= DEPTH.era2RegularNeed,
     progress: (s) => frac(s.depth?.regularSatisfied ?? 0, DEPTH.era2RegularNeed),
-    action: () => ({ type: 'serveRegular' }),
+    action: (s) => serveOrPrep(s),
   },
   {
     id: 'lot-survey',

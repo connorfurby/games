@@ -23,7 +23,7 @@ import { dockCheckInBlock, runDockCheckIn } from './systems/dock'
 import type { GameState } from './state'
 import { canRunBrownoutDrill, canSignCoolerLog, runBrownoutDrill, signCoolerLog } from './systems/cold'
 import { dumpCooler, perishableQty } from './systems/recovery'
-import { applyStarHit, swapRegularFocus, tryServeRegular } from './systems/regulars'
+import { applyStarHit, regularServeBlock, swapRegularFocus, tryServeRegular } from './systems/regulars'
 import { clearRivalLock } from './systems/rivals'
 
 const ok: Check = { ok: true }
@@ -409,14 +409,12 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
   serveRegular: {
     can: (s) => {
       ensureDepth(s)
-      if (!s.depth.regulars.activeId) return no('No regular waiting.')
-      return ok
+      const why = regularServeBlock(s)
+      return why ? no(why) : ok
     },
     run: (s) => {
       ensureDepth(s)
-      if (!tryServeRegular(s)) {
-        log(s, 'Shelf or facing does not match their list yet.', 'warn')
-      }
+      tryServeRegular(s)
     },
   },
   focusRegular: {

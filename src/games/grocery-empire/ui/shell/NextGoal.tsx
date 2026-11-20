@@ -182,7 +182,8 @@ export function NextGoal({
   } catch {
     /* never break the HUD */
   }
-  const hint = choices ? g.hint : clauseHint(act, g.hint)
+  const hint = choices || g.id === 'corner-store' ? g.hint : clauseHint(act, g.hint)
+  const blocked = isFree && act && !ready && !showGo ? (can(s, act).reason ?? 'Not yet') : null
 
   const stars = s.depth?.stars ?? DEPTH.starsStart
   const starsLocked =
@@ -209,6 +210,7 @@ export function NextGoal({
             <span className="g2-goal__eta"> Also needs {also.slice(isFree ? 0 : 1).join(' and ')}.</span>
           ) : null}
           {t ? <span className="g2-goal__eta"> Ready in {t}.</span> : null}
+          {blocked ? <span className="g2-goal__eta"> {blocked}</span> : null}
         </span>
         {counts ? <span className="g2-goal__counts">{counts}</span> : null}
       </div>
@@ -243,20 +245,21 @@ export function NextGoal({
         </div>
       ) : act ? (
         <div className="g2-goal__acts">
-          {isFree ? (
+          {blocked ? (
+            <p className="g2-goal__wait">Not yet</p>
+          ) : isFree ? (
             <button
               type="button"
               className="g2-goal__do g2-goal__do--free"
-              disabled={!ready && !showGo}
               onClick={(e) => (ready ? dispatch(act) : go(e.currentTarget))}
-              title={ready ? 'Do it now' : showGo ? `${can(s, act).reason ?? 'Not yet'} · ${whereTitle}` : (can(s, act).reason ?? 'Not yet')}
+              title={ready ? 'Do it now' : `${can(s, act).reason ?? 'Not yet'} · ${whereTitle}`}
             >
-              {ready ? 'Do it' : showGo ? 'Show me' : 'Do it'}
+              {ready ? 'Do it' : 'Show me'}
             </button>
           ) : (
             <button
               type="button"
-              className={`g2-tag${!ready && showGo ? ' is-saving' : ''}`}
+              className={`g2-tag${!ready ? ' is-saving' : ''}`}
               disabled={!ready && !showGo}
               onClick={(e) => (ready ? dispatch(act) : go(e.currentTarget))}
               title={ready ? 'Do it now' : showGo ? `${can(s, act).reason ?? 'Not yet'} · ${whereTitle}` : (can(s, act).reason ?? 'Not yet')}

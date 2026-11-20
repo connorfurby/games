@@ -6,9 +6,14 @@ import { runPacing } from './bots'
  * real players beat it. Every balance change must keep these.
  *
  * Plan targets (CI windows) after Phase 2 SAVE 23 / 4.0 SAVE 30:
- *   Era 1 at 35–55 min · Era 2 at 3.5–5 h · …
+ *   Era 1 at 22–35 min · Era 2 at 3.5–5 h · …
  *
- * Measured bot (seed 1, SAVE 26): Era 1 ≈ 40.5 min · Era 2 ≈ 3.50 h.
+ * 2026-11-20: Era 1 floor 35 → 22 min and ceiling 55 → 35 min. Sixteen layaway
+ * slips at a 150s gap were a ~13 min idle after every other opening goal
+ * (measured 40.5 min). Eight slips at 90s finish at 13.5 min; baskets close
+ * the door at ~25.8 min (seeds 1 and 42: 1546s / 1553s). Era 2 stays 12601s.
+ *
+ * Measured bot (seed 1): Era 1 ≈ 25.8 min · Era 2 ≈ 3.50 h.
  * 4.0 adds tournament cooldown + Read gates — default CI still green; pad waits if LONG slips.
  *
  * LONG=1: Era 3–6 plan windows (Phase 3 SAVE 24+).
@@ -20,11 +25,11 @@ const H = 3600
 
 describe('pacing (campaign bot)', () => {
   for (const seed of SEEDS) {
-    it(`seed ${seed}: Era 1 ≤ 55 min AND > 35 min; Era 2 ≤ 5 h AND > 3.5 h`, () => {
+    it(`seed ${seed}: Era 1 ≤ 35 min AND > 22 min; Era 2 ≤ 5 h AND > 3.5 h`, () => {
       const r = runPacing(seed, 5 * H)
       expect(r.eraAt[1]).toBeDefined()
-      expect(r.eraAt[1]!).toBeLessThanOrEqual(55 * MIN)
-      expect(r.eraAt[1]!).toBeGreaterThan(35 * MIN)
+      expect(r.eraAt[1]!).toBeLessThanOrEqual(35 * MIN)
+      expect(r.eraAt[1]!).toBeGreaterThan(22 * MIN)
       expect(r.eraAt[2]).toBeDefined()
       expect(r.eraAt[2]!).toBeLessThanOrEqual(5 * H)
       expect(r.eraAt[2]!).toBeGreaterThan(3.5 * H)

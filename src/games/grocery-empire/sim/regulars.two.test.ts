@@ -34,9 +34,11 @@ describe('two regulars at once (SAVE 31)', () => {
     expect(r.layaway).toBe(true)
     expect(r.waitingId).toBeNull()
     expect(r.waitingPatienceUntil).toBe(0)
-    // Otis wants beans on the shelf; tomatoes are still out.
-    expect(can(s, { type: 'serveRegular' }).ok).toBe(true)
-    expect(run(s, { type: 'serveRegular' }).ok).toBe(true)
+    // Otis wants beans. Serving while tomatoes are featured must not look successful.
+    const blocked = can(s, { type: 'serveRegular' })
+    expect(blocked.ok).toBe(false)
+    expect(blocked.reason).toMatch(/Beans/)
+    expect(run(s, { type: 'serveRegular' }).ok).toBe(false)
     expect(s.depth.regularSatisfied).toBe(before + 1)
   })
 

@@ -899,7 +899,7 @@
 
 .ge-office__stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 0.35rem;
 }
 
@@ -915,9 +915,11 @@
 .ge-office__stats span {
   font-family: var(--ge-font-mono);
   font-size: var(--t-2xs);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
   text-transform: uppercase;
   color: var(--ge-muted);
+  white-space: normal;
 }
 
 .ge-office__stats strong {
@@ -969,12 +971,6 @@
   flex: 1 1 auto;
   min-width: 5.5rem;
   font-size: var(--t-xs);
-}
-
-@media (max-width: 520px) {
-  .ge-office__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 .ge-memo-list {

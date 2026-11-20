@@ -1,4 +1,3 @@
-import { waitLabel } from '../../sim/helpers'
 import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { NumberFormat } from '@/shared/bn'
 import { playMemoFx } from '@/shared/audio'
@@ -134,7 +133,7 @@ function archivesFirstWarn(s: GS): string | null {
   const fill = cap > 0 ? att / cap : 1
   const secToCap = perSec > 0 ? Math.max(0, cap - att) / perSec : Number.POSITIVE_INFINITY
   if (fill >= 0.8 || secToCap < 45) {
-    return `Attention ${qty(att)} / ${qty(cap)} (${Math.round(fill * 100)}%). It is nearly full, so a faster Analyst would mostly go to waste. Open an Archive first.`
+    return `The bar is ${Math.round(fill * 100)}% full. Another Analyst would overflow it. Open an Archive.`
   }
   for (const m of MEMOS) {
     if (owned(s, m.id) && !m.repeatable) continue
@@ -147,7 +146,7 @@ function archivesFirstWarn(s: GS): string | null {
     }
     const need = memoCosts(m, s).attention
     if (need > cap + 1e-9) {
-      return `${m.name} needs ${qty(need)} Attention but you can only hold ${qty(cap)}. Open an Archive first, then Analysts.`
+      return `${m.name} needs ${qty(need)} Attention. This office holds ${qty(cap)}. Open an Archive first.`
     }
   }
   return null
@@ -385,12 +384,13 @@ function OfficeRebalance({ ask }: { ask: (spec: ConfirmSpec) => void }) {
 
   return (
     <div className="ge-office__rebalance">
-      <span className="ge-office__rebalance-label">Rebalance · {costLabel}</span>
+      <span className="ge-office__rebalance-label">Swap a seat · {costLabel}</span>
+      <p className="ge-office__job">Turn one into the other. You always keep at least one of each.</p>
       <div className="ge-office__rebalance-row">
         <Button
           tone="ghost"
           disabled={!toArchive.ok}
-          title={toArchive.reason ?? `Pay cash · move 1 Analyst → Archive (cap +${step})`}
+          title={toArchive.reason ?? `Pay ${costLabel}. One Analyst becomes an Archive. Cap +${step}.`}
           onClick={() =>
             ask({
               title: 'Move Analyst → Archive',
@@ -401,12 +401,12 @@ function OfficeRebalance({ ask }: { ask: (spec: ConfirmSpec) => void }) {
             })
           }
         >
-          → Archive
+          Analyst → Archive
         </Button>
         <Button
           tone="ghost"
           disabled={!toAnalyst.ok}
-          title={toAnalyst.reason ?? `Pay cash · move 1 Archive → Analyst (cap −${step})`}
+          title={toAnalyst.reason ?? `Pay ${costLabel}. One Archive becomes an Analyst. Cap −${step}.`}
           onClick={() =>
             ask({
               title: 'Move Archive → Analyst',
@@ -417,7 +417,7 @@ function OfficeRebalance({ ask }: { ask: (spec: ConfirmSpec) => void }) {
             })
           }
         >
-          → Analyst
+          Archive → Analyst
         </Button>
       </div>
     </div>
@@ -436,12 +436,18 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
   const [readyOnly, setReadyOnly] = useState(false)
   const [tab, setTab] = useState<'desk' | 'filed' | 'standing'>('desk')
   const spineOwned = SPINE_MEMOS.filter((id) => (s.memos[id] ?? 0) > 0).length
-  // Back office opens for the first spine memos, then folds away once, on its own.
-  const [officeOpen, setOfficeOpen] = useState(spineOwned < 3)
-  const [officeFolded, setOfficeFolded] = useState(spineOwned >= 3)
-  if (spineOwned >= 3 && !officeFolded) {
-    setOfficeFolded(true)
-    setOfficeOpen(false)
+  // Stay visible. Open when Reputation is waiting or the bar is nearly full; the header stays either way.
+  const officeUnlocked = !!s.compute?.unlocked
+  const [officeOpen, setOfficeOpen] = useState(() => {
+    if (!officeUnlocked) return false
+    const cap = Math.max(1, attentionCap(s))
+    const fill = s.compute.attention / cap
+    return spineOwned < 3 || (s.compute.reputation ?? 0) >= 1 || fill >= 0.8
+  })
+  const [seenOffice, setSeenOffice] = useState(officeUnlocked)
+  if (officeUnlocked && !seenOffice) {
+    setSeenOffice(true)
+    setOfficeOpen(true)
   }
   const listRef = useRef<HTMLUListElement>(null)
   const scrollRef = useRef<HTMLElement | null>(null)
@@ -646,142 +652,137 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
   const room = (
     <div className="wc-memo-room">
       {s.compute?.unlocked ? (
-        <div className="wc-att" data-coach-id="compute-attention">
-          <Meter
-            value={s.compute.attention}
-            max={Math.max(1, attCap)}
-            label={`Attention ${qty(s.compute.attention)} / ${qty(attCap)}`}
-          />
-          <p className="wc-att__note">{attentionNote(s)}</p>
-          {archivesWarn ? (
-            <p className="wc-att__warn" role="status">
-              <StatusChip tone="warn">Archives first</StatusChip>{' '}
-              <button type="button" className="pf-chip__link" onClick={openOffice}>
-                Open Back office
-              </button>
-            </p>
-          ) : null}
+        <div data-coach-id="compute-attention">
+          <Disclosure
+            className={`wc-office${archivesWarn ? ' is-warn' : ''}`}
+            title={
+              <span className="ge-office__head">
+                <span className="ge-office__name">Back office</span>
+                <span className="ge-office__glance">
+                  Attention {qty(s.compute.attention)} / {qty(attCap)} · Reputation {s.compute.reputation}
+                  {archivesWarn ? ' · Archive first' : ''}
+                </span>
+              </span>
+            }
+            open={officeOpen}
+            onOpenChange={setOfficeOpen}
+          >
+            <div className="ge-office">
+              <p className="ge-office__dek">Analysts fill Attention. Archives raise the cap. Both cost 1 Reputation.</p>
+              <Meter
+                value={s.compute.attention}
+                max={Math.max(1, attCap)}
+                label={`Attention ${qty(s.compute.attention)} / ${qty(attCap)}`}
+              />
+              <p className="ge-office__job">{attentionNote(s)}</p>
+              <div className="ge-office__stats">
+                <div>
+                  <span>Analysts</span>
+                  <strong>{s.compute.analysts}</strong>
+                  <em>fill the bar</em>
+                </div>
+                <div>
+                  <span>Archives</span>
+                  <strong>{s.compute.archives}</strong>
+                  <em>cap {qty(attCap)}</em>
+                </div>
+                {s.compute.ideasUnlocked ? (
+                  <div data-coach-id="compute-ideas">
+                    <span>Ideas</span>
+                    <strong>{qty(s.compute.ideas)}</strong>
+                    <em>{s.compute.ideasOn ? 'minting' : 'paused'}</em>
+                  </div>
+                ) : null}
+                <div data-coach-id="compute-reputation">
+                  <span>Reputation</span>
+                  <strong>{s.compute.reputation}</strong>
+                  <em>to spend</em>
+                </div>
+              </div>
+
+              <p className="ge-office__rep" title="Next Reputation +1 from baskets">
+                Next Reputation at {qty(s.compute.nextRepAt)} baskets
+                {s.baskets >= s.compute.nextRepAt
+                  ? ' · ready'
+                  : ` · ${qty(Math.max(0, s.compute.nextRepAt - s.baskets))} to go`}
+              </p>
+
+              <div className="ge-office__actions">
+                <OfficeSuggestBtn
+                  id="hire-analyst"
+                  label="Hire Analyst"
+                  disabled={s.compute.reputation < 1}
+                  title={
+                    archivesWarn
+                      ? archivesWarn
+                      : 'Spend 1 Reputation. Attention fills faster. The cap stays the same.'
+                  }
+                  onClick={() =>
+                    setConfirm({
+                      title: archivesWarn ? 'Archives first?' : 'Hire Analyst',
+                      body: archivesWarn
+                        ? `${archivesWarn} Hiring an Analyst now mostly wastes the Reputation.`
+                        : 'Spend 1 Reputation to fill Attention faster.',
+                      detail: `Cap stays ${qty(attCap)}.`,
+                      confirmLabel: archivesWarn ? 'Hire anyway · 1 Reputation' : 'Hire · 1 Reputation',
+                      onConfirm: () => dispatch({ type: 'buyAnalyst' }),
+                    })
+                  }
+                />
+                <OfficeSuggestBtn
+                  id="buy-archive"
+                  label="Open Archive"
+                  disabled={s.compute.reputation < 1}
+                  title="Spend 1 Reputation. Attention cap rises by 1,000."
+                  onClick={() => {
+                    const nextCap = attCap + COMPUTE.capPerArchive
+                    setConfirm({
+                      title: 'Open Archive',
+                      body: 'Spend 1 Reputation to raise the Attention ceiling.',
+                      detail: `Cap becomes ${qty(nextCap)}.`,
+                      confirmLabel: 'Open · 1 Reputation',
+                      onConfirm: () => dispatch({ type: 'buyArchive' }),
+                    })
+                  }}
+                />
+                {s.compute.ideasUnlocked ? (
+                  <Button
+                    tone="ghost"
+                    title={
+                      s.compute.ideasOn
+                        ? 'Ideas mint while Attention is full. Auto-tournament waits.'
+                        : 'Ideas paused. Tourney While Full can spend the bar.'
+                    }
+                    onClick={() => dispatch({ type: 'toggleIdeas' })}
+                  >
+                    Ideas {s.compute.ideasOn ? 'on' : 'off'}
+                  </Button>
+                ) : null}
+                {s.compute.scanner ? (
+                  <Button
+                    tone="ghost"
+                    disabled={!scannerCheck.ok}
+                    title={scannerCheck.ok ? 'Pulse Attention. It wobbles, then waits 2–4s.' : scannerCheck.reason}
+                    onClick={() => dispatch({ type: 'pulseScanner' })}
+                  >
+                    {scannerCheck.ok ? 'Pulse' : scannerWait > 0 ? `Pulse · ${scannerWait}s` : 'Pulse'}
+                  </Button>
+                ) : null}
+              </div>
+
+              {archivesWarn ? (
+                <p className="ge-office__warn" role="status">
+                  {archivesWarn}
+                </p>
+              ) : null}
+
+              <OfficeRebalance ask={setConfirm} />
+            </div>
+          </Disclosure>
         </div>
       ) : null}
       <SpinePath s={s} fmt={numberFormat} />
       <ColdChainGraph s={s} />
-      {s.compute?.unlocked ? (
-        <Disclosure
-          className="wc-office"
-          title="Back office"
-          open={officeOpen}
-          onOpenChange={setOfficeOpen}
-        >
-          <div className="ge-office">
-            <div className="ge-office__stats">
-              <div>
-                <span>Analysts</span>
-                <strong>{s.compute.analysts}</strong>
-              </div>
-              <div>
-                <span>Archives</span>
-                <strong>{s.compute.archives}</strong>
-              </div>
-              {s.compute.ideasUnlocked ? (
-                <div data-coach-id="compute-ideas">
-                  <span>Ideas</span>
-                  <strong>{qty(s.compute.ideas)}</strong>
-                </div>
-              ) : null}
-              <div data-coach-id="compute-reputation">
-                <span>Reputation</span>
-                <strong>{s.compute.reputation}</strong>
-              </div>
-            </div>
-
-            <p className="ge-office__rep" title="Next Reputation +1 from baskets">
-              Next +1 @ {qty(s.compute.nextRepAt)} baskets
-              {s.baskets >= s.compute.nextRepAt
-                ? ' · ready'
-                : ` · ${qty(Math.max(0, s.compute.nextRepAt - s.baskets))} to go${
-                    s.rates.soldPerSec > 1e-6
-                      ? ` · ~${
-                          (s.compute.nextRepAt - s.baskets) / s.rates.soldPerSec < 60
-                            ? `${waitLabel((s.compute.nextRepAt - s.baskets) / s.rates.soldPerSec)}`
-                            : `${Math.ceil((s.compute.nextRepAt - s.baskets) / s.rates.soldPerSec / 60)} min`
-                        }`
-                      : ''
-                  }`}
-            </p>
-
-            <div className="ge-office__actions">
-              <OfficeSuggestBtn
-                id="hire-analyst"
-                label="Analyst"
-                disabled={s.compute.reputation < 1}
-                title={
-                  archivesWarn
-                    ? `Archives first: ${archivesWarn}`
-                    : 'Spend 1 Reputation — Attention fills faster (cap unchanged)'
-                }
-                onClick={() =>
-                  setConfirm({
-                    title: archivesWarn ? 'Archives first?' : 'Hire Analyst',
-                    body: archivesWarn
-                      ? `${archivesWarn} Hiring an Analyst now mostly wastes the Reputation.`
-                      : 'Spend 1 Reputation to fill Attention faster.',
-                    detail: `Cap stays ${qty(attCap)}.`,
-                    confirmLabel: archivesWarn ? 'Hire anyway · 1 Reputation' : 'Hire · 1 Reputation',
-                    onConfirm: () => dispatch({ type: 'buyAnalyst' }),
-                  })
-                }
-              />
-              <OfficeSuggestBtn
-                id="buy-archive"
-                label="Archive"
-                disabled={s.compute.reputation < 1}
-                title="Spend 1 Reputation — raise Attention cap by 1,000"
-                onClick={() => {
-                  const nextCap = attCap + COMPUTE.capPerArchive
-                  setConfirm({
-                    title: 'Open Archive',
-                    body: 'Spend 1 Reputation to raise the Attention ceiling.',
-                    detail: `Cap becomes ${qty(nextCap)}.`,
-                    confirmLabel: 'Open · 1 Reputation',
-                    onConfirm: () => dispatch({ type: 'buyArchive' }),
-                  })
-                }}
-              />
-              {s.compute.ideasUnlocked ? (
-                <Button
-                  tone="ghost"
-                  title={
-                    s.compute.ideasOn
-                      ? 'Ideas mint while Attention is full. Auto-tournament waits.'
-                      : 'Ideas paused. Tourney While Full can spend the bar.'
-                  }
-                  onClick={() => dispatch({ type: 'toggleIdeas' })}
-                >
-                  Ideas {s.compute.ideasOn ? 'on' : 'off'}
-                </Button>
-              ) : null}
-              {s.compute.scanner ? (
-                <Button
-                  tone="ghost"
-                  disabled={!scannerCheck.ok}
-                  title={scannerCheck.ok ? 'Pulse Attention (wobbles, 2–4s cooldown)' : scannerCheck.reason}
-                  onClick={() => dispatch({ type: 'pulseScanner' })}
-                >
-                  {scannerCheck.ok ? 'Pulse' : scannerWait > 0 ? `Pulse · ${scannerWait}s` : 'Pulse'}
-                </Button>
-              ) : null}
-            </div>
-
-            {archivesWarn ? (
-              <p className="ge-muted ge-office__warn" role="status">
-                ⚠ Archives first — {archivesWarn}
-              </p>
-            ) : null}
-
-            <OfficeRebalance ask={setConfirm} />
-          </div>
-        </Disclosure>
-      ) : null}
     </div>
   )
 
@@ -850,9 +851,9 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
               ? [
                   {
                     key: 'office',
-                    label: officeOpen ? 'Hide Back office' : 'Back office',
-                    title: officeOpen ? 'Fold the Attention desk' : 'Open the Attention desk',
-                    onClick: () => setOfficeOpen((o) => !o),
+                    label: 'Back office',
+                    title: 'Open the Attention desk: Analysts, Archives, Reputation',
+                    onClick: openOffice,
                   },
                 ]
               : []),

@@ -66,6 +66,7 @@ These are the knobs that made Era 1–2 hit plan windows. Re-read live file — 
 | `ERA1_BASKETS_GATE` / `ERA1_HIRE_BASKETS` | Volume still required with hire path |
 | `marketBellNeed` | Count of dips (not one checkbox) |
 | `era1RegularNeed` / `era2RegularNeed` | Satisfied regular visits |
+| `layawaySlipNeed` / `layawayVisitGapSec` | 8 slips, 90s gap. Opening click, done before the basket gate |
 | Invoice float | Wholesale → invoice; `payInvoice` early disc / late fee |
 | `payroll.softCapFrac` | ~0.30 of recent revenue max wages |
 | Stars | Soft-cap demand; memo floors (~3.0); cold permit ~3.7 |
