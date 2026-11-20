@@ -12,9 +12,16 @@ import type { Session, User } from '@supabase/supabase-js'
 import { flushNow, hydrateForUser, setSyncUser, signOutClear, subscribeHydrate } from '@/shared/cloudSync'
 import type { ProfileRow } from '@/shared/database.types'
 import { getSupabase, supabaseConfigured } from '@/shared/supabase'
+import { social } from './social/backend'
+import { DEMO_ME, ensureDemoMe } from './social/demoBackend'
+import type { ProfilePatch } from './social/model'
 
 interface AuthCtx {
   configured: boolean
+  /** No account server on this build: you play as a local player (nothing is uploaded). */
+  local: boolean
+  /** Signed in but hasn't picked a name yet. */
+  needsOnboarding: boolean
   ready: boolean
   session: Session | null
   user: User | null
@@ -25,31 +32,51 @@ interface AuthCtx {
   signInWithGoogle: () => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
-  updateProfile: (
-    patch: Partial<Pick<ProfileRow, 'handle' | 'bio' | 'display_name' | 'pinned_awards'>>,
-  ) => Promise<{ error: string | null }>
+  updateProfile: (patch: ProfilePatch) => Promise<{ error: string | null }>
+}
+
+/** A stand-in session for builds without accounts, so play, saves and Social still work. */
+const LOCAL_SESSION = {
+  access_token: 'local',
+  refresh_token: 'local',
+  expires_in: 0,
+  token_type: 'bearer',
+  user: { id: DEMO_ME, app_metadata: {}, user_metadata: {}, aud: 'local', created_at: new Date(0).toISOString() },
+} as unknown as Session
+
+function localOnboardForced(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).has('onboard') || sessionStorage.getItem('games.forceOnboard') === '1'
+  } catch {
+    return false
+  }
 }
 
 const Ctx = createContext<AuthCtx | null>(null)
 
 async function fetchProfile(userId: string): Promise<ProfileRow | null> {
-  const sb = getSupabase()
-  if (!sb) return null
-  const { data, error } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle()
-  if (error) {
-    console.warn('profile fetch', error.message)
+  try {
+    return await social().getProfile(userId)
+  } catch (e) {
+    console.warn('profile fetch', e)
     return null
   }
-  return data as ProfileRow | null
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(!supabaseConfigured)
-  const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<ProfileRow | null>(null)
+  const local = !supabaseConfigured
+  const [ready, setReady] = useState(local)
+  const [session, setSession] = useState<Session | null>(local ? LOCAL_SESSION : null)
+  const [profile, setProfile] = useState<ProfileRow | null>(() => {
+    if (!local) return null
+    const me = ensureDemoMe()
+    if (localOnboardForced()) me.onboarded_at = null
+    return { ...me }
+  })
   const [hydrating, setHydrating] = useState(false)
   const [hydrateError, setHydrateError] = useState<string | null>(null)
-  const [savesReady, setSavesReady] = useState(false)
+  const [savesReady, setSavesReady] = useState(local)
+  const [v2, setV2] = useState(local)
   const lastHydrated = useRef<string | null>(null)
 
   const refreshProfile = useCallback(async () => {
@@ -155,13 +182,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const sb = getSupabase()
     await flushNow()
-    if (!sb) {
-      signOutClear()
-      setProfile(null)
-      setSavesReady(false)
-      lastHydrated.current = null
-      return
-    }
+    // Local play has no account to leave.
+    if (!sb) return
     await sb.auth.signOut()
     signOutClear()
     setSyncUser(null)
@@ -171,25 +193,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateProfile = useCallback(
-    async (patch: Partial<Pick<ProfileRow, 'handle' | 'bio' | 'display_name' | 'pinned_awards'>>) => {
-      const sb = getSupabase()
+    async (patch: ProfilePatch) => {
       const uid = session?.user?.id
-      if (!sb || !uid) return { error: 'Sign in first.' }
-      const cleaned = {
-        ...patch,
-        handle: patch.handle?.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24),
-      }
-      const { data, error } = await sb.from('profiles').update(cleaned).eq('id', uid).select('*').maybeSingle()
-      if (error) return { error: error.message }
-      if (data) setProfile(data as ProfileRow)
+      if (!uid) return { error: 'Sign in first.' }
+      const cleaned: ProfilePatch = { ...patch }
+      if (patch.handle != null) cleaned.handle = patch.handle.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24)
+      if (patch.display_name != null) cleaned.display_name = patch.display_name.replace(/\s+/g, ' ').trim().slice(0, 32)
+      const { data, error } = await social().updateProfile(uid, cleaned)
+      if (error) return { error }
+      if (data) setProfile(data)
       return { error: null }
     },
     [session?.user?.id],
   )
 
+  // Learn whether the account server has the v2 tables (names, settings, competitions).
+  useEffect(() => {
+    if (local || !session) return
+    void social()
+      .v2()
+      .then(setV2)
+      .catch(() => setV2(false))
+  }, [local, session])
+
+  // Without the v2 server we can't record onboarding, so we don't block on it.
+  const needsOnboarding = !!session && !!profile && v2 && !profile.onboarded_at
+
   const value = useMemo<AuthCtx>(
     () => ({
       configured: supabaseConfigured,
+      local,
+      needsOnboarding,
       ready,
       session,
       user: session?.user ?? null,
@@ -203,6 +237,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
     }),
     [
+      local,
+      needsOnboarding,
       ready,
       session,
       profile,

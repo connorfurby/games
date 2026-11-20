@@ -16,12 +16,7 @@ import { qty } from '@/games/grocery-empire/ui/format'
 import { engine } from '@/games/grocery-empire/sim/engine'
 
 import { loadGame } from '@/shared/save'
-import {
-  hasPrimaryGrocerySave,
-  loadDailyChallenge,
-  prepareDailyChallengeStart,
-  todaysChallenge,
-} from './dailyChallenge'
+import { hasPrimaryGrocerySave, loadDailyChallenge, prepareDailyChallengeStart, todaysChallenge } from './dailyChallenge'
 import { dailyTheme, localDayKey, streakWeek } from './dailyStamp'
 import { NewGameDialog } from './NewGameDialog'
 import { ShellConfirm } from './SaveSlots'
@@ -29,7 +24,8 @@ import { museumStore } from '@/games/grocery-empire/ui/museum/store'
 import { useAuth } from './AuthContext'
 import { useMeta } from './MetaContext'
 import { ShellFrame } from './ShellFrame'
-import { fetchProfilesByIds, listFriendships } from './social/api'
+import { firstName, presenceOf } from './social/people'
+import { useSocial } from './social/SocialContext'
 import './home.css'
 
 interface SaveGlance {
@@ -83,7 +79,8 @@ export function Shelf() {
   const [burst, setBurst] = useState(false)
   const [authBusy, setAuthBusy] = useState(false)
   const [authErr, setAuthErr] = useState<string | null>(null)
-  const [friendsLive, setFriendsLive] = useState(0)
+  const { friends, waiting } = useSocial()
+  const friendsLive = friends.filter((f) => ['playing', 'online'].includes(presenceOf(f.profile).kind)).length
   const nav = useNavigate()
   const game = GAMES.find((g) => g.id === selected) ?? GAMES[0]
   const playable = game.status === 'playable'
@@ -120,34 +117,6 @@ export function Shelf() {
     return () => window.clearInterval(id)
   }, [])
 
-  useEffect(() => {
-    if (!user || !savesReady) {
-      setFriendsLive(0)
-      return
-    }
-    let cancelled = false
-    const load = async () => {
-      const fs = await listFriendships(user.id)
-      const accepted = fs.filter((f) => f.status === 'accepted')
-      const ids = accepted.map((f) => (f.requester_id === user.id ? f.addressee_id : f.requester_id))
-      const profiles = await fetchProfilesByIds(ids)
-      if (cancelled) return
-      let live = 0
-      for (const p of profiles.values()) {
-        if (p.playing_game || (p.last_seen_at && Date.now() - new Date(p.last_seen_at).getTime() < 2 * 60_000)) {
-          live += 1
-        }
-      }
-      setFriendsLive(live)
-    }
-    void load()
-    const id = window.setInterval(() => void load(), 60_000)
-    return () => {
-      cancelled = true
-      window.clearInterval(id)
-    }
-  }, [user, savesReady])
-
   const selectByOffset = useCallback((delta: number) => {
     setSelected((cur) => {
       const i = GAMES.findIndex((g) => g.id === cur)
@@ -183,23 +152,16 @@ export function Shelf() {
 
   const age = save && typeof save.lastSavedAt === 'number' && save.lastSavedAt > 0 ? formatAge(now - save.lastSavedAt) : null
   const era = typeof save?.era === 'number' ? Math.max(0, Math.floor(save.era)) : null
-  const eraTitle =
-    era != null ? (isSd ? SD_ERA_TITLES[era] : ERA_STORY[era]?.title) : null
+  const eraTitle = era != null ? (isSd ? SD_ERA_TITLES[era] : ERA_STORY[era]?.title) : null
   const baskets = typeof save?.baskets === 'number' ? Math.floor(save.baskets) : null
   const cash = typeof save?.cash === 'number' ? save.cash : null
   const stars = typeof save?.depth?.stars === 'number' ? save.depth.stars : null
   const soldRate = isSd ? save?.rates?.revenuePerSec : save?.rates?.soldPerSec
   const rateText =
-    typeof soldRate === 'number' && Number.isFinite(soldRate)
-      ? `${soldRate < 100 ? soldRate.toFixed(1) : qty(soldRate, 'named')}/s`
-      : '—'
-  const playSec = isSd
-    ? Math.floor(typeof save?.time === 'number' ? save.time : 0)
-    : (save?.stats?.playSec ?? 0)
+    typeof soldRate === 'number' && Number.isFinite(soldRate) ? `${soldRate < 100 ? soldRate.toFixed(1) : qty(soldRate, 'named')}/s` : '—'
+  const playSec = isSd ? Math.floor(typeof save?.time === 'number' ? save.time : 0) : (save?.stats?.playSec ?? 0)
   const lesson = isGe ? nextLesson(era ?? 0, save?.tutorials?.done ?? {}) : null
-  const lessonsDone = isGe
-    ? Object.values(save?.tutorials?.done ?? {}).filter(Boolean).length
-    : 0
+  const lessonsDone = isGe ? Object.values(save?.tutorials?.done ?? {}).filter(Boolean).length : 0
   const awards = Object.keys(meta.achievements).length
   const relicCount = Object.keys(museumStore.get().relics ?? {}).length
   const pack = TEXTURE_PACKS.find((p) => p.id === meta.equippedPack) ?? TEXTURE_PACKS[0]
@@ -297,9 +259,9 @@ export function Shelf() {
               <p className="hm-tag">{game.tagline}</p>
               {!locked && profile ? (
                 <Link to="/social" className="hm-presence">
-                  {friendsLive > 0
-                    ? `${friendsLive} friend${friendsLive === 1 ? '' : 's'} on the floor · you’re @${profile.handle}`
-                    : `You’re @${profile.handle} · open the floor`}
+                  {`Hi, ${firstName(profile)}`}
+                  {friendsLive > 0 ? ` · ${friendsLive} friend${friendsLive === 1 ? '' : 's'} playing` : ''}
+                  {waiting > 0 ? ` · ${waiting} waiting for you` : ''}
                 </Link>
               ) : null}
 
@@ -393,7 +355,9 @@ export function Shelf() {
                           <>
                             <div className="sd-stat">
                               <span>Baskets</span>
-                              <strong title={baskets != null ? String(baskets) : undefined}>{baskets != null ? qty(baskets, 'named') : '—'}</strong>
+                              <strong title={baskets != null ? String(baskets) : undefined}>
+                                {baskets != null ? qty(baskets, 'named') : '—'}
+                              </strong>
                             </div>
                             <div className="sd-stat">
                               <span>Selling</span>
@@ -421,7 +385,9 @@ export function Shelf() {
                           <strong>Today&apos;s corner · {dailyTheme(dailyToday.seed)}</strong>
                           <span>
                             {bestToday ? `Best today: ${qty(bestToday.baskets, 'named')} baskets.` : 'No run yet today.'}{' '}
-                            {(meta.dailyStreak ?? 0) > 0 ? `Streak: ${meta.dailyStreak} day${meta.dailyStreak === 1 ? '' : 's'}.` : 'Play any day to start a streak.'}
+                            {(meta.dailyStreak ?? 0) > 0
+                              ? `Streak: ${meta.dailyStreak} day${meta.dailyStreak === 1 ? '' : 's'}.`
+                              : 'Play any day to start a streak.'}
                           </span>
                         </div>
                         <ol className="hm-week" aria-label="This week">
@@ -437,7 +403,8 @@ export function Shelf() {
                         </ol>
                       </div>
                       <p className="hm-note">
-                        Today&apos;s corner is the same fresh start for everyone, new each day.{save ? ' Your current run waits safely in save slot 3.' : ''}
+                        Today&apos;s corner is the same fresh start for everyone, new each day.
+                        {save ? ' Your current run waits safely in save slot 3.' : ''}
                         {dailyActive ? ' You are playing it now.' : ''}
                       </p>
                     </>
@@ -475,11 +442,7 @@ export function Shelf() {
                     onClick={() => setSelected(g.id)}
                   >
                     {coverForGame(g.id) ? (
-                      <span
-                        className="hm-spine__cover"
-                        style={{ backgroundImage: `url(${coverForGame(g.id)})` }}
-                        aria-hidden
-                      />
+                      <span className="hm-spine__cover" style={{ backgroundImage: `url(${coverForGame(g.id)})` }} aria-hidden />
                     ) : null}
                     <span className="hm-spine__band" aria-hidden />
                     <span className="hm-spine__title">{g.title}</span>
@@ -508,7 +471,7 @@ export function Shelf() {
               </span>
               <span className="sd-eyebrow">Social</span>
               <strong>Locked until sign-in</strong>
-              <em>Floor · Boards · Friends — run cards and presence on your account.</em>
+              <em>Weekly cups, challenges and leaderboards with your friends.</em>
               <span className="hm-card__go">Sign in →</span>
             </button>
           ) : (
@@ -517,11 +480,13 @@ export function Shelf() {
                 ⌂
               </span>
               <span className="sd-eyebrow">Social</span>
-              <strong>Floor · Boards · Friends</strong>
+              <strong>Friends · Cups · Leaderboards</strong>
               <em>
                 {friendsLive > 0
                   ? `${friendsLive} friend${friendsLive === 1 ? '' : 's'} around right now.`
-                  : 'Post a run card, climb the podium, or add a friend by code.'}
+                  : waiting > 0
+                    ? `${waiting} thing${waiting === 1 ? '' : 's'} waiting for you.`
+                    : 'Race friends in the weekly cup, or start a challenge.'}
               </em>
               <span className="hm-card__go">Open Social →</span>
             </Link>
@@ -587,7 +552,11 @@ export function Shelf() {
               <span className="hm-card__go">Sign in →</span>
             </button>
           ) : (
-            <Link to="/shop" className="hm-card hm-card--shop" style={{ ['--pk-bg' as string]: pack.vars['--bg'], ['--pk-accent' as string]: pack.vars['--accent'] }}>
+            <Link
+              to="/shop"
+              className="hm-card hm-card--shop"
+              style={{ ['--pk-bg' as string]: pack.vars['--bg'], ['--pk-accent' as string]: pack.vars['--accent'] }}
+            >
               <span className="hm-card__swatch" aria-hidden>
                 <i />
                 <i />
@@ -599,7 +568,9 @@ export function Shelf() {
               </strong>
               <em>
                 Wearing {pack.name}.{' '}
-                {affordablePacks ? `${affordablePacks} pack${affordablePacks === 1 ? '' : 's'} in reach.` : 'Packs change paper and light, never the math.'}
+                {affordablePacks
+                  ? `${affordablePacks} pack${affordablePacks === 1 ? '' : 's'} in reach.`
+                  : 'Packs change paper and light, never the math.'}
               </em>
               <span className="hm-card__go">Dress the counter →</span>
             </Link>

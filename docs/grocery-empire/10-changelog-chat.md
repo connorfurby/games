@@ -2,6 +2,18 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## AV. Social overhaul: names, competitions, leaderboards, friends (2026-11-20, on `main`)
+
+No `SAVE_VERSION` bump (no sim state changed). **Server step:** apply `supabase/migrations/20261120100000_social_v2.sql`. Until it is applied the client falls back to v1 tables: boards, friends and the feed work; cups, challenges, leagues, settings and onboarding switch on after.
+
+- **Names first.** First sign-in opens a blocking "Welcome to the shelf" sheet (name prefilled from Google, handle with a live availability check, colour, favourite game, findable toggle). Everywhere shows the name; @handle is secondary. Avatars are initials on your colour when there's no photo.
+- **Rooms** (`/social`, `/compete`, `/boards`, `/friends`, `/you`, `/u/:handle`, `/add/:code`): Home (feed with Everyone/Friends/Mine, composer with run card, era-share prompt, side cards for this week with friends, challenges, friends on now, suggestions); Compete (weekly cup per game with countdown, past winners and trophies; head-to-head challenges 1 day/3 days/1 week on sales, baskets or play time; private leagues by 6-letter code); Leaderboards (game, Everyone/Friends/each league, 7 rankings, podium, sticky "your place", gap to the next spot, top-N%); Friends (search by name, handle or code; invite link with share; requests in and out; online first; suggestions by mutual friends then era); You (profile editor, notifications, privacy and alert switches that save on tap); public profile pages with stats, overall rank, trophies, pinned awards and posts.
+- **Code:** `src/shell/social/` — `model.ts` (backend contract), `supabaseBackend.ts`, `demoBackend.ts` (seeded practice town), `SocialContext.tsx` (friends, challenges, leagues, notifications app-wide), rooms, `ProfileEditor.tsx`, `Onboarding.tsx`. Old Floor/Friends/Boards/You and `api.ts` are gone. `social.css` rewritten (`sc-*`), tabs shorten to "Ranks" under 560px.
+- **Local play:** builds without Supabase env run as a local player against the demo town, and saves mirror to `localStorage` (`games.v1.*`) so refresh keeps the run. With accounts nothing changes: cloud only.
+- **HUD:** the "⌂ Shelf" pill is gone from both games; the store name links home and carries `meta-shelf`. Account menu shows your name, avatar and a badge for waiting requests/challenges/unread.
+- Removed 104 Finder duplicate files (`* 2.*`, `* 3.*`).
+- Verified: `npm test` (adds `social.test.ts`), `npm run build`, `npm run lint`, full e2e (adds `social.spec.ts`), screenshots at 390 px and desktop.
+
 ## AU. Loose ends: help, tours, names, one place for each thing (2026-11-19, on `main`)
 
 - **One name per thing.** The company **Exchange** is now **Stock Market** (Era 8's Exchange keeps its name). The company **Franchises** screen is now **Licensing**: independent grocers stocking your house brand. Logistics franchises are your own stores and keep the name. The company **Lab** is now **Inventions** (the Lab upgrade tree keeps its name). The People upgrade **Shift Lead** is now **Scheduling Desk** (Shift Lead is the promoted role). Foundation shows **Town goodwill** (the reset currency is Goodwill). The two "Licence royalties" rows in Treasury are now Licence and Patent royalties.

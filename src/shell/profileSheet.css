@@ -24,8 +24,9 @@
   overflow: auto;
   padding: 1.1rem 1.15rem 1.4rem;
   border-radius: 1.1rem 1.1rem 0 0;
-  background: var(--sd-paper, #f4ead6);
-  color: var(--sd-paper-ink, #2a2118);
+  background: var(--ge-bg2, #241f19);
+  color: var(--sd-paper, #f4ead6);
+  border: 1px solid rgb(244 234 214 / 0.12);
   box-shadow: 0 -18px 48px rgb(0 0 0 / 0.4);
   font-family: var(--font-ui, 'Space Grotesk', sans-serif);
 }
@@ -66,7 +67,8 @@
 
 .profile-sheet__close {
   appearance: none;
-  border: 1px solid rgb(42 33 24 / 0.18);
+  border: 1px solid rgb(244 234 214 / 0.2);
+  min-height: 36px;
   background: transparent;
   border-radius: 999px;
   padding: 0.35rem 0.7rem;

@@ -2,6 +2,10 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { openProfileSheet } from './profileBus'
+import { Avatar } from './social/Avatar'
+import { nameOf } from './social/people'
+import { useSocial } from './social/SocialContext'
+import './social/social.css'
 
 /**
  * Sign-in / avatar menu shared by the shelf bar and both in-play HUDs.
@@ -15,7 +19,8 @@ export function AccountChrome({
   /** shell = light-on-dark shelf bar; play = sits in game HUD controls */
   tone?: 'shell' | 'play'
 }) {
-  const { configured, ready, user, profile, hydrating, signInWithGoogle, signOut } = useAuth()
+  const { configured, local, ready, user, profile, hydrating, signInWithGoogle, signOut } = useAuth()
+  const { waiting, unread } = useSocial()
   const loc = useLocation()
   const inPlay = loc.pathname.startsWith('/play/')
   const [busy, setBusy] = useState(false)
@@ -43,7 +48,7 @@ export function AccountChrome({
     }
   }, [open])
 
-  if (!configured || !ready) return null
+  if ((!configured && !local) || !ready) return null
 
   const root = `account-chrome account-chrome--${tone}${className ? ` ${className}` : ''}`
 
@@ -73,8 +78,8 @@ export function AccountChrome({
     )
   }
 
-  const handle = profile?.handle ?? 'you'
-  const avatar = profile?.avatar_url
+  const name = nameOf(profile)
+  const badge = waiting + unread
 
   return (
     <div className={`${root} is-signed`}>
@@ -86,21 +91,22 @@ export function AccountChrome({
         aria-expanded={open}
         aria-controls={labelId}
         onClick={() => setOpen((v) => !v)}
-        title={`@${handle}`}
+        title={name}
+        aria-label={badge ? `${name}, ${badge} new` : name}
       >
-        {avatar ? (
-          <img src={avatar} alt="" width={28} height={28} referrerPolicy="no-referrer" />
-        ) : (
-          <span aria-hidden>{handle.slice(0, 1).toUpperCase()}</span>
-        )}
+        <Avatar profile={profile} size={30} />
+        {badge ? <span className="account-chrome__badge">{badge > 9 ? '9+' : badge}</span> : null}
         {hydrating ? <span className="account-chrome__pulse" aria-hidden /> : null}
       </button>
       {open ? (
         <div ref={panelRef} id={labelId} className="account-chrome__menu" role="menu">
-          <p className="account-chrome__who">
-            <strong>@{handle}</strong>
-            {profile?.friend_code ? <span className="account-chrome__code">{profile.friend_code}</span> : null}
-          </p>
+          <div className="account-chrome__who">
+            <Avatar profile={profile} size={40} />
+            <span>
+              <strong>{name}</strong>
+              {profile ? <span className="account-chrome__code">@{profile.handle}</span> : null}
+            </span>
+          </div>
           <button
             type="button"
             role="menuitem"
@@ -112,30 +118,28 @@ export function AccountChrome({
           >
             Profile
           </button>
-          <Link
-            to="/social"
-            role="menuitem"
-            className="account-chrome__item"
-            onClick={() => setOpen(false)}
-          >
+          <Link to="/social" role="menuitem" className="account-chrome__item" onClick={() => setOpen(false)}>
             Social
+            {badge ? <span className="account-chrome__count">{badge > 9 ? '9+' : badge}</span> : null}
           </Link>
           {inPlay ? (
             <Link to="/" role="menuitem" className="account-chrome__item" onClick={() => setOpen(false)}>
               Shelf
             </Link>
           ) : null}
-          <button
-            type="button"
-            role="menuitem"
-            className="account-chrome__item"
-            onClick={async () => {
-              setOpen(false)
-              await signOut()
-            }}
-          >
-            Sign out
-          </button>
+          {local ? null : (
+            <button
+              type="button"
+              role="menuitem"
+              className="account-chrome__item"
+              onClick={async () => {
+                setOpen(false)
+                await signOut()
+              }}
+            >
+              Sign out
+            </button>
+          )}
         </div>
       ) : null}
     </div>

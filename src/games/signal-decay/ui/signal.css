@@ -109,25 +109,6 @@
     min-width: 7.5rem;
   }
 
-  .sd-hud__shelf {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.28rem;
-    margin-bottom: 0.12rem;
-    padding: 0.16rem 0.42rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--sd-ink) 16%, transparent);
-    color: var(--sd-muted);
-    text-decoration: none;
-    font-size: 0.68rem;
-    font-weight: 650;
-    letter-spacing: 0.02em;
-  }
-
-  .sd-hud__shelf:hover {
-    color: var(--sd-tag);
-    border-color: color-mix(in srgb, var(--sd-tag) 40%, transparent);
-  }
 
   .sd-hud__home {
     font-family: var(--sd-font-display, 'Fraunces', Georgia, serif);

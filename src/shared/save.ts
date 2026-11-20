@@ -1,11 +1,48 @@
 import { markDeleted, markDirty } from './cloudSync'
 import { isCloudSlot, isDevSlot } from './progress'
 import { deserializeState, serializeState } from './saveCodec'
+import { supabaseConfigured } from './supabase'
 
 export { deserializeState, serializeState } from './saveCodec'
 
-/** In-memory account cache. Never written to localStorage — cloud is the durable store. */
-const store = new Map<string, string>()
+/**
+ * In-memory account cache. With accounts, cloud is the durable store and nothing touches
+ * localStorage. A build with no account server (local play, dev, e2e) keeps a browser copy
+ * instead, so a refresh doesn't wipe the run.
+ */
+const LOCAL_PREFIX = 'games.v1.'
+const localMirror = !supabaseConfigured && import.meta.env.MODE !== 'test' && typeof localStorage !== 'undefined'
+
+class SlotStore extends Map<string, string> {
+  override set(id: string, raw: string) {
+    super.set(id, raw)
+    if (localMirror) {
+      try {
+        localStorage.setItem(LOCAL_PREFIX + id, raw)
+      } catch {
+        /* full or blocked: memory still has it */
+      }
+    }
+    return this
+  }
+  override delete(id: string) {
+    if (localMirror) localStorage.removeItem(LOCAL_PREFIX + id)
+    return super.delete(id)
+  }
+  override clear() {
+    if (localMirror) for (const k of Object.keys(localStorage)) if (k.startsWith(LOCAL_PREFIX)) localStorage.removeItem(k)
+    super.clear()
+  }
+}
+
+const store = new SlotStore()
+if (localMirror) {
+  for (const k of Object.keys(localStorage)) {
+    if (!k.startsWith(LOCAL_PREFIX)) continue
+    const raw = localStorage.getItem(k)
+    if (raw) Map.prototype.set.call(store, k.slice(LOCAL_PREFIX.length), raw)
+  }
+}
 const snaps = new Map<string, Snapshot[]>()
 
 function notifyCloudWrite(id: string) {

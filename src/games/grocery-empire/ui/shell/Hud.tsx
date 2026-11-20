@@ -67,11 +67,7 @@ export function Hud({
   return (
     <header className="g2-hud">
       <div className="g2-hud__brand">
-        <Link to="/" className="g2-hud__shelf" aria-label="Back to shelf" data-coach-id="meta-shelf">
-          <span aria-hidden>⌂</span>
-          <span>Shelf</span>
-        </Link>
-        <Link to="/" className="g2-hud__home" aria-label="Back to shelf" title="Back to the shelf">
+        <Link to="/" className="g2-hud__home" aria-label="Back to shelf" title="Back to the shelf" data-coach-id="meta-shelf">
           {storeDisplayName(s)}
         </Link>
         <span className="g2-hud__era" title={era?.epigraph}>
@@ -210,7 +206,17 @@ function SoundButton() {
         if (!on) window.setTimeout(() => sfx.purchase(), 80)
       }}
     >
-      <svg viewBox="0 0 18 18" width="16" height="16" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        viewBox="0 0 18 18"
+        width="16"
+        height="16"
+        aria-hidden
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M3 7h2.5L9 4v10l-3.5-3H3V7Z" />
         {on ? <path d="M11.5 6.5a3.5 3.5 0 0 1 0 5M13.6 4.6a6.2 6.2 0 0 1 0 8.8" /> : <path d="m12 7 4 4m0-4-4 4" />}
       </svg>

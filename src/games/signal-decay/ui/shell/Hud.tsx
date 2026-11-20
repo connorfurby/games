@@ -61,11 +61,7 @@ export function Hud({ onMore }: { onMore?: () => void }) {
   return (
     <header className="sd-hud">
       <div className="sd-hud__brand">
-        <Link to="/" className="sd-hud__shelf" aria-label="Back to shelf" data-coach-id="meta-shelf">
-          <span aria-hidden>⌂</span>
-          <span>Shelf</span>
-        </Link>
-        <Link to="/" className="sd-hud__home" aria-label="Back to shelf" title="Back to the shelf">
+        <Link to="/" className="sd-hud__home" aria-label="Back to shelf" title="Back to the shelf" data-coach-id="meta-shelf">
           Signal Decay
         </Link>
         <span className="sd-hud__era">{era}</span>
@@ -155,13 +151,7 @@ export function Hud({ onMore }: { onMore?: () => void }) {
           </button>
         </div>
         {onMore ? (
-          <button
-            type="button"
-            className="sd-icon-btn sd-menu-btn"
-            onClick={onMore}
-            aria-label="More"
-            title="Wiki, museum, settings"
-          >
+          <button type="button" className="sd-icon-btn sd-menu-btn" onClick={onMore} aria-label="More" title="Wiki, museum, settings">
             <svg viewBox="0 0 18 18" width="16" height="16" aria-hidden>
               {[0, 1, 2].flatMap((r) =>
                 [0, 1, 2].map((c) => (

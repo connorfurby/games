@@ -3,7 +3,16 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type ReactionKind = 'stamp' | 'basket' | 'static'
 export type FriendshipStatus = 'pending' | 'accepted' | 'blocked'
 export type PostVisibility = 'public' | 'friends'
-export type NotificationKind = 'friend_request' | 'friend_accept' | 'comment' | 'reaction'
+export type NotificationKind =
+  | 'friend_request'
+  | 'friend_accept'
+  | 'comment'
+  | 'reaction'
+  | 'challenge'
+  | 'challenge_accept'
+  | 'challenge_result'
+  | 'league_join'
+  | 'cup_result'
 export type SocialGameId = 'grocery-empire' | 'signal-decay'
 
 export interface ProfileRow {
@@ -18,6 +27,24 @@ export interface ProfileRow {
   playing_game: string | null
   created_at: string
   updated_at: string
+  /** Social v2 (20261120100000). Absent on servers without the migration. */
+  onboarded_at?: string | null
+  accent?: AccentId | null
+  favorite_game?: SocialGameId | null
+  settings?: ProfileSettings | null
+}
+
+export type AccentId = 'tomato' | 'tag' | 'mint' | 'sky' | 'plum' | 'rose' | 'sand' | 'ink'
+
+/** Privacy and notification switches. Every key is optional; missing means on (or 'friends'). */
+export interface ProfileSettings {
+  discoverable?: boolean
+  public_boards?: boolean
+  show_presence?: boolean
+  default_visibility?: PostVisibility
+  notify_friends?: boolean
+  notify_posts?: boolean
+  notify_compete?: boolean
 }
 
 export interface SaveRow {
@@ -38,6 +65,12 @@ export interface PublicStatsRow {
   week_key: string | null
   week_start_score: string
   updated_at: string
+  /** Social v2 */
+  revenue_num?: number
+  week_gain?: number
+  prev_week_key?: string | null
+  prev_week_gain?: number
+  achievements?: number
 }
 
 export interface FriendshipRow {
@@ -98,6 +131,7 @@ export interface NotificationRow {
   body: string
   read_at: string | null
   created_at: string
+  ref_id?: string | null
 }
 
 export interface Database {

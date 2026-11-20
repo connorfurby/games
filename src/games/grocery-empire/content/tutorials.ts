@@ -807,7 +807,7 @@ export const TUTORIALS: TutorialDef[] = [
         id: 'meta-shelf-spot',
         coachId: 'meta-shelf',
         title: 'The library shelf',
-        body: 'Outside the store, the Shelf holds every game and your cosmetics. Texture packs and achievements live in Shop and Achievements. Coach replays any tour from inside the run.',
+        body: 'Tap your store name to step out to the Shelf: every game, your cosmetics, and Social with friends and weekly cups. Your profile menu has it too.',
         recovery: 'Shop items never change how the game plays. Skip them freely.',
         doneWhen: { kind: 'always' },
       },

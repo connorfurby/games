@@ -15,11 +15,15 @@ import { NewsPage } from '@/shell/NewsPage'
 import { PlayPage } from '@/shell/PlayPage'
 import { Shelf } from '@/shell/Shelf'
 import { ShopPage } from '@/shell/ShopPage'
-import { Boards } from '@/shell/social/Boards'
-import { Floor } from '@/shell/social/Floor'
-import { Friends } from '@/shell/social/Friends'
-import { SocialPage } from '@/shell/social/SocialPage'
-import { You } from '@/shell/social/You'
+import { BoardsRoom } from '@/shell/social/BoardsRoom'
+import { CompeteRoom } from '@/shell/social/CompeteRoom'
+import { FriendsRoom } from '@/shell/social/FriendsRoom'
+import { HomeRoom } from '@/shell/social/HomeRoom'
+import { OnboardingHost } from '@/shell/social/Onboarding'
+import { ProfileView } from '@/shell/social/ProfileView'
+import { SocialProvider } from '@/shell/social/SocialContext'
+import { AddByCode, SocialPage } from '@/shell/social/SocialPage'
+import { YouRoom } from '@/shell/social/YouRoom'
 import { setPlayingGame, startPresence, stopPresence } from '@/shell/social/presence'
 import { publishPublicStats } from '@/shell/social/stats'
 import type { SocialGameId } from '@/shared/database.types'
@@ -128,10 +132,13 @@ function AppRoutes() {
           }
         />
         <Route path="/social" element={<SocialPage />}>
-          <Route index element={<Floor />} />
-          <Route path="friends" element={<Friends />} />
-          <Route path="boards" element={<Boards />} />
-          <Route path="you" element={<You />} />
+          <Route index element={<HomeRoom />} />
+          <Route path="compete" element={<CompeteRoom />} />
+          <Route path="boards" element={<BoardsRoom />} />
+          <Route path="friends" element={<FriendsRoom />} />
+          <Route path="you" element={<YouRoom />} />
+          <Route path="u/:handle" element={<ProfileView />} />
+          <Route path="add/:code" element={<AddByCode />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -139,6 +146,7 @@ function AppRoutes() {
       <HotkeyOverlay />
       <AccountGate />
       <ProfileSheetHost />
+      <OnboardingHost />
     </>
   )
 }
@@ -146,11 +154,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <MetaProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </MetaProvider>
+      <SocialProvider>
+        <MetaProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </MetaProvider>
+      </SocialProvider>
     </AuthProvider>
   )
 }
