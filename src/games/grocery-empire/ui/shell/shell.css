@@ -78,6 +78,17 @@
     color: var(--ge-muted);
   }
 
+  .g2-stat--baskets {
+    position: relative;
+  }
+  .g2-stat--baskets > .ge-pops {
+    left: 100%;
+    right: auto;
+    bottom: 0;
+    width: 2.75rem;
+    height: 2.4rem;
+    margin-left: 4px;
+  }
   .g2-stat__value {
     position: relative;
     min-width: 0;
@@ -1095,7 +1106,12 @@
 
     .g2-goal__acts {
       gap: 0.15rem;
-      max-width: 5.5rem;
+      max-width: 7.5rem;
+    }
+
+    /* Prices like $256.00M must fit whole, never clipped. */
+    .g2-goal__acts .g2-tag__price {
+      font-size: var(--t-sm);
     }
 
     .g2-goal__acts .g2-tag {
@@ -1376,32 +1392,35 @@
   }
 
   /*
-   * Alert pill: hangs from the HUD's bottom edge instead of taking a row or a slot in the
-   * controls. It can come and go without moving anything else on screen.
+   * Alert tab: hangs under the HUD like a tab, in a gutter the page always keeps, so it
+   * never covers the goal card or the page and can come and go without moving anything.
    */
   .g2-hud .g2-alert--hang {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 1px);
     right: var(--s-3);
-    transform: translateY(-50%);
     z-index: 2;
     max-width: min(26rem, calc(100vw - 2 * var(--s-3)));
-    min-height: 30px;
-    padding: var(--s-1) var(--s-3);
+    height: 28px;
+    min-height: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--s-3);
     font-size: var(--t-xs);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    box-shadow: var(--shadow-2);
-    background-color: var(--ge-bg);
+    border: 1px solid var(--g2-line);
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    background-color: color-mix(in srgb, var(--ge-bg) 88%, #000);
+    background-image: linear-gradient(color-mix(in srgb, var(--g2-tag) 14%, transparent), color-mix(in srgb, var(--g2-tag) 14%, transparent));
+  }
+  .g2-hud .g2-alert--hang.is-danger {
+    background-image: linear-gradient(color-mix(in srgb, var(--ge-danger) 18%, transparent), color-mix(in srgb, var(--ge-danger) 18%, transparent));
   }
   .g2-root .g2-main {
-    padding-top: 1.15rem;
-  }
-  @media (max-width: 720px) {
-    .g2-root .g2-main {
-      padding-top: var(--s-4);
-    }
+    padding-top: calc(28px + var(--s-3));
   }
 
   /* The reason line under a primary verb keeps its row whether or not there is a reason. */
@@ -1704,6 +1723,9 @@
   .g2-main {
     position: relative;
     isolation: isolate;
+    /* The glows below behave like absolute boxes here (an ancestor is a containing block),
+       so they would widen the page. Pages never scroll sideways. */
+    overflow-x: hidden;
   }
   .g2-main::before,
   .g2-main::after {

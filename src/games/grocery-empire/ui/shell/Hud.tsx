@@ -102,8 +102,9 @@ export function Hud({
             <span className="g2-stat__short" aria-hidden="true">
               {shortFigure(qty(basketsShown, 'named'))}
             </span>
-            <PopLayer pops={pops} />
           </span>
+          {/* Floaters rise beside the column, never over the number. */}
+          <PopLayer pops={pops} />
           <span className="g2-stat__rate">
             {s.rates.soldPerSec < 100 ? s.rates.soldPerSec.toFixed(1) : qty(s.rates.soldPerSec, 'named')}/s
           </span>

@@ -2,6 +2,17 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## AS. Phone upgrade tree, no sideways scroll, visual fixes (2026-11-19, on `main`)
+
+- **Phone tree** (`PhoneTree` in `UpgradesBoard.tsx`, `phoneTree.css`): below 900px the wired tree reads top to bottom. One section per layer, one full-width row per node (progress ring, name, effect, rank, price button). A node sits indented under the node it needs; needs from another layer show as "After …". Tap a row to open its details in place. Desktop keeps the wired tree.
+- **"Unlocks" links are chips** (36px tall), not underlined text.
+- **No sideways scroll**: the two ambient glows behind `.g2-main` act like absolute boxes there, so they made every page about 150px wider. `.g2-main` now clips sideways (`overflow-x: hidden`).
+- **HUD alert is a tab** that hangs under the header in a gutter the page always keeps. Before, it sat half over the header edge and covered the goal card on phones.
+- **Goal price fits on phones** (e.g. $256.00M was clipped).
+- **Basket floaters** rise beside the Baskets figure instead of over its digits.
+- **Registers**: the cryptic "Q18" badge over the sign is gone; a "N in line" badge under the tills says it in words, formatted (no raw 25151).
+- Visual baselines updated for the new top gutter.
+
 ## AR. Company layer woven into progression (2026-11-19, on `main`, SAVE 45)
 
 - **Icons**: Company hub gets its own briefcase icon (was the Money ledger). Treasury is now a vault (looked like City Hall/Town). Exchange (Era 8), Signal and Map stop borrowing Truck, Star and Orbit.

@@ -159,12 +159,17 @@ export function FloorRoom() {
       <Sign x={530} y={164} text={`Cans sell ${money(price, numberFormat)}`} small />
     </>
   )
+  const lineText = `${qty(Math.max(1, Math.ceil(sold * 2)), numberFormat)} in line`
   const registers = (
       <Hit x={660} y={90} w={140} h={110} label="Registers" coachId="staff-hire-clerk" menu="staff">
         <Sign x={668} y={108} text="Registers" />
-        <Register x={668} y={120} queue={bn.kind === 'checkout' ? Math.max(1, Math.ceil(sold * 2)) : 0} />
-        <Register x={736} y={120} queue={0} />
+        {/* The line is told in words under the tills, not as a badge over the sign. */}
+        <Register x={668} y={120} />
+        <Register x={736} y={120} />
         <Badge x={668} y={162} text={`${cashiers} on till`} w={70} />
+        {bn.kind === 'checkout' ? (
+          <Badge x={668} y={182} text={lineText} w={Math.max(70, Math.round(lineText.length * 7.6 + 14))} />
+        ) : null}
         {phone ? null : <Person x={700} y={ROOM_GROUND - 24} tint="#7fa3c9" delay={0.5} working={sold > 0.2} />}
       </Hit>
   )

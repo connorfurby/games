@@ -27,9 +27,11 @@ import { treeRanks } from '../../sim/systems/stats'
 import { hasAffordableUpgrade, pickBestUpgrade, planAffordableUpgrades } from '../../sim/upgradePlan'
 import { useGame } from '../GameContext'
 import { money } from '../format'
-import { Meter, SegmentedControl, useConfirm, Toggle } from '../kit'
+import { Meter, SegmentedControl, useConfirm, Toggle, useMediaQuery } from '../kit'
 import { PlayFrame } from '../play'
+import '../tree/tree.css'
 import './waveC.css'
+import './phoneTree.css'
 
 type NodeView = {
   def: UpgradeDef
@@ -296,17 +298,156 @@ function UpgradeDetail({
       ) : null}
       {children.length ? (
         <p className="sd-links">
-          Unlocks:{' '}
-          {children.map((c, i) => (
-            <span key={c.id}>
-              {i ? ', ' : ''}
-              <button type="button" onClick={() => onJump(c.id)}>
-                {c.name}
-              </button>
-            </span>
+          <span>Unlocks</span>
+          {children.map((c) => (
+            <button key={c.id} type="button" onClick={() => onJump(c.id)}>
+              {c.name}
+            </button>
           ))}
         </p>
       ) : null}
+    </div>
+  )
+}
+
+/** One row's look: what the player can do with this node right now. */
+function rowState(v: NodeView): 'unknown' | 'max' | 'ready' | 'locked' | 'owned' | 'open' {
+  if (!v.shown) return 'unknown'
+  if (v.lvl >= v.def.max) return 'max'
+  if (v.can1) return 'ready'
+  if (v.locked) return v.lvl > 0 ? 'owned' : 'locked'
+  return v.lvl > 0 ? 'owned' : 'open'
+}
+
+/**
+ * Phone tree: the same tree read top to bottom. Each layer is a section; inside it,
+ * a node sits under the node it needs (indented, with a guide line). Rows are full
+ * width and tappable; the price button buys a rank, tapping the row opens its details
+ * in place.
+ */
+function PhoneTree({
+  views,
+  s,
+  fmt,
+  mastery,
+  open,
+  onOpen,
+  onBuy,
+  tint,
+}: {
+  tint: string
+  views: NodeView[]
+  s: GameState
+  fmt: Parameters<typeof money>[1]
+  mastery: number
+  open: string | null
+  onOpen: (id: string | null) => void
+  onBuy: (id: string, n: number) => void
+}) {
+  const byId = new Map(views.map((v) => [v.def.id, v]))
+  const order = (a: NodeView, b: NodeView) => (a.def.row ?? 0) - (b.def.row ?? 0) || (a.def.col ?? 0) - (b.def.col ?? 0)
+  // Parent = the first need in the same layer of this tree; otherwise the node starts a branch.
+  const parentOf = (v: NodeView): string | null => {
+    for (const r of v.def.requires ?? []) {
+      const p = byId.get(r.id)
+      if (p && bandOf(p.def) === bandOf(v.def)) return r.id
+    }
+    return null
+  }
+  const kids = new Map<string, NodeView[]>()
+  for (const v of views) {
+    const p = parentOf(v)
+    if (p) kids.set(p, [...(kids.get(p) ?? []), v])
+  }
+  const jump = (id: string) => {
+    onOpen(id)
+    requestAnimationFrame(() => document.querySelector(`[data-ptree-id="${id}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
+  }
+
+  const row = (v: NodeView, depth: number): React.ReactNode => {
+    const st = rowState(v)
+    const { def, lvl } = v
+    const isOpen = open === def.id
+    const outside = (def.requires ?? []).filter((r) => byId.get(r.id) && bandOf(byId.get(r.id)!.def) !== bandOf(def))
+    const sub =
+      st === 'unknown'
+        ? 'Keep upgrading nearby to reveal this.'
+        : st === 'max'
+          ? 'Maxed'
+          : v.locked
+            ? v.locked
+            : def.per
+    const children = (kids.get(def.id) ?? []).sort(order)
+    return (
+      <li key={def.id} className="pt-item" style={{ ['--d' as string]: Math.min(depth, 3) }}>
+        <div className={`pt-row is-${st}${isOpen ? ' is-expanded' : ''}`} data-ptree-id={def.id} data-upgrade-id={def.id}>
+          <button
+            type="button"
+            className="pt-main"
+            aria-expanded={isOpen}
+            disabled={st === 'unknown'}
+            onClick={() => onOpen(isOpen ? null : def.id)}
+          >
+            <span className="pt-ring" style={{ ['--p' as string]: Math.min(1, lvl / def.max) }} aria-hidden>
+              <StatGlyph stat={def.effects?.[0]?.stat} size={18} />
+            </span>
+            <span className="pt-text">
+              <strong>{st === 'unknown' ? '???' : def.name}</strong>
+              <span className="pt-sub">{sub}</span>
+              {outside.length && st !== 'unknown' ? (
+                <span className="pt-after">After {outside.map((r) => UPGRADE_BY_ID[r.id]?.name).join(', ')}</span>
+              ) : null}
+            </span>
+            {st !== 'unknown' ? (
+              <span className="pt-lvl">
+                {lvl}
+                <small>/{def.max}</small>
+              </span>
+            ) : null}
+          </button>
+          {st === 'ready' || st === 'open' || (st === 'owned' && !v.locked) ? (
+            <button
+              type="button"
+              className="pt-buy"
+              disabled={!v.can1}
+              onClick={() => onBuy(def.id, 1)}
+              aria-label={`Buy a rank of ${def.name} for ${money(v.cost1, fmt)}`}
+            >
+              {money(v.cost1, fmt)}
+            </button>
+          ) : null}
+        </div>
+        {isOpen ? (
+          <div className="pt-detail">
+            <UpgradeDetail v={v} s={s} fmt={fmt} mastery={mastery} onBuy={(n) => onBuy(def.id, n)} onJump={jump} />
+          </div>
+        ) : null}
+        {children.length ? <ul className="pt-list pt-kids">{children.map((c) => row(c, depth + 1))}</ul> : null}
+      </li>
+    )
+  }
+
+  return (
+    <div className="pt" style={{ ['--st-tint' as string]: tint }}>
+      {BAND_IDS.map((band) => {
+        const inBand = views.filter((v) => bandOf(v.def) === band && (v.shown || v.lvl > 0))
+        if (!inBand.length) return null
+        const roots = inBand.filter((v) => !parentOf(v)).sort(order)
+        const openAt = UPGRADE_RANKS.bands[band].empireOpen
+        const isOpenBand = s.empire.level >= openAt
+        const ready = inBand.filter((v) => v.can1).length
+        return (
+          <section key={band} className={`pt-band${isOpenBand ? '' : ' is-closed'}`}>
+            <h3 className="pt-band__title">
+              <span>{BAND_LABELS[band]}</span>
+              <small>
+                {isOpenBand ? (band === 3 ? 'Capstones: pick one' : ready ? `${ready} to buy` : 'Open') : `Opens at Empire ${openAt}`}
+              </small>
+            </h3>
+            <ul className="pt-list">{roots.map((v) => row(v, 0))}</ul>
+          </section>
+        )
+      })}
     </div>
   )
 }
@@ -317,6 +458,8 @@ export function UpgradesBoard() {
   const [tree, setTree] = useState<TreeId>('floor')
   const [affordOnly, setAffordOnly] = useState(false)
   const [view, setView] = useState<'tree' | 'list'>('tree')
+  // The wired tree needs room; below this width it reads as a top-to-bottom list.
+  const phone = useMediaQuery('(max-width: 900px)')
   const [sel, setSel] = useState<string | null>(null)
   const [sweepNote, setSweepNote] = useState<{ text: string; bought: number } | null>(null)
 
@@ -493,7 +636,20 @@ export function UpgradesBoard() {
           ) : null}
         </div>
 
-        {view === 'tree' ? (
+        {view === 'tree' && phone ? (
+          <PhoneTree
+            views={active.views}
+            s={s}
+            fmt={numberFormat}
+            mastery={mastery}
+            open={sel && UPGRADE_BY_ID[sel]?.tree === active.id ? sel : null}
+            onOpen={setSel}
+            onBuy={(id, n) => dispatch({ type: 'buyUpgrade', id, count: n })}
+            tint={TREE_TINT[active.id]}
+          />
+        ) : null}
+
+        {view === 'tree' && !phone ? (
           <SkillTree
             nodes={active.views.map((v) => toTreeNode(v, numberFormat))}
             tiers={BAND_IDS.map((b) => {
