@@ -1,0 +1,139 @@
+.profile-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: end center;
+  padding: 0;
+}
+
+.profile-sheet__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(10 8 6 / 0.55);
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+}
+
+.profile-sheet__panel {
+  position: relative;
+  z-index: 1;
+  width: min(28rem, 100%);
+  max-height: min(92dvh, 40rem);
+  overflow: auto;
+  padding: 1.1rem 1.15rem 1.4rem;
+  border-radius: 1.1rem 1.1rem 0 0;
+  background: var(--sd-paper, #f4ead6);
+  color: var(--sd-paper-ink, #2a2118);
+  box-shadow: 0 -18px 48px rgb(0 0 0 / 0.4);
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+}
+
+.profile-sheet__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.profile-sheet__who {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.profile-sheet__who img,
+.profile-sheet__glyph {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-sheet__glyph {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, #ff5a43 22%, #e9dcc1);
+  font: 700 1.2rem/1 'Fraunces Variable', serif;
+}
+
+.profile-sheet__head h2 {
+  margin: 0.15rem 0 0;
+  font: 700 1.25rem/1.1 'Fraunces Variable', serif;
+}
+
+.profile-sheet__close {
+  appearance: none;
+  border: 1px solid rgb(42 33 24 / 0.18);
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font: 600 0.78rem/1 inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+.profile-sheet__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.profile-sheet__form label,
+.profile-sheet__form fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.profile-sheet__form input,
+.profile-sheet__form textarea {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgb(42 33 24 / 0.16);
+  background: #e9dcc1;
+  color: inherit;
+  font: inherit;
+}
+
+.profile-sheet__code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.75rem;
+  background: #e9dcc1;
+}
+
+.profile-sheet__code strong {
+  font: 700 1.05rem/1 var(--font-mono, 'IBM Plex Mono', monospace);
+  letter-spacing: 0.1em;
+  flex: 1;
+}
+
+.profile-sheet__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+@media (min-width: 720px) {
+  .profile-sheet {
+    place-items: center;
+    padding: 1rem;
+  }
+  .profile-sheet__panel {
+    border-radius: 1.1rem;
+    max-height: min(88vh, 36rem);
+  }
+}

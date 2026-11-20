@@ -6,6 +6,7 @@ import { AchievementsPage } from '@/shell/AchievementsPage'
 import { AccountGate } from '@/shell/AccountGate'
 import { AppChrome } from '@/shell/AppChrome'
 import { AuthProvider, useAuth } from '@/shell/AuthContext'
+import { ProfileSheetHost } from '@/shell/ProfileSheet'
 import { wireCloudReload } from '@/shell/cloudReload'
 import { GuidePage } from '@/shell/GuidePage'
 import { HotkeyOverlay } from '@/shell/HotkeyOverlay'
@@ -14,7 +15,11 @@ import { NewsPage } from '@/shell/NewsPage'
 import { PlayPage } from '@/shell/PlayPage'
 import { Shelf } from '@/shell/Shelf'
 import { ShopPage } from '@/shell/ShopPage'
+import { Boards } from '@/shell/social/Boards'
+import { Floor } from '@/shell/social/Floor'
+import { Friends } from '@/shell/social/Friends'
 import { SocialPage } from '@/shell/social/SocialPage'
+import { You } from '@/shell/social/You'
 import { setPlayingGame, startPresence, stopPresence } from '@/shell/social/presence'
 import { publishPublicStats } from '@/shell/social/stats'
 import type { SocialGameId } from '@/shared/database.types'
@@ -63,7 +68,7 @@ function PresenceBridge() {
   return null
 }
 
-/** Play / shop / awards / social need a signed-in Google account. */
+/** Play / shop / awards need a signed-in Google account. Social soft-gates in-place. */
 function RequireAuth({ children }: { children: ReactNode }) {
   const { ready, user, savesReady, hydrating } = useAuth()
   if (!ready) return null
@@ -122,19 +127,18 @@ function AppRoutes() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/social"
-          element={
-            <RequireAuth>
-              <SocialPage />
-            </RequireAuth>
-          }
-        />
+        <Route path="/social" element={<SocialPage />}>
+          <Route index element={<Floor />} />
+          <Route path="friends" element={<Friends />} />
+          <Route path="boards" element={<Boards />} />
+          <Route path="you" element={<You />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AppChrome />
       <HotkeyOverlay />
       <AccountGate />
+      <ProfileSheetHost />
     </>
   )
 }

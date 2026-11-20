@@ -479,13 +479,13 @@ export function MoreSections({ only, onOpenMenu }: { only?: MoreSection; onOpenM
         {show('go') ? (
         <section className="ge-more-block">
           <header className="ge-more-block__head">
-            <h3>Leave</h3>
-            <p>Leave the store.</p>
+            <h3>Shelf</h3>
+            <p>Leave the store and return to the desk.</p>
           </header>
           <div className="ge-more-links">
-            <Link className="ge-more-link" to="/">
-              <strong>Home</strong>
-              <span>All games</span>
+            <Link className="ge-more-link ge-more-link--primary" to="/">
+              <strong>Shelf</strong>
+              <span>All games · Home</span>
             </Link>
             <button type="button" className="ge-more-link" onClick={() => openHotkeyMap()}>
               <strong>Keys</strong>

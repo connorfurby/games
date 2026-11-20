@@ -6,6 +6,7 @@ import { clarity } from '../../sim/helpers'
 import type { GameState } from '../../sim/state'
 import { useFlash, useTween } from '../fx'
 import { money, pct, qty } from '../format'
+import { AccountChrome } from '@/shell/AccountChrome'
 import { useGame } from '../GameContext'
 import { NextGoal } from './NextGoal'
 
@@ -60,7 +61,11 @@ export function Hud({ onMore }: { onMore?: () => void }) {
   return (
     <header className="sd-hud">
       <div className="sd-hud__brand">
-        <Link to="/" className="sd-hud__home" title="Back to the shelf" data-coach-id="meta-shelf">
+        <Link to="/" className="sd-hud__shelf" aria-label="Back to shelf" data-coach-id="meta-shelf">
+          <span aria-hidden>⌂</span>
+          <span>Shelf</span>
+        </Link>
+        <Link to="/" className="sd-hud__home" aria-label="Back to shelf" title="Back to the shelf">
           Signal Decay
         </Link>
         <span className="sd-hud__era">{era}</span>
@@ -166,6 +171,7 @@ export function Hud({ onMore }: { onMore?: () => void }) {
             </svg>
           </button>
         ) : null}
+        <AccountChrome tone="play" className="sd-hud__account" />
       </div>
     </header>
   )

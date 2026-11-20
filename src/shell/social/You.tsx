@@ -2,24 +2,13 @@ import { useEffect, useState } from 'react'
 import { ACHIEVEMENTS } from '@/achievements/registry'
 import { loadGame } from '@/shared/save'
 import { useAuth } from '../AuthContext'
-import { useMeta } from '../MetaContext'
+import { openProfileSheet } from '../profileBus'
 import { fetchNotifications, markNotificationsRead } from './api'
 import { publishPublicStats } from './stats'
 
 export function You() {
-  const { user, profile, updateProfile, signInWithGoogle, refreshProfile } = useAuth()
-  const { meta } = useMeta()
-  const [handle, setHandle] = useState(profile?.handle ?? '')
-  const [bio, setBio] = useState(profile?.bio ?? '')
-  const [pinned, setPinned] = useState<string[]>(profile?.pinned_awards ?? [])
-  const [msg, setMsg] = useState<string | null>(null)
+  const { user, profile } = useAuth()
   const [notes, setNotes] = useState<Awaited<ReturnType<typeof fetchNotifications>>>([])
-
-  useEffect(() => {
-    setHandle(profile?.handle ?? '')
-    setBio(profile?.bio ?? '')
-    setPinned(profile?.pinned_awards ?? [])
-  }, [profile])
 
   useEffect(() => {
     if (!user) return
@@ -29,20 +18,12 @@ export function You() {
 
   const grocery = loadGame<{ era?: number }>('grocery-empire')
   const signal = loadGame<{ era?: number }>('signal-decay')
-  const unlocked = Object.keys(meta.achievements ?? {})
 
-  if (!user || !profile) {
-    return (
-      <div className="social-empty">
-        <p className="sd-eyebrow">You</p>
-        <h2>Your shelf identity</h2>
-        <p>Sign in with Google to set a handle, pin awards, and see notifications.</p>
-        <button type="button" className="auth-btn__google" onClick={() => void signInWithGoogle()}>
-          Sign in with Google
-        </button>
-      </div>
-    )
-  }
+  if (!user || !profile) return null
+
+  const pinned = (profile.pinned_awards ?? [])
+    .map((id) => ACHIEVEMENTS.find((a) => a.id === id))
+    .filter(Boolean)
 
   return (
     <div className="social-you">
@@ -55,73 +36,44 @@ export function You() {
         <div>
           <p className="sd-eyebrow">Profile</p>
           <h2>@{profile.handle}</h2>
+          <p className="social-muted">{profile.bio?.trim() || 'No bio yet.'}</p>
           <p className="social-muted">Code {profile.friend_code}</p>
         </div>
       </div>
 
-      <form
-        className="social-you__form"
-        onSubmit={async (e) => {
-          e.preventDefault()
-          setMsg(null)
-          const { error } = await updateProfile({
-            handle,
-            bio,
-            pinned_awards: pinned.slice(0, 3),
-          })
-          setMsg(error ?? 'Saved.')
-          await refreshProfile()
-        }}
-      >
-        <label>
-          Handle
-          <input value={handle} onChange={(e) => setHandle(e.target.value.toLowerCase())} maxLength={24} />
-        </label>
-        <label>
-          Bio
-          <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={280} rows={3} />
-        </label>
-        <fieldset>
-          <legend>Pin up to three awards</legend>
-          <div className="social-pins">
-            {unlocked.slice(0, 24).map((id) => {
-              const a = ACHIEVEMENTS.find((x) => x.id === id)
-              const on = pinned.includes(id)
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  className={`social-chip${on ? ' is-on' : ''}`}
-                  onClick={() => {
-                    setPinned((prev) => {
-                      if (prev.includes(id)) return prev.filter((x) => x !== id)
-                      if (prev.length >= 3) return prev
-                      return [...prev, id]
-                    })
-                  }}
-                >
-                  {a?.name ?? id}
-                </button>
-              )
-            })}
-          </div>
-          {!unlocked.length ? <p className="social-muted">Unlock awards in play to pin them here.</p> : null}
-        </fieldset>
-        <button type="submit" className="btn btn--primary">
-          Save profile
+      <div className="social-you__edit">
+        <button type="button" className="btn btn--primary" onClick={() => openProfileSheet()}>
+          Edit profile
         </button>
-        {msg ? <p className="social-muted">{msg}</p> : null}
-      </form>
+        <p className="social-muted">Handle, bio, and pinned awards open in the sheet from any screen.</p>
+      </div>
+
+      {pinned.length ? (
+        <section>
+          <h3 className="social-h3">Pinned awards</h3>
+          <div className="social-pins">
+            {pinned.map((a) => (
+              <span key={a!.id} className="social-chip is-on">
+                {a!.name}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section>
         <h3 className="social-h3">Best eras</h3>
         <ul className="social-list">
           <li>
-            <strong>Grocery Empire</strong>
+            <div>
+              <strong>Grocery Empire</strong>
+            </div>
             <span>Era {grocery?.era ?? 0}</span>
           </li>
           <li>
-            <strong>Signal Decay</strong>
+            <div>
+              <strong>Signal Decay</strong>
+            </div>
             <span>Era {signal?.era ?? 0}</span>
           </li>
         </ul>

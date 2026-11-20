@@ -34,6 +34,26 @@
     min-width: 9.5rem;
   }
 
+  .g2-hud__shelf {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    margin-bottom: 0.15rem;
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--ge-ink) 16%, transparent);
+    color: var(--ge-muted);
+    text-decoration: none;
+    font-size: var(--t-xs);
+    font-weight: 650;
+    letter-spacing: 0.02em;
+  }
+
+  .g2-hud__shelf:hover {
+    color: var(--g2-tag);
+    border-color: color-mix(in srgb, var(--g2-tag) 40%, transparent);
+  }
+
   .g2-hud__home {
     font-family: var(--g2-display);
     font-size: var(--t-lg);
@@ -46,6 +66,8 @@
 
   .g2-hud__home:hover {
     color: var(--g2-tag);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
   }
 
   .g2-hud__era {

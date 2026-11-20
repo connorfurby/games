@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { GAME_VERSION } from '@/games/grocery-empire/content/news'
+import { AccountChrome } from './AccountChrome'
 import { AppMenu } from './AppMenu'
-import { AuthButton } from './AuthButton'
 
 const PRIMARY = [
   { id: 'play', label: 'Play', to: '/play/grocery-empire', match: (p: string) => p.startsWith('/play/') },
@@ -59,7 +59,7 @@ export function ShellFrame({
               v{GAME_VERSION}
             </Link>
           ) : null}
-          <AuthButton className="shell-bar__auth" />
+          <AccountChrome className="shell-bar__auth" />
           <AppMenu placement="inline" className="shell-bar__waffle" />
         </div>
       </header>

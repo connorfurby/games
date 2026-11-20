@@ -29,6 +29,7 @@ import { museumStore } from '@/games/grocery-empire/ui/museum/store'
 import { useAuth } from './AuthContext'
 import { useMeta } from './MetaContext'
 import { ShellFrame } from './ShellFrame'
+import { fetchProfilesByIds, listFriendships } from './social/api'
 import './home.css'
 
 interface SaveGlance {
@@ -73,7 +74,7 @@ function playTime(sec: number) {
 
 export function Shelf() {
   const { meta, dailyStampLine } = useMeta()
-  const { user, savesReady, hydrating, signInWithGoogle } = useAuth()
+  const { user, profile, savesReady, hydrating, signInWithGoogle } = useAuth()
   const locked = !user
   const readyToPlay = !!user && savesReady
   const reduce = useReducedMotion() || meta.settings.reducedMotion
@@ -82,6 +83,7 @@ export function Shelf() {
   const [burst, setBurst] = useState(false)
   const [authBusy, setAuthBusy] = useState(false)
   const [authErr, setAuthErr] = useState<string | null>(null)
+  const [friendsLive, setFriendsLive] = useState(0)
   const nav = useNavigate()
   const game = GAMES.find((g) => g.id === selected) ?? GAMES[0]
   const playable = game.status === 'playable'
@@ -117,6 +119,34 @@ export function Shelf() {
     const id = window.setInterval(() => setNow(Date.now()), 15_000)
     return () => window.clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    if (!user || !savesReady) {
+      setFriendsLive(0)
+      return
+    }
+    let cancelled = false
+    const load = async () => {
+      const fs = await listFriendships(user.id)
+      const accepted = fs.filter((f) => f.status === 'accepted')
+      const ids = accepted.map((f) => (f.requester_id === user.id ? f.addressee_id : f.requester_id))
+      const profiles = await fetchProfilesByIds(ids)
+      if (cancelled) return
+      let live = 0
+      for (const p of profiles.values()) {
+        if (p.playing_game || (p.last_seen_at && Date.now() - new Date(p.last_seen_at).getTime() < 2 * 60_000)) {
+          live += 1
+        }
+      }
+      setFriendsLive(live)
+    }
+    void load()
+    const id = window.setInterval(() => void load(), 60_000)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [user, savesReady])
 
   const selectByOffset = useCallback((delta: number) => {
     setSelected((cur) => {
@@ -265,6 +295,13 @@ export function Shelf() {
               </p>
               <h1 className="hm-title">{game.title}</h1>
               <p className="hm-tag">{game.tagline}</p>
+              {!locked && profile ? (
+                <Link to="/social" className="hm-presence">
+                  {friendsLive > 0
+                    ? `${friendsLive} friend${friendsLive === 1 ? '' : 's'} on the floor · you’re @${profile.handle}`
+                    : `You’re @${profile.handle} · open the floor`}
+                </Link>
+              ) : null}
 
               {playable ? (
                 <>
@@ -463,6 +500,32 @@ export function Shelf() {
             <em>{bulletin.dek}</em>
             <span className="hm-card__go">Read the edition →</span>
           </Link>
+
+          {locked ? (
+            <button type="button" className="hm-card hm-card--social" onClick={() => void askSignIn()}>
+              <span className="hm-card__ico" aria-hidden>
+                ⌂
+              </span>
+              <span className="sd-eyebrow">Social</span>
+              <strong>Locked until sign-in</strong>
+              <em>Floor · Boards · Friends — run cards and presence on your account.</em>
+              <span className="hm-card__go">Sign in →</span>
+            </button>
+          ) : (
+            <Link to="/social" className="hm-card hm-card--social">
+              <span className="hm-card__ico" aria-hidden>
+                ⌂
+              </span>
+              <span className="sd-eyebrow">Social</span>
+              <strong>Floor · Boards · Friends</strong>
+              <em>
+                {friendsLive > 0
+                  ? `${friendsLive} friend${friendsLive === 1 ? '' : 's'} around right now.`
+                  : 'Post a run card, climb the podium, or add a friend by code.'}
+              </em>
+              <span className="hm-card__go">Open Social →</span>
+            </Link>
+          )}
 
           <Link to={lesson ? `/guide/grocery-empire/learn/${lesson.id}` : '/guide/grocery-empire'} className="hm-card hm-card--wiki">
             <span className="hm-card__ico" aria-hidden>

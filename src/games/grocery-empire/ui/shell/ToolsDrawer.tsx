@@ -101,9 +101,9 @@ export function ToolsDrawer({
           <AutopilotPanel onOpenMenu={(m) => { onOpenMenu(m); onClose() }} />
         ) : active === 'run' ? (
           <>
+            <MoreSections only="go" />
             <MoreSections only="run" />
             <MoreSections only="progress" onOpenMenu={onOpenMenu} />
-            <MoreSections only="go" />
           </>
         ) : (
           <MoreSections only={active as MoreSection} />

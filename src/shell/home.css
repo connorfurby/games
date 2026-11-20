@@ -82,6 +82,22 @@
   font: italic 400 clamp(1rem, 1.6vw, 1.25rem) / 1.45 var(--ge-font-display);
   color: rgb(251 241 223 / 0.82);
 }
+.hm-presence {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 240 220 / 0.18);
+  background: rgb(12 10 8 / 0.35);
+  color: rgb(251 241 223 / 0.88);
+  text-decoration: none;
+  font: 600 0.78rem/1.2 var(--ge-font-ui);
+  max-width: 100%;
+}
+.hm-presence:hover {
+  border-color: color-mix(in srgb, var(--hm-accent, #ff5a43) 55%, transparent);
+  color: #fff;
+}
 .hm-acts {
   position: relative;
   display: flex;
@@ -288,8 +304,14 @@ button.hm-card {
   width: min(1240px, 100% - 2.5rem);
   margin: 34px auto 0;
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  grid-template-columns: 1.35fr 1fr 1fr 1fr 1fr;
   gap: 14px;
+}
+.hm-card--social {
+  background: linear-gradient(165deg, #2a221c, #1a1511 55%, #241810);
+}
+.hm-card--social .hm-card__ico {
+  color: #ff8f6b;
 }
 .hm-card {
   position: relative;

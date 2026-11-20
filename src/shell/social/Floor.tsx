@@ -20,7 +20,7 @@ const REACT_LABEL: Record<ReactionKind, string> = {
 }
 
 export function Floor() {
-  const { user, profile, signInWithGoogle } = useAuth()
+  const { user, profile } = useAuth()
   const [posts, setPosts] = useState<PostWithAuthor[]>([])
   const [body, setBody] = useState('')
   const [visibility, setVisibility] = useState<'friends' | 'public'>('friends')
@@ -39,7 +39,10 @@ export function Floor() {
 
   useEffect(() => {
     void reload()
-  }, [reload])
+    if (!user) return
+    const id = window.setInterval(() => void reload(), 45_000)
+    return () => window.clearInterval(id)
+  }, [reload, user])
 
   useEffect(() => {
     if (!user) return
@@ -50,18 +53,7 @@ export function Floor() {
     })
   }, [user])
 
-  if (!user) {
-    return (
-      <div className="social-empty">
-        <p className="sd-eyebrow">Floor</p>
-        <h2>The floor is for signed-in players</h2>
-        <p>Sign in with Google to post a run card and react to friends.</p>
-        <button type="button" className="auth-btn__google" onClick={() => void signInWithGoogle()}>
-          Sign in with Google
-        </button>
-      </div>
-    )
-  }
+  if (!user) return null
 
   return (
     <div className="social-floor">
@@ -96,7 +88,7 @@ export function Floor() {
       ) : null}
 
       <form
-        className="social-composer"
+        className="social-composer social-composer--sticky"
         onSubmit={async (e) => {
           e.preventDefault()
           setBusy(true)
@@ -162,7 +154,7 @@ export function Floor() {
             </header>
             {p.body ? <p>{p.body}</p> : null}
             {p.run_card ? (
-              <div className="social-run-card">
+              <div className="social-run-card social-run-card--hero">
                 <span className="sd-eyebrow">
                   {p.run_card.gameId === 'grocery-empire' ? 'Grocery Empire' : 'Signal Decay'}
                 </span>
@@ -230,7 +222,16 @@ export function Floor() {
           </li>
         ))}
       </ul>
-      {!posts.length ? <p className="social-muted">No posts yet. Say hello to the floor.</p> : null}
+      {!posts.length ? (
+        <div className="social-empty social-empty--inline">
+          <p className="sd-eyebrow">First post</p>
+          <h2>The floor is quiet</h2>
+          <p>
+            Share a run card from Grocery Empire or Signal Decay — friends will see it here. Keep the
+            composer sticky while you scroll later.
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }

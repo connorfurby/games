@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { GAME_VERSION } from '../../sim/balance'
 import { Button } from '../kit/Button'
 import { Sheet } from '../kit/Sheet'
@@ -51,6 +52,10 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
             <strong>Settings</strong>
             <span>Pause, speed, buy-best, undo.</span>
           </button>
+          <Link to="/" className="sd-more-tile" onClick={close}>
+            <strong>Home · Shelf</strong>
+            <span>Leave the plant and return to the desk.</span>
+          </Link>
           <div className="sd-more-tile sd-more-tile--static">
             <strong>Keys</strong>
             <span>1–5 hubs · Space pause</span>

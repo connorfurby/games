@@ -48,7 +48,7 @@ function formatMetric(metric: Metric, row: {
 }
 
 export function Boards() {
-  const { user, signInWithGoogle } = useAuth()
+  const { user } = useAuth()
   const [gameId, setGameId] = useState<SocialGameId>('grocery-empire')
   const [metric, setMetric] = useState<Metric>('lifetime_revenue')
   const [scope, setScope] = useState<Scope>('everyone')
@@ -84,73 +84,79 @@ export function Boards() {
     if (!metrics.some((m) => m.id === metric)) setMetric(metrics[0]?.id ?? 'lifetime_revenue')
   }, [metrics, metric])
 
-  if (!user) {
-    return (
-      <div className="social-empty">
-        <p className="sd-eyebrow">Boards</p>
-        <h2>Leaderboards unlock with Google</h2>
-        <p>The podium shape is ready — sign in to publish your run and see the field.</p>
-        <button type="button" className="auth-btn__google" onClick={() => void signInWithGoogle()}>
-          Sign in with Google
-        </button>
-      </div>
-    )
-  }
+  if (!user) return null
 
   const top3 = rows.slice(0, 3)
   const rest = rows.slice(3)
   const myIndex = rows.findIndex((r) => r.user_id === user.id)
   const myRow = myIndex >= 0 ? rows[myIndex] : null
-  const myOffPage = myIndex >= 50
+  const myRank = myIndex >= 0 ? myIndex + 1 : null
 
   return (
     <div className="social-boards">
-      <div className="social-chips">
-        <button
-          type="button"
-          className={`social-chip${gameId === 'grocery-empire' ? ' is-on' : ''}`}
-          onClick={() => setGameId('grocery-empire')}
-        >
-          Grocery Empire
-        </button>
-        <button
-          type="button"
-          className={`social-chip${gameId === 'signal-decay' ? ' is-on' : ''}`}
-          onClick={() => setGameId('signal-decay')}
-        >
-          Signal Decay
-        </button>
-      </div>
-      <div className="social-chips">
-        {metrics.map((m) => (
+      <div className="social-boards__compose" role="group" aria-label="Board filters">
+        <div className="social-chips social-chips--games">
           <button
-            key={m.id}
             type="button"
-            className={`social-chip${metric === m.id ? ' is-on' : ''}`}
-            onClick={() => setMetric(m.id)}
+            className={`social-chip${gameId === 'grocery-empire' ? ' is-on' : ''}`}
+            onClick={() => setGameId('grocery-empire')}
           >
-            {m.label}
+            Grocery Empire
           </button>
-        ))}
-      </div>
-      <div className="social-chips">
-        <button
-          type="button"
-          className={`social-chip${scope === 'everyone' ? ' is-on' : ''}`}
-          onClick={() => setScope('everyone')}
-        >
-          Everyone
-        </button>
-        <button
-          type="button"
-          className={`social-chip${scope === 'friends' ? ' is-on' : ''}`}
-          onClick={() => setScope('friends')}
-        >
-          Friends
-        </button>
+          <button
+            type="button"
+            className={`social-chip${gameId === 'signal-decay' ? ' is-on' : ''}`}
+            onClick={() => setGameId('signal-decay')}
+          >
+            Signal Decay
+          </button>
+        </div>
+        <div className="social-chips">
+          {metrics.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={`social-chip${metric === m.id ? ' is-on' : ''}`}
+              onClick={() => setMetric(m.id)}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <div className="social-chips social-chips--scope" role="group" aria-label="Who appears">
+          <button
+            type="button"
+            className={`social-chip${scope === 'everyone' ? ' is-on' : ''}`}
+            onClick={() => setScope('everyone')}
+          >
+            Everyone
+          </button>
+          <button
+            type="button"
+            className={`social-chip${scope === 'friends' ? ' is-on' : ''}`}
+            onClick={() => setScope('friends')}
+            title="Only accepted friends plus you"
+          >
+            Friends only
+          </button>
+        </div>
+        <p className="social-muted social-boards__hint">
+          {scope === 'friends'
+            ? 'Showing accepted friends and your own rank.'
+            : 'Public board — anyone who published stats.'}
+        </p>
       </div>
 
       {loading ? <p className="social-muted">Loading board…</p> : null}
+
+      {myRow && myRank != null ? (
+        <div className="social-you-pin social-you-pin--always" aria-live="polite">
+          <span className="sd-eyebrow">Your rank</span>
+          <strong>#{myRank}</strong>
+          <span>@{myRow.profile?.handle ?? 'you'}</span>
+          <span className="social-rank__score">{formatMetric(metric, myRow).main}</span>
+        </div>
+      ) : null}
 
       <div className="social-podium" aria-label="Top three">
         {[1, 0, 2].map((podiumIndex) => {
@@ -188,14 +194,6 @@ export function Boards() {
           )
         })}
       </ol>
-
-      {myRow && (myOffPage || myIndex < 0) ? (
-        <div className="social-you-pin">
-          <span>You</span>
-          <strong>@{myRow.profile?.handle ?? 'you'}</strong>
-          <span>{formatMetric(metric, myRow).main}</span>
-        </div>
-      ) : null}
 
       {!rows.length && !loading ? (
         <p className="social-muted">No scores yet. Play a bit, then refresh — stats publish from your save.</p>

@@ -6,6 +6,7 @@ import { ERA_STORY } from '../../content/lore'
 import { MENUS, type MenuId } from '../../content/menus'
 import type { Command } from '../../sim/commands'
 import { storeDisplayName, type GameState } from '../../sim/state'
+import { AccountChrome } from '@/shell/AccountChrome'
 import { useMeta } from '@/shell/MetaContext'
 import { sfx } from '@/shared/audio'
 import { canUndo, undoLabel, undoSecondsLeft } from '../../sim/undo'
@@ -66,7 +67,11 @@ export function Hud({
   return (
     <header className="g2-hud">
       <div className="g2-hud__brand">
-        <Link to="/" className="g2-hud__home" title="Back to the shelf" data-coach-id="meta-shelf">
+        <Link to="/" className="g2-hud__shelf" aria-label="Back to shelf" data-coach-id="meta-shelf">
+          <span aria-hidden>⌂</span>
+          <span>Shelf</span>
+        </Link>
+        <Link to="/" className="g2-hud__home" aria-label="Back to shelf" title="Back to the shelf">
           {storeDisplayName(s)}
         </Link>
         <span className="g2-hud__era" title={era?.epigraph}>
@@ -183,6 +188,7 @@ export function Hud({
             )}
           </svg>
         </button>
+        <AccountChrome tone="play" className="g2-hud__account" />
       </div>
     </header>
   )
