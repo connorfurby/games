@@ -5,7 +5,6 @@ import { getSignalEngine } from '@/games/signal-decay/sim/engine'
 import { AchievementsPage } from '@/shell/AchievementsPage'
 import { AccountGate } from '@/shell/AccountGate'
 import { AppChrome } from '@/shell/AppChrome'
-import { AuthLanding } from '@/shell/AuthLanding'
 import { AuthProvider, useAuth } from '@/shell/AuthContext'
 import { wireCloudReload } from '@/shell/cloudReload'
 import { GuidePage } from '@/shell/GuidePage'
@@ -81,20 +80,13 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return children
 }
 
-function Home() {
-  const { ready, user } = useAuth()
-  if (!ready) return null
-  if (!user) return <AuthLanding />
-  return <Shelf />
-}
-
 function AppRoutes() {
   return (
     <>
       <CloudReloadBridge />
       <PresenceBridge />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Shelf />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:id" element={<NewsPage />} />
         <Route path="/guide/:gameId/*" element={<GuidePage />} />

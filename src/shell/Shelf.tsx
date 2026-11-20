@@ -26,6 +26,7 @@ import { dailyTheme, localDayKey, streakWeek } from './dailyStamp'
 import { NewGameDialog } from './NewGameDialog'
 import { ShellConfirm } from './SaveSlots'
 import { museumStore } from '@/games/grocery-empire/ui/museum/store'
+import { useAuth } from './AuthContext'
 import { useMeta } from './MetaContext'
 import { ShellFrame } from './ShellFrame'
 import './home.css'
@@ -72,19 +73,37 @@ function playTime(sec: number) {
 
 export function Shelf() {
   const { meta, dailyStampLine } = useMeta()
+  const { user, savesReady, hydrating, signInWithGoogle } = useAuth()
+  const locked = !user
+  const readyToPlay = !!user && savesReady
   const reduce = useReducedMotion() || meta.settings.reducedMotion
   const [selected, setSelected] = useState(GAMES[0].id)
   const [now, setNow] = useState(Date.now())
   const [burst, setBurst] = useState(false)
+  const [authBusy, setAuthBusy] = useState(false)
+  const [authErr, setAuthErr] = useState<string | null>(null)
   const nav = useNavigate()
   const game = GAMES.find((g) => g.id === selected) ?? GAMES[0]
   const playable = game.status === 'playable'
   const isGe = game.id === 'grocery-empire'
   const isSd = game.id === 'signal-decay'
-  const save = playable ? loadGlance(game.id) : null
+  const save = readyToPlay && playable ? loadGlance(game.id) : null
   const bulletin = latestNews()
 
+  const askSignIn = useCallback(async () => {
+    setAuthBusy(true)
+    setAuthErr(null)
+    const { error } = await signInWithGoogle()
+    if (error) setAuthErr(error)
+    setAuthBusy(false)
+  }, [signInWithGoogle])
+
   const continuePlay = useCallback(() => {
+    if (locked) {
+      void askSignIn()
+      return
+    }
+    if (!readyToPlay) return
     if (!reduce) {
       setBurst(true)
       window.setTimeout(() => setBurst(false), 700)
@@ -92,7 +111,7 @@ export function Shelf() {
       return
     }
     nav(`/play/${game.id}`)
-  }, [game.id, nav, reduce])
+  }, [askSignIn, game.id, locked, nav, readyToPlay, reduce])
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 15_000)
@@ -159,8 +178,13 @@ export function Shelf() {
   const [newGameOpen, setNewGameOpen] = useState(false)
   const [dailyAsk, setDailyAsk] = useState(false)
   const newGame = () => {
+    if (locked) {
+      void askSignIn()
+      return
+    }
+    if (!readyToPlay) return
     if (isSd) {
-      if (save && !window.confirm('Start a new Signal Decay? This wipes the current local save.')) return
+      if (save && !window.confirm('Start a new Signal Decay? This wipes the current save on your account.')) return
       import('@/games/signal-decay/sim/engine').then(({ getSignalEngine }) => {
         getSignalEngine().newGame()
         nav(`/play/${game.id}`)
@@ -188,6 +212,11 @@ export function Shelf() {
   }
   const startDaily = () => {
     if (!playable) return
+    if (locked) {
+      void askSignIn()
+      return
+    }
+    if (!readyToPlay) return
     if (hasPrimaryGrocerySave()) setDailyAsk(true)
     else beginDaily()
   }
@@ -239,16 +268,52 @@ export function Shelf() {
 
               {playable ? (
                 <>
-                  <div className={`hm-acts${burst ? ' is-burst' : ''}`}>
-                    <Button tone="free" size="lg" className="hm-play" onClick={continuePlay}>
-                      {save ? 'Continue' : 'Start'}
+                  {locked ? (
+                    <p className="hm-lock" role="status">
+                      Sign in to unlock play, saves, Social, Shop and Awards. Browse the shelf anytime.
+                    </p>
+                  ) : null}
+                  {authErr ? (
+                    <p className="hm-lock hm-lock--err" role="alert">
+                      {authErr}
+                    </p>
+                  ) : null}
+                  <div className={`hm-acts${burst ? ' is-burst' : ''}${locked ? ' is-locked' : ''}`}>
+                    <Button
+                      tone="free"
+                      size="lg"
+                      className="hm-play"
+                      disabled={authBusy || (!!user && !readyToPlay)}
+                      onClick={continuePlay}
+                    >
+                      {locked
+                        ? authBusy
+                          ? 'Signing in…'
+                          : 'Sign in to play'
+                        : hydrating || !readyToPlay
+                          ? 'Opening shelf…'
+                          : save
+                            ? 'Continue'
+                            : 'Start'}
                     </Button>
                     {isGe ? (
-                      <Button tone="secondary" size="lg" onClick={startDaily} title={save ? 'A fresh start shared by everyone today. Your run is kept in save slot 3.' : 'A fresh start shared by everyone today.'}>
+                      <Button
+                        tone="secondary"
+                        size="lg"
+                        disabled={authBusy || locked || !readyToPlay}
+                        onClick={startDaily}
+                        title={
+                          locked
+                            ? 'Sign in to play today’s corner'
+                            : save
+                              ? 'A fresh start shared by everyone today. Your run is kept in save slot 3.'
+                              : 'A fresh start shared by everyone today.'
+                        }
+                      >
                         Today&apos;s corner
                       </Button>
                     ) : null}
-                    {save ? (
+                    {readyToPlay && save ? (
                       <Button tone="ghost" size="lg" onClick={newGame}>
                         New game
                       </Button>
@@ -262,7 +327,7 @@ export function Shelf() {
                     ) : null}
                   </div>
 
-                  {save ? (
+                  {readyToPlay && save ? (
                     <div className="hm-save" aria-label="Your run">
                       <div className="hm-save__era">
                         <span className="hm-save__n">{era ?? 0}</span>
@@ -312,7 +377,7 @@ export function Shelf() {
                         : 'A neighbourhood shelf, one price and a stack of crates. See how far one counter can go.'}
                     </p>
                   )}
-                  {isGe ? (
+                  {readyToPlay && isGe ? (
                     <>
                       <div className="hm-daily" aria-label="Today's corner">
                         <div className="hm-daily__copy">
@@ -339,7 +404,7 @@ export function Shelf() {
                         {dailyActive ? ' You are playing it now.' : ''}
                       </p>
                     </>
-                  ) : isSd ? (
+                  ) : readyToPlay && isSd ? (
                     <p className="hm-note">Clarity decays. Antenna raises the window. The Next Goal strip never strands you.</p>
                   ) : null}
                 </>
@@ -414,37 +479,68 @@ export function Shelf() {
             </span>
           </Link>
 
-          <Link to="/achievements" className="hm-card hm-card--awards">
-            <span className="hm-card__ico hm-card__ico--medal" aria-hidden>
-              ★
-            </span>
-            <span className="sd-eyebrow">Awards</span>
-            <strong>
-              {awards} of {ACHIEVEMENTS.length} earned
-            </strong>
-            <em>Each award pays shelf tokens for the shop.</em>
-            <span className="hm-meter">
-              <i style={{ width: `${(awards / Math.max(1, ACHIEVEMENTS.length)) * 100}%` }} />
-            </span>
-            <span className="hm-card__go">See the wall →</span>
-          </Link>
+          {locked ? (
+            <button type="button" className="hm-card hm-card--awards" onClick={() => void askSignIn()}>
+              <span className="hm-card__ico hm-card__ico--medal" aria-hidden>
+                ★
+              </span>
+              <span className="sd-eyebrow">Awards</span>
+              <strong>Locked until sign-in</strong>
+              <em>Earn awards on your account and spend them in the shop.</em>
+              <span className="hm-card__go">Sign in →</span>
+            </button>
+          ) : (
+            <Link to="/achievements" className="hm-card hm-card--awards">
+              <span className="hm-card__ico hm-card__ico--medal" aria-hidden>
+                ★
+              </span>
+              <span className="sd-eyebrow">Awards</span>
+              <strong>
+                {awards} of {ACHIEVEMENTS.length} earned
+              </strong>
+              <em>Each award pays shelf tokens for the shop.</em>
+              <span className="hm-meter">
+                <i style={{ width: `${(awards / Math.max(1, ACHIEVEMENTS.length)) * 100}%` }} />
+              </span>
+              <span className="hm-card__go">See the wall →</span>
+            </Link>
+          )}
 
-          <Link to="/shop" className="hm-card hm-card--shop" style={{ ['--pk-bg' as string]: pack.vars['--bg'], ['--pk-accent' as string]: pack.vars['--accent'] }}>
-            <span className="hm-card__swatch" aria-hidden>
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className="sd-eyebrow">Shop</span>
-            <strong>
-              <span className="sd-coin">¢</span> {meta.shelfTokens} token{meta.shelfTokens === 1 ? '' : 's'}
-            </strong>
-            <em>
-              Wearing {pack.name}.{' '}
-              {affordablePacks ? `${affordablePacks} pack${affordablePacks === 1 ? '' : 's'} in reach.` : 'Packs change paper and light, never the math.'}
-            </em>
-            <span className="hm-card__go">Dress the counter →</span>
-          </Link>
+          {locked ? (
+            <button
+              type="button"
+              className="hm-card hm-card--shop"
+              style={{ ['--pk-bg' as string]: pack.vars['--bg'], ['--pk-accent' as string]: pack.vars['--accent'] }}
+              onClick={() => void askSignIn()}
+            >
+              <span className="hm-card__swatch" aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="sd-eyebrow">Shop</span>
+              <strong>Locked until sign-in</strong>
+              <em>Packs and ornaments live on your account.</em>
+              <span className="hm-card__go">Sign in →</span>
+            </button>
+          ) : (
+            <Link to="/shop" className="hm-card hm-card--shop" style={{ ['--pk-bg' as string]: pack.vars['--bg'], ['--pk-accent' as string]: pack.vars['--accent'] }}>
+              <span className="hm-card__swatch" aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="sd-eyebrow">Shop</span>
+              <strong>
+                <span className="sd-coin">¢</span> {meta.shelfTokens} token{meta.shelfTokens === 1 ? '' : 's'}
+              </strong>
+              <em>
+                Wearing {pack.name}.{' '}
+                {affordablePacks ? `${affordablePacks} pack${affordablePacks === 1 ? '' : 's'} in reach.` : 'Packs change paper and light, never the math.'}
+              </em>
+              <span className="hm-card__go">Dress the counter →</span>
+            </Link>
+          )}
         </section>
 
         <footer className="hm-foot">

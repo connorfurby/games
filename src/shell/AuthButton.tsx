@@ -46,7 +46,7 @@ export function AuthButton({ className = '' }: { className?: string }) {
             setBusy(false)
           }}
         >
-          {busy ? 'Opening Google…' : 'Sign in with Google'}
+          {busy ? 'Signing in…' : 'Sign in'}
         </button>
         {err ? (
           <p className="auth-btn__err" role="alert">

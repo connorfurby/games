@@ -134,10 +134,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async () => {
     const sb = getSupabase()
     if (!sb) return { error: 'Accounts are not configured on this build.' }
+    // Must match an entry in Supabase Auth → URL Configuration → Redirect URLs.
+    // If it doesn't, Auth falls back to Site URL (often localhost:3000) and the return breaks.
     const redirectTo = `${window.location.origin}/`
+    try {
+      sessionStorage.setItem('games.authReturn', window.location.pathname + window.location.search)
+    } catch {
+      /* ignore */
+    }
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo, queryParams: { prompt: 'select_account' } },
+      options: {
+        redirectTo,
+        queryParams: { prompt: 'select_account' },
+      },
     })
     return { error: error?.message ?? null }
   }, [])

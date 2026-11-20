@@ -150,6 +150,31 @@
   font-size: var(--t-xs);
   color: rgb(251 241 223 / 0.5);
 }
+.hm-lock {
+  margin: 0 0 12px;
+  max-width: 42ch;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgb(255 240 220 / 0.14);
+  background: rgb(14 10 7 / 0.45);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: rgb(251 241 223 / 0.82);
+}
+.hm-lock--err {
+  border-color: color-mix(in srgb, var(--ge-danger, #e0453c) 45%, transparent);
+  color: #ffb4a8;
+}
+.hm-acts.is-locked .gk-btn:disabled {
+  opacity: 0.55;
+}
+button.hm-card {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
 
 /* ── Shelf of spines ──────────────────────────────────────────── */
 .hm-shelf {
