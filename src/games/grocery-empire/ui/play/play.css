@@ -188,10 +188,21 @@
     gap: var(--s-2);
   }
 
+  /* One secondary must never sit in a half-empty 2-col hole (e.g. Memos “Back office”). */
+  .pf__secondaries:has(> :only-child) {
+    grid-template-columns: 1fr;
+  }
+  .pf__secondaries .gk-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
   @media (min-width: 720px) {
     /* Fill the row: three verbs share it in thirds, four in quarters. */
     .pf__secondaries {
       grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    }
+    .pf__secondaries:has(> :only-child) {
+      grid-template-columns: 1fr;
     }
   }
   @media (max-width: 719.98px) {
@@ -226,10 +237,6 @@
     .pf__secondaries .pf-row__fact {
       max-width: 100%;
     }
-    /* Three verbs: the last one takes the full row instead of leaving a hole. */
-    .pf__secondaries .gk-btn:last-child:nth-child(odd) {
-      grid-column: 1 / -1;
-    }
     .pf__secondaries .gk-btn:last-child:nth-child(odd) .pf-row__main {
       flex-direction: row;
       align-items: baseline;
@@ -243,20 +250,32 @@
     justify-content: flex-start;
     font-size: var(--t-sm);
     border-radius: var(--r-md);
+    /* Nested label+fact need room to show; don't clip the whole control to one line. */
+    white-space: normal;
   }
   .pf__secondaries .gk-btn__label {
     flex: 1 1 auto;
     min-width: 0;
+    width: 100%;
   }
   .pf__secondaries .pf-row__main {
     flex-direction: row;
     align-items: baseline;
     justify-content: space-between;
     gap: var(--s-2);
+    width: 100%;
+  }
+  .pf__secondaries .pf-row__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    /* Prefer a full word over “Back of…” in a narrow rail. */
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
   }
   .pf__secondaries .pf-row__fact {
-    flex: 0 1 auto;
-    min-width: 0;
+    flex: 0 0 auto;
+    max-width: 40%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -850,8 +850,8 @@ function MemosPanelInner({ compact }: { compact?: boolean }) {
               ? [
                   {
                     key: 'office',
-                    label: 'Back office',
-                    fact: officeOpen ? 'open' : 'folded',
+                    label: officeOpen ? 'Hide Back office' : 'Back office',
+                    title: officeOpen ? 'Fold the Attention desk' : 'Open the Attention desk',
                     onClick: () => setOfficeOpen((o) => !o),
                   },
                 ]
