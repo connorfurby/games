@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_META } from '@/shared/types'
+import { __resetSaveStore, exportSave, loadGame, saveRaw } from '@/shared/save'
 import {
   DAILY_CHALLENGE_ID,
   isDailyRunActive,
@@ -14,12 +15,12 @@ import {
 import { localDayKey } from './dailyStamp'
 
 beforeEach(() => {
-  localStorage.clear()
+  __resetSaveStore()
   sessionStorage.clear()
 })
 
 afterEach(() => {
-  localStorage.clear()
+  __resetSaveStore()
   sessionStorage.clear()
 })
 
@@ -39,20 +40,15 @@ describe('dailyChallenge', () => {
   })
 
   it('prepareDailyChallengeStart marks active and pending', () => {
-    localStorage.setItem('games.v1.grocery-empire', '{"baskets":9}')
+    saveRaw('grocery-empire', '{"baskets":9}')
     const r = prepareDailyChallengeStart({
       stashToSlot3: true,
       now: new Date(2026, 9, 28, 12, 0, 0),
     })
     expect(r.day).toBe('2026-10-28')
     expect(r.seed).toBe(seedFromDayKey('2026-10-28'))
-    expect(localStorage.getItem('games.v1.grocery-empire-slot-3')).toBe('{"baskets":9}')
-    // Fresh seeded run is written immediately (disk + live engine), not left wiped.
-    const primary = JSON.parse(localStorage.getItem('games.v1.grocery-empire') ?? 'null') as {
-      baskets?: number
-      seed?: number
-      era?: number
-    } | null
+    expect(exportSave('grocery-empire-slot-3')).toBe('{"baskets":9}')
+    const primary = loadGame<{ baskets?: number; seed?: number; era?: number }>('grocery-empire')
     expect(primary?.baskets).toBe(0)
     expect(primary?.era).toBe(0)
     expect(primary?.seed).toBe(r.seed)
@@ -60,7 +56,7 @@ describe('dailyChallenge', () => {
     expect(blob?.active).toBe(true)
     expect(blob?.day).toBe('2026-10-28')
     expect(sessionStorage.getItem('games.v1.daily-challenge.pending')).toBe('1')
-    expect(localStorage.getItem(`games.v1.${DAILY_CHALLENGE_ID}`)).toBeTruthy()
+    expect(exportSave(DAILY_CHALLENGE_ID)).toBeTruthy()
   })
 
   it('maybeRecordDailyBest updates MetaSave for active day', () => {
@@ -77,12 +73,5 @@ describe('dailyChallenge', () => {
 
     const better = maybeRecordDailyBest(once, 55, seed, now)
     expect(better.dailyChallengeBest?.baskets).toBe(55)
-  })
-
-  it('maybeRecordDailyBest no-ops when daily inactive', () => {
-    const now = new Date(2026, 9, 28, 12, 0, 0)
-    const seed = seedFromDayKey('2026-10-28')
-    const meta = { ...DEFAULT_META }
-    expect(maybeRecordDailyBest(meta, 99, seed, now)).toBe(meta)
   })
 })

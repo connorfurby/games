@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
+import { loadPrefs, savePrefs } from '@/shared/prefs'
 import { OPENING_TOUR, TOURS, nextTour, type CoachStep, type Tour } from '../../content/tutorials'
 import { getSignalEngine } from '../../sim/engine'
 import { Button } from '../kit/Button'
 import { useGame } from '../GameContext'
 import './coach.css'
+
+function coachDoneLocal(): boolean {
+  return !!loadPrefs().sdCoachDone
+}
 
 function stepDone(step: CoachStep, s: ReturnType<typeof useGame>['state'], introSeen: boolean): boolean {
   switch (step.done) {
@@ -29,13 +34,7 @@ function stepDone(step: CoachStep, s: ReturnType<typeof useGame>['state'], intro
 function OpeningCoach({ onDone }: { onDone: () => void }) {
   const { state: s, tick, dispatch, setActiveMenu, reducedMotion } = useGame()
   const [idx, setIdx] = useState(0)
-  const [dismissed, setDismissed] = useState(() => {
-    try {
-      return localStorage.getItem('sd-coach-done') === '1' || s.introSeen
-    } catch {
-      return s.introSeen
-    }
-  })
+  const [dismissed, setDismissed] = useState(() => coachDoneLocal() || s.introSeen)
 
   const step = OPENING_TOUR[idx] ?? null
   const finished = dismissed || idx >= OPENING_TOUR.length
@@ -79,11 +78,7 @@ function OpeningCoach({ onDone }: { onDone: () => void }) {
 
   const finishTour = () => {
     setDismissed(true)
-    try {
-      localStorage.setItem('sd-coach-done', '1')
-    } catch {
-      /* ignore */
-    }
+    savePrefs({ sdCoachDone: true })
     if (!s.introSeen) dispatch({ type: 'markIntro' })
     getSignalEngine().setSoftPauseMul(1)
   }
@@ -140,24 +135,13 @@ function OpeningCoach({ onDone }: { onDone: () => void }) {
   )
 }
 
-const TOURS_KEY = 'sd-tours-done'
-
 function readDone(): string[] {
-  try {
-    const raw = localStorage.getItem(TOURS_KEY)
-    const arr = raw ? (JSON.parse(raw) as unknown) : []
-    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string' && x in TOURS) : []
-  } catch {
-    return []
-  }
+  const fromPrefs = loadPrefs().sdToursDone ?? []
+  return fromPrefs.filter((x) => typeof x === 'string' && x in TOURS)
 }
 
 function writeDone(ids: string[]) {
-  try {
-    localStorage.setItem(TOURS_KEY, JSON.stringify(ids))
-  } catch {
-    /* ignore */
-  }
+  savePrefs({ sdToursDone: ids })
 }
 
 /** After the opening: offer the next era-relevant tour, one at a time. Never blocks play. */
@@ -253,13 +237,7 @@ function TourCoach() {
 
 export function Coach() {
   const { state: s } = useGame()
-  const [openingDone, setOpeningDone] = useState(() => {
-    try {
-      return localStorage.getItem('sd-coach-done') === '1' || s.introSeen
-    } catch {
-      return s.introSeen
-    }
-  })
+  const [openingDone, setOpeningDone] = useState(() => coachDoneLocal() || s.introSeen)
   if (s.chapterSeen < s.era) return null
   if (!openingDone) return <OpeningCoach onDone={() => setOpeningDone(true)} />
   return <TourCoach />

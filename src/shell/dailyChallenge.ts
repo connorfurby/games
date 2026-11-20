@@ -1,13 +1,11 @@
 import { engine } from '@/games/grocery-empire/sim/engine'
 import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
-import { deserializeState, loadGame, saveGame } from '@/shared/save'
+import { exportSave, loadGame, saveGame, saveRaw } from '@/shared/save'
 import type { MetaSave } from '@/shared/types'
 import { localDayKey } from './dailyStamp'
 
 export const DAILY_CHALLENGE_ID = 'daily-challenge'
 const PENDING_KEY = 'games.v1.daily-challenge.pending'
-const SLOT3_KEY = 'games.v1.grocery-empire-slot-3'
-const PRIMARY_KEY = 'games.v1.grocery-empire'
 
 export interface DailyChallengeBlob {
   day: string
@@ -87,24 +85,16 @@ export function clearDailyPending() {
   }
 }
 
-/** Copy primary grocery save into slot 3 (localStorage only — no engine needed). */
+/** Copy primary grocery save into slot 3 (no engine needed). */
 export function stashPrimaryToSlot3(): boolean {
-  try {
-    const raw = localStorage.getItem(PRIMARY_KEY)
-    if (!raw) return false
-    localStorage.setItem(SLOT3_KEY, raw)
-    return true
-  } catch {
-    return false
-  }
+  const raw = exportSave('grocery-empire')
+  if (!raw) return false
+  saveRaw('grocery-empire-slot-3', raw)
+  return true
 }
 
 export function hasPrimaryGrocerySave(): boolean {
-  try {
-    return !!localStorage.getItem(PRIMARY_KEY)
-  } catch {
-    return false
-  }
+  return !!exportSave('grocery-empire')
 }
 
 /**
@@ -142,14 +132,8 @@ export function maybeRecordDailyBest(
   }
 }
 
-/** Glance baskets from a raw grocery save blob (for shelf UI). */
+/** Glance baskets from the primary grocery save (for shelf UI). */
 export function glanceBasketsFromPrimary(): number | null {
-  try {
-    const raw = localStorage.getItem(PRIMARY_KEY)
-    if (!raw) return null
-    const parsed = deserializeState<{ baskets?: number }>(raw)
-    return typeof parsed?.baskets === 'number' ? Math.floor(parsed.baskets) : null
-  } catch {
-    return null
-  }
+  const parsed = loadGame<{ baskets?: number }>('grocery-empire')
+  return typeof parsed?.baskets === 'number' ? Math.floor(parsed.baskets) : null
 }

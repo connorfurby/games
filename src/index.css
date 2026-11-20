@@ -2383,3 +2383,229 @@ html.ornament--receipt-corner .hm .hm-title::after,
     transform: none;
   }
 }
+
+/* ── Auth + account gate ───────────────────────────────────────────────── */
+.auth-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-btn__google {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  background: var(--sd-paper, #f4ead6);
+  color: var(--sd-paper-ink, #2a2118);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font: 600 0.78rem/1.1 var(--font-ui, 'Space Grotesk', sans-serif);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-btn__google:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.auth-btn__google:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.auth-btn__err {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  margin: 0;
+  max-width: 16rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.45rem;
+  background: #3a1814;
+  color: #ffc9c0;
+  font-size: 0.72rem;
+  z-index: 20;
+}
+
+.auth-btn__avatar {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  padding: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font: 700 0.85rem/1 var(--font-display);
+}
+
+.auth-btn__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-btn__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tag, #f2c14e) 80%, transparent);
+  animation: auth-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes auth-pulse {
+  50% { opacity: 0.35; }
+}
+
+.auth-btn__menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 11rem;
+  padding: 0.45rem;
+  border-radius: 0.75rem;
+  background: var(--sd-paper, #f4ead6);
+  color: var(--sd-paper-ink, #2a2118);
+  border: 1px solid rgb(42 33 24 / 0.16);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.28);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.auth-btn__who {
+  margin: 0;
+  padding: 0.35rem 0.5rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border-bottom: 1px solid rgb(42 33 24 / 0.12);
+  font-size: 0.82rem;
+}
+
+.auth-btn__code {
+  font: 600 0.72rem/1 var(--font-mono, 'IBM Plex Mono', monospace);
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.auth-btn__item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0.5rem 0.55rem;
+  border-radius: 0.45rem;
+  color: inherit;
+  font: 600 0.82rem/1.1 var(--font-ui, 'Space Grotesk', sans-serif);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.auth-btn__item:hover {
+  background: rgb(42 33 24 / 0.08);
+}
+
+.account-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(12 10 8 / 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.account-gate--toast {
+  inset: auto 1rem 1rem auto;
+  background: transparent;
+  backdrop-filter: none;
+  place-items: end;
+}
+
+.account-gate--toast p {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.65rem;
+  background: #3a1814;
+  color: #ffc9c0;
+  font-size: 0.82rem;
+}
+
+.account-gate__card {
+  width: min(26rem, 100%);
+  padding: 1.25rem 1.35rem;
+  border-radius: 1rem;
+  background: var(--sd-paper, #f4ead6);
+  color: var(--sd-paper-ink, #2a2118);
+  border: 1px solid rgb(42 33 24 / 0.16);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.35);
+}
+
+.account-gate__card--slim {
+  text-align: center;
+}
+
+.account-gate__title {
+  margin: 0.35rem 0 0.5rem;
+  font: 700 1.35rem/1.15 var(--font-display, 'Libre Baskerville', serif);
+}
+
+.account-gate__body {
+  margin: 0;
+  color: #6f604c;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.account-gate__list {
+  margin: 0.85rem 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.account-gate__list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.55rem;
+  background: #e9dcc1;
+  font-size: 0.82rem;
+}
+
+.account-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Minimal btn styles used by account gate / social when kit buttons aren't mounted */
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  font: 600 0.82rem/1 var(--font-ui, 'Space Grotesk', sans-serif);
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: #ff5a43;
+  color: #1a120f;
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: rgb(42 33 24 / 0.22);
+  color: inherit;
+}

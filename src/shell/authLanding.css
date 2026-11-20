@@ -1,0 +1,278 @@
+.auth-land {
+  --al-ink: #f6efe4;
+  --al-muted: #b7a994;
+  --al-paper: #f3ead7;
+  --al-tomato: #ff5a43;
+  --al-night: #120e0b;
+  --al-wood: #241910;
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 1.5rem;
+  padding: 1.25rem clamp(1rem, 3vw, 2.5rem) 2rem;
+  color: var(--al-ink);
+  background:
+    radial-gradient(1200px 700px at 10% -10%, color-mix(in srgb, var(--al-tomato) 28%, transparent), transparent 55%),
+    radial-gradient(900px 600px at 90% 10%, color-mix(in srgb, #d9a441 18%, transparent), transparent 50%),
+    linear-gradient(165deg, #1a1410 0%, var(--al-night) 45%, #0c1a1a 100%);
+  overflow: hidden;
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+}
+
+.auth-land__glow {
+  position: absolute;
+  inset: auto -20% -30% 20%;
+  height: 55%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--al-tomato) 22%, transparent), transparent);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.auth-land__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.auth-land__top {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-land__brand {
+  margin: 0;
+  font: 700 clamp(1.4rem, 3vw, 1.8rem) / 1 var(--font-display, 'Libre Baskerville', serif);
+  letter-spacing: 0.12em;
+}
+
+.auth-land__links {
+  display: flex;
+  gap: 1rem;
+}
+
+.auth-land__links a {
+  color: var(--al-muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.auth-land__links a:hover {
+  color: var(--al-ink);
+}
+
+.auth-land__hero {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  max-width: 36rem;
+  padding: 1rem 0 2rem;
+}
+
+.auth-land__eyebrow {
+  margin: 0 0 0.65rem;
+  font: 600 0.75rem/1 var(--font-mono, 'IBM Plex Mono', monospace);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--al-tomato);
+}
+
+.auth-land__title {
+  margin: 0;
+  font: 700 clamp(2.4rem, 6vw, 4.2rem) / 1.02 'Fraunces Variable', var(--font-display, serif);
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 144, 'SOFT' 40;
+}
+
+.auth-land__lede {
+  margin: 1rem 0 0;
+  color: var(--al-muted);
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
+  line-height: 1.5;
+}
+
+.auth-land__cta {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.auth-land__google {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.85rem 1.25rem 0.85rem 0.85rem;
+  background: var(--al-paper);
+  color: #2a2118;
+  font: 700 1rem/1 var(--font-ui, 'Space Grotesk', sans-serif);
+  cursor: pointer;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-land__google:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 48px rgb(0 0 0 / 0.4);
+}
+
+.auth-land__google:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.auth-land__g {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #4285f4;
+  font-weight: 800;
+}
+
+.auth-land__hint {
+  margin: 0;
+  color: var(--al-muted);
+  font-size: 0.85rem;
+}
+
+.auth-land__err {
+  margin: 0;
+  color: #ffb4a8;
+  font-size: 0.88rem;
+}
+
+.auth-land__perks {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.auth-land__perks li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--al-wood) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--al-ink) 10%, transparent);
+}
+
+.auth-land__perks strong {
+  font-family: 'Fraunces Variable', var(--font-display, serif);
+  font-size: 1.05rem;
+}
+
+.auth-land__perks span {
+  color: var(--al-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.auth-land__stage {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  min-height: 22rem;
+  display: grid;
+  place-items: center;
+}
+
+.auth-land__card {
+  position: absolute;
+  width: min(16rem, 70%);
+  padding: 1.1rem 1.2rem;
+  border-radius: 1.1rem;
+  background: var(--al-paper);
+  color: #2a2118;
+  box-shadow: 0 22px 50px rgb(0 0 0 / 0.4);
+  display: grid;
+  gap: 0.35rem;
+  animation: auth-float 6s ease-in-out infinite;
+}
+
+.auth-land__card span {
+  font: 600 0.72rem/1 var(--font-mono, monospace);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6f604c;
+}
+
+.auth-land__card strong {
+  font: 700 1.35rem/1.1 'Fraunces Variable', serif;
+}
+
+.auth-land__card--a {
+  transform: translate(-18%, -28%) rotate(-6deg);
+  animation-delay: 0s;
+}
+
+.auth-land__card--b {
+  transform: translate(22%, 4%) rotate(5deg);
+  background: linear-gradient(160deg, #f7e2a1, var(--al-paper));
+  animation-delay: 0.4s;
+}
+
+.auth-land__card--c {
+  transform: translate(-8%, 42%) rotate(-2deg);
+  background: linear-gradient(160deg, #ffd2c8, var(--al-paper));
+  animation-delay: 0.8s;
+}
+
+@keyframes auth-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-land__card {
+    animation: none;
+  }
+  .auth-land__google {
+    transition: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .auth-land {
+    grid-template-columns: 1fr;
+    padding-bottom: 3rem;
+  }
+  .auth-land__stage {
+    order: -1;
+    min-height: 14rem;
+    margin-top: 0.5rem;
+  }
+  .auth-land__card {
+    position: relative;
+    width: auto;
+    transform: none !important;
+    margin: 0.35rem 0;
+  }
+  .auth-land__card--a,
+  .auth-land__card--b,
+  .auth-land__card--c {
+    animation: none;
+  }
+}

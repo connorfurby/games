@@ -353,7 +353,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       ensurePrimarySandbox()
       // Disk is source of truth when (re)entering Play from the shelf.
       // Without this, the module singleton keeps the previous run in memory and
-      // New Game (localStorage wipe only) looks like it "never works".
+      // New Game (cache wipe only) looks like it "never works".
       engine.reloadFromDisk()
     }
     engine.start()

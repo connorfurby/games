@@ -1,9 +1,16 @@
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
-import { SNAP_EVERY_MS, SNAP_KEEP, clearGameSave, listSnapshots, readSnapshot, snapshotGame } from './save'
+import {
+  SNAP_EVERY_MS,
+  SNAP_KEEP,
+  __resetSaveStore,
+  clearGameSave,
+  listSnapshots,
+  readSnapshot,
+  snapshotGame,
+} from './save'
 
 describe('automatic backups', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => __resetSaveStore())
 
   it('takes one per interval, keeps the newest few, and reads them back', () => {
     const t0 = 1_000_000

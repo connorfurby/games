@@ -1,59 +1,61 @@
-import { D } from './bn'
+import { markDeleted, markDirty } from './cloudSync'
+import { isCloudSlot, isDevSlot } from './progress'
+import { deserializeState, serializeState } from './saveCodec'
 
-const PREFIX = 'games.v1.'
+export { deserializeState, serializeState } from './saveCodec'
 
-function isDecimal(v: unknown): boolean {
-  return (
-    !!v &&
-    typeof v === 'object' &&
-    'mantissa' in (v as object) &&
-    'exponent' in (v as object) &&
-    typeof (v as { toString: () => string }).toString === 'function'
-  )
+/** In-memory account cache. Never written to localStorage — cloud is the durable store. */
+const store = new Map<string, string>()
+const snaps = new Map<string, Snapshot[]>()
+
+function notifyCloudWrite(id: string) {
+  if (isDevSlot(id)) return
+  if (!isCloudSlot(id) && !id.match(/^grocery-empire-slot-[123]$/)) return
+  markDirty(id)
 }
 
-export function serializeState(data: unknown): string {
-  return JSON.stringify(data, (_k, v) => {
-    if (isDecimal(v)) return { __bn: String(v) }
-    return v
-  })
+/** Test helper — wipe the in-memory store. */
+export function __resetSaveStore() {
+  store.clear()
+  snaps.clear()
 }
 
-/** Parse a save string. Never throws — returns null on any failure. */
-export function deserializeState<T>(raw: string): T | null {
-  try {
-    if (typeof raw !== 'string' || raw.length === 0) return null
-    return JSON.parse(raw, (_k, v) => {
-      if (v && typeof v === 'object' && '__bn' in v) return D((v as { __bn: string }).__bn)
-      return v
-    }) as T
-  } catch {
-    return null
+/** Replace every slot from a cloud hydrate (clears first). */
+export function replaceAllSlots(payloads: Record<string, string>) {
+  store.clear()
+  snaps.clear()
+  for (const [id, raw] of Object.entries(payloads)) {
+    store.set(id, raw)
   }
+}
+
+/** Clear every slot (sign-out). */
+export function clearAllSlots() {
+  store.clear()
+  snaps.clear()
 }
 
 export function saveGame(id: string, data: unknown) {
   try {
     const payload = serializeState(data)
-    const key = PREFIX + id
-    localStorage.setItem(PREFIX + id + '.tmp', payload)
-    localStorage.setItem(key, payload)
-    localStorage.setItem(PREFIX + id + '.bak', payload)
-    localStorage.removeItem(PREFIX + id + '.tmp')
+    store.set(id, payload)
+    notifyCloudWrite(id)
   } catch {
     /* ignore */
   }
 }
 
+/** Write a raw JSON string (slot copy / import). Syncs when signed in. */
+export function saveRaw(id: string, raw: string) {
+  store.set(id, raw)
+  notifyCloudWrite(id)
+}
+
 /** Load a game save. Never throws — returns null on missing or corrupt data. */
 export function loadGame<T>(id: string): T | null {
-  try {
-    const raw = localStorage.getItem(PREFIX + id) ?? localStorage.getItem(PREFIX + id + '.bak')
-    if (!raw) return null
-    return deserializeState<T>(raw)
-  } catch {
-    return null
-  }
+  const raw = store.get(id)
+  if (!raw) return null
+  return deserializeState<T>(raw)
 }
 
 /** Alias for loadGame — explicit “never brick the app” entry point. */
@@ -62,34 +64,25 @@ export function safeLoadGame<T>(id: string): T | null {
 }
 
 export function exportSave(id: string): string {
-  try {
-    return localStorage.getItem(PREFIX + id) ?? ''
-  } catch {
-    return ''
-  }
+  return store.get(id) ?? ''
 }
 
 export function importSave(id: string, raw: string) {
-  try {
-    localStorage.setItem(PREFIX + id, raw)
-  } catch {
-    /* ignore */
-  }
+  store.set(id, raw)
+  notifyCloudWrite(id)
 }
 
-/** Wipe primary + tmp + backup for a game id. Used by New Game / recovery UI. */
+/** Wipe primary + snapshots for a game id. Used by New Game / recovery UI. */
 export function clearGameSave(id: string) {
-  try {
-    for (const suffix of ['', '.tmp', '.bak', '.snaps']) {
-      localStorage.removeItem(PREFIX + id + suffix)
-    }
-  } catch {
-    /* ignore */
+  store.delete(id)
+  snaps.delete(id)
+  if (!isDevSlot(id) && (isCloudSlot(id) || /^grocery-empire-slot-[123]$/.test(id))) {
+    markDeleted(id)
   }
 }
 
 export function saveKey(id: string) {
-  return PREFIX + id
+  return id
 }
 
 export function saveMeta(data: unknown) {
@@ -99,10 +92,6 @@ export function saveMeta(data: unknown) {
 export function loadMeta<T>(fallback: T): T {
   return loadGame<T>('meta') ?? fallback
 }
-
-// ── Rolling automatic backups ─────────────────────────────────────────────
-// `.bak` mirrors the live save, so it can't undo a bad hour. Snapshots can: one every
-// SNAP_EVERY_MS of play, the newest SNAP_KEEP kept, each with a short label to choose by.
 
 export const SNAP_EVERY_MS = 10 * 60 * 1000
 export const SNAP_KEEP = 3
@@ -117,25 +106,17 @@ interface Snapshot extends SnapshotInfo {
 }
 
 function readSnaps(id: string): Snapshot[] {
-  try {
-    const raw = localStorage.getItem(PREFIX + id + '.snaps')
-    const arr = raw ? (JSON.parse(raw) as unknown) : []
-    return Array.isArray(arr)
-      ? arr.filter((x): x is Snapshot => !!x && typeof x.at === 'number' && typeof x.payload === 'string')
-      : []
-  } catch {
-    return []
-  }
+  return snaps.get(id) ?? []
 }
 
 /** Take a snapshot if the newest is older than SNAP_EVERY_MS (or `force`). Never throws. */
 export function snapshotGame(id: string, data: unknown, label: string, now = Date.now(), force = false): boolean {
   try {
-    const snaps = readSnaps(id)
-    const newest = snaps[0]
+    const list = readSnaps(id)
+    const newest = list[0]
     if (!force && newest && now - newest.at < SNAP_EVERY_MS) return false
-    const next = [{ at: now, label, payload: serializeState(data) }, ...snaps].slice(0, SNAP_KEEP)
-    localStorage.setItem(PREFIX + id + '.snaps', JSON.stringify(next))
+    const next = [{ at: now, label, payload: serializeState(data) }, ...list].slice(0, SNAP_KEEP)
+    snaps.set(id, next)
     return true
   } catch {
     return false
@@ -155,9 +136,15 @@ export function readSnapshot<T>(id: string, i: number): T | null {
 
 /** Drop every automatic backup for `id` (after a Rebrand, so its payout can't be replayed). */
 export function clearSnapshots(id: string) {
-  try {
-    localStorage.removeItem(PREFIX + id + '.snaps')
-  } catch {
-    /* ignore */
-  }
+  snaps.delete(id)
+}
+
+/** Read raw payload for cloud flush. */
+export function getRawSlot(id: string): string | null {
+  return store.get(id) ?? null
+}
+
+/** All in-memory slot payloads (for diagnostics / tests). */
+export function listSlotIds(): string[] {
+  return [...store.keys()]
 }

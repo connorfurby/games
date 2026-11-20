@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { exportSave } from '@/shared/save'
 import { engine } from './engine'
 import { PRIMARY_SAVE_ID, setActiveSaveId } from './saveKey'
 
@@ -31,13 +32,13 @@ describe('engine.newGame', () => {
     expect(live.seed).toBe(77)
     expect(live.cash).toBeLessThan(100)
 
-    // Disk should match the fresh run (or at least not keep 12345).
-    const raw = localStorage.getItem('games.v1.grocery-empire')
+    // Account cache should match the fresh run (or at least not keep 12345).
+    const raw = exportSave('grocery-empire')
     expect(raw).toBeTruthy()
     expect(raw).not.toContain('"baskets":12345')
     expect(raw).toContain('"seed":77')
 
-    // Remount path: mutate memory, then reload from the wiped+rewritten disk.
+    // Remount path: mutate memory, then reload from the rewritten cache.
     live.baskets = 50
     engine.reloadFromDisk()
     expect(engine.getState().baskets).toBe(0)

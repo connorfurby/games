@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { getWikiChecks, setWikiChecks } from '@/shared/prefs'
 import type { WikiBlock } from '../../content/wiki/blocks'
 import { GLOSSARY, type GlossEntry } from '../../content/wiki/glossary'
 import { WIKI_BY_ID } from '../../content/wiki/articles'
@@ -51,24 +52,16 @@ function linkTerms(text: string, ctx: Ctx): ReactNode[] {
 const CALLOUT_ICON = { tip: 'help', warn: 'rivals', lore: 'memo', rule: 'doctrine' } as const
 
 function readChecks(key: string): Record<string, boolean> {
-  try {
-    return JSON.parse(localStorage.getItem(`ge-wiki-check:${key}`) ?? '{}') as Record<string, boolean>
-  } catch {
-    return {}
-  }
+  return getWikiChecks(key)
 }
 
-/** Ticks persist per article + block on this device. The caller keys the list so a new article remounts it. */
+/** Ticks persist on the signed-in account via prefs. */
 function useChecks(key: string) {
   const [on, setOn] = useState<Record<string, boolean>>(() => readChecks(key))
   const toggle = (i: string) =>
     setOn((prev) => {
       const next = { ...prev, [i]: !prev[i] }
-      try {
-        localStorage.setItem(`ge-wiki-check:${key}`, JSON.stringify(next))
-      } catch {
-        /* storage can be unavailable */
-      }
+      setWikiChecks(key, next)
       return next
     })
   return [on, toggle] as const

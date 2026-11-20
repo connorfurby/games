@@ -1,4 +1,15 @@
-import { clearGameSave, clearSnapshots, listSnapshots, loadGame, readSnapshot, saveGame, snapshotGame, type SnapshotInfo } from '@/shared/save'
+import {
+  clearGameSave,
+  clearSnapshots,
+  exportSave,
+  listSnapshots,
+  loadGame,
+  readSnapshot,
+  saveGame,
+  saveRaw,
+  snapshotGame,
+  type SnapshotInfo,
+} from '@/shared/save'
 import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
 import { can as canCmd, run as runCmd, tickAutoRestock, type Check, type Command } from './commands'
 import { migrate } from './migrate'
@@ -307,8 +318,8 @@ export class GroceryEngine {
 
   /**
    * UI "New Game" — wipe the active save id (campaign or DevMode) and start fresh.
-   * Must update the in-memory singleton, not only localStorage — otherwise a later
-   * autosave / Play remount rewrites the wiped disk with the old run.
+   * Must update the in-memory singleton, not only the account cache — otherwise a later
+   * autosave / Play remount rewrites the wiped slot with the old run.
    */
   newGame(seed?: number) {
     clearGameSave(getActiveSaveId())
@@ -335,7 +346,7 @@ export class GroceryEngine {
     this.save()
   }
 
-  /** Re-read the primary grocery save from localStorage into the live engine. */
+  /** Re-read the active grocery save from the account cache into the live engine. */
   reloadFromDisk() {
     this.cancelCatchUp()
     this.state = GroceryEngine.loadState()
@@ -351,9 +362,9 @@ export class GroceryEngine {
     this.save()
     try {
       const id = getActiveSaveId()
-      const raw = localStorage.getItem(`games.v1.${id}`)
+      const raw = exportSave(id)
       if (!raw) return false
-      localStorage.setItem(`games.v1.${id}-slot-${slot}`, raw)
+      saveRaw(`${id}-slot-${slot}`, raw)
       return true
     } catch {
       return false
@@ -394,11 +405,7 @@ export class GroceryEngine {
 
   /** True when a slot has a stored JSON blob for the active save id. */
   hasSlot(slot: 1 | 2 | 3): boolean {
-    try {
-      return !!localStorage.getItem(`games.v1.${getActiveSaveId()}-slot-${slot}`)
-    } catch {
-      return false
-    }
+    return !!exportSave(`${getActiveSaveId()}-slot-${slot}`)
   }
 
   /** Force React snapshot + listeners after in-place mutation (DevMode helpers). */

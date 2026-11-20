@@ -21,6 +21,8 @@
 | [13-release-1.0-plan.md](13-release-1.0-plan.md) | **Active:** the 1.0 release plan — audit, gates, phases P0–P12 |
 | [12-expansion-megaplan.md](12-expansion-megaplan.md) | **Shipped (2026-11-14):** lengthen to ~40–50h. Live generation work is **40.0** (Phases 0–12 below). |
 
-**Current snapshot (update when wrong):** `SAVE_VERSION` **38** · display `GAME_VERSION` **1.0** (launch numbering; pre-1.0 bulletins erased) · default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
+**Current snapshot (update when wrong):** `SAVE_VERSION` **42** · display `GAME_VERSION` **1.0** (launch numbering; pre-1.0 bulletins erased) · default CI Era 1 **>35m ≤55m**, Era 2 **>3.5h ≤5h**. `LONG=1` Eras 3–6 plan windows; `LONG_HORIZON=1` Era 12 **>40h ≤50h**. Tournament cooldown **600s**; doctrine growth **1.65**; depot needs **12 Read**; Autonomous needs **48 Read**.
 
-Last pack review: 2026-11-16 (**1.0 Phases 0–3 + first hour** + fluid opening lesson: one type scale, phone rooms, single Next Goal button, in-room help, one continuous `opening` coach tour; see changelog Y–W; before that 40.1 shell + Ops Wiki; earlier the same day: 40.0 prove). Phases 0–12 shipped: foundation → one frame + phone → QoL → era decisions 0–12 → postgame/museum → content + News 40.0 → visual `@layer shell` → app shell → prove. Measured seed-1 landings still inside plan windows (Era 12 ~40.10 h). See [10-changelog-chat.md](10-changelog-chat.md).
+**Accounts:** Google sign-in is required to play. Saves live on the account in Supabase (in-memory cache only while the tab is open — no localStorage persistence). DevMode slots stay ephemeral and never rank. Social at `/social`.
+
+Last pack review: 2026-11-19 (Google accounts + cloud sync + Social). Earlier: 2026-11-16 (**1.0 Phases 0–3 + first hour** + fluid opening lesson; see changelog Y–W).
