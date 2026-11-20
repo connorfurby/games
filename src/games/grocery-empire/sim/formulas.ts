@@ -1,4 +1,5 @@
-import { BUILD_TIERS, DAILY_RULES, type DailyRuleMods } from './balance'
+import { BUILD_TIERS, DAILY_RULES, STAFF_POWER, type DailyRuleMods } from './balance'
+import { crewCount, crewEffect, crewStrength, softStrength } from './staffPower'
 import { crimeDemandMul, crimeWageMul } from './systems/crime'
 import { visitorMul } from './systems/visitors'
 import { corpCrateMul, corpDemandMul, corpLifeMul, corpWageMul } from './corp/effects'
@@ -170,11 +171,7 @@ function traitWage(id: StaffTraitId | undefined) {
 
 /** Sum of (1 + levelBonus*(level-1)) across a role — a level-5 clerk is worth 1.2 clerks. Traits nudge ±5%. */
 function roleStrength(s: GameState, role: RoleId) {
-  let n = 0
-  for (const m of s.staff) {
-    if (m.role === role) n += (1 + UNPACK.levelBonus * (m.level - 1)) * traitStrength(m.traitId)
-  }
-  return n
+  return crewStrength(s, role)
 }
 
 // ── Capacity ────────────────────────────────────────────────────────────────
@@ -285,7 +282,8 @@ export function unitCost(s: GameState, cat: CategoryId, supplier: SupplierId = s
     wholesaleMul(s) *
     valueMul(s) *
     statCut(s, 'crateCut') *
-    corpCrateMul(s, cat)
+    corpCrateMul(s, cat) *
+    (1 - crewEffect(s, 'buyer', STAFF_POWER.buyerCrate))
   if (supplier === 'b') base *= WHOLESALE.supplierB.discount
   if (
     cat === DEPTH.greengrocer.cat &&
@@ -326,9 +324,10 @@ export function deliveryTime(s: GameState, supplier: SupplierId) {
   t *= BUILD_TIERS.transitTime[Math.min(transit, BUILD_TIERS.transitTime.length - 1)] ?? 1
   if (memo(s, 'dock-plate')) t *= 0.6
   if (hasDoctrine(s, 'route-density')) t *= DOCTRINE_EFFECTS.routeDensityDeliveryMul
-  const receivers = roleCount(s, 'receiver')
+  // Receivers: level and Shift Leads count, up to 3.5 receivers' worth.
+  const receivers = Math.min(STAFF_POWER.receiverStrengthCap, roleStrength(s, 'receiver'))
   if (receivers > 0) {
-    t *= Math.max(0.4, Math.pow(DEPTH.receiverEtaMul, Math.min(3, receivers)))
+    t *= Math.max(0.4, Math.pow(DEPTH.receiverEtaMul, receivers))
   }
   return Math.max(1, t * dailyMod(s, 'truckTime'))
 }
@@ -576,6 +575,8 @@ export function demandBreakdown(s: GameState) {
     /** Brand 0..1 maps to roughly ±12% demand — visible on Books. */
     brand: 0.88 + 0.24 * clamp(s.brand, 0, 1),
     morale: 0.9 + 0.1 * Math.min(1, s.morale),
+    /** Greeters at the door. */
+    crew: 1 + crewEffect(s, 'greeter', STAFF_POWER.greeterDemand),
     empire: empireDemandMul(s),
     expansions: expansionDemandMul(s),
     marketing: marketingDemandMul(s),
@@ -910,7 +911,8 @@ export function wagesPerSec(s: GameState) {
     statCut(s, 'wageCut') *
     crimeWageMul(s) *
     visitorMul(s, 'wages') *
-    corpWageMul(s)
+    corpWageMul(s) *
+    (1 - crewEffect(s, 'bookkeeper', STAFF_POWER.bookkeeperWage))
   if (s.depth && s.depth.open === false) wage *= DEPTH.closedWageMul
   // Soft-cap: total wage burden cannot exceed ~30% of recent revenue forever.
   const rev = Math.max(0, s.rates?.revenuePerSec ?? 0)
@@ -922,7 +924,8 @@ export function wagesPerSec(s: GameState) {
 }
 
 export function staffLevelCap(s: GameState) {
-  return Math.min(20, 3 + Math.floor(s.empire.level / 2) + up(s, 'training'))
+  const trainers = Math.min(STAFF_POWER.trainerCapMax, crewCount(s, 'trainer') * STAFF_POWER.trainerCapEach)
+  return Math.min(20, 3 + Math.floor(s.empire.level / 2) + up(s, 'training')) + trainers
 }
 
 /** Max heads on payroll from building + deeds + Shift Lead. */
@@ -949,7 +952,8 @@ export function xpToLevel(level: number) {
 }
 
 export function unpackPerSec(s: GameState) {
-  let r = roleStrength(s, 'clerk') * UNPACK.clerkPerSec + roleStrength(s, 'stocker') * UNPACK.stockerPerSec
+  let r =
+    (roleStrength(s, 'clerk') + roleStrength(s, 'shiftLead')) * UNPACK.clerkPerSec + roleStrength(s, 'stocker') * UNPACK.stockerPerSec
   // Cross-Train: cashiers lend a sliver of their pace to Unpack between customers.
   const cross = up(s, 'cross-train') * 0.03 * (1 + (up(s, 'float-pool') > 0 ? 0.5 : 0))
   r += roleStrength(s, 'cashier') * UNPACK.clerkPerSec * cross
@@ -981,6 +985,7 @@ export function moraleTarget(s: GameState) {
   if (sec > 2) t -= (sec - 2) * MORALE.securityCrowding
   if (memo(s, 'staff-room')) t += 0.05
   if (memo(s, 'smell-of-bread')) t += 0.02
+  t += crewEffect(s, 'hrManager', STAFF_POWER.hrMorale)
   if (s.time < s.pizzaUntil) t += MORALE.pizzaBoost
   if (s.events?.rival?.kind === 'poach' && s.staff.length > 0) t += RIVAL_EVENTS.poachMoraleTarget
   return Math.min(MORALE.max, Math.max(MORALE.min, t))
@@ -1008,8 +1013,9 @@ export function lifeMul(s: GameState, cat: CategoryId) {
   if (memo(s, 'cold-vault')) m *= 1.04
   if (memo(s, 'spoil-log')) m *= 1.03
   if (s.board?.rndUntil > s.time) m *= 1.1
-  if (cat === 'meat' && roleCount(s, 'butcher') > 0) m *= DEPTH.butcherMeatLifeMul
-  if (cat === 'dairy' && roleCount(s, 'dairyClerk') > 0) m *= DEPTH.dairyClerkLifeMul
+  // Butchers and dairy clerks: the first one does most of it; more and higher levels add a bit.
+  if (cat === 'meat' && roleCount(s, 'butcher') > 0) m *= 1 + (DEPTH.butcherMeatLifeMul - 1) * softStrength(s, 'butcher', STAFF_POWER.freshStrengthCap) / 0.81
+  if (cat === 'dairy' && roleCount(s, 'dairyClerk') > 0) m *= 1 + (DEPTH.dairyClerkLifeMul - 1) * softStrength(s, 'dairyClerk', STAFF_POWER.freshStrengthCap) / 0.81
   {
     const daySec = DEPTH.shiftDaySec
     const phase = (((s.time % daySec) + daySec) % daySec) / daySec
@@ -1057,7 +1063,7 @@ export function batchSpoilFrac(s: GameState, batch: { cat: CategoryId; age: numb
 
 export function agingMul(s: GameState, where: 'shelf' | 'backroom', cat?: CategoryId) {
   let m = weatherSpoil(s, s.weather.now, cat) * (1 - perk(s, 'slow-spoil') * 0.03)
-  const stockers = Math.min(SPOIL.maxStockers, roleCount(s, 'stocker'))
+  const stockers = Math.min(SPOIL.maxStockers, roleStrength(s, 'stocker'))
   m *= Math.pow(SPOIL.stockerMul, stockers)
   if (where === 'backroom') {
     m *= SPOIL.backroomAgeMul

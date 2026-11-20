@@ -1,9 +1,10 @@
 import { upgradeEffect } from '../../content/upgrades'
 import { CAUSE_BY_ID, CAUSES, OFFICE_BY_ID, OFFICES, OUTLETS, SEGMENTS, UNION_DEMANDS, type CausePerk, type PlatformLever } from '../../content/corp/town'
 import { RIVAL_BY_ID, type RivalId } from '../../content/rivals'
-import { CRIME, TOWN } from '../balance'
+import { CRIME, TOWN, STAFF_POWER } from '../balance'
 import { log } from '../helpers'
 import type { GameState } from '../state'
+import { crewEffect, crewStrength } from '../staffPower'
 import { crimeOf } from '../systems/crime'
 import { addBoost } from './company'
 import { corpOf, crand, round2, salesRate } from './core'
@@ -40,7 +41,7 @@ export function donate(s: GameState, cause: string, sec: number) {
   const amount = round2(salesRate(s) * sec)
   s.cash = round2(s.cash - amount)
   t.donated = round2(t.donated + amount)
-  t.goodwill += sec * TOWN.goodwillPerSec
+  t.goodwill += sec * TOWN.goodwillPerSec * (1 + crewEffect(s, 'communityRep', STAFF_POWER.repGoodwill))
   t.causeGiven[cause] = round2((t.causeGiven[cause] ?? 0) + amount)
   // Level up while the gift covers it.
   let lvl = t.causes[cause] ?? 0
@@ -197,7 +198,7 @@ export function answerUnion(s: GameState, accept: boolean) {
     }
   }
   u.demand = null
-  u.nextDemandAt = s.time + TOWN.demandGapSec
+  u.nextDemandAt = s.time + TOWN.demandGapSec * (1 + crewEffect(s, 'hrManager', STAFF_POWER.hrUnion))
 }
 
 export function endStrike(s: GameState) {
@@ -231,7 +232,7 @@ export function buyOutlet(s: GameState, id: string) {
 export function pressReach(s: GameState): number {
   if (!s.corp) return 0
   const base = s.corp.town.outlets.reduce((a, id) => a + (OUTLETS.find((o) => o.id === id)?.reach ?? 0), 0)
-  return base * (1 + upgradeEffect(s, 'newsroom'))
+  return base * (1 + upgradeEffect(s, 'newsroom') + crewEffect(s, 'spokesperson', STAFF_POWER.spokesReach))
 }
 
 function credMul(s: GameState) {
@@ -321,8 +322,10 @@ export function setFocus(s: GameState, id: string | null) {
 export function tickTown(s: GameState) {
   const c = corpOf(s)
   const t = c.town
+  // A Community Rep earns a trickle of goodwill on their own (like a small gift every second).
+  t.goodwill += crewStrength(s, 'communityRep') * TOWN.goodwillPerSec * 0.05
   // Goodwill fades slowly; big givers win awards.
-  if (t.goodwill > 0) t.goodwill *= 1 - TOWN.goodwillDecayPerMin / 60
+  if (t.goodwill > 0) t.goodwill *= 1 - (TOWN.goodwillDecayPerMin / 60) * (1 - crewEffect(s, 'communityRep', STAFF_POWER.repFade))
   if (s.time >= t.nextAwardAt) {
     t.nextAwardAt = s.time + TOWN.awardEverySec
     if (t.goodwill >= TOWN.awardGoodwill) {
@@ -360,7 +363,7 @@ export function tickTown(s: GameState) {
     for (const x of openSegments(s)) {
       const fit = segmentFit(s, x.id)
       const cur = t.loyalty[x.id] ?? TOWN.loyaltyStart
-      const pull = (TOWN.loyaltyPull / 60) * (t.focus === x.id ? TOWN.focusPull : 1)
+      const pull = (TOWN.loyaltyPull / 60) * (t.focus === x.id ? TOWN.focusPull : 1) * (1 + crewEffect(s, 'greeter', STAFF_POWER.greeterLoyalty))
       t.loyalty[x.id] = cur + (fit - cur) * pull
     }
   }

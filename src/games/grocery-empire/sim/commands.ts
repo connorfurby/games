@@ -18,6 +18,7 @@ import { PROJECT_BY_ID } from '../content/projects'
 import { empireUnlocked } from '../content/empireRewards'
 import { PERK_BY_ID } from '../content/perks'
 import { ROLE_IDS, ROLES, isDeptRole, isHorizonRole, traitForStaffId, type RoleId } from '../content/staff'
+import { MENUS } from '../content/menus'
 import { annexSeatBlock, floorHeadcount } from './staffAnnex'
 import { deptSeatBlock, syncDeptRoster } from './staffDept'
 import { postureFee } from './lateCost'
@@ -821,6 +822,9 @@ const coreHandlers = {
       if (roleDef.era && s.era < roleDef.era) return no(`${roleDef.name} hires in Era ${roleDef.era}.`)
       if (role === 'shiftLead') return no('Promote a clerk to Shift Lead.')
       if (role === 'night' && !s.memos['night-latch']) return no('Night Latch memo first.')
+      if (roleDef.needsMenu && !s.menus[roleDef.needsMenu as keyof typeof s.menus]) {
+        return no(`Open ${MENUS[roleDef.needsMenu as keyof typeof MENUS]?.name ?? roleDef.needsMenu} first.`)
+      }
       if (!s.menus.staff && !s.memos['help-wanted']) return no('Staff not unlocked.')
       if (isHorizonRole(role)) {
         const full = annexSeatBlock(s)
@@ -831,7 +835,7 @@ const coreHandlers = {
       } else {
         const seats = staffSeatCap(s)
         if (floorHeadcount(s) >= seats) {
-          return no(`Staff seats full (${seats}). Grow the storefront or buy Shift Lead.`)
+          return no(`Staff seats full (${seats}). Grow the storefront, take the Shift Lead upgrade, or let someone go.`)
         }
       }
       const cost = hireCost(s, role)

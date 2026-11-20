@@ -2,6 +2,26 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## AT. Staff overhaul: every role earns its seat (2026-11-19, on `main`)
+
+- **Page rebuilt** (`StaffPanel`, `ui/staff/{CrewFlow,HireDesk,CrewDesk,crewModel,StaffPortrait}.tsx`, `crew.css`). The tall floor drawing (`StaffFloor`) is gone; a flow strip shows Unpack → Shelf → Checkout ← Shoppers with the limit lit, seats, wages, morale and Shift Lead lift, plus clickable Worlds annex desks from Era 7.
+- **Hire desk**: compact rows grouped Floor / Fresh / Office and town / Departments / Worlds annex. Each row shows what one more would change ("Checkout 4.91/s → 6.48/s", "Spoilage −15%"), its worth in cash per second after the new wage, "Needed" for support roles the store is missing, or "Enough for now". The best pick is marked. Each group names the next role to come and when.
+- **Measured, not guessed** (`sim/staffOutlook.ts`): runs the real formulas on a copy of the state with one more (or one fewer) of a role. `pickHire` picks the biggest cash gain, else the most needed support role. When every seat is taken, the tray offers a **swap** (let the least useful floor member go, hire the pick).
+- **Crew desk**: one row per role (count, level range, wage, "Earning +$X/s" or "More than you need"), with One more / Promote / Let one go. Names fold away under each row, with XP bars and a gold bar at the top level. No more wall of Fire buttons.
+- **Shifts**: per slot, who's on (chips with a real remove target) and "Add the best fit", instead of a chip per person per slot.
+- **Every role useful** (`sim/staffPower.ts`, `STAFF_POWER` in balance):
+  - Shift Lead was a trap: it took the seat it added and stopped unpacking. Now a promotion costs a raise and needs a level-3 clerk. The lead still unpacks, adds a seat, and lifts the floor crew by 4% each (up to three).
+  - Receivers, stockers, butchers and dairy clerks now scale with level and headcount, softly.
+  - Trainers raise the crew's level cap (+2 each, up to +10), so maxed crews have somewhere to go.
+- **Nine new roles that reach past the floor** (floor seats, era- and screen-gated):
+  - Era 1: Greeter (shoppers, faster crowd loyalty), Buyer (cheaper crates), Community Rep (goodwill per gift, slower fade, a passive trickle; needs Foundation).
+  - Era 2: Trainer (XP, level cap), Bookkeeper (wages, bond interest), Paralegal (trial odds, cheaper settlements; needs Courthouse).
+  - Era 3: HR Manager (morale, fewer union demands), Spokesperson (press reach, crisis odds; needs Press).
+  - Era 4: Franchise Scout (franchise quality and fee; needs Franchises).
+  Greeters show up in Books' demand breakdown.
+- **Staff ambitions**: promote a lead → hire three office and town roles → five crew past level 20.
+- Glossary: Shift Lead; Office and town crew. Tests: `sim/staff.roles.test.ts`.
+
 ## AS. Phone upgrade tree, no sideways scroll, visual fixes (2026-11-19, on `main`)
 
 - **Phone tree** (`PhoneTree` in `UpgradesBoard.tsx`, `phoneTree.css`): below 900px the wired tree reads top to bottom. One section per layer, one full-width row per node (progress ring, name, effect, rank, price button). A node sits indented under the node it needs; needs from another layer show as "After …". Tap a row to open its details in place. Desktop keeps the wired tree.

@@ -485,6 +485,7 @@ const DEMAND_PART_LABELS: Record<string, string> = {
   celebrity: 'Celebrity endcap',
   brand: 'Brand',
   morale: 'Crew morale',
+  crew: 'Greeters',
   empire: 'Empire',
   expansions: 'Expansions',
   marketing: 'Marketing',

@@ -1,6 +1,7 @@
 import { CATEGORY_IDS, type CategoryId } from '../../content/categories'
 import { ROLES } from '../../content/staff'
-import { MORALE, STAFF_XP } from '../balance'
+import { MORALE, STAFF_POWER, STAFF_XP } from '../balance'
+import { crewStrength } from '../staffPower'
 import {
   memo,
   moraleTarget,
@@ -74,7 +75,7 @@ export function tickStaffXp(s: GameState, dt: number) {
   const gain =
     STAFF_XP.perSec *
     dt *
-    (1 + up(s, 'xp-gain') * STAFF_XP.trainingBonusPerLevel + nightXp)
+    (1 + up(s, 'xp-gain') * STAFF_XP.trainingBonusPerLevel + nightXp + crewStrength(s, 'trainer') * STAFF_POWER.trainerXp)
   for (const m of s.staff) {
     if (m.level >= cap) continue
     m.xp += gain

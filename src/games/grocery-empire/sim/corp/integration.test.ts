@@ -85,7 +85,7 @@ describe('company layer is part of the progression', () => {
     corpOf(s).more.execs = { cfo: { name: 'x', trait: 'steady', level: 1, hiredAt: 0 } }
     tickAmbitions(s)
     expect(corpOf(s).ambitions['execs-1']).toBeUndefined()
-    expect(AMBITIONS.length).toBe(39)
+    expect(AMBITIONS.length).toBe(42)
   })
 
   it('old saves get empty ambitions', () => {

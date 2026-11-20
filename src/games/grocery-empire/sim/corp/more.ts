@@ -16,9 +16,10 @@ import {
   type ExecRole,
   type Lever,
 } from '../../content/corp/more'
-import { CRIME, CRISIS, EXEC, FRANCHISE, LAB, PROPERTY } from '../balance'
+import { CRIME, CRISIS, EXEC, FRANCHISE, LAB, PROPERTY, STAFF_POWER } from '../balance'
 import { log } from '../helpers'
 import type { GameState } from '../state'
+import { crewEffect } from '../staffPower'
 import { crimeOf } from '../systems/crime'
 import { addBoost } from './company'
 import { corpOf, cpick, crand, round2, salesRate } from './core'
@@ -172,7 +173,7 @@ export function franchiseCap(s: GameState): number {
 }
 
 export function franchiseFee(s: GameState) {
-  return round2(salesRate(s) * 60 * FRANCHISE.feeMin * (1 + upgradeEffect(s, 'franchise-academy')))
+  return round2(salesRate(s) * 60 * FRANCHISE.feeMin * (1 + upgradeEffect(s, 'franchise-academy') + crewEffect(s, 'franchiseScout', STAFF_POWER.scoutFee)))
 }
 
 export function sellFranchise(s: GameState) {
@@ -183,7 +184,7 @@ export function sellFranchise(s: GameState) {
   const used = new Set(m.franchises.map((f) => f.name))
   let name = cpick(s, FRANCHISEE_NAMES)
   for (let k = 0; k < 6 && used.has(name); k++) name = cpick(s, FRANCHISEE_NAMES)
-  m.franchises.push({ id: c.nextId++, name, trait: trait.id, quality: 50 + Math.round(crand(s) * 30), openedAt: s.time, paid: 0 })
+  m.franchises.push({ id: c.nextId++, name, trait: trait.id, quality: Math.min(100, 50 + Math.round(crand(s) * 30 + crewEffect(s, 'franchiseScout', STAFF_POWER.scoutQuality))), openedAt: s.time, paid: 0 })
   s.cash = round2(s.cash + fee)
   log(s, `${name} opened a franchise and paid ${cashLabel(fee)}. (${trait.name}: ${trait.blurb})`, 'good')
 }
@@ -220,7 +221,7 @@ function applyOutcome(s: GameState, o: { demand: number; sec: number; brand: num
 
 /** Odds an option works, after your marketer and crisis team. */
 export function crisisOdds(s: GameState, base: number): number {
-  return Math.min(0.97, base + execPower(s, 'cmo') * 0.5 + upgradeEffect(s, 'crisis-pr'))
+  return Math.min(0.97, base + execPower(s, 'cmo') * 0.5 + upgradeEffect(s, 'crisis-pr') + crewEffect(s, 'spokesperson', STAFF_POWER.spokesCrisis))
 }
 
 /** What answering a crisis option costs right now. */

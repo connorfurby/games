@@ -29,7 +29,14 @@ const R = [0, 120, 300, 720] as const
 
 type Row = [menu: string, title: string, hint: string, progress: (s: GameState) => [number, number]]
 
+const OFFICE = ['greeter', 'buyer', 'communityRep', 'trainer', 'bookkeeper', 'paralegal', 'hrManager', 'spokesperson', 'franchiseScout']
+
 const CHAINS: Record<string, Row[]> = {
+  staff: [
+    ['staff', 'A lead on the floor', 'Promote a clerk to Shift Lead.', (s) => [Math.min(1, s.staff.filter((m) => m.role === 'shiftLead').length), 1]],
+    ['staff', 'Beyond the aisles', 'Hire three different office and town roles.', (s) => [new Set(s.staff.filter((m) => OFFICE.includes(m.role)).map((m) => m.role)).size, 3]],
+    ['staff', 'Seasoned crew', 'Train five of your crew past level 20.', (s) => [s.staff.filter((m) => m.level > 20).length, 5]],
+  ],
   foundation: [
     ['foundation', 'First gift', 'Give to any cause.', (s) => [Math.min(1, n(c(s)?.town.donated)), 1]],
     ['foundation', 'A cause of your own', 'Grow one cause to level 3.', (s) => [Math.max(0, ...Object.values(c(s)?.town.causes ?? {})), 3]],

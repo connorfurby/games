@@ -2,9 +2,10 @@ import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import { JUDGES, JUDGE_BY_ID, LAWYERS, SUIT_BY_ID, SUIT_KINDS, YOUR_SUITS, type SuitKind } from '../../content/corp/legal'
 import { RIVAL_BY_ID, type RivalId } from '../../content/rivals'
-import { LAW } from '../balance'
+import { LAW, STAFF_POWER } from '../balance'
 import { log } from '../helpers'
 import type { GameState } from '../state'
+import { crewEffect } from '../staffPower'
 import { corpOf, cpick, crand, round2, salesRate } from './core'
 import { shockTicker } from './market'
 import { addGrudge, ceoPeek, rivalActive, spySuers, suers } from './rivalry'
@@ -64,7 +65,7 @@ export function trialOdds(s: GameState, suit: SuitState): number {
   let o = (kind?.odds ?? 0.5) + (LAWYERS[suit.lawyer]?.odds ?? 0) + (judge?.lean ?? 0)
   if (judge?.id === 'haddock' && (s.stores?.length ?? 1) > 10) o -= 0.05
   if (judge?.id === 'okoro') o += (LAWYERS[suit.lawyer]?.odds ?? 0) * 0.5
-  o += execPower(s, 'counsel') + upgradeEffect(s, 'in-house-counsel')
+  o += execPower(s, 'counsel') + upgradeEffect(s, 'in-house-counsel') + crewEffect(s, 'paralegal', STAFF_POWER.paralegalOdds)
   return Math.max(0.05, Math.min(0.92, o))
 }
 
@@ -96,8 +97,9 @@ export function settle(s: GameState, suitId: number) {
     s.cash = round2(s.cash + pay)
     log(s, `${byName(suit.by)} settled for ${cashLabel(pay)}.`, 'good')
   } else {
-    s.cash = round2(s.cash - pay)
-    log(s, `Settled “${suitKind(suit.kind)?.title}” for ${cashLabel(pay)}.`, 'info')
+    const cost = settleCost(s, suitId)
+    s.cash = round2(s.cash - cost)
+    log(s, `Settled “${suitKind(suit.kind)?.title}” for ${cashLabel(cost)}.`, 'info')
   }
   c.settled += 1
   close(s, suit)
@@ -105,7 +107,7 @@ export function settle(s: GameState, suitId: number) {
 
 export function settleCost(s: GameState, suitId: number) {
   const suit = corpOf(s).suits.find((x) => x.id === suitId)
-  return suit && !suit.yours ? round2(suit.claim * LAW.settleShare) : 0
+  return suit && !suit.yours ? round2(suit.claim * LAW.settleShare * (1 - crewEffect(s, 'paralegal', STAFF_POWER.paralegalSettle))) : 0
 }
 
 function lose(s: GameState, suit: SuitState, mul: number) {

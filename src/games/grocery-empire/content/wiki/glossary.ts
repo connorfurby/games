@@ -464,4 +464,21 @@ export const GLOSSARY: GlossEntry[] = [
     short: 'A tree of desks for the company and town. Each node appears once you use its system.',
     more: 'Prices follow your sales, and more ranks open each era.',
   },
+  {
+    id: 'shift-lead',
+    term: 'Shift Lead',
+    kind: 'people',
+    era: 1,
+    icon: 'staff',
+    short: 'A clerk you promote for a raise. Still unpacks, adds a floor seat, and lifts the floor crew by 4% (up to three leads).',
+  },
+  {
+    id: 'crew-roles',
+    term: 'Office and town crew',
+    kind: 'people',
+    era: 1,
+    icon: 'staff',
+    short: 'Greeters, buyers, community reps, trainers, bookkeepers, paralegals, HR, spokespeople and scouts take floor seats but work for the rest of the business.',
+    more: 'The Hire desk shows what one more of each would change, and the best pick.',
+  },
 ]

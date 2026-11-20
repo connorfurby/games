@@ -71,7 +71,7 @@ describe('team hub panels', () => {
     for (const label of ['Probe', 'Route', 'Beds', 'Taste', 'Wire', 'Agent', 'Treaty']) {
       expect(out).toContain(label)
     }
-    expect(out).toContain('sf-desk is-lit')
+    expect(out).toContain('cf-desk is-lit')
     expect(out).toContain('Annex')
   })
 

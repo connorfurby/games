@@ -32,6 +32,16 @@ export const ROLE_IDS = [
   'diplomat',
   'minutesClerk',
   'whip',
+  // Crew that reaches past the floor (floor seats, real reads in town, company and supply).
+  'greeter',
+  'buyer',
+  'communityRep',
+  'trainer',
+  'bookkeeper',
+  'paralegal',
+  'hrManager',
+  'spokesperson',
+  'franchiseScout',
 ] as const
 export type RoleId = (typeof ROLE_IDS)[number]
 
@@ -89,6 +99,8 @@ export interface RoleDef {
   perkPerLevel: string
   /** First era this role can be hired. The original floor has none. */
   era?: number
+  /** A screen that must be open first (the role works for that system). */
+  needsMenu?: string
 }
 
 export const ROLES: Record<RoleId, RoleDef> = {
@@ -149,11 +161,11 @@ export const ROLES: Record<RoleId, RoleDef> = {
   shiftLead: {
     id: 'shiftLead',
     name: 'Shift Lead',
-    blurb: 'Promoted from clerk. Opens another floor seat and keeps the shift honest.',
+    blurb: 'A clerk you promoted. Still unpacks, adds a floor seat, and lifts the whole floor crew a little (up to three leads).',
     hireBase: 80,
     hireGrowth: 1.35,
     wagePerMin: 0.85,
-    perkPerLevel: '+1 floor seat while on the clock',
+    perkPerLevel: '+5% unpack; +1 seat; +4% floor crew per lead',
     era: 1,
   },
   produceLead: {
@@ -405,6 +417,100 @@ export const ROLES: Record<RoleId, RoleDef> = {
     wagePerMin: 1.05e16,
     perkPerLevel: '+1 amend while on the clock',
     era: 11,
+  },
+  greeter: {
+    id: 'greeter',
+    name: 'Greeter',
+    blurb: 'Says hello at the door. Brings shoppers in and helps crowds settle in as regulars.',
+    hireBase: 60,
+    hireGrowth: 1.3,
+    wagePerMin: 0.6,
+    perkPerLevel: '+shoppers, faster crowd loyalty',
+    era: 1,
+  },
+  buyer: {
+    id: 'buyer',
+    name: 'Buyer',
+    blurb: 'Haggles with the wholesaler. Every crate costs a little less.',
+    hireBase: 90,
+    hireGrowth: 1.35,
+    wagePerMin: 0.8,
+    perkPerLevel: 'cheaper crates',
+    era: 1,
+  },
+  communityRep: {
+    id: 'communityRep',
+    name: 'Community Rep',
+    blurb: 'Shows up at every fair and bake sale. Gifts earn more goodwill, and goodwill fades slower.',
+    hireBase: 120,
+    hireGrowth: 1.35,
+    wagePerMin: 0.8,
+    perkPerLevel: 'more goodwill per gift',
+    era: 1,
+    needsMenu: 'foundation',
+  },
+  trainer: {
+    id: 'trainer',
+    name: 'Trainer',
+    blurb: 'Runs the break-room classes. The crew levels faster and can climb higher.',
+    hireBase: 400,
+    hireGrowth: 1.45,
+    wagePerMin: 1.6,
+    perkPerLevel: 'faster crew levels; +2 level cap each',
+    era: 2,
+  },
+  bookkeeper: {
+    id: 'bookkeeper',
+    name: 'Bookkeeper',
+    blurb: 'Keeps the payroll tidy and the bank happy. Lower wages, cheaper bonds.',
+    hireBase: 450,
+    hireGrowth: 1.45,
+    wagePerMin: 1.5,
+    perkPerLevel: 'lower wages and bond interest',
+    era: 2,
+  },
+  paralegal: {
+    id: 'paralegal',
+    name: 'Paralegal',
+    blurb: 'Files the papers on time. Better odds at trial, cheaper settlements.',
+    hireBase: 500,
+    hireGrowth: 1.45,
+    wagePerMin: 1.8,
+    perkPerLevel: 'better trial odds',
+    era: 2,
+    needsMenu: 'court',
+  },
+  hrManager: {
+    id: 'hrManager',
+    name: 'HR Manager',
+    blurb: 'Listens before it becomes a grievance. Higher morale, and the union asks less often.',
+    hireBase: 2400,
+    hireGrowth: 1.5,
+    wagePerMin: 4,
+    perkPerLevel: 'morale; calmer union',
+    era: 3,
+  },
+  spokesperson: {
+    id: 'spokesperson',
+    name: 'Spokesperson',
+    blurb: 'Talks to the press so you do not have to. Stories reach further and crises go better.',
+    hireBase: 2600,
+    hireGrowth: 1.5,
+    wagePerMin: 4.5,
+    perkPerLevel: 'press reach; crisis odds',
+    era: 3,
+    needsMenu: 'press',
+  },
+  franchiseScout: {
+    id: 'franchiseScout',
+    name: 'Franchise Scout',
+    blurb: 'Vets would-be franchisees. New franchises open better run and pay a bigger fee.',
+    hireBase: 90_000,
+    hireGrowth: 1.45,
+    wagePerMin: 130,
+    perkPerLevel: 'franchise quality and fee',
+    era: 4,
+    needsMenu: 'franchise',
   },
   whip: {
     id: 'whip',

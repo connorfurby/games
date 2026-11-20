@@ -13,9 +13,9 @@ import {
   type ShiftSlot,
 } from '../content/depth'
 import { ROLES, type RoleId } from '../content/staff'
-import { DEPTH } from './balance'
+import { DEPTH, STAFF_POWER } from './balance'
 import type { Check, Command } from './commands'
-import { unitCost } from './formulas'
+import { hireCost, unitCost } from './formulas'
 import { compact, log, round2 } from './helpers'
 import { syncDeptRoster } from './staffDept'
 import { invoiceDue, payInvoicesWhileCash, settleInvoice } from './systems/invoices'
@@ -217,12 +217,16 @@ export const depthHandlers: { [K in DepthCmd['type']]: DepthHandler<Extract<Dept
       if (!m) return no('No such employee.')
       if (cmd.toRole !== 'shiftLead') return no('Only clerk → Shift Lead for now.')
       if (m.role !== 'clerk') return no('Promote a clerk.')
+      if (m.level < STAFF_POWER.promoteLevel) return no(`${m.name} needs level ${STAFF_POWER.promoteLevel} first.`)
+      const cost = hireCost(s, 'shiftLead')
+      if (s.cash < cost) return no(`Need ${cashLabel(cost)} for the raise.`)
       return ok
     },
     run: (s, cmd) => {
       ensureDepth(s)
       const m = s.staff.find((x) => x.id === cmd.staffId)
       if (!m) return
+      s.cash -= hireCost(s, 'shiftLead')
       m.role = cmd.toRole as RoleId
       s.depth.promotions += 1
       log(s, `${m.name} promoted to ${ROLES[cmd.toRole as RoleId]?.name ?? cmd.toRole}.`, 'staff')

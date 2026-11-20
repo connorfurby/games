@@ -936,6 +936,42 @@ export const VENTURE_TRAFFIC = {
 
 export const STAFF_XP = { perSec: 1, perLevel: 60, trainingBonusPerLevel: 0.25 }
 
+/**
+ * How strong each crew role is. A role's strength is the sum of its members (level and
+ * trait included). Effects saturate: `cap × (1 − e^(−per × strength / cap))`, so the first
+ * hires matter most and nobody stacks a role forever.
+ */
+export const STAFF_POWER = {
+  /** Shift Leads lift the floor crew: +4% each, the first three count. */
+  leadBonus: 0.04,
+  leadMax: 3,
+  /** Promoting needs a clerk of at least this level. */
+  promoteLevel: 3,
+  /** Receivers, stockers, butchers and dairy clerks scale with strength, softly. */
+  receiverStrengthCap: 3.5,
+  stockerStrengthCap: 3.5,
+  freshStrengthCap: 2.2,
+  /** Trainers: +25% crew XP each, and +2 level cap each (up to +10). */
+  trainerXp: 0.25,
+  trainerCapEach: 2,
+  trainerCapMax: 10,
+  greeterDemand: { per: 0.03, cap: 0.15 },
+  greeterLoyalty: { per: 0.15, cap: 0.6 },
+  buyerCrate: { per: 0.03, cap: 0.15 },
+  repGoodwill: { per: 0.2, cap: 0.8 },
+  repFade: { per: 0.15, cap: 0.5 },
+  bookkeeperWage: { per: 0.04, cap: 0.18 },
+  bookkeeperBond: { per: 0.03, cap: 0.15 },
+  paralegalOdds: { per: 0.025, cap: 0.1 },
+  paralegalSettle: { per: 0.05, cap: 0.25 },
+  hrMorale: { per: 0.03, cap: 0.12 },
+  hrUnion: { per: 0.25, cap: 1 },
+  spokesReach: { per: 0.08, cap: 0.35 },
+  spokesCrisis: { per: 0.025, cap: 0.1 },
+  scoutQuality: { per: 6, cap: 20 },
+  scoutFee: { per: 0.1, cap: 0.4 },
+}
+
 export const ENDCAP = { base: 40, growth: 1.3, demandEach: 0.04, max: 10, refund: 0.5 }
 
 export const HISTORY = { everySec: 5, keep: 72 }

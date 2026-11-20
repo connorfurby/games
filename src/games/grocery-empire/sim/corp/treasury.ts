@@ -1,9 +1,10 @@
 import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
 import { POLICIES, POLICY_BY_ID } from '../../content/corp/legal'
-import { CREDIT, INSURE, WHOLESALE } from '../balance'
+import { CREDIT, INSURE, WHOLESALE, STAFF_POWER } from '../balance'
 import { log } from '../helpers'
 import type { GameState } from '../state'
+import { crewEffect } from '../staffPower'
 import { corpOf, round2, salesRate } from './core'
 import { causePerk } from './town'
 import { execPower } from './more'
@@ -27,7 +28,7 @@ function nudgeCredit(s: GameState, d: number) {
 /** Total interest over a bond's term at your score. */
 export function bondRate(s: GameState): number {
   const t = (corpOf(s).credit - CREDIT.min) / (CREDIT.max - CREDIT.min)
-  return (CREDIT.rateWorst + (CREDIT.rateBest - CREDIT.rateWorst) * t) * (1 - execPower(s, 'cfo')) * (1 - upgradeEffect(s, 'credit-desk'))
+  return (CREDIT.rateWorst + (CREDIT.rateBest - CREDIT.rateWorst) * t) * (1 - execPower(s, 'cfo')) * (1 - upgradeEffect(s, 'credit-desk')) * (1 - crewEffect(s, 'bookkeeper', STAFF_POWER.bookkeeperBond))
 }
 
 export function bondPrincipal(s: GameState, mins: number) {

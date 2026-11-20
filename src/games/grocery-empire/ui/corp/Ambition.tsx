@@ -1,3 +1,4 @@
+import './ledger.css'
 import { AMBITIONS } from '../../content/corp/ambitions'
 import { ambitionReward, currentAmbition } from '../../sim/corp/ambitions'
 import { useGame } from '../GameContext'
