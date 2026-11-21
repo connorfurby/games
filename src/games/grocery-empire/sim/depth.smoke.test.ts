@@ -436,6 +436,13 @@ describe('autopilot pieces', () => {
     s.depth.nextDockAt = 0
     tickAutoDock(s)
     expect(s.depth.dockCheckIns).toBe(DEPTH.dockAutoAfter + 1)
+    s.depth.dockCheckIns = DEPTH.dockCheckInNeed
+    s.depth.autoDock = true
+    s.depth.nextDockAt = 0
+    tickAutoDock(s)
+    expect(s.depth.dockCheckIns).toBe(DEPTH.dockCheckInNeed)
+    const { can } = await import('./commands')
+    expect(can(s, { type: 'dockCheckIn', aisle: 'cans' }).ok).toBe(false)
   })
 
   it('collect all empties every till in one command', async () => {

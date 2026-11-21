@@ -856,7 +856,7 @@ export const TUTORIALS: TutorialDef[] = [
         id: 'e2-depot-spot',
         coachId: 'land-depot',
         title: 'Build the depot',
-        body: 'Build the depot before your fifth store. It brings more shoppers to every store and opens catering and the ghost kitchen. Buy it on Land.',
+        body: 'The depot card is on Land, under your stores. Bank Read on Strategy, then buy it. It brings more shoppers to every store and opens catering and the ghost kitchen.',
         recovery: 'Without the depot, new stores cost more Attention to look after.',
         action: { type: 'buildDepot' },
         doneWhen: { kind: 'flag', key: 'depot' },

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { FRANCHISE, LAB } from '../balance'
+import { CRISES, CRISIS_BY_ID } from '../../content/corp/more'
+import { CRISIS, FRANCHISE, LAB } from '../balance'
 import { can, run } from '../commands'
+import { addBatch, sumQty } from '../helpers'
 import { demandBreakdown, lifeMul, unitCost } from '../formulas'
 import { createInitialState, type GameState } from '../state'
+import { crimeOf } from '../systems/crime'
 import { corpOf } from './core'
+import { answerCrisis, crisisPool, pickCrisis } from './more'
+import { corpWageMul } from './effects'
 import { tickCorp } from './tick'
 
 function world(era = 5): GameState {
@@ -101,5 +106,72 @@ describe('executives and crises', () => {
     tickCorp(s, 1)
     expect(corpOf(s).more.crisis).toBeNull()
     expect(s.brand).toBeLessThanOrEqual(brand)
+  })
+
+  it('deck is large, unique, and every era 1–12 has at least 15 legal cards', () => {
+    expect(CRISES.length).toBeGreaterThanOrEqual(200)
+    const ids = CRISES.map((c) => c.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const c of CRISES) {
+      expect(c.options).toHaveLength(3)
+      expect(CRISIS.kinds[c.kind]).toBeTruthy()
+    }
+    for (let era = 1; era <= 12; era++) {
+      const s = world(era)
+      if (era >= 5) corpOf(s).co.listed = true
+      expect(crisisPool(s).length).toBeGreaterThanOrEqual(15)
+    }
+    expect(CRISIS_BY_ID['rat-video']?.lastEra).toBe(3)
+  })
+
+  it('every ignore stays in the mild shopper-and-brand band', () => {
+    const ig = CRISIS.ignore
+    expect(ig.demand).toBeGreaterThanOrEqual(0.88)
+    expect(ig.demand).toBeLessThanOrEqual(0.92)
+    expect(ig.brand).toBeLessThan(0)
+    expect(ig.brand).toBeGreaterThanOrEqual(-0.03)
+  })
+
+  it('least-seen picker does not repeat an id until the rest of the legal deck has appeared', () => {
+    const s = world(2)
+    run(s, { type: 'buyOutlet', id: 'gazette' })
+    const pool = crisisPool(s)
+    expect(pool.length).toBeGreaterThan(10)
+    const seenIds: string[] = []
+    for (let i = 0; i < pool.length; i++) {
+      const def = pickCrisis(s)
+      expect(def).not.toBeNull()
+      seenIds.push(def!.id)
+      corpOf(s).more.seen[def!.id] = (corpOf(s).more.seen[def!.id] ?? 0) + 1
+    }
+    expect(new Set(seenIds).size).toBe(pool.length)
+  })
+
+  it('answering shelf / alley / payroll presets change stock, heat, or wages', () => {
+    const s = world(3)
+    s.categories.cans = true
+    s.brand = 0.5
+    s.backroom = []
+    s.shelf = []
+    addBatch(s.backroom, 'cans', 20, 0)
+
+    const brand0 = s.brand
+    const stock0 = sumQty(s.backroom)
+    corpOf(s).more.crisis = { id: 'spilled-milk-river', until: s.time + 60 }
+    answerCrisis(s, 0)
+    // Shelf always moves brand; with free room and stock on hand, quantity moves too.
+    expect(s.brand).not.toBe(brand0)
+    expect(sumQty(s.backroom) + sumQty(s.shelf)).not.toBe(stock0)
+
+    crimeOf(s).heat = 40
+    const heat0 = crimeOf(s).heat
+    corpOf(s).more.crisis = { id: 'price-tag-swap', until: s.time + 60 }
+    answerCrisis(s, 0)
+    expect(crimeOf(s).heat).not.toBe(heat0)
+
+    const wage0 = corpWageMul(s)
+    corpOf(s).more.crisis = { id: 'broken-scale', until: s.time + 60 }
+    answerCrisis(s, 0)
+    expect(corpWageMul(s)).not.toBe(wage0)
   })
 })

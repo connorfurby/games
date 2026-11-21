@@ -41,7 +41,11 @@ export interface DevStageDef {
 }
 
 function openMenus(s: GameState, ids: MenuId[]) {
-  for (const id of ids) s.menus[id] = true
+  for (const id of ids) {
+    s.menus[id] = true
+    s.revealedMenus[id] = true
+  }
+  s.pendingReveal = []
 }
 
 export function markTutorialsDone(s: GameState, upToEra: number) {
@@ -63,6 +67,7 @@ function base(seed = 42_424): GameState {
   s.paused = false
   s.offlineReceipt = null
   s.chapterQueue = []
+  s.pendingReveal = []
   s.ledger = []
   s.nextLedgerId = 1
   return s
@@ -448,5 +453,9 @@ export function buildDevStage(id: string): GameState | null {
 
 /** Open every department menu (debug). */
 export function unlockAllMenus(s: GameState) {
-  for (const id of MENU_IDS) s.menus[id] = true
+  for (const id of MENU_IDS) {
+    s.menus[id] = true
+    s.revealedMenus[id] = true
+  }
+  s.pendingReveal = []
 }

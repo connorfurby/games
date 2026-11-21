@@ -6,6 +6,7 @@ Use this as the “what’s left” list for the next agent. Check items off her
 
 ## After 40.0 (still open)
 
+- [ ] P3-11 remainder: Next Goal should point at the first new verb after an arrival (Stay here / Show me + rail wait shipped SAVE 46).
 - [ ] Human multi-hour playtest pass — bot ≠ feel. Especially charter Boutique/Co-op, Accept rebuild, two regulars, flyer deep/soft.
 - [ ] Watch seed flakiness near CI floors (Era 12 landed ~40.10 h — only ~6 min over the floor). Prefer seating/gap pads over softens.
 - [ ] Museum relic drip for 40.0 verbs (keep 25/wing; Oddities may stay 26).

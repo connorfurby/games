@@ -13,6 +13,7 @@ import {
 import { setCampaignGlance } from '@/shared/saveGlance'
 import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
 import { can as canCmd, run as runCmd, type Check, type Command } from './commands'
+import { settlePendingReveals } from './helpers'
 import { migrate } from './migrate'
 import { openUnpaused } from './pause'
 import { getActiveSaveId } from './saveKey'
@@ -292,7 +293,13 @@ export class GroceryEngine {
     const check = runCmd(this.state, cmd)
     // Accept rebuilds the whole run like Rebrand — an older spend snapshot must not resurrect it.
     if (check.ok && cmd.type === 'acceptEnding') clearUndo()
-    if (check.ok) this.bump()
+    // Memo / expand / door commands unlock menus mid-command — settle the arrival list once.
+    if (check.ok) settlePendingReveals(this.state)
+    if (check.ok) {
+      // Invalidate the ~1 Hz shell cache so chapter / arrival / coach overlays paint now.
+      notePanelAction()
+      this.bump()
+    }
     return check
   }
 
@@ -500,9 +507,12 @@ export function getPanelSnapshot(): EngineSnapshot {
   const eng = getGroceryEngine()
   const snap = eng.getSnapshot()
   const catchUp = eng.catchUp()
+  const s = snap.state
+  // Chapter / arrival / coach must invalidate the shell cache even when sim-time is still.
+  const arrivalKey = `ch:${s.chapterQueue[0] ?? ''}:pr:${s.pendingReveal?.length ?? 0}:tu:${s.tutorials.active?.id ?? ''}:${s.tutorials.active?.step ?? ''}`
   const key = catchUp
     ? `c:${Math.floor(catchUp.progress * 40)}:${Math.floor(catchUp.total)}`
-    : `t:${Math.floor(snap.state.time)}:a:${panelAction}`
+    : `t:${Math.floor(s.time)}:a:${panelAction}:${arrivalKey}`
   if (panelCache?.key === key) return panelCache.snap
   const next: EngineSnapshot = { v: snap.v, state: snap.state }
   panelCache = { key, snap: next }

@@ -1,5 +1,5 @@
 import { CRISIS_BY_ID } from '../../content/corp/more'
-import { CRISIS } from '../../sim/balance'
+import { CRISIS, CRISIS_KIND_LABEL } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { crisisCost, crisisOdds } from '../../sim/corp/more'
 import { useGame } from '../GameContext'
@@ -20,7 +20,9 @@ export function CrisisCard({ reducedMotion }: { reducedMotion: boolean }) {
         <span className="vz-life" aria-hidden>
           <i style={{ transform: `scaleX(${Math.min(1, left / CRISIS.waitSec)})` }} />
         </span>
-        <p className="vz-k">Crisis · {clock(left)} to respond</p>
+        <p className="vz-k">
+          Crisis · {CRISIS_KIND_LABEL[def.kind]} · {clock(left)} to respond
+        </p>
         <h2 id="cz-title" className="vz-who">
           {def.title}
         </h2>

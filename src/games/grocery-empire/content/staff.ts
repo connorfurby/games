@@ -554,3 +554,28 @@ export function traitForStaffId(id: number): StaffTraitId | undefined {
   const h = (Math.imul(Math.floor(id) | 0, 2654435761) >>> 0) % 8
   return h < TRAIT_ORDER.length ? TRAIT_ORDER[h] : undefined
 }
+
+/**
+ * Hire names. Length is coprime with the stride in `staffName`, so every name
+ * is used once before anyone is numbered. Ids 1–3 are Connor, Luke, Jonas.
+ */
+export const STAFF_NAMES = [
+  'Ana', 'Ben', 'Cleo', 'Dev', 'Esme', 'Femi', 'Gus', 'Connor',
+  'Ivo', 'Jun', 'Kit', 'Lou', 'Mo', 'Nia', 'Luke', 'Pia',
+  'Quin', 'Rae', 'Sol', 'Tam', 'Uma', 'Jonas', 'Wes', 'Xan',
+  'Yara', 'Zed', 'Hana', 'Oz', 'Vic', 'Ari', 'Bo', 'Cass',
+  'Dot', 'Eden', 'Finn', 'Gil', 'Ida', 'Jules', 'Kai', 'Lena',
+  'Mina', 'Nico', 'Otto', 'Priya', 'Rosa', 'Sam', 'Tess', 'Wren',
+  'Yuki', 'Amir', 'Bea', 'Cole', 'Dana', 'Eli', 'Fran', 'Gio',
+  'Hope', 'Iris', 'Jade', 'Kenji', 'Lila', 'Mateo', 'Noor', 'Omar',
+  'Petra', 'Remy', 'Sable', 'Theo', 'Val', 'Willa', 'Yael', 'Zora',
+  'Avery', 'Blake', 'Carmen', 'Drew', 'Ellis', 'Farah', 'Greta', 'Hasan',
+  'Indigo', 'Jo', 'Kei', 'Leif', 'Maren', 'Nadia', 'Orla', 'Pax',
+  'Rhea', 'Soren', 'Tove', 'Uri', 'Vesper', 'Winter', 'Ximena', 'Yosef',
+  'Ash', 'Nell', 'Hugo', 'Cora', 'Dex', 'Fern', 'Holt', 'Imani',
+  'Joss', 'Kira', 'Lars', 'Mae', 'Nils', 'Opal', 'Penn', 'Ruth',
+  'Seth', 'Thea', 'Vera', 'Walt', 'Yves', 'Zia', 'Ade', 'Bryn',
+  'Chi', 'Emil', 'Faye', 'Haru', 'Ines', 'Javi', 'Kofi', 'Luna',
+  'Moss', 'Nila', 'Oona', 'Pilar', 'Quill', 'Rio', 'Suki', 'Tamsin',
+  'Una', 'Veda', 'Wynn', 'Xiao', 'Yvette', 'Zeke', 'Anika', 'Bram',
+] as const

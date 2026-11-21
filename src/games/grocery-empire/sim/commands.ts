@@ -17,7 +17,7 @@ import { PROJECT_BY_ID } from '../content/projects'
 import { empireUnlocked } from '../content/empireRewards'
 import { PERK_BY_ID } from '../content/perks'
 import { ROLE_IDS, ROLES, isDeptRole, isHorizonRole, traitForStaffId, type RoleId } from '../content/staff'
-import { MENUS } from '../content/menus'
+import { MENUS, type MenuId } from '../content/menus'
 import { annexSeatBlock, floorHeadcount } from './staffAnnex'
 import { deptSeatBlock, syncDeptRoster } from './staffDept'
 import { postureFee } from './lateCost'
@@ -67,8 +67,11 @@ import {
 } from './formulas'
 import {
   addBatch,
+  acknowledgeArrival,
   advanceDialogue,
   advanceTutorialStep,
+  arrivalFocusMenu,
+  beginArrivalTour,
   beginTutorial,
   clamp,
   finishOpeningLegacy,
@@ -80,6 +83,7 @@ import {
   setEra,
   skipOpeningDialogue,
   sumQty,
+  TUTORIAL_CALM_SEC,
   unlockMenu, waitLabel } from './helpers'
 import { TUTORIAL_BY_ID } from '../content/tutorials'
 import { chance } from './rng'
@@ -119,7 +123,7 @@ import { collectVenture } from './systems/growth'
 import type { RebrandCarry } from './systems/prestige'
 import { hasAffordableMemo, planAffordableMemos } from './memoPlan'
 import { hasAffordableUpgrade, hasAffordableVenture, planAffordableUpgrades, planAffordableVentures } from './upgradePlan'
-import { unpackUnits, staffName } from './systems/people'
+import { unpackUnits, hireName } from './systems/people'
 import {
   applyBailout,
   applyEmptyShelfHelper,
@@ -314,6 +318,10 @@ export type Command =
   | { type: 'setPaused'; paused?: boolean }
   | { type: 'setSpeed'; speed: number }
   | { type: 'acceptChapter' }
+  /** Stay here on an arrival notice (no chapter): reveal tabs, calm, no tour. */
+  | { type: 'arriveStay' }
+  /** Show me: reveal tabs and start the one opener (chapter or hanging notice). */
+  | { type: 'arriveShow' }
   | { type: 'buyAnalyst' }
   | { type: 'buyArchive' }
   | { type: 'spendRep'; on: 'analyst' | 'archive' }
@@ -850,14 +858,14 @@ const coreHandlers = {
       s.staff.push({
         id,
         role,
-        name: staffName(id),
+        name: hireName(s, id),
         level: 1,
         xp: 0,
         hiredAt: s.time,
         ...(traitId ? { traitId } : {}),
       })
       s.stats.hires += 1
-      log(s, `Hired ${staffName(id)} as ${role}.`, 'staff')
+      log(s, `Hired ${s.staff[s.staff.length - 1]!.name} as ${role}.`, 'staff')
       if (isDeptRole(role)) syncDeptRoster(s)
     },
   },
@@ -1598,8 +1606,7 @@ const coreHandlers = {
         ensureFlagshipStore(s)
         unlockMenu(s, 'land')
         unlockMenu(s, 'strategy')
-        // One opener only — rest live in Coach catalog (player-pulled).
-        queueTutorial(s, 'e2-second-store')
+        // Opener is queued by setEra; sequels stay in the Coach catalog.
         log(s, 'Era 2 — Chain and capital. Attention splits; the book waits.', 'era')
       }
     },
@@ -1783,8 +1790,20 @@ const coreHandlers = {
     run: (s, cmd) => {
       const id = (cmd as Extract<Command, { type: 'noteMenu' }>).id
       if (!isMenuId(id)) return
-      s.lastMenu = id
+      const menu = id as MenuId
+      s.lastMenu = menu
       s.menuStamp = (s.menuStamp ?? 0) + 1
+      // Opening a pending room yourself is Stay here for that arrival.
+      if ((s.pendingReveal?.length ?? 0) > 0 && s.chapterQueue.length === 0) {
+        if (s.pendingReveal.includes(menu)) {
+          acknowledgeArrival(s)
+          s.tutorials.calmUntil = s.time + TUTORIAL_CALM_SEC
+        } else if (s.revealedMenus) {
+          s.revealedMenus[menu] = true
+        }
+      } else if (s.revealedMenus && s.menus[menu]) {
+        s.revealedMenus[menu] = true
+      }
     },
   },
   doTutorialForMe: {
@@ -1820,6 +1839,41 @@ const coreHandlers = {
       const era = s.chapterQueue.shift()
       if (era != null) {
         log(s, `Chapter ${era} accepted. The aisle keeps its new name.`, 'story')
+      }
+      acknowledgeArrival(s)
+      s.tutorials.calmUntil = s.time + TUTORIAL_CALM_SEC
+    },
+  },
+  arriveStay: {
+    can: (s) =>
+      (s.pendingReveal?.length ?? 0) > 0 && s.chapterQueue.length === 0
+        ? ok
+        : no('Nothing new waiting.'),
+    run: (s) => {
+      acknowledgeArrival(s)
+      s.tutorials.calmUntil = s.time + TUTORIAL_CALM_SEC
+      log(s, 'New rooms are on the rail whenever you want them.', 'story')
+    },
+  },
+  arriveShow: {
+    can: (s) => {
+      if (s.chapterQueue.length > 0) return ok
+      if ((s.pendingReveal?.length ?? 0) > 0) return ok
+      return no('Nothing new waiting.')
+    },
+    run: (s) => {
+      if (s.chapterQueue.length > 0) {
+        const era = s.chapterQueue.shift()
+        if (era != null) log(s, `Chapter ${era} accepted. The aisle keeps its new name.`, 'story')
+      }
+      const focus = arrivalFocusMenu(s)
+      acknowledgeArrival(s)
+      s.tutorials.calmUntil = 0
+      beginArrivalTour(s)
+      if (focus && s.menus[focus]) {
+        s.lastMenu = focus
+        s.menuStamp = (s.menuStamp ?? 0) + 1
+        if (s.revealedMenus) s.revealedMenus[focus] = true
       }
     },
   },
@@ -1995,6 +2049,8 @@ const MAX_AUTO_CRATES = 200
 
 /**
  * Auto-restock tick — fills backroom room at the live wholesale price.
+ * Each crate goes to the unlocked aisle furthest under its restock share
+ * (shelf + back + inbound), so a wall of cans does not take the spare truck.
  * Ignores legacy maxCost / minUnits (kept on the save for migrate). Restock Smarts
  * no longer waits for a dip; the rank stays wired for Hands Off.
  */
@@ -2014,57 +2070,48 @@ export function tickAutoRestock(s: GameState) {
   if (cratesLeft < minCrates) return
 
   const targets = restockTargets(s)
-  const stockTotal = Math.max(1, sumQty(s.backroom) + pending)
-  const inboundByCat: Partial<Record<CategoryId, number>> = {}
+  const aisles = CATEGORY_IDS.filter((c) => (targets[c] ?? 0) > 0)
+  if (!aisles.length && s.categories[s.orderCat]) aisles.push(s.orderCat)
+  if (!aisles.length) return
+
+  // Shelf + back + inbound. A wall of cans must not keep winning the spare crate.
+  const have: Partial<Record<CategoryId, number>> = {}
+  for (const c of aisles) have[c] = sumQty(s.backroom, c) + sumQty(s.shelf, c)
   for (const o of s.orders ?? []) {
-    inboundByCat[o.cat] = (inboundByCat[o.cat] ?? 0) + o.qty
+    if (have[o.cat] != null) have[o.cat] = (have[o.cat] ?? 0) + o.qty
   }
-  const ranked: { cat: CategoryId; gap: number; weight: number }[] = []
-  for (const c of CATEGORY_IDS) {
-    const weight = targets[c]
-    if (weight == null) continue
-    const have = sumQty(s.backroom, c) + (inboundByCat[c] ?? 0)
-    ranked.push({ cat: c, gap: weight - have / stockTotal, weight })
-  }
-  ranked.sort((a, b) => b.gap - a.gap)
-  if (!ranked.length && s.categories[s.orderCat]) {
-    ranked.push({ cat: s.orderCat, gap: 1, weight: 1 })
-  }
-  if (!ranked.length) return
 
-  // Split crates by mix weight; emptiest aisle (first) gets rounding leftovers.
-  const plan: { cat: CategoryId; crates: number }[] = ranked.map((r) => ({ cat: r.cat, crates: 0 }))
-  let used = 0
-  for (let i = 0; i < plan.length; i++) {
-    const w = ranked[i]!.weight
-    const n = i === plan.length - 1 ? cratesLeft - used : Math.floor(cratesLeft * w)
-    plan[i]!.crates = Math.max(0, n)
-    used += plan[i]!.crates
-  }
-  if (used < cratesLeft) plan[0]!.crates += cratesLeft - used
-
-  // Supplier B needs a legal minimum — fold undersized aisle shares into the emptiest.
-  if (minCrates > 1) {
-    for (let i = 1; i < plan.length; i++) {
-      if (plan[i]!.crates > 0 && plan[i]!.crates < minCrates) {
-        plan[0]!.crates += plan[i]!.crates
-        plan[i]!.crates = 0
+  const plan = new Map<CategoryId, number>()
+  const step = minCrates
+  while (cratesLeft >= step) {
+    const total = aisles.reduce((n, c) => n + (have[c] ?? 0), 0) + step * unitsEach
+    let best: CategoryId | null = null
+    let bestDef = -Infinity
+    for (const c of aisles) {
+      const def = (targets[c] ?? 0) * total - (have[c] ?? 0)
+      if (def > bestDef) {
+        bestDef = def
+        best = c
       }
     }
+    if (!best) break
+    plan.set(best, (plan.get(best) ?? 0) + step)
+    have[best] = (have[best] ?? 0) + step * unitsEach
+    cratesLeft -= step
   }
 
-  for (const row of plan) {
-    if (row.crates < minCrates) continue
-    const cmd = { type: 'buyWholesale' as const, cat: row.cat, crates: row.crates }
+  for (const [cat, crates] of plan) {
+    if (crates < minCrates) continue
+    const cmd = { type: 'buyWholesale' as const, cat, crates }
     if (can(s, cmd).ok) {
       run(s, cmd)
       continue
     }
-    // Invoice book may be full or aisle locked — try min-crate bites, then stop.
-    let left = row.crates
+    // Invoice book may be full or the aisle locked — try bites, then the next aisle.
+    let left = crates
     while (left >= minCrates) {
-      const bite = { type: 'buyWholesale' as const, cat: row.cat, crates: minCrates }
-      if (!can(s, bite).ok) return
+      const bite = { type: 'buyWholesale' as const, cat, crates: minCrates }
+      if (!can(s, bite).ok) break
       run(s, bite)
       left -= minCrates
     }

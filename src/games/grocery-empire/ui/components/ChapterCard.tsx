@@ -3,12 +3,15 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { plateSrc, type PlateId, type SpeakerId } from '../../art/cast'
 import { sfx } from '@/shared/audio'
+import { MENUS } from '../../content/menus'
 import { CHAPTERS } from '../chapters'
 import { useGame } from '../GameContext'
 import { clock, money, qty } from '../format'
 import { StoreScene } from '../scene/StoreScene'
 import { storeDisplayName } from '../../sim/state'
+import { arrivalFocusMenu } from '../../sim/helpers'
 import { Btn } from './Btn'
+import { pendingArrivalRooms } from './ArrivalNotice'
 import { SpeakerChrome } from './SpeakerChrome'
 
 const FALLBACK = {
@@ -42,7 +45,8 @@ export function ChapterCard({
   const beat = beats[Math.min(beatIdx, beats.length - 1)]!
   const last = beatIdx >= beats.length - 1
   const plate = plateSrc(def.plate)
-  const { state: s, numberFormat } = useGame()
+  const { state: s, numberFormat, dispatch, setActiveMenu } = useGame()
+  const rooms = pendingArrivalRooms(s.pendingReveal ?? [])
   // The era sting: once, when the chapter opens (silent unless sound is on).
   useEffect(() => {
     sfx.era()
@@ -51,6 +55,13 @@ export function ChapterCard({
   const next = () => {
     if (last) onAccept()
     else setBeatIdx((n) => n + 1)
+  }
+
+  const onStay = () => onAccept()
+  const onShow = () => {
+    const focus = arrivalFocusMenu(s) ?? rooms[0]
+    dispatch({ type: 'arriveShow' })
+    if (focus) setActiveMenu(focus)
   }
 
   return (
@@ -110,23 +121,50 @@ export function ChapterCard({
                 </div>
               ) : null}
             </dl>
-            <ul className="ge-chapter__recap">
-              {def.lines.slice(0, 3).map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+            {rooms.length > 0 ? (
+              <div className="ge-chapter__opened">
+                <p className="ge-chapter__opened-label">Just opened</p>
+                <ul className="ge-chapter__opened-list">
+                  {rooms.slice(0, 8).map((id) => (
+                    <li key={id}>
+                      <strong>{MENUS[id].name}</strong>
+                      <span>{MENUS[id].purpose}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <ul className="ge-chapter__recap">
+                {def.lines.slice(0, 3).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            )}
             <p className="ge-chapter__guide">
               <Link to="/guide/grocery-empire">Open strategy guide</Link>
             </p>
           </>
         ) : null}
         <div className="ge-chip-row">
-          <Btn tone="ghost" onClick={onAccept}>
-            Skip chapter
-          </Btn>
-          <Btn tone="primary" onClick={next}>
-            {last ? 'Continue the story' : 'Next'}
-          </Btn>
+          {last ? (
+            <>
+              <Btn tone="ghost" onClick={onStay}>
+                Stay here
+              </Btn>
+              <Btn tone="primary" onClick={onShow}>
+                Show me
+              </Btn>
+            </>
+          ) : (
+            <>
+              <Btn tone="ghost" onClick={onAccept}>
+                Skip chapter
+              </Btn>
+              <Btn tone="primary" onClick={next}>
+                Next
+              </Btn>
+            </>
+          )}
         </div>
       </motion.div>
     </div>

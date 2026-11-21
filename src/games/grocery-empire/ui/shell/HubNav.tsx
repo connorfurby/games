@@ -63,12 +63,14 @@ export function HubNav({
   // Coach tours spotlight hub buttons by id, so keep the whole rail visible during a tour.
   const collapse = phone && !state.tutorials.active
 
-  const unlocked = (h: HubDef): MenuId[] => h.menus.filter((id) => !!state.menus[id])
+  // Rail waits on revealedMenus so an era dump does not reflow under the chapter card.
+  const shown = (id: MenuId) => !!(state.revealedMenus?.[id] ?? state.menus[id])
+  const unlocked = (h: HubDef): MenuId[] => h.menus.filter((id) => shown(id))
 
   // Cheap readiness checks, once per render, only for hubs the player has open.
   const readyHubs = new Set<HubId>()
-  if (HUB_BY_ID.empire.menus.some((m) => state.menus[m]) && empireReady(state)) readyHubs.add('empire')
-  if (HUB_BY_ID.worlds.menus.some((m) => state.menus[m]) && worldsReady(state)) readyHubs.add('worlds')
+  if (HUB_BY_ID.empire.menus.some((m) => shown(m)) && empireReady(state)) readyHubs.add('empire')
+  if (HUB_BY_ID.worlds.menus.some((m) => shown(m)) && worldsReady(state)) readyHubs.add('worlds')
 
   const companyNeeds = companyAttention(state)
   const townNeeds = townAttention(state)

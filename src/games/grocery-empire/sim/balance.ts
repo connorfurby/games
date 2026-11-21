@@ -5,7 +5,7 @@ export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
 export const AUTOSAVE_MS = 45_000
-export const SAVE_VERSION = 45
+export const SAVE_VERSION = 46
 
 /** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
 export const PUZZLE_SLOW = 0.72
@@ -654,11 +654,78 @@ export const EXEC = {
   incidentPerMin: 0.01,
 }
 
+/** Shared crisis outcome magnitudes. Cards name a kind; they do not invent their own numbers. */
+export type CrisisOutcome = {
+  demand?: number
+  wages?: number
+  ventures?: number
+  /** Duration for demand / wages / ventures boosts. */
+  sec?: number
+  brand?: number
+  /** Seconds of current sales added (or taken) from cash. */
+  cashSec?: number
+  /** Heat delta for the back alley. */
+  heat?: number
+  /** Fraction of free backroom (positive) or of current stock (negative). Never a full wipe. */
+  stockShare?: number
+  /** Share-price walk multiplier. */
+  walk?: number
+}
+
+export type CrisisKind = 'press' | 'cash' | 'shelf' | 'payroll' | 'side' | 'alley' | 'spectacle' | 'ticker'
+
+export const CRISIS_KIND_LABEL: Record<CrisisKind, string> = {
+  press: 'Press',
+  cash: 'Cash',
+  shelf: 'Shelf',
+  payroll: 'Payroll',
+  side: 'Side door',
+  alley: 'Alley',
+  spectacle: 'Spectacle',
+  ticker: 'Ticker',
+}
+
 export const CRISIS = {
   /** Crises only find a company in the public eye (listed, owned, owning the press or execs). */
   gapMin: 600,
   gapMax: 1100,
   waitSec: 120,
+  /** Mild walk-away — bots never answer, so pacing only feels this band. */
+  ignore: { demand: 0.9, sec: 240, brand: -0.02 } satisfies CrisisOutcome,
+  kinds: {
+    press: {
+      win: { demand: 1.06, sec: 240, brand: 0.015 } satisfies CrisisOutcome,
+      lose: { demand: 0.88, sec: 240, brand: -0.025 } satisfies CrisisOutcome,
+    },
+    cash: {
+      win: { cashSec: 45, brand: 0.01 } satisfies CrisisOutcome,
+      lose: { cashSec: -60, brand: -0.02 } satisfies CrisisOutcome,
+    },
+    shelf: {
+      win: { stockShare: 0.12, brand: 0.005 } satisfies CrisisOutcome,
+      lose: { stockShare: -0.15, brand: -0.015 } satisfies CrisisOutcome,
+    },
+    payroll: {
+      win: { wages: 0.94, sec: 240, brand: 0.01 } satisfies CrisisOutcome,
+      lose: { wages: 1.08, sec: 240, brand: -0.015 } satisfies CrisisOutcome,
+    },
+    side: {
+      win: { ventures: 1.12, sec: 240, brand: 0.01 } satisfies CrisisOutcome,
+      lose: { ventures: 0.88, sec: 240, brand: -0.02 } satisfies CrisisOutcome,
+    },
+    alley: {
+      win: { heat: -15, brand: 0.005 } satisfies CrisisOutcome,
+      lose: { heat: 20, brand: -0.02 } satisfies CrisisOutcome,
+    },
+    spectacle: {
+      win: { demand: 1.15, sec: 150, brand: 0.02 } satisfies CrisisOutcome,
+      lose: { demand: 0.82, sec: 300, brand: -0.04 } satisfies CrisisOutcome,
+    },
+    ticker: {
+      win: { walk: 1.04, brand: 0.01 } satisfies CrisisOutcome,
+      lose: { walk: 0.92, brand: -0.025 } satisfies CrisisOutcome,
+    },
+  },
 }
 
 /** Your company: valuation, listing, quarters, owners and the board. */

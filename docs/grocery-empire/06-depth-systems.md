@@ -61,7 +61,7 @@ One hard gate per era (counts + cooldowns + ETAs). Constants in `DEPTH` / `HORIZ
 
 | Era | Verb | Gate |
 | --- | --- | --- |
-| 0–1 | Layaway slips (8 at a 90s gap — finishes before baskets; after that matching visits auto-serve) / dock check-in (first 3 choose aisle, then receiver + Autopilot finish 28) | Era 1 / side yard |
+| 0–1 | Layaway slips (8 at a 90s gap — finishes before baskets; after that matching visits auto-serve) / dock check-in (first 3 choose aisle, then receiver + Autopilot finish 28; the desk and the free crates stop once the count is in) | Era 1 / side yard |
 | 2–3 | Flyer band lock / hot-trait walks · Chain Patrol slows drift | Cold permit |
 | 4–6 | Exam holds / berth turnarounds / ration ledger stamps | Berth / Era 6 / Continue |
 | 7–9 | Climate neighbors (matching climate + shelf pull) / stop settlements / yield hauls | Era 8–10 |
@@ -147,3 +147,7 @@ Public 1–5 rating. Soft-caps demand; blocks memos below floor; cold permit nee
 | Drift / Keel / Verdant / Static / Concord / Ration | World SKU lock, bay theft, trait undercut, symbol jam, hearings, list line |
 
 Keep price war / buyout; add loop pressure, don’t only clone stores.
+
+## Company crises
+
+Public-eye corner cards (`content/corp/crises/`, `sim/corp/more.ts`). ~240 unique events across eras 1–12 with `era` / `lastEra` windows. Eight kinds share outcome presets in `CRISIS.kinds` (shoppers, cash, stock, wages, side tills, Heat, spectacle spikes, share walk). `corp.more.seen` drives least-seen picks; ticker kinds need a listed company. Ignore uses `CRISIS.ignore` (mild) so pacing bots stay green.

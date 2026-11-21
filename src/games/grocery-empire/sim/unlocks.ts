@@ -12,6 +12,7 @@ import {
   queueDialogue,
   queueTutorial,
   setEra,
+  settlePendingReveals,
   unlockMenu,
 } from './helpers'
 import type { GameState } from './state'
@@ -131,47 +132,34 @@ function tickTutorialQueue(s: GameState) {
   if (s.era >= 1 && s.stats.weatherDays >= 1) queueTutorial(s, 'weather')
   if (s.era >= 2 && s.events?.rival?.kind) queueTutorial(s, 'e2-rival')
 
-  // Era 2 tours
+  // Era 2+ feature tours (not door openers — those enqueue once from setEra).
   if (s.era >= 2) {
-    queueTutorial(s, 'e2-second-store')
-    queueTutorial(s, 'e2-policies')
     if (s.stores.length >= 2 || s.memos['depot-permit']) queueTutorial(s, 'e2-depot')
     if (s.memos['articles-of-inc'] || s.lifetimeRevenue >= 20_000) queueTutorial(s, 'e2-incorporate')
     if (s.invest.unlocked || s.memos['trading-desk']) queueTutorial(s, 'e2-invest')
     if (s.menus.strategy || s.memos['doctrine-room']) queueTutorial(s, 'e2-tournament')
     if (s.incorporated) queueTutorial(s, 'e2-board')
-    queueTutorial(s, 'e2-expansions')
     if (s.depot || s.memos['catering-license']) queueTutorial(s, 'e2-ventures')
     if (s.depot && s.read >= 10) queueTutorial(s, 'e2-autonomous')
+    // Policies / expansions: Coach catalog only — never auto-pile on the era door.
   }
 
-  // Eras 3–6
-  if (s.menus.cold || s.memos['cold-plant-permit'] || s.era >= 3) queueTutorial(s, 'cold')
+  // Eras 3–6 feature tours. Door openers (cold / logistics / charter / endings) come from setEra.
   if ((s.cold.tanks ?? 0) >= 1 || s.memos['tank-farm']) queueTutorial(s, 'tanks')
   if (s.cold.momentumOn || s.memos.momentum) queueTutorial(s, 'momentum')
   if (s.menus.politics || s.memos['lobby-office']) queueTutorial(s, 'politics')
   if (s.cold.yieldLeft <= 0 || s.memos['leave-region'] || s.politics.leftRegion) {
     queueTutorial(s, 'leave-region')
   }
-  if (s.menus.logistics || s.era >= 4 || s.politics.leftRegion) queueTutorial(s, 'logistics')
   if (s.memos['franchise-kit'] || (s.fleet.franchises ?? 0) > 0 || s.era >= 4) {
     queueTutorial(s, 'franchise')
   }
-  if (s.menus.fleet || s.fleet.launched || s.memos['barge-berth']) queueTutorial(s, 'charter')
   if (s.fleet.guardianUsed || s.memos['guardian-shell'] || (s.fleet.warOn && s.fleet.barges <= 2)) {
     queueTutorial(s, 'guardian')
   }
   if (s.fleet.warOn || s.memos['off-brand-war']) queueTutorial(s, 'drift-war')
   if (s.era >= 3 || s.memos['private-label-works']) queueTutorial(s, 'venture-late')
-  if (s.era >= 6 || s.endingChoice || s.memos['universal-ration']) queueTutorial(s, 'endings')
-
-  // One opener per Worlds era — sequels stay in the Coach catalog.
-  if (s.era >= 7 || s.menus.planets) queueTutorial(s, 'hz-worlds')
-  if (s.era >= 8 || s.menus.exchange) queueTutorial(s, 'hz-exchange')
-  if (s.era >= 9 || s.menus.cultivars) queueTutorial(s, 'hz-greenhouse')
-  if (s.era >= 10 || s.menus.signal) queueTutorial(s, 'hz-phrase')
-  if (s.era >= 11 || s.menus.charter) queueTutorial(s, 'hz-clauses')
-  if (s.era >= 12 || s.menus.lastaisle) queueTutorial(s, 'hz-list')
+  // Door openers (cold / logistics / charter / endings / Worlds) enqueue once from setEra.
 }
 
 function tickActiveTutorial(s: GameState) {
@@ -199,6 +187,9 @@ function tickActiveTutorial(s: GameState) {
 
 function promoteTutorial(s: GameState) {
   if (s.tutorials.active || s.tutorials.queue.length === 0) return
+  // Hold the coach under a chapter card or an unacknowledged arrival dump.
+  if (s.chapterQueue.length > 0) return
+  if ((s.pendingReveal?.length ?? 0) > 0) return
   if (s.time < (s.tutorials.calmUntil ?? 0)) return
   while (s.tutorials.queue.length > 0) {
     const id = s.tutorials.queue.shift()!
@@ -290,6 +281,7 @@ export function tickUnlocks(s: GameState, dt: number) {
   s.stats.playSec += 1
 
   tickMenus(s)
+  settlePendingReveals(s)
   tickDialogue(s)
   tickTutorials(s)
   tickMemoSeen(s)

@@ -16,6 +16,8 @@ Unlocked mostly by memos. Facings in `content/depth/facings.ts`. Planet SKUs (Wo
 
 Traits: quick / dreamy / frugal / picky (±5%).
 
+Hire names: `STAFF_NAMES` in `content/staff.ts` (144). `hireName` gives Connor, Luke, and Jonas to the next open hires while those names are off the clock, then walks the list. A number is appended only after every name is in use.
+
 ## Upgrades — `content/upgrades/`
 
 ~470 nodes across trees (Floor, Supply, Brand, People, Automation, Capital, Orbital/space, Lab, Fresh, Logistics, Pantry, Exchange, Cultivar, Signal…). Bands Counter → Institution gated by Empire. Verbs must be read via `upgradeEffect`. `wired.test.ts` enforces wiring.
@@ -61,6 +63,8 @@ Storefront, Storage, Cold, Production, Transit, Civic, **Signage**. Every tier's
 ## Company and Town hubs (2026-11-19)
 
 Company: Boardroom, Executives, Stock Market, Treasury, Courthouse, Inventions, Property, Licensing (ids `market`, `lab`, `franchise`). Town: Customers, Foundation, City Hall, Union Hall, Press. Content: `content/corp/{tickers,owners,ceos,legal,town,more}.ts`. Balance: `CORP`, `CO`, `RIVALRY`, `LAW`, `CREDIT`, `INSURE`, `TOWN`, `LAB`, `PROPERTY`, `FRANCHISE`, `EXEC`, `CRISIS` in `balance.ts`.
+
+**Crises** (`content/corp/crises/`, ~240 cards, eras 1–12): eight kinds (Press, Cash, Shelf, Payroll, Side door, Alley, Spectacle, Ticker) with shared outcome presets in `CRISIS.kinds`. Era windows (`era` / `lastEra`); least-seen picker in `sim/corp/more.ts`; the original viral rat (`rat-video`) retires after Era 3. Ticker cards only when listed. Ignore stays mild (bots never answer).
 
 Integration: screens open on `CORP_OPENS` (`sim/corp/tick.ts`). Each screen has three ambitions (`content/corp/ambitions.ts`), a Company-tree node (`content/upgrades/company.ts`) and most have a memo (`content/corp/memos.ts`); all appear only after the player uses that system.
 

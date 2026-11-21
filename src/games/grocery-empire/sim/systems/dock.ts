@@ -5,10 +5,16 @@ import { crateSize } from '../formulas'
 import { addBatch, log, waitLabel } from '../helpers'
 import type { GameState } from '../state'
 
+/** The side-yard count is in. Further check-ins do not gate anything. */
+export function dockCheckInDone(s: GameState): boolean {
+  return (s.depth?.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed
+}
+
 /** Why a dock check-in can't happen right now (null when it can). */
 export function dockCheckInBlock(s: GameState): string | null {
   if (!s.depth) return 'Dock check-in opens in Era 1.'
   if (s.era < 1) return 'Dock check-in opens in Era 1.'
+  if (dockCheckInDone(s)) return 'Side-yard check-ins are done.'
   const onBoard = DEPTH.shiftSlots.some((slot) =>
     (s.depth.shifts?.[slot] ?? []).some((id) => s.staff.find((x) => x.id === id)?.role === 'receiver'),
   )
@@ -33,6 +39,9 @@ export function runDockCheckIn(s: GameState, aisle: CategoryId, short: boolean, 
       'Your receiver has the routine down: trucks now check in on their own. Turn it off in Menu → Autopilot if you want every truck by hand.',
       'good',
     )
+  }
+  if (s.depth.dockCheckIns === DEPTH.dockCheckInNeed) {
+    log(s, 'Side-yard check-ins are done. The dock desk closes — order from the wholesaler.', 'good')
   }
   if (!quiet) {
     log(
@@ -60,8 +69,8 @@ export function lowestStockAisle(s: GameState): CategoryId | null {
  */
 export function tickAutoDock(s: GameState) {
   if (s.depth?.autoDock === false) return
+  if (dockCheckInDone(s)) return
   if ((s.depth.dockCheckIns ?? 0) < DEPTH.dockAutoAfter) return
-  if ((s.depth.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed) return
   if (dockCheckInBlock(s)) return
   const aisle = lowestStockAisle(s)
   if (aisle) runDockCheckIn(s, aisle, false, true)

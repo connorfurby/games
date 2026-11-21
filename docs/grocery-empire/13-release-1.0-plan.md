@@ -248,7 +248,7 @@ Sizes: **S** ≤ ½ day, **M** 1–2 days, **L** 3–5 days (agent-days). Each t
 | P3-08 | **Blocked verbs** always show reason + link to the unblocking room (extend `FailReason`). Audit every `can()` reason string for plain language. | M |
 | P3-09 | **Number formatting**: one helper per context (HUD short, tray medium, Books full); rates as `/s` or `/min` by magnitude; never `0.00/s` — show "idle". | S |
 | P3-10 | **Late-game scale framing**: flagship panels in Era 4+ show "Your flagship · the network copies ×N" so small store numbers next to Qi cash read as intended. | S |
-| P3-11 | **Era transitions**: chapter card lists what just opened (departments, verbs) with "Show me" buttons; Next Goal points at the first new verb. | M |
+| P3-11 | **Era transitions**: ~~chapter card lists what just opened (departments) with Stay here / Show me; hanging notice for mid-run dumps; rail waits on `revealedMenus` (SAVE 46).~~ Done 2026-11-20. Next Goal → first new verb still open. | M |
 
 ### Phase 4 — Per-screen pass (G1–G4) · ~8 days
 

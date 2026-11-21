@@ -63,7 +63,7 @@ export function AutopilotPanel({ onOpenMenu }: { onOpenMenu: (m: MenuId) => void
     rows.push({
       id: 'restock',
       title: 'Restocking',
-      what: 'Fills the backroom at today’s price, emptiest aisle first.',
+      what: 'Fills the backroom toward your restock mix. A wall of one aisle does not keep getting the truck.',
       on: hasClip && s.autoRestock.enabled,
       control: hasClip ? (
         <Toggle checked={s.autoRestock.enabled} onChange={(on) => dispatch({ type: 'setAutoRestock', enabled: on })}>
@@ -74,29 +74,31 @@ export function AutopilotPanel({ onOpenMenu }: { onOpenMenu: (m: MenuId) => void
       go: hasClip ? goto('suppliers', 'Open Suppliers') : { label: 'Memos', run: () => requestInbox('memos') },
     })
 
-    // 4. Dock check-ins
+    // 4. Dock check-ins — only while the side-yard count is still open.
     const done = s.depth.dockCheckIns ?? 0
-    const earned = done >= DEPTH.dockAutoAfter
-    rows.push({
-      id: 'dock',
-      title: 'Dock check-ins',
-      what: 'Your receiver checks each truck in to the aisle with the least stock.',
-      on: earned && !!s.depth.autoDock,
-      control: earned ? (
-        <Toggle checked={!!s.depth.autoDock} onChange={(on) => dispatch({ type: 'setAutoDock', on })}>
-          Check trucks in automatically
-        </Toggle>
-      ) : undefined,
-      earn: earned
-        ? undefined
-        : `Choose the aisle for ${DEPTH.dockAutoAfter} trucks first (${done} of ${DEPTH.dockAutoAfter}).`,
-      go: earned ? undefined : goto('suppliers', 'Suppliers'),
-      extra: earned ? null : (
-        <span className="ap-bar" aria-hidden>
-          <i style={{ width: `${(done / DEPTH.dockAutoAfter) * 100}%` }} />
-        </span>
-      ),
-    })
+    if (done < DEPTH.dockCheckInNeed) {
+      const earned = done >= DEPTH.dockAutoAfter
+      rows.push({
+        id: 'dock',
+        title: 'Dock check-ins',
+        what: 'Your receiver checks each truck in to the aisle with the least stock, until the side yard count is in.',
+        on: earned && !!s.depth.autoDock,
+        control: earned ? (
+          <Toggle checked={!!s.depth.autoDock} onChange={(on) => dispatch({ type: 'setAutoDock', on })}>
+            Check trucks in automatically
+          </Toggle>
+        ) : undefined,
+        earn: earned
+          ? undefined
+          : `Choose the aisle for ${DEPTH.dockAutoAfter} trucks first (${done} of ${DEPTH.dockAutoAfter}).`,
+        go: earned ? undefined : goto('suppliers', 'Suppliers'),
+        extra: earned ? null : (
+          <span className="ap-bar" aria-hidden>
+            <i style={{ width: `${(done / DEPTH.dockAutoAfter) * 100}%` }} />
+          </span>
+        ),
+      })
+    }
   }
 
   // 5. Cooler log

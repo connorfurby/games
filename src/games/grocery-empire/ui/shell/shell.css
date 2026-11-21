@@ -1447,6 +1447,89 @@
   .g2-hud .g2-alert--hang.is-danger {
     background-image: linear-gradient(color-mix(in srgb, var(--ge-danger) 18%, transparent), color-mix(in srgb, var(--ge-danger) 18%, transparent));
   }
+
+  /* Arrival notice: hangs like the alert tab but can list several new rooms. */
+  .g2-hud .g2-arrival {
+    position: absolute;
+    top: calc(100% + 1px);
+    right: var(--s-3);
+    z-index: 3;
+    max-width: min(22rem, calc(100vw - 2 * var(--s-3)));
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-3);
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    border: 1px solid var(--g2-line);
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    background-color: color-mix(in srgb, var(--ge-bg) 92%, #000);
+    background-image: linear-gradient(color-mix(in srgb, var(--g2-tag) 12%, transparent), color-mix(in srgb, var(--g2-tag) 12%, transparent));
+    box-shadow: 0 8px 20px color-mix(in srgb, #000 18%, transparent);
+  }
+  .g2-hud .g2-arrival--enter {
+    animation: g2-arrival-in 0.28s ease-out;
+  }
+  @keyframes g2-arrival-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  html.ge-reduced-motion .g2-hud .g2-arrival--enter {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .g2-hud .g2-arrival--enter {
+      animation: none;
+    }
+  }
+  .g2-arrival__title {
+    margin: 0;
+    font-size: var(--t-sm);
+    font-weight: 650;
+  }
+  .g2-arrival__purpose {
+    margin: 0;
+    font-size: var(--t-xs);
+    color: var(--ge-ink-dim, color-mix(in srgb, var(--ge-ink) 72%, transparent));
+  }
+  .g2-arrival__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-height: 9rem;
+    overflow: auto;
+  }
+  .g2-arrival__list li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: var(--t-xs);
+  }
+  .g2-arrival__list strong {
+    font-weight: 650;
+  }
+  .g2-arrival__list span {
+    color: var(--ge-ink-dim, color-mix(in srgb, var(--ge-ink) 72%, transparent));
+  }
+  .g2-arrival__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    justify-content: flex-end;
+  }
   .g2-root .g2-main {
     padding-top: calc(28px + var(--s-3));
   }

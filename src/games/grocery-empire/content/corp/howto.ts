@@ -85,5 +85,8 @@ export const HOWTO: Record<string, string[]> = {
     'A mole loses cover over time and with every job. A caught mole costs Heat, brand and a lawsuit.',
     `Own ${RIVALRY.takeoverShares / 10}% of a rival on the Stock Market to take them over. Past ${RIVALRY.pillAt / 10}% they dilute you.`,
   ],
-  crisis: [`Crises only find a company in the public eye (listed, with owners, press or executives). Answer within ${CRISIS.waitSec / 60} minutes.`],
+  crisis: [
+    `Crises only find a company in the public eye (listed, with owners, press or executives). Answer within ${CRISIS.waitSec / 60} minutes.`,
+    'The desk draws from a large era-windowed deck (Press, Cash, Shelf, Payroll, Side door, Alley, Spectacle, Ticker) and prefers crises you have not seen yet. Walking away is mild; the three answers are where the swing lives.',
+  ],
 }

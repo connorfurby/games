@@ -172,7 +172,12 @@ export function SuppliersPanel() {
         )}
       </Sheet>
 
-      <Sheet open onClose={() => {}} title={`Dock check-in · ${s.depth?.dockCheckIns ?? 0} of ${DEPTH.dockCheckInNeed}`} deskHidden={s.era < 1}>
+      <Sheet
+        open
+        onClose={() => {}}
+        title={`Dock check-in · ${s.depth?.dockCheckIns ?? 0} of ${DEPTH.dockCheckInNeed}`}
+        deskHidden={s.era < 1 || (s.depth?.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed}
+      >
         <div className="p6-stack" data-coach-id="suppliers-dock-check">
           <p className="p6-copy">
             {(s.depth?.dockCheckIns ?? 0) < DEPTH.dockAutoAfter
@@ -239,7 +244,7 @@ export function SuppliersPanel() {
                 {s.autoRestock?.enabled ? 'Reordering for you' : 'Off'}
               </Toggle>
               <p className="p6-copy">
-                Fills the backroom at today’s price, emptiest aisle first. You can still order by hand.
+                Fills the backroom at today’s price, toward your restock mix. An aisle you already have a wall of waits. You can still order by hand.
               </p>
             </>
           ) : (

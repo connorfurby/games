@@ -13,14 +13,106 @@ export function log(s: GameState, text: string, kind: LedgerKind = 'info') {
   if (s.ledger.length > LEDGER_CAP) s.ledger.splice(0, s.ledger.length - LEDGER_CAP)
 }
 
+/**
+ * One coach opener per era door. Sequelae live in the Coach catalog and are
+ * never auto-queued on the same tick as the door.
+ */
+export const ERA_OPENERS: Record<number, { tour: string; menu: MenuId }> = {
+  2: { tour: 'e2-second-store', menu: 'land' },
+  3: { tour: 'cold', menu: 'cold' },
+  4: { tour: 'logistics', menu: 'logistics' },
+  5: { tour: 'charter', menu: 'fleet' },
+  6: { tour: 'endings', menu: 'fleet' },
+  7: { tour: 'hz-worlds', menu: 'planets' },
+  8: { tour: 'hz-exchange', menu: 'exchange' },
+  9: { tour: 'hz-greenhouse', menu: 'cultivars' },
+  10: { tour: 'hz-phrase', menu: 'signal' },
+  11: { tour: 'hz-clauses', menu: 'charter' },
+  12: { tour: 'hz-list', menu: 'lastaisle' },
+}
+
+/** True when the hub rail / subtabs should show this department. */
+export function isMenuRevealed(s: GameState, id: MenuId): boolean {
+  return !!(s.revealedMenus?.[id] ?? s.menus[id])
+}
+
+/** Move every pending unlock onto the rail and clear the arrival list. */
+export function acknowledgeArrival(s: GameState) {
+  if (!s.revealedMenus) {
+    s.revealedMenus = Object.fromEntries(MENU_IDS.map((m) => [m, !!s.menus[m]])) as Record<
+      MenuId,
+      boolean
+    >
+  }
+  if (!Array.isArray(s.pendingReveal)) s.pendingReveal = []
+  for (const id of s.pendingReveal) {
+    if (MENU_IDS.includes(id)) s.revealedMenus[id] = true
+  }
+  // Any sim-unlocked menu that somehow skipped the queue still shows after ack.
+  for (const id of MENU_IDS) {
+    if (s.menus[id] && s.pendingReveal.includes(id)) s.revealedMenus[id] = true
+  }
+  s.pendingReveal = []
+}
+
+/**
+ * After a batch of unlocks: a lone mid-run room may appear on the rail (opacity),
+ * but a chapter or a multi-room dump keeps the rail still until the player chooses.
+ */
+export function settlePendingReveals(s: GameState) {
+  if (!Array.isArray(s.pendingReveal)) s.pendingReveal = []
+  if (!s.revealedMenus) {
+    s.revealedMenus = Object.fromEntries(MENU_IDS.map((m) => [m, !!s.menus[m]])) as Record<
+      MenuId,
+      boolean
+    >
+  }
+  if (s.chapterQueue.length > 0) return
+  if (s.pendingReveal.length !== 1) return
+  const id = s.pendingReveal[0]!
+  if (MENU_IDS.includes(id)) s.revealedMenus[id] = true
+}
+
+/** Focus target for Show me: era opener room, else the first pending unlock. */
+export function arrivalFocusMenu(s: GameState): MenuId | null {
+  const opener = ERA_OPENERS[s.era]
+  if (opener && !s.tutorials.done[opener.tour] && TUTORIAL_BY_ID[opener.tour]) return opener.menu
+  const pending = s.pendingReveal ?? []
+  for (const id of pending) {
+    if (MENU_IDS.includes(id) && id !== 'coach' && id !== 'more') return id
+  }
+  return null
+}
+
+/** Start the era opener (or nothing) immediately — used by Show me. */
+export function beginArrivalTour(s: GameState) {
+  const opener = ERA_OPENERS[s.era]
+  if (!opener || !TUTORIAL_BY_ID[opener.tour] || s.tutorials.done[opener.tour]) return
+  s.tutorials.queue = s.tutorials.queue.filter((id) => id !== opener.tour)
+  if (s.tutorials.active?.id === opener.tour) return
+  if (s.tutorials.active) {
+    s.tutorials.done[s.tutorials.active.id] = true
+    s.tutorials.active = null
+  }
+  beginTutorial(s, opener.tour)
+}
+
 export function unlockMenu(s: GameState, id: MenuId) {
   if (s.menus[id]) return
   s.menus[id] = true
-  // Skip chatter during migrate / pre-intro; floor is always open at start.
-  if (!s.introSeen || id === 'floor' || id === 'more') return
+  if (!s.revealedMenus) {
+    s.revealedMenus = Object.fromEntries(MENU_IDS.map((m) => [m, false])) as Record<MenuId, boolean>
+  }
+  if (!Array.isArray(s.pendingReveal)) s.pendingReveal = []
+  // Skip arrival chrome during migrate / pre-intro; floor / More / Coach are chrome, not rooms.
+  if (!s.introSeen || id === 'floor' || id === 'more' || id === 'coach') {
+    s.revealedMenus[id] = true
+    return
+  }
   const line = MENU_LORE[id]
   if (line) log(s, line, 'story')
-  queueDialogue(s, `menu-${id}`)
+  // One arrival list instead of a spoken strip line per room.
+  if (!s.revealedMenus[id] && !s.pendingReveal.includes(id)) s.pendingReveal.push(id)
 }
 
 /** Enqueue a spoken strip line once. Missing ids are ignored. */
@@ -294,6 +386,9 @@ export function setEra(s: GameState, era: number) {
   s.chapterQueue.push(era)
   const story = ERA_STORY[era]
   if (story) log(s, story.line, 'story')
+  // One opener for this door; the rest stay in the Coach catalog.
+  const opener = ERA_OPENERS[era]
+  if (opener) queueTutorial(s, opener.tour)
   // Flagship planogram: practice resets each era door.
   if (s.depth?.flagship) {
     s.depth.flagship.practiceLeft = DEPTH.flagshipPracticePerEra

@@ -28,16 +28,29 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
   // Soft-navigate to the panel that hosts the spotlight target.
   useEffect(() => {
     if (!step?.coachId) return
+    // Never yank the page while a chapter or arrival notice is covering the coach.
+    if (state.chapterQueue[0] != null || (state.pendingReveal?.length ?? 0) > 0) return
     const menu = menuForCoachId(step.coachId)
     if (menu && activeMenu !== menu) setActiveMenu(menu)
     const nav = menuForNavCoachId(step.coachId, activeMenu as MenuId, (id) => !!state.menus[id])
     if (nav) setActiveMenu(nav)
-  }, [step?.coachId, active.step, active.id, activeMenu, setActiveMenu, state.menus])
+  }, [
+    step?.coachId,
+    active.step,
+    active.id,
+    activeMenu,
+    setActiveMenu,
+    state.menus,
+    state.chapterQueue,
+    state.pendingReveal,
+  ])
 
   // Memos / Attention / Ideas controls live in the Memos drawer — open it first.
   useEffect(() => {
-    if (step?.coachId && needsInbox(step.coachId)) requestInbox('memos')
-  }, [step?.coachId, active.step, active.id])
+    if (!step?.coachId || !needsInbox(step.coachId)) return
+    if (state.chapterQueue[0] != null || (state.pendingReveal?.length ?? 0) > 0) return
+    requestInbox('memos')
+  }, [step?.coachId, active.step, active.id, state.chapterQueue, state.pendingReveal])
 
   // Spotlight: one scrollIntoView per step, then rAF-track the live rect (sheets animate in).
   useEffect(() => {
@@ -97,7 +110,16 @@ export function CoachOverlay({ active }: { active: TutorialRun }) {
         if (scrolledForStep.current !== stepKey) {
           scrolledForStep.current = stepKey
           if (!reducedMotion) {
-            el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+            const r = el.getBoundingClientRect()
+            const pad = 8
+            const onScreen =
+              r.top >= pad &&
+              r.left >= pad &&
+              r.bottom <= window.innerHeight - pad &&
+              r.right <= window.innerWidth - pad
+            if (!onScreen) {
+              el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+            }
           }
         }
       }

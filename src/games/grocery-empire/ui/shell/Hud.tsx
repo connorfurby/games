@@ -13,6 +13,7 @@ import { computeHudAlert } from './hudAlert'
 import { PauseReminder } from './PauseReminder'
 import { performUndo } from './undoAction'
 import { storySilence } from '../../sim/pause'
+import { ArrivalNotice } from '../components/ArrivalNotice'
 import { PopLayer, type PopItem } from '../components/Pop'
 import { money, qty } from '../format'
 import { Icon } from '../icons/Icon'
@@ -97,7 +98,9 @@ export function Hud({
 
       <NextGoal state={s} numberFormat={numberFormat} dispatch={dispatch} activeMenu={activeMenu} onMenu={onMenu} />
 
-      {alert ? (
+      {(s.pendingReveal?.length ?? 0) > 0 && s.chapterQueue[0] == null && s.introSeen && !s.offlineReceipt ? (
+        <ArrivalNotice reducedMotion={reducedMotion} />
+      ) : alert ? (
         <button
           type="button"
           className={`g2-alert g2-alert--hang is-${alert.tone}`}

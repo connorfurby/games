@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { MENUS } from '../../content/menus'
 import { STORE_TRAIT_BY_ID, isPlaceTraitId, policyMatchesTrait } from '../../content/depth'
 import { ERA2_EXPANSIONS } from '../../content/era2'
-import { CHAIN, DEPTH } from '../../sim/balance'
+import { CAPITAL, CHAIN, DEPTH } from '../../sim/balance'
 import { can } from '../../sim/commands'
 import { attentionPerSec } from '../../sim/formulas'
 import {
@@ -19,7 +19,7 @@ import { outposts } from '../../sim/systems/lateHubs'
 import { networkStores, storeEngineWeight } from '../../sim/systems/network'
 import type { StorePolicy } from '../../sim/state'
 import { useGame, useIsSuggested } from '../GameContext'
-import { money } from '../format'
+import { money, qty } from '../format'
 import { HubStage } from '../components/HubStage'
 import { Button, EmptyState, SegmentedControl } from '../kit'
 import { type VerbSecondary, type VerbTrayProps } from '../play'
@@ -111,6 +111,74 @@ function LandExpansionCard({
         </Button>
       )}
     </article>
+  )
+}
+
+/** The buy lives here. The street lot is the place; this card says why it is or isn't ready. */
+function DepotCard() {
+  const { state: s, dispatch, numberFormat, setActiveMenu } = useGame()
+  const check = can(s, { type: 'buildDepot' })
+  const reason = check.reason ?? ''
+  const price = money(CHAIN.depotCash, numberFormat)
+  const needsRead = reason.includes('Read')
+  const cashOnly = !check.ok && !needsRead && !/Era|store|Permit|already/i.test(reason)
+  const showBuy = check.ok || cashOnly
+  return (
+    <section className="ge-empire-block" aria-label="Depot">
+      <header className="ge-empire-block__head">
+        <h3>Depot</h3>
+        <p>One warehouse for the chain. Buy it once.</p>
+      </header>
+      <article className="ge-card" data-coach-id="land-depot">
+        <div className="ge-card__head">
+          <div>
+            <p className="ge-muted">
+              More shoppers at every store. Doors past the fourth bring fewer people and take more Attention until this is built.
+              It also opens catering and the ghost kitchen.
+            </p>
+          </div>
+        </div>
+        <div className="ge-card__meta">
+          <div className="ge-card__meta-row">
+            <span>Price</span>
+            <strong className="ld-deed__value">{price}</strong>
+          </div>
+          {needsRead ? (
+            <div className="ge-card__meta-row">
+              <span>Read</span>
+              <strong className="ld-deed__value">
+                {qty(Math.floor(s.read), numberFormat)} / {qty(CAPITAL.depotReadNeed, numberFormat)}
+              </strong>
+            </div>
+          ) : null}
+        </div>
+        {showBuy ? (
+          <Button
+            tone="primary"
+            affordable={check.ok}
+            disabled={!check.ok}
+            cost={price}
+            title={check.ok ? 'Stores past the fourth run at full speed, and the chain brings in more shoppers.' : reason}
+            onClick={() => dispatch({ type: 'buildDepot' })}
+          >
+            Build depot
+          </Button>
+        ) : (
+          <>
+            <p className="ge-muted">
+              {needsRead
+                ? `Bank ${qty(CAPITAL.depotReadNeed, numberFormat)} Read on Strategy first. You have ${qty(Math.floor(s.read), numberFormat)}.`
+                : reason}
+            </p>
+            {needsRead && s.menus.strategy ? (
+              <Button tone="secondary" size="sm" onClick={() => setActiveMenu('strategy')}>
+                Open Strategy
+              </Button>
+            ) : null}
+          </>
+        )}
+      </article>
+    </section>
   )
 }
 
@@ -420,21 +488,6 @@ export function LandPanel() {
                 onClick: () => dispatch({ type: 'walkDrifting' }),
               },
             ]),
-        ...(!s.depot
-          ? [
-              {
-                key: 'depot',
-                label: 'Depot',
-                fact: money(CHAIN.depotCash, numberFormat),
-                coachId: 'land-depot',
-                disabled: !depotCheck.ok,
-                title: depotCheck.ok
-                  ? 'Stores past the fourth run at full speed and the chain earns 20% more.'
-                  : depotCheck.reason,
-                onClick: () => dispatch({ type: 'buildDepot' }),
-              },
-            ]
-          : []),
         {
           key: 'even',
           label: 'Even out Attention',
@@ -456,7 +509,11 @@ export function LandPanel() {
           s.era >= 7 && outposts(s).length > 0 ? (
             <OutpostStreetScene />
           ) : s.era >= 2 ? (
-            <LandStreet state={s} onPick={pickStore} />
+            <LandStreet
+              state={s}
+              onPick={pickStore}
+              onBuild={depotCheck.ok ? () => dispatch({ type: 'buildDepot' }) : undefined}
+            />
           ) : (
             <>
               <EarlyLandStreet state={s} />
@@ -470,6 +527,7 @@ export function LandPanel() {
           secondaries,
         }}
       >
+        {s.era >= 2 && !s.depot ? <DepotCard /> : null}
         {s.stores.length > 1 ? (
           <p className="ge-muted" data-coach-id="land-drift-why">
             {driftShopperLoss(s) > 0.005

@@ -1,5 +1,6 @@
 import { upgradeEffect } from '../../content/upgrades'
 import { cashLabel } from '@/shared/bn'
+import { CATEGORY_IDS } from '../../content/categories'
 import {
   CRISES,
   CRISIS_BY_ID,
@@ -16,8 +17,9 @@ import {
   type ExecRole,
   type Lever,
 } from '../../content/corp/more'
-import { CRIME, CRISIS, EXEC, FRANCHISE, LAB, PROPERTY, STAFF_POWER } from '../balance'
-import { log } from '../helpers'
+import { CRIME, CRISIS, EXEC, FRANCHISE, LAB, PROPERTY, STAFF_POWER, type CrisisOutcome } from '../balance'
+import { backroomCap } from '../formulas'
+import { addBatch, log, sumQty, takeUnits } from '../helpers'
 import type { GameState } from '../state'
 import { crewEffect } from '../staffPower'
 import { crimeOf } from '../systems/crime'
@@ -214,9 +216,66 @@ export function inPublicEye(s: GameState): boolean {
   return c.co.listed || Object.keys(c.co.owners).length > 0 || c.town.outlets.length > 0 || Object.keys(c.more.execs).length > 0
 }
 
-function applyOutcome(s: GameState, o: { demand: number; sec: number; brand: number }, label: string) {
-  if (o.demand !== 1) addBoost(s, 'demand', o.demand, o.sec, label)
-  s.brand = Math.max(0, Math.min(1, s.brand + o.brand))
+function lastEraOf(def: { era: number; lastEra?: number }): number {
+  return def.lastEra ?? def.era + 4
+}
+
+/** Crises legal for this era (and ticker only when listed). */
+export function crisisPool(s: GameState) {
+  const listed = !!s.corp?.co.listed
+  return CRISES.filter((x) => s.era >= x.era && s.era <= lastEraOf(x) && (x.kind !== 'ticker' || listed))
+}
+
+/** Least-seen first; within a tie, prefer crises introduced in the last couple of eras. */
+export function pickCrisis(s: GameState) {
+  const m = moreOf(s)
+  const pool = crisisPool(s)
+  if (!pool.length) return null
+  const least = Math.min(...pool.map((d) => m.seen[d.id] ?? 0))
+  const fresh = pool.filter((d) => (m.seen[d.id] ?? 0) === least)
+  const recent = fresh.filter((d) => s.era - d.era <= 2)
+  const shortlist = recent.length ? recent : fresh
+  return cpick(s, shortlist)
+}
+
+function applyOutcome(s: GameState, o: CrisisOutcome, label: string) {
+  const sec = o.sec ?? 240
+  if (o.demand != null && o.demand !== 1) addBoost(s, 'demand', o.demand, sec, label)
+  if (o.wages != null && o.wages !== 1) addBoost(s, 'wages', o.wages, sec, label)
+  if (o.ventures != null && o.ventures !== 1) addBoost(s, 'ventures', o.ventures, sec, label)
+  if (o.brand) s.brand = Math.max(0, Math.min(1, s.brand + o.brand))
+  if (o.cashSec) {
+    const amt = round2(o.cashSec * salesRate(s))
+    s.cash = round2(Math.max(0, s.cash + amt))
+  }
+  if (o.heat) {
+    const c = crimeOf(s)
+    c.heat = Math.max(0, Math.min(CRIME.heatMax, c.heat + o.heat))
+  }
+  if (o.stockShare) {
+    const cats = CATEGORY_IDS.filter((k) => s.categories[k])
+    if (cats.length) {
+      if (o.stockShare > 0) {
+        const room = Math.max(0, backroomCap(s) - sumQty(s.backroom))
+        const total = Math.floor(room * o.stockShare)
+        if (total > 0) {
+          const each = Math.max(1, Math.floor(total / cats.length))
+          for (const k of cats) addBatch(s.backroom, k, each, 0)
+        }
+      } else {
+        const have = sumQty(s.backroom) + sumQty(s.shelf)
+        const take = Math.floor(have * Math.min(0.25, -o.stockShare))
+        if (take > 0) {
+          const fromShelf = Math.min(sumQty(s.shelf), Math.ceil(take / 2))
+          takeUnits(s.shelf, fromShelf, true)
+          takeUnits(s.backroom, take - fromShelf, true)
+        }
+      }
+    }
+  }
+  if (o.walk) {
+    corpOf(s).co.walk = Math.max(0.35, Math.min(3, corpOf(s).co.walk * o.walk))
+  }
 }
 
 /** Odds an option works, after your marketer and crisis team. */
@@ -236,16 +295,13 @@ export function answerCrisis(s: GameState, pick: number) {
   if (!def) return
   const o = def.options[pick]!
   s.cash = round2(s.cash - crisisCost(s, o.costSec))
-  // A good Head of People or marketer tilts the odds a little.
   const odds = crisisOdds(s, o.odds)
   const win = crand(s) < odds
-  applyOutcome(s, win ? o.win : o.lose, def.title)
+  const preset = CRISIS.kinds[def.kind]
+  applyOutcome(s, win ? preset.win : preset.lose, def.title)
   m.lastCrisis = { id: def.id, win, pick, t: s.time }
-  corpOf(s).co.walk = Math.max(0.35, Math.min(3, corpOf(s).co.walk * (win ? 1.02 : 0.94)))
-  if (def.id === 'space-bugs' && pick === 2) {
-    const c = crimeOf(s)
-    c.heat = Math.min(CRIME.heatMax, c.heat + 20)
-  }
+  // Small walk bump on every answered crisis, on top of ticker presets.
+  corpOf(s).co.walk = Math.max(0.35, Math.min(3, corpOf(s).co.walk * (win ? 1.01 : 0.97)))
   m.crisis = null
   m.crisesHandled += 1
   m.nextCrisisAt = s.time + CRISIS.gapMin + crand(s) * (CRISIS.gapMax - CRISIS.gapMin)
@@ -340,17 +396,17 @@ export function tickMore(s: GameState) {
   if (m.crisis && m.crisis.until <= s.time) {
     const def = CRISIS_BY_ID[m.crisis.id]
     if (def) {
-      applyOutcome(s, def.ignore, def.title)
+      applyOutcome(s, CRISIS.ignore, def.title)
       log(s, `${def.title}: you said nothing, and it got worse.`, 'warn')
     }
     m.crisis = null
     m.nextCrisisAt = s.time + CRISIS.gapMin + crand(s) * (CRISIS.gapMax - CRISIS.gapMin)
   }
   if (!m.crisis && inPublicEye(s) && s.time >= m.nextCrisisAt) {
-    const pool = CRISES.filter((x) => s.era >= x.era)
-    if (pool.length) {
-      const def = cpick(s, pool)
+    const def = pickCrisis(s)
+    if (def) {
       m.crisis = { id: def.id, until: s.time + CRISIS.waitSec }
+      m.seen[def.id] = (m.seen[def.id] ?? 0) + 1
     }
   }
 }

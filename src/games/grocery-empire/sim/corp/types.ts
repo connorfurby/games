@@ -148,6 +148,8 @@ export interface Stage6State {
   lastCrisis: { id: string; win: boolean; pick: number; t: number } | null
   nextCrisisAt: number
   crisesHandled: number
+  /** How many times each crisis id has appeared (marked on spawn). */
+  seen: Record<string, number>
 }
 
 export interface CorpState {

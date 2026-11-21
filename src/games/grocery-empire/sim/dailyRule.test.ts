@@ -62,7 +62,7 @@ describe('daily rule', () => {
     const raw = JSON.parse(JSON.stringify(createInitialState(7)))
     raw.dailyRule = 'free-money'
     expect(migrate(raw)?.dailyRule).toBeNull()
-    expect(SAVE_VERSION).toBe(45)
+    expect(SAVE_VERSION).toBe(46)
   })
 
   it('a rebrand keeps the store name and the rule', () => {

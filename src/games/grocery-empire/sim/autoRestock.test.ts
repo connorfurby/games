@@ -63,6 +63,36 @@ describe('tickAutoRestock', () => {
     expect(sumQty(s.backroom) + s.orders.reduce((n, o) => n + o.qty, 0)).toBe(crates * units)
   })
 
+  it('buys an empty aisle when the backroom is already a wall of cans', () => {
+    const s = ready()
+    s.categories.household = true
+    s.categories.produce = true
+    s.categories.dairy = true
+    const units = crateSize(s)
+    const cap = backroomCap(s) + doorOverflow(s)
+    s.backroom = [{ cat: 'cans', qty: cap - units, age: 0 }]
+
+    tickAutoRestock(s)
+
+    expect(s.orders.length).toBeGreaterThan(0)
+    expect(s.orders.every((o) => o.cat !== 'cans')).toBe(true)
+  })
+
+  it('splits a roomy backroom across unlocked aisles', () => {
+    const s = ready()
+    s.builds.storage = 3
+    s.categories.household = true
+    s.categories.produce = true
+    s.backroom = []
+
+    tickAutoRestock(s)
+
+    const cats = new Set(s.orders.map((o) => o.cat))
+    expect(cats.has('cans')).toBe(true)
+    expect(cats.has('household')).toBe(true)
+    expect(cats.has('produce')).toBe(true)
+  })
+
   it('stops when the invoice book is full', () => {
     const s = ready()
     for (let id = 1; id <= DEPTH.invoiceUnpaidCap; id++) {

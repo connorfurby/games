@@ -93,6 +93,7 @@ export function emptyCorp(seed = 1): CorpState {
       lastCrisis: null,
       nextCrisisAt: 900,
       crisesHandled: 0,
+      seen: {},
     },
   }
 }

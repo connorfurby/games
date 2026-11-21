@@ -1,4 +1,16 @@
 @layer scenes {
+  /* Stays at the left edge when the chain scrolls. Opaque so doors don't show through. */
+  .ld-lot--depot {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #1a1e22;
+  }
+
+  button.ld-lot--depot {
+    cursor: pointer;
+  }
+
   /* Early Land: empty lots wear a lease board. Muted, never tomato or tag (nothing to buy yet). */
   .ld-lot--lease {
     cursor: default;

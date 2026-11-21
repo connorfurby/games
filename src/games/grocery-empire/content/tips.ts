@@ -86,7 +86,7 @@ export const TIPS: TipDef[] = [
   },
   {
     id: 'e2-depot',
-    text: 'Build the depot before your fifth store. Without it, extra stores take Attention and bring in fewer shoppers than they should.',
+    text: 'The depot is the warehouse on the left of your block, and the card under your stores. It needs Read from Strategy before you can buy it. Without it, extra stores take Attention and bring in fewer shoppers than they should.',
     when: (s) => s.era >= 2 && s.stores.length >= 2 && !s.depot,
   },
   {

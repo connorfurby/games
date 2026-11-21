@@ -5,7 +5,7 @@
  * Protocol: bump GAME_VERSION (patch/minor), prepend a NEWS article, keep newest first.
  */
 
-export const GAME_VERSION = '1.0.6'
+export const GAME_VERSION = '1.0.10'
 
 /** Era bands the News filter offers. `meta` is shell/site news that isn't about an era. */
 export type NewsBand = 'e01' | 'e23' | 'e46' | 'e712' | 'meta'
@@ -53,6 +53,63 @@ export function newsArt(a: NewsArticle): NewsArt {
 
 /** Newest first. Agents: prepend — never bury the latest bulletin. */
 export const NEWS: NewsArticle[] = [
+  {
+    id: '2026-11-20-crew-and-dock',
+    bands: ['e01', 'e23'],
+    date: '2026-11-20',
+    version: '1.0.10',
+    kicker: 'Desk',
+    art: 'counter',
+    headline: 'Longer hire list, and the dock closes when the count is in',
+    dek: 'New hires keep their own names. Dock check-in leaves once the side yard has its twenty-eight. Auto-restock buys the mix.',
+    body: [
+      'The floor used to run out of names and start numbering people. The list is much longer now. The next three hires are Connor, Luke, and Jonas if those names are not already on the clock. People already hired keep the names they have.',
+      'Dock check-in was the side-yard count, then it stayed on the desk and kept handing out free crates. Once you have checked in twenty-eight trucks, that card and the Autopilot row go away. Ordering is the wholesaler’s job after that.',
+      'Auto-restock was giving the spare crate to the aisle you already had the most of, which kept filling the back with cans. It now buys whichever unlocked aisle is furthest under your restock mix.',
+    ],
+  },
+  {
+    id: '2026-11-20-crisis-deck',
+    bands: ['e01', 'e23', 'e46', 'e712'],
+    date: '2026-11-20',
+    version: '1.0.9',
+    kicker: 'Desk',
+    art: 'desk',
+    headline: 'Hundreds of crises, not the same rat',
+    dek: 'When your company is in the public eye, the corner card draws from a deep deck — press, shelf, payroll, alley, and more.',
+    body: [
+      'The viral rat still exists, and it retires after Era 3. About two hundred and forty hand-written crises now span Eras 1–12, each with three answers and a type on the card (Press, Cash, Shelf, Payroll, Side door, Alley, Spectacle, Ticker).',
+      'The desk remembers what you have already seen and prefers fresh trouble. Walking away stays mild; the buttons are where the shake-ups live.',
+    ],
+  },
+  {
+    id: '2026-11-20-smooth-arrivals',
+    bands: ['e01', 'e23', 'e46', 'e712'],
+    date: '2026-11-20',
+    version: '1.0.8',
+    kicker: 'Desk',
+    art: 'corner',
+    headline: 'New rooms arrive one list at a time',
+    dek: 'Era doors and department dumps show what opened, then wait for Stay here or Show me.',
+    body: [
+      'When a chapter opens — or a hub unlocks several rooms at once — you get one list of what just arrived. Stay here puts the tabs on the rail and leaves you where you were. Show me walks you to the one new lesson.',
+      'The coach no longer starts under the chapter card, and the rail does not jump until you choose. A single new room can appear quietly with a short notice and the same two choices.',
+    ],
+  },
+  {
+    id: '2026-11-20-depot-on-the-block',
+    bands: ['e23'],
+    date: '2026-11-20',
+    version: '1.0.7',
+    kicker: 'Desk',
+    art: 'corner',
+    headline: 'The depot has a lot',
+    dek: 'It sits on the left of your block, with a card that says what it still needs.',
+    body: [
+      'The depot was easy to miss. The tip asked for it, and the buy button only appeared after you already had the Read.',
+      'Land now keeps a warehouse at the left of the block. The card under your stores shows the price, how much Read you still need, and a way to Strategy when that is the holdup.',
+    ],
+  },
   {
     id: '2026-11-20-auto-restock-fill',
     bands: ['e01'],

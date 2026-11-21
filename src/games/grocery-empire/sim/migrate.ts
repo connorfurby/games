@@ -1415,6 +1415,22 @@ export function migrate(raw: unknown, now = Date.now()): GameState {
       if (isObject(raw.menus)) {
         for (const id of MENU_IDS) base.menus[id] = bool(raw.menus[id], base.menus[id])
       }
+      // SAVE 46: rail uses revealedMenus. Older saves copy current menus so a reload
+      // does not fake an arrival burst; pendingReveal starts empty.
+      if (isObject(raw.revealedMenus)) {
+        for (const id of MENU_IDS) {
+          base.revealedMenus[id] = bool(raw.revealedMenus[id], base.menus[id])
+        }
+      } else {
+        for (const id of MENU_IDS) base.revealedMenus[id] = !!base.menus[id]
+      }
+      if (Array.isArray(raw.pendingReveal)) {
+        base.pendingReveal = (raw.pendingReveal as unknown[])
+          .filter((id): id is (typeof MENU_IDS)[number] => typeof id === 'string' && MENU_IDS.includes(id as (typeof MENU_IDS)[number]))
+          .filter((id, i, arr) => arr.indexOf(id) === i)
+      } else {
+        base.pendingReveal = []
+      }
       if (isObject(raw.seenMenus)) base.seenMenus = raw.seenMenus as Record<string, boolean>
       if (isObject(raw.tutorials)) {
         base.tutorials.done = isObject(raw.tutorials.done)

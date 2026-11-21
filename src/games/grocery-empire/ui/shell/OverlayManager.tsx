@@ -53,11 +53,16 @@ export function OverlayManager({
   const phone = usePhone()
   const chapterEra = state.chapterQueue[0]
   const clear = !offline && state.introSeen && !state.pendingAccept
+  const pendingArrival = (state.pendingReveal?.length ?? 0) > 0
+  // Hold headlines / visitors / crisis until the chapter and arrival are done, plus post-chapter calm.
+  const arrivalHold =
+    chapterEra != null || pendingArrival || state.time < (state.tutorials.calmUntil ?? 0)
   const showDialogue =
     !offline &&
     state.introSeen &&
     !state.pendingAccept &&
     !chapterEra &&
+    !pendingArrival &&
     !state.tutorials.active &&
     !!state.dialogueQueue[0]
 
@@ -128,15 +133,15 @@ export function OverlayManager({
         <ChapterCard era={chapterEra} reducedMotion={reducedMotion} onAccept={() => dispatch({ type: 'acceptChapter' })} />
       ) : null}
 
-      {clear && chapterEra == null && state.horizon.headlineId && !state.corp?.more.crisis ? <HeadlineCard reducedMotion={reducedMotion} /> : null}
+      {clear && !arrivalHold && state.horizon.headlineId && !state.corp?.more.crisis ? <HeadlineCard reducedMotion={reducedMotion} /> : null}
 
-      {clear && chapterEra == null && !state.tutorials.active && state.corp?.more.crisis ? <CrisisCard reducedMotion={reducedMotion} /> : null}
+      {clear && !arrivalHold && !state.tutorials.active && state.corp?.more.crisis ? <CrisisCard reducedMotion={reducedMotion} /> : null}
 
-      {clear && chapterEra == null && !state.horizon.headlineId && !state.tutorials.active && !state.corp?.more.crisis && state.visitors?.current ? (
+      {clear && !arrivalHold && !state.horizon.headlineId && !state.tutorials.active && !state.corp?.more.crisis && state.visitors?.current ? (
         <VisitorCard reducedMotion={reducedMotion} />
       ) : null}
 
-      {clear && !chapterEra && state.tutorials.active ? <CoachOverlay active={state.tutorials.active} /> : null}
+      {clear && !chapterEra && !pendingArrival && state.tutorials.active ? <CoachOverlay active={state.tutorials.active} /> : null}
 
       <div className="ge-toasts g2-toasts" aria-live="polite">
         <AnimatePresence>

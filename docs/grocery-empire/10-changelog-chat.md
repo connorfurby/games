@@ -1,6 +1,40 @@
 # Changelog — this chat arc (2026-11)
 
-Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
+Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 46**; the company layer is SAVE 44–45; smooth arrivals are SAVE 46.
+
+## BI. Hire names, dock retirement, mix restock (2026-11-20)
+
+`GAME_VERSION` **1.0.10**. No `SAVE_VERSION` bump.
+
+- `STAFF_NAMES` is 144 names. The next open hires are Connor, Luke, and Jonas while those names are not already on the clock. A number is added only after every name is in use. Names already on a save stay.
+- Dock check-in stops at 28. The Suppliers card and the Autopilot row hide, and further check-ins are refused, so the desk no longer grants free crates after the side-yard count.
+- Auto-restock gives each spare crate to the unlocked aisle furthest under its restock share (shelf + back + inbound). A wall of cans no longer takes the leftover truck. A failed aisle does not cancel the others.
+
+## BH. Crisis deck expansion (2026-11-20)
+
+`GAME_VERSION` **1.0.9**. No `SAVE_VERSION` bump (`corp.more.seen` defaults via `fillDefaults`).
+
+- ~240 unique crises in `content/corp/crises/` (~20 per era). Original eight ids kept; `rat-video` `lastEra: 3`.
+- Eight kinds with shared presets in `CRISIS` (press, cash, shelf, payroll, side, alley, spectacle, ticker). Answers apply demand / cash / stock / wages / ventures / heat / walk — not only shoppers + brand.
+- Least-seen picker (prefer recent intros on ties). Ticker only when listed. Mild ignore band unchanged for pacing.
+- Corner card kicker shows the kind (`Crisis · Shelf · 1:12`).
+
+## BG. Smooth era and page arrivals (2026-11-20)
+
+`GAME_VERSION` **1.0.8**. `SAVE_VERSION` **46** (`revealedMenus`, `pendingReveal`).
+
+- Sim menus still unlock on the same tick; the rail and subtabs wait on `revealedMenus`.
+- Unlocking no longer queues a spoken strip line per room; arrivals batch into one list.
+- Chapter last beat lists new rooms with **Stay here** / **Show me**. Mid-run dumps use a hanging HUD notice.
+- One era opener from `setEra`; tours, headlines, visitors, and crisis hold until the chapter and arrival are done (plus calm). Soft-pause does not crawl under the chapter card.
+- Coach page hops crossfade (sync) and skip scroll when the target is already on screen.
+
+## BF. Depot is findable (2026-11-20)
+
+`GAME_VERSION` **1.0.7**. No `SAVE_VERSION` bump.
+
+- The Land tip asked for a depot whose buy lived only as a tray secondary, and the tray drops any secondary that is not legal yet. Short on Read (the usual gate: 12), the control was gone.
+- The warehouse is now the left lot on the block. A card under the stores shows the price, the Read you still need, and Open Strategy when that is the holdup. The lot itself buys only once the command is legal.
 
 ## BE. Smarter auto-restock (2026-11-20)
 

@@ -175,6 +175,16 @@ const PAGE_VARIANTS = {
       : { opacity: 0, x: dir * -20, transition: { duration: 0.12, ease: 'easeIn' as const } },
 }
 
+/** Coach Show-me / step hops: opacity only, sync (no wait-mode skip). */
+const COACH_PAGE_VARIANTS = {
+  enter: () => ({ opacity: 0 }),
+  center: {
+    opacity: 1,
+    transition: { duration: 0.2, ease: 'easeOut' as const },
+  },
+  exit: () => ({ opacity: 0, transition: { duration: 0.16, ease: 'easeIn' as const } }),
+}
+
 export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const { meta, metaRef, replaceMeta } = useMeta()
   // Shell paints ~1 Hz (+ immediate on commands / catch-up). Cash figures subscribe on their own.
@@ -422,7 +432,13 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
       engine.setSoftPauseMul(0)
       return
     }
-    const active = engine.getState().tutorials.active
+    const live = engine.getState()
+    // A tour under the chapter card must not crawl the world — hold soft-pause until the card is gone.
+    if (live.chapterQueue[0] != null || (live.pendingReveal?.length ?? 0) > 0) {
+      engine.setSoftPauseMul(1)
+      return
+    }
+    const active = live.tutorials.active
     const stepPresent =
       active != null
         ? (TUTORIAL_BY_ID[active.id]?.steps[active.step]?.present ?? 'act')
@@ -440,6 +456,8 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     state.tutorials.active,
     state.tutorials.active?.step,
     state.introSeen,
+    state.chapterQueue[0],
+    state.pendingReveal?.length,
     photoMode,
   ])
 
@@ -770,12 +788,20 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   // Story lines read themselves out and move on; clicking still skips ahead.
   const lineId = state.dialogueQueue[0]
   useEffect(() => {
-    if (!lineId || !state.introSeen || state.tutorials.active || state.chapterQueue[0] != null) return
+    if (
+      !lineId ||
+      !state.introSeen ||
+      state.tutorials.active ||
+      state.chapterQueue[0] != null ||
+      (state.pendingReveal?.length ?? 0) > 0
+    ) {
+      return
+    }
     const words = (DIALOGUE_BY_ID[lineId]?.text ?? '').split(/\s+/).length
     const ms = Math.max(4500, words * 330)
     const t = window.setTimeout(() => engine.dispatch({ type: 'advanceDialogue' }), ms)
     return () => window.clearTimeout(t)
-  }, [lineId, state.introSeen, state.tutorials.active, state.chapterQueue])
+  }, [lineId, state.introSeen, state.tutorials.active, state.chapterQueue, state.pendingReveal?.length])
   const Active = PANEL[menu]!
 
   const suggestOn = !!meta.settings.suggestNext
@@ -881,7 +907,10 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   )
 
   const hub = hubOf(menu)
-  const hubMenus = (h: HubId) => HUB_BY_ID[h].menus.filter((id) => !!state.menus[id])
+  const menuShown = (id: MenuId) => !!(state.revealedMenus?.[id] ?? state.menus[id])
+  const hubMenus = (h: HubId) => HUB_BY_ID[h].menus.filter((id) => menuShown(id))
+  // Coach Show-me navigations crossfade; player tab changes keep the slide.
+  const coachPageMove = !!state.tutorials.active
   // Page transitions know where you came from: a sub-tab to the right slides in from the right,
   // a different hub rises in. 1 = forward, -1 = back, 0 = new hub.
   const pageOrder = PAGE_ORDER.indexOf(menu)
@@ -1039,12 +1068,12 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
                 ) : null}
               </div>
             ) : null}
-            <AnimatePresence mode="wait" initial={false} custom={pageDir}>
+            <AnimatePresence mode={coachPageMove ? 'sync' : 'wait'} initial={false} custom={pageDir}>
               <motion.div
                 key={menu}
                 custom={pageDir}
-                className={`ge-main__panel g2-panel${reducedMotion ? '' : ' g2-panel--enter'}`}
-                variants={PAGE_VARIANTS}
+                className={`ge-main__panel g2-panel${reducedMotion || coachPageMove ? '' : ' g2-panel--enter'}`}
+                variants={coachPageMove ? COACH_PAGE_VARIANTS : PAGE_VARIANTS}
                 initial={reducedMotion ? false : 'enter'}
                 animate="center"
                 exit={reducedMotion ? undefined : 'exit'}

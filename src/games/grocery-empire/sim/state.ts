@@ -579,6 +579,14 @@ export interface GameState {
   }
 
   menus: Record<MenuId, boolean>
+  /**
+   * SAVE 46: departments shown on the hub rail / subtabs. Sim `menus` still unlock
+   * instantly; the rail waits until the player acknowledges an arrival (or a lone
+   * mid-run tab is revealed in place).
+   */
+  revealedMenus: Record<MenuId, boolean>
+  /** SAVE 46: unlocked menus waiting for the arrival notice / chapter list. */
+  pendingReveal: MenuId[]
   seenMenus: Record<string, boolean>
   /** Player-opened department. Coach auto-nav does not bump this. */
   menuStamp: number
@@ -856,6 +864,9 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
   const menus = Object.fromEntries(MENU_IDS.map((m) => [m, false])) as Record<MenuId, boolean>
   menus.floor = true
   menus.more = true
+  const revealedMenus = Object.fromEntries(MENU_IDS.map((m) => [m, false])) as Record<MenuId, boolean>
+  revealedMenus.floor = true
+  revealedMenus.more = true
   const categories = Object.fromEntries(CATEGORY_IDS.map((c) => [c, c === 'cans'])) as Record<
     CategoryId,
     boolean
@@ -1027,6 +1038,8 @@ export function createInitialState(seed = Date.now() % 2147483647, now = Date.no
     rebrand: { goodwill: 0, count: 0, bankedThisRun: 0 },
 
     menus,
+    revealedMenus,
+    pendingReveal: [],
     seenMenus: { floor: true, more: true },
     menuStamp: 0,
     lastMenu: 'floor',

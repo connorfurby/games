@@ -1,5 +1,5 @@
 import { CATEGORY_IDS, type CategoryId } from '../../content/categories'
-import { ROLES } from '../../content/staff'
+import { ROLES, STAFF_NAMES } from '../../content/staff'
 import { MORALE, STAFF_POWER, STAFF_XP } from '../balance'
 import { crewStrength } from '../staffPower'
 import {
@@ -104,8 +104,25 @@ export function tickMorale(s: GameState, dt: number) {
   else s.morale = Math.max(target, s.morale - regen * 0.5 * dt)
 }
 
-const FIRST = ['Ana', 'Ben', 'Cleo', 'Dev', 'Esme', 'Femi', 'Gus', 'Hana', 'Ivo', 'Jun', 'Kit', 'Lou', 'Mo', 'Nia', 'Oz', 'Pia', 'Quin', 'Rae', 'Sol', 'Tam', 'Uma', 'Vic', 'Wes', 'Xan', 'Yara', 'Zed']
+const PINNED_NAMES = ['Connor', 'Luke', 'Jonas'] as const
 
+/** Name for a staff id. The stride hits every name once before anyone is numbered. */
 export function staffName(id: number) {
-  return FIRST[(id * 7) % FIRST.length] + (id > FIRST.length ? ` ${Math.ceil(id / FIRST.length)}` : '')
+  const n = STAFF_NAMES.length
+  const name = STAFF_NAMES[(Math.floor(id) * 7) % n]!
+  return id > n ? `${name} ${Math.ceil(id / n)}` : name
+}
+
+/** Next hire. Connor, Luke, and Jonas come first while they are not already on the clock. */
+export function hireName(s: GameState, id: number) {
+  const used = new Set(s.staff.map((m) => m.name))
+  for (const name of PINNED_NAMES) {
+    if (!used.has(name)) return name
+  }
+  const n = STAFF_NAMES.length
+  for (let k = 0; k < n; k++) {
+    const name = STAFF_NAMES[((Math.floor(id) + k) * 7) % n]!
+    if (!used.has(name)) return name
+  }
+  return staffName(id)
 }

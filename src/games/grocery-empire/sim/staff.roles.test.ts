@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ROLE_IDS, ROLES, type RoleId } from '../content/staff'
+import { ROLE_IDS, ROLES, STAFF_NAMES, type RoleId } from '../content/staff'
+import { hireName, staffName } from './systems/people'
 import { CAUSES } from '../content/corp/town'
 import { can, run } from './commands'
 import { corpOf } from './corp/core'
@@ -137,6 +138,30 @@ describe('hiring is gated by the system a role works for', () => {
     expect(can(s, { type: 'hire', role: 'paralegal' }).ok).toBe(false)
     s.menus.court = true
     expect(can(s, { type: 'hire', role: 'paralegal' }).ok).toBe(true)
+  })
+})
+
+describe('hire names', () => {
+  it('uses a long list, with Connor, Luke, and Jonas as the first three hires', () => {
+    expect(new Set(STAFF_NAMES).size).toBe(STAFF_NAMES.length)
+    expect(STAFF_NAMES.length).toBeGreaterThan(100)
+    expect(staffName(1)).toBe('Connor')
+    expect(staffName(2)).toBe('Luke')
+    expect(staffName(3)).toBe('Jonas')
+    const firstRound = Array.from({ length: STAFF_NAMES.length }, (_, i) => staffName(i + 1))
+    expect(new Set(firstRound).size).toBe(STAFF_NAMES.length)
+    expect(staffName(STAFF_NAMES.length + 1)).toMatch(/ 2$/)
+  })
+
+  it('gives Connor, Luke, and Jonas to the next open hires on a save that already has a crew', () => {
+    const s = base(1)
+    s.nextStaffId = 40
+    add(s, 'clerk')
+    expect(hireName(s, s.nextStaffId)).toBe('Connor')
+    s.staff.push({ id: 2, role: 'clerk', name: 'Connor', level: 1, xp: 0, hiredAt: 0 })
+    expect(hireName(s, s.nextStaffId)).toBe('Luke')
+    s.staff.push({ id: 3, role: 'clerk', name: 'Luke', level: 1, xp: 0, hiredAt: 0 })
+    expect(hireName(s, s.nextStaffId)).toBe('Jonas')
   })
 })
 
