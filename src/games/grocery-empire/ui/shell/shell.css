@@ -1009,10 +1009,14 @@
     filter: none;
   }
 
-  /* A free click that cannot run is a plate, not a button that says Do it. */
+  /* Compact CTA plate — same footprint as the free button. Detail lives under the title. */
   .g2-goal__wait {
     margin: 0;
+    box-sizing: border-box;
+    width: 100%;
+    height: 2.35rem;
     min-height: 2.35rem;
+    max-height: 2.35rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1020,11 +1024,14 @@
     font-family: var(--g2-ui);
     font-size: var(--t-xs);
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1;
     color: var(--ge-ink-muted);
     border: 1px dashed color-mix(in srgb, var(--ge-free, #e85d4c) 60%, transparent);
     border-radius: var(--g2-r-sm, 7px);
-    padding: 0.2rem 0.35rem;
+    padding: 0 0.35rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* Alert chip: the in-controls one is desktop; a compact full-width one shows on phones. */

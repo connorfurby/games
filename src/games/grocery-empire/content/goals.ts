@@ -1,7 +1,7 @@
 import { BILL_IDS, REGULAR_BY_ID, STORE_TRAIT_BY_ID, policyMatchesTrait, type BillId, type PlaceTraitId } from './depth'
 import { DEPTH, HORIZON, LOT_SURVEY_LIFETIME } from '../sim/balance'
 import type { Command } from '../sim/commands'
-import { hireCost } from '../sim/formulas'
+import { hireCost, staffSeatCap } from '../sim/formulas'
 import { sumQty, waitLabel } from '../sim/helpers'
 import { billCost, billsPassed } from '../sim/systems/politics'
 import { matchedStoreCount, openStoreCost } from '../sim/systems/chain'
@@ -167,6 +167,10 @@ function dockStatus(s: GameState): string {
   if (dockRunningItself(s)) return `${line} · receiver checking trucks in`
   const next = (s.depth?.nextDockAt ?? 0) - s.time
   if (next > 0) return `${line} · next truck in ${waitLabel(next)}`
+  if (!s.staff.some((m) => m.role === 'receiver')) {
+    if (s.staff.length >= staffSeatCap(s)) return `${line} · grow the storefront for a seat`
+    return `${line} · hire a receiver`
+  }
   if (!receiverOnBoard(s)) return `${line} · put a receiver on a shift`
   if (have < DEPTH.dockAutoAfter) return `${line} · choose the next aisle`
   return line
@@ -498,7 +502,13 @@ export const GOALS: GoalDef[] = [
     counts: (s) => dockStatus(s),
     action: (s) => {
       const receiver = s.staff.find((m) => m.role === 'receiver')
-      if (!receiver) return { type: 'hire', role: 'receiver' }
+      if (!receiver) {
+        // Seats full: grow the storefront instead of a Hire click that cannot run.
+        if (s.staff.length >= staffSeatCap(s)) {
+          return { type: 'buyBuild', track: 'storefront' }
+        }
+        return { type: 'hire', role: 'receiver' }
+      }
       if (!receiverOnBoard(s)) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
       // Lesson done and autopilot on: the receiver stamps without a Do it nag.
       if (dockRunningItself(s)) return null
@@ -596,7 +606,10 @@ export const GOALS: GoalDef[] = [
       if (!s.depth?.flagship?.credited) return { type: 'fileStandardFlagship' }
       if ((s.depth?.dockCheckIns ?? 0) < DEPTH.dockCheckInNeed) {
         const receiver = s.staff.find((m) => m.role === 'receiver')
-        if (!receiver) return { type: 'hire', role: 'receiver' }
+        if (!receiver) {
+          if (s.staff.length >= staffSeatCap(s)) return { type: 'buyBuild', track: 'storefront' }
+          return { type: 'hire', role: 'receiver' }
+        }
         if (!receiverOnBoard(s)) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
         if (dockRunningItself(s)) return null
         if ((s.depth?.nextDockAt ?? 0) > s.time) return null

@@ -145,11 +145,20 @@ function isWaitReason(reason: string | undefined): boolean {
   if (!reason) return false
   return (
     /next .+ in /i.test(reason) ||
-    / in \d/i.test(reason) ||
+    /\bin \d/i.test(reason) ||
     /due in /i.test(reason) ||
     /cooldown/i.test(reason) ||
-    /wait/i.test(reason)
+    /\bwait(ing)?\b/i.test(reason)
   )
+}
+
+/** Short label for the CTA plate — never a wrapping essay that shifts the HUD. */
+function plateLabel(reason: string | null | undefined, fallback: string): string {
+  if (!reason) return fallback
+  const wait = reason.match(/\bin\s+(\d+\s*[smh](?:\s+\d+\s*[smh])?|\d+m\s+\d+s|\d+h\s+\d+m)/i)
+  if (wait) return wait[1]!.replace(/\s+/g, ' ').trim()
+  if (isWaitReason(reason)) return 'Waiting'
+  return 'Not yet'
 }
 
 /**
@@ -251,10 +260,13 @@ export function NextGoal({
   // Door goals and chore-running goals keep their own hint; others get a direction.
   const keepHint = !act || !!choices || g.id === 'corner-store' || g.id === 'side-yard' || g.id === 'cold-permit'
   const hint = keepHint ? g.hint : clauseHint(act, g.hint)
-  // Free click that cannot run and cannot usefully navigate: plate, not Do it.
-  const blocked = isFree && act && !ready && !showGo ? (reason ?? 'Not yet') : null
+  // Free click that cannot run and cannot usefully navigate: compact plate, not a wrapping essay.
+  const blocked = isFree && act && !ready && !showGo
   // Chore finishing itself (null action): no button — the counts line is the signal.
   const choreRunning = !act && !choices
+  const plate = waiting || blocked ? plateLabel(reason, 'Not yet') : null
+  // Detail lives under the title (one line). Never dump it into the CTA column.
+  const whyLine = reason && (waiting || blocked) ? reason : null
 
   const stars = s.depth?.stars ?? DEPTH.starsStart
   const starsLocked =
@@ -276,13 +288,13 @@ export function NextGoal({
         <span className="g2-goal__title" title={starsTitle}>
           <span className="g2-goal__title-text">{g.title}</span>
         </span>
-        <span className="g2-goal__hint" title={typeof hint === 'string' ? hint : undefined}>
+        <span className="g2-goal__hint" title={whyLine || (typeof hint === 'string' ? hint : undefined)}>
           {hint}
           {also.length > (isFree ? 0 : 1) ? (
             <span className="g2-goal__eta"> Also needs {also.slice(isFree ? 0 : 1).join(' and ')}.</span>
           ) : null}
           {t ? <span className="g2-goal__eta"> Ready in {t}.</span> : null}
-          {blocked && !waiting ? <span className="g2-goal__eta"> {blocked}</span> : null}
+          {whyLine ? <span className="g2-goal__eta"> {whyLine}</span> : null}
         </span>
         {counts ? <span className="g2-goal__counts">{counts}</span> : null}
       </div>
@@ -318,13 +330,15 @@ export function NextGoal({
       ) : choreRunning ? (
         <div className="g2-goal__acts">
           <p className="g2-goal__wait" title={counts || undefined}>
-            {counts.includes('·') ? counts.split('·').slice(1).join('·').trim() || 'Running' : 'Running'}
+            Running
           </p>
         </div>
       ) : act ? (
         <div className="g2-goal__acts">
-          {blocked || waiting ? (
-            <p className="g2-goal__wait">{waiting ? reason! : blocked!}</p>
+          {plate ? (
+            <p className="g2-goal__wait" title={reason || undefined}>
+              {plate}
+            </p>
           ) : isFree ? (
             <button
               type="button"
