@@ -75,6 +75,7 @@ export function clearAllSlots() {
 export function saveGame(id: string, data: unknown) {
   try {
     const payload = serializeState(data)
+    if (store.get(id) === payload) return
     store.set(id, payload)
     notifyCloudWrite(id)
   } catch {
@@ -84,6 +85,7 @@ export function saveGame(id: string, data: unknown) {
 
 /** Write a raw JSON string (slot copy / import). Syncs when signed in. */
 export function saveRaw(id: string, raw: string) {
+  if (store.get(id) === raw) return
   store.set(id, raw)
   notifyCloudWrite(id)
 }

@@ -87,7 +87,9 @@ export function AutopilotPanel({ onOpenMenu }: { onOpenMenu: (m: MenuId) => void
           Check trucks in automatically
         </Toggle>
       ) : undefined,
-      earn: earned ? undefined : `Do ${DEPTH.dockAutoAfter} check-ins by hand first (${done} of ${DEPTH.dockAutoAfter}).`,
+      earn: earned
+        ? undefined
+        : `Choose the aisle for ${DEPTH.dockAutoAfter} trucks first (${done} of ${DEPTH.dockAutoAfter}).`,
       go: earned ? undefined : goto('suppliers', 'Suppliers'),
       extra: earned ? null : (
         <span className="ap-bar" aria-hidden>

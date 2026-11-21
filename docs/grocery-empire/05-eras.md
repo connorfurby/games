@@ -24,9 +24,9 @@ There is **no Era 13**.
 
 ## Early gates (code pointers)
 
-- **0→1:** `sim/unlocks.ts` → `tickEra` — featured cans, `marketBellDips`, regulars, 8 layaway slips (90s gap; finishes ~13.5 min), stars, basket/hire rules from `DEPTH`. Baskets are the clock (~26 min). The Next Goal line keeps that list after the slips, including baskets (1,050 with Open covered, otherwise `ERA1_BASKETS_GATE`). The era opens on the tick; there is no separate button.
-- **1→2:** `expandLot` side-yard/lot in `commands.ts` — write-offs, Produce Lead, Corner Store, dairy, regulars, on-time invoices, flagship planogram credit, Open days (`openDaysNeedSideYard`), stars.
-- **2→3:** `cold-plant-permit` memo — flyer weeks, matched stores, stars, depot/commissary, chain planogram credit.
+- **0→1:** `sim/unlocks.ts` → `tickEra` — featured cans, `marketBellDips`, regulars, 8 layaway slips (90s gap; finishes ~13.5 min), stars, basket/hire rules from `DEPTH`. Baskets are the clock (~26 min). The Next Goal line / Road ahead `doorParts` keep that list after the slips, including baskets (1,050 with Open covered, otherwise `ERA1_BASKETS_GATE`). The era opens on the tick; there is no separate button. After the 8 slips, matching visits auto-serve.
+- **1→2:** `expandLot` side-yard/lot in `commands.ts` — write-offs, Produce Lead, Corner Store, dairy, regulars, on-time invoices, flagship planogram credit, dock check-ins (28; first 3 by hand, then receiver + Autopilot), Open days (`openDaysNeedSideYard`), stars. Road ahead always expands the side-yard `doorParts` checklist. Open days remain the era clock (~3.5 h).
+- **2→3:** `cold-plant-permit` memo — flyer weeks, matched stores, stars, depot/commissary, chain planogram credit. Same `doorParts` pattern on Road ahead.
 - **3→4:** `leaveRegion` — yield empty (blast-only), bills passed, cooler logs, plants, shift coverage, stars.
 - **4→5:** barge berth / `launchBarge` — clean manifests **and** sworn exams (SAVE 33: separate credits — a filing is clean OR exam-ready OR fast, never two), logistics staffed, franchise stable/defection, Import + port broker, globe planogram, stars.
 - **5→6:** `fleet.ts` tick — pockets cleared via Pocket Ops **done** trips (two open pockets can want different rations while one hauler sails; `pocket-concurrent` decides whether both get fed), ration facing, Orbit Mid, drift Hold, stars.

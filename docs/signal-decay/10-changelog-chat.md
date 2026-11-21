@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-20 — cool memory / main-thread heat
+
+- Autosave **45s**; cloud identical-payload skip; campaign glance cache for Social/Shelf.
+- UI paint **2.5 Hz**; skip React notify while hidden; undo HUD uses one timeout (no 500ms interval).
+- No `SAVE_VERSION` / `GAME_VERSION` bump.
+
 ## 2026-11-20 — 1.2.1 pause clock
 
 - Opening a save clears a player pause, including a Quiet sign-off, so the station starts on air. Time away while paused is not caught up. A double reject stays parked.

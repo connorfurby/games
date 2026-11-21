@@ -1,10 +1,13 @@
 import type { SaveRow } from './database.types'
 import { CLOUD_SLOT_IDS, isCloudSlot, isDevSlot } from './progress'
 import { clearAllSlots, getRawSlot, replaceAllSlots } from './save'
+import { clearCampaignGlances } from './saveGlance'
 import { getSupabase } from './supabase'
 
 const FLUSH_MS = 3000
 const dirty = new Set<string>()
+/** Last payload successfully upserted (or hydrated) per slot — skip identical flushes. */
+const lastFlushed = new Map<string, string>()
 let flushTimer: ReturnType<typeof setTimeout> | null = null
 let syncUserId: string | null = null
 let flushing = false
@@ -44,6 +47,7 @@ export function setSyncUser(userId: string | null) {
   syncUserId = userId
   if (!userId) {
     dirty.clear()
+    lastFlushed.clear()
     if (flushTimer) {
       clearTimeout(flushTimer)
       flushTimer = null
@@ -88,6 +92,7 @@ export async function flushDirty(): Promise<void> {
       .map((slot_id) => {
         const payload = getRawSlot(slot_id)
         if (!payload) return null
+        if (lastFlushed.get(slot_id) === payload) return null
         return { user_id: syncUserId!, slot_id, payload }
       })
       .filter((r): r is { user_id: string; slot_id: string; payload: string } => !!r)
@@ -97,6 +102,8 @@ export async function flushDirty(): Promise<void> {
     if (error) {
       for (const r of rows) dirty.add(r.slot_id)
       console.warn('cloud flush failed', error.message)
+    } else {
+      for (const r of rows) lastFlushed.set(r.slot_id, r.payload)
     }
   } finally {
     flushing = false
@@ -140,6 +147,10 @@ export async function hydrateForUser(userId: string): Promise<{ reloaded: boolea
     }
     replaceAllSlots(payloads)
     dirty.clear()
+    lastFlushed.clear()
+    for (const [slot_id, payload] of Object.entries(payloads)) {
+      lastFlushed.set(slot_id, payload)
+    }
     if (flushTimer) {
       clearTimeout(flushTimer)
       flushTimer = null
@@ -152,6 +163,7 @@ export async function hydrateForUser(userId: string): Promise<{ reloaded: boolea
     emit({ type: 'error', message })
     clearAllSlots()
     dirty.clear()
+    lastFlushed.clear()
     setSyncUser(null)
     emit({ type: 'done', reloaded: false })
     return { reloaded: false }
@@ -161,11 +173,29 @@ export async function hydrateForUser(userId: string): Promise<{ reloaded: boolea
 export function signOutClear() {
   setSyncUser(null)
   clearAllSlots()
+  clearCampaignGlances()
   dirty.clear()
+  lastFlushed.clear()
   if (flushTimer) {
     clearTimeout(flushTimer)
     flushTimer = null
   }
+}
+
+/** Test helper — last flushed payload for a slot (or undefined). */
+export function __lastFlushedPayload(slotId: string): string | undefined {
+  return lastFlushed.get(slotId)
+}
+
+/** Test helper — seed last-flushed without a network round-trip. */
+export function __seedLastFlushed(slotId: string, payload: string) {
+  lastFlushed.set(slotId, payload)
+}
+
+/** True when flush would skip an upsert for this slot's current memory payload. */
+export function __wouldSkipIdenticalFlush(slotId: string): boolean {
+  const payload = getRawSlot(slotId)
+  return !!payload && lastFlushed.get(slotId) === payload
 }
 
 /** Call on visibility hidden / beforeunload. */

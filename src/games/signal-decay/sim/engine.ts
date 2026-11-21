@@ -1,4 +1,5 @@
 import { clearGameSave, loadGame, saveGame } from '@/shared/save'
+import { setCampaignGlance } from '@/shared/saveGlance'
 import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
 import { can as canCmd, run as runCmd, type Check, type Command } from './commands'
 import { repair } from './invariants'
@@ -10,7 +11,20 @@ import { applyOffline, applyTick } from './tick'
 
 type Listener = () => void
 
-const PULSES_PER_PAINT = 2
+const PULSES_PER_PAINT = 4
+
+function noteSignalGlance(id: string, s: GameState) {
+  if (id.includes('-dev')) return
+  const calls = Math.max(0, Math.floor(Number(s.calls ?? 0)))
+  setCampaignGlance('signal-decay', {
+    era: Math.max(0, Math.floor(s.era ?? 0)),
+    lifetimeRevenue: Math.max(0, Math.floor(Number(s.lifetimeRevenue ?? 0))),
+    headline: calls,
+    playSec: Math.max(0, Math.floor(Number(s.time ?? 0))),
+    lastSavedAt: s.lastSavedAt ?? Date.now(),
+    headlineLabel: `${calls.toLocaleString()} calls`,
+  })
+}
 
 export type EngineSnapshot = { readonly v: number; readonly state: GameState }
 
@@ -32,6 +46,7 @@ export class SignalEngine {
   constructor(state?: GameState) {
     this.state = state ?? SignalEngine.loadState()
     this.snapshot = { v: this.version, state: this.state }
+    noteSignalGlance(getActiveSaveId(), this.state)
   }
 
   static loadState(): GameState {
@@ -171,10 +186,15 @@ export class SignalEngine {
 
   canUndo = (): boolean => !!this.undoJson && Date.now() <= this.undoUntil
 
+  /** Epoch ms when the current undo window ends; 0 if none. */
+  undoDeadline = (): number => (this.undoJson && this.undoUntil > Date.now() ? this.undoUntil : 0)
+
   save() {
     this.state.lastSavedAt = Date.now()
     try {
-      saveGame(getActiveSaveId(), this.state)
+      const id = getActiveSaveId()
+      saveGame(id, this.state)
+      noteSignalGlance(id, this.state)
     } catch {
       /* ignore */
     }
@@ -203,6 +223,7 @@ export class SignalEngine {
 
   reloadFromDisk() {
     this.state = SignalEngine.loadState()
+    noteSignalGlance(getActiveSaveId(), this.state)
     this.bump()
   }
 
@@ -218,6 +239,7 @@ export class SignalEngine {
   private bump() {
     this.version += 1
     this.snapshot = { v: this.version, state: this.state }
+    if (typeof document !== 'undefined' && document.hidden) return
     this.listeners.forEach((l) => l())
   }
 }

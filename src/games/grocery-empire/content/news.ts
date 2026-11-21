@@ -5,7 +5,7 @@
  * Protocol: bump GAME_VERSION (patch/minor), prepend a NEWS article, keep newest first.
  */
 
-export const GAME_VERSION = '1.0.4'
+export const GAME_VERSION = '1.0.5'
 
 /** Era bands the News filter offers. `meta` is shell/site news that isn't about an era. */
 export type NewsBand = 'e01' | 'e23' | 'e46' | 'e712' | 'meta'
@@ -53,6 +53,20 @@ export function newsArt(a: NewsArticle): NewsArt {
 
 /** Newest first. Agents: prepend — never bury the latest bulletin. */
 export const NEWS: NewsArticle[] = [
+  {
+    id: '2026-11-20-road-and-chores',
+    bands: ['e01', 'e23'],
+    date: '2026-11-20',
+    version: '1.0.5',
+    kicker: 'Desk',
+    art: 'corner',
+    headline: 'The road lists every part of the door',
+    dek: 'Dock trucks after three choices, and the next-goal button names the verb.',
+    body: [
+      'Road ahead shows a status on every step, and the side-yard door expands into a checklist (write-offs, Fresh lead, dairy, regulars, invoices, dock, planogram, Open days, cash) even while you are still on an earlier step. The next-chapter card keeps the title and the quote.',
+      'The first three dock check-ins are yours to aim. After that, a receiver on shift finishes the twenty-eight. Matching neighbours after the eight layaway slips leave happy on their own. The top button says Check in or Serve when it will work, shows the wait when the truck is still out, and stays quiet while a chore is running itself.',
+    ],
+  },
   {
     id: '2026-11-20-corner-store-line',
     bands: ['e01'],

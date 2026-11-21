@@ -2,7 +2,7 @@ import { BILL_IDS, REGULAR_BY_ID, STORE_TRAIT_BY_ID, policyMatchesTrait, type Bi
 import { DEPTH, HORIZON, LOT_SURVEY_LIFETIME } from '../sim/balance'
 import type { Command } from '../sim/commands'
 import { hireCost } from '../sim/formulas'
-import { sumQty } from '../sim/helpers'
+import { sumQty, waitLabel } from '../sim/helpers'
 import { billCost, billsPassed } from '../sim/systems/politics'
 import { matchedStoreCount, openStoreCost } from '../sim/systems/chain'
 import { plantCost, plantCountOf } from '../sim/systems/cold'
@@ -35,6 +35,8 @@ export interface GoalDef {
   opensEra?: number
   /** Filing counts shown under the hint (eras 10–12). */
   counts?: (s: GameState) => string
+  /** Door checklist rows — Road ahead expands these even before this goal is current. */
+  doorParts?: (s: GameState) => GoalPart[]
   /** A real fork: the HUD offers each choice; `action` stays the bot's pick. */
   choices?: (s: GameState) => GoalChoice[] | null
 }
@@ -45,6 +47,14 @@ export interface GoalChoice {
   /** One line: what this fork does. */
   line: string
   action: Command
+}
+
+/** One row of a door checklist (side yard, cold permit, …). */
+export interface GoalPart {
+  label: string
+  done: boolean
+  /** Optional live detail, e.g. "6/28" or "next truck in 1m". */
+  detail?: string
 }
 
 const memo = (s: GameState, id: string) => (s.memos[id] ?? 0) > 0
@@ -86,25 +96,179 @@ function restockCommand(s: GameState): Command {
 }
 
 /** Live gaps for the corner-store door. Baskets stay listed after the slips are gone. */
-function era1Left(s: GameState): string[] {
+function era1Parts(s: GameState): GoalPart[] {
   const d = s.depth
-  const left: string[] = []
-  if (!d?.facings?.cans) left.push('Feature cans')
-  if ((d?.marketBellDips ?? 0) < DEPTH.marketBellNeed) left.push(`Price dips ${d?.marketBellDips ?? 0}/${DEPTH.marketBellNeed}`)
-  if ((d?.regularSatisfied ?? 0) < DEPTH.era1RegularNeed) left.push(`Regulars ${d?.regularSatisfied ?? 0}/${DEPTH.era1RegularNeed}`)
-  if ((d?.layawaySlips ?? 0) < DEPTH.layawaySlipNeed) left.push(`Layaway ${d?.layawaySlips ?? 0}/${DEPTH.layawaySlipNeed}`)
-  if ((d?.stars ?? 0) < DEPTH.era1StarMin) left.push(`Stars ${(d?.stars ?? 0).toFixed(1)}/${DEPTH.era1StarMin}`)
   const open = s.staff.length > 0 && (d?.shifts?.open?.length ?? 0) > 0
-  const need = open ? DEPTH.ERA1_HIRE_BASKETS : DEPTH.ERA1_BASKETS_GATE
-  if (s.baskets < need) {
-    const have = Math.floor(s.baskets)
-    left.push(
-      open
-        ? `Baskets ${have}/${DEPTH.ERA1_HIRE_BASKETS}`
-        : `Baskets ${have}/${DEPTH.ERA1_BASKETS_GATE} (or ${DEPTH.ERA1_HIRE_BASKETS} with someone on Open)`,
-    )
+  const basketNeed = open ? DEPTH.ERA1_HIRE_BASKETS : DEPTH.ERA1_BASKETS_GATE
+  const baskets = Math.floor(s.baskets)
+  return [
+    { label: 'Feature cans', done: !!d?.facings?.cans },
+    {
+      label: 'Price dips',
+      done: (d?.marketBellDips ?? 0) >= DEPTH.marketBellNeed,
+      detail: `${d?.marketBellDips ?? 0}/${DEPTH.marketBellNeed}`,
+    },
+    {
+      label: 'Regulars',
+      done: (d?.regularSatisfied ?? 0) >= DEPTH.era1RegularNeed,
+      detail: `${d?.regularSatisfied ?? 0}/${DEPTH.era1RegularNeed}`,
+    },
+    {
+      label: 'Layaway slips',
+      done: (d?.layawaySlips ?? 0) >= DEPTH.layawaySlipNeed,
+      detail: `${d?.layawaySlips ?? 0}/${DEPTH.layawaySlipNeed}`,
+    },
+    {
+      label: 'Stars',
+      done: (d?.stars ?? 0) >= DEPTH.era1StarMin,
+      detail: `${(d?.stars ?? 0).toFixed(1)}/${DEPTH.era1StarMin}`,
+    },
+    {
+      label: open ? 'Baskets (Open staffed)' : 'Baskets',
+      done: baskets >= basketNeed,
+      detail: open
+        ? `${baskets}/${DEPTH.ERA1_HIRE_BASKETS}`
+        : `${baskets}/${DEPTH.ERA1_BASKETS_GATE} (or ${DEPTH.ERA1_HIRE_BASKETS} with someone on Open)`,
+    },
+  ]
+}
+
+function era1Left(s: GameState): string[] {
+  return era1Parts(s)
+    .filter((p) => !p.done)
+    .map((p) => {
+      if (p.label === 'Feature cans') return 'Feature cans'
+      if (p.label === 'Layaway slips') return `Layaway ${p.detail}`
+      if (p.label === 'Baskets (Open staffed)') return `Baskets ${p.detail}`
+      return p.detail ? `${p.label} ${p.detail}` : p.label
+    })
+}
+
+function receiverOnBoard(s: GameState): boolean {
+  return DEPTH.shiftSlots.some((slot) =>
+    (s.depth?.shifts?.[slot] ?? []).some((id) => s.staff.find((x) => x.id === id)?.role === 'receiver'),
+  )
+}
+
+/** Dock is finishing itself: lesson done, autopilot on, receiver on a board. */
+export function dockRunningItself(s: GameState): boolean {
+  const have = s.depth?.dockCheckIns ?? 0
+  if (have >= DEPTH.dockCheckInNeed) return false
+  if (have < DEPTH.dockAutoAfter) return false
+  if (s.depth?.autoDock === false) return false
+  return receiverOnBoard(s)
+}
+
+function dockStatus(s: GameState): string {
+  const have = s.depth?.dockCheckIns ?? 0
+  const need = DEPTH.dockCheckInNeed
+  const line = `${have}/${need}`
+  if (have >= need) return line
+  if (dockRunningItself(s)) return `${line} · receiver checking trucks in`
+  const next = (s.depth?.nextDockAt ?? 0) - s.time
+  if (next > 0) return `${line} · next truck in ${waitLabel(next)}`
+  if (!receiverOnBoard(s)) return `${line} · put a receiver on a shift`
+  if (have < DEPTH.dockAutoAfter) return `${line} · choose the next aisle`
+  return line
+}
+
+function sideYardParts(s: GameState): GoalPart[] {
+  const d = s.depth
+  const freshLead =
+    s.staff.some((m) => m.role === 'produceLead') || (d?.departments?.fresh?.leadId ?? null) != null
+  return [
+    {
+      label: 'Write-offs',
+      done: (d?.writeOffs ?? 0) >= DEPTH.writeOffNeedEra2,
+      detail: `${d?.writeOffs ?? 0}/${DEPTH.writeOffNeedEra2}`,
+    },
+    { label: 'Fresh lead', done: freshLead },
+    {
+      label: 'Storefront',
+      done: (s.builds.storefront ?? 1) >= 2,
+      detail: `${s.builds.storefront ?? 1}/2`,
+    },
+    { label: 'Dairy', done: !!s.categories.dairy },
+    {
+      label: 'Regulars',
+      done: (d?.regularSatisfied ?? 0) >= DEPTH.era2RegularNeed,
+      detail: `${d?.regularSatisfied ?? 0}/${DEPTH.era2RegularNeed}`,
+    },
+    {
+      label: 'Invoices on time',
+      done: (d?.invoicesOnTime ?? 0) >= DEPTH.invoiceOnTimeNeedSideYard,
+      detail: `${d?.invoicesOnTime ?? 0}/${DEPTH.invoiceOnTimeNeedSideYard}`,
+    },
+    {
+      label: 'Dock check-ins',
+      done: (d?.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed,
+      detail: dockStatus(s),
+    },
+    { label: 'Planogram', done: !!d?.flagship?.credited },
+    {
+      label: 'Open days',
+      done: (d?.shifts?.daysCoveredOpen ?? 0) >= DEPTH.openDaysNeedSideYard,
+      detail: `${d?.shifts?.daysCoveredOpen ?? 0}/${DEPTH.openDaysNeedSideYard}`,
+    },
+    {
+      label: 'Cash for the yard',
+      done: s.cash >= 2500,
+      detail: s.cash >= 2500 ? undefined : `need $2,500`,
+    },
+  ]
+}
+
+function coldPermitParts(s: GameState): GoalPart[] {
+  const d = s.depth
+  return [
+    {
+      label: 'Flyer weeks',
+      done: (d?.flyerWeeks ?? 0) >= DEPTH.flyerWeeksNeed,
+      detail: `${d?.flyerWeeks ?? 0}/${DEPTH.flyerWeeksNeed}`,
+    },
+    {
+      label: 'Hot-trait walks',
+      done: (d?.hotTraitWalks ?? 0) >= DEPTH.hotTraitWalkNeed,
+      detail: `${d?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed}`,
+    },
+    {
+      label: 'Matched stores',
+      done: matchedStoreCount(s) >= DEPTH.matchedStoresNeed,
+      detail: `${matchedStoreCount(s)}/${DEPTH.matchedStoresNeed}`,
+    },
+    {
+      label: 'Stars',
+      done: (d?.stars ?? 0) >= DEPTH.coldPermitStarMin,
+      detail: `${(d?.stars ?? 0).toFixed(1)}/${DEPTH.coldPermitStarMin}`,
+    },
+    { label: 'Depot', done: !!(s.depot || d?.contracts?.commissary) },
+    { label: 'Chain planogram', done: !!d?.flagship?.chainCredited },
+  ]
+}
+
+function joinLeft(parts: GoalPart[]): string {
+  const left = parts.filter((p) => !p.done).map((p) => (p.detail ? `${p.label} ${p.detail}` : p.label))
+  return left.length ? `Still to do: ${left.join(' · ')}` : ''
+}
+
+/** Short status line for Road ahead / the HUD (shared so they cannot drift). */
+export function goalStatus(s: GameState, g: GoalDef): string {
+  try {
+    if (g.counts) {
+      const c = g.counts(s)
+      if (c) return c
+    }
+  } catch {
+    /* never break the HUD */
   }
-  return left
+  try {
+    if (g.done(s)) return 'Done'
+    const p = Math.max(0, Math.min(1, g.progress(s)))
+    if (p > 0 && p < 1) return `${Math.round(p * 100)}%`
+  } catch {
+    /* never break */
+  }
+  return ''
 }
 
 /** Era 10: post the habit — claim an unheld post, wait out a live watch, else file. */
@@ -192,6 +356,7 @@ export const GOALS: GoalDef[] = [
     title: 'Become a corner store',
     hint: 'The sign changes on its own. The line under this is everything still in the way.',
     done: (s) => s.era >= 1,
+    doorParts: (s) => era1Parts(s),
     counts: (s) => {
       const left = era1Left(s)
       return left.length ? `Still to do: ${left.join(' · ')}` : ''
@@ -261,6 +426,7 @@ export const GOALS: GoalDef[] = [
     hint: 'Stock produce, then dump or markdown what soured — three times.',
     done: (s) => (s.depth?.writeOffs ?? 0) >= DEPTH.writeOffNeedEra2,
     progress: (s) => frac(s.depth?.writeOffs ?? 0, DEPTH.writeOffNeedEra2),
+    counts: (s) => `${s.depth?.writeOffs ?? 0}/${DEPTH.writeOffNeedEra2}`,
     action: (s) => {
       if (!s.categories.produce) return { type: 'buyMemo', id: 'produce-crates' }
       if (sumQty(s.backroom, 'produce') + sumQty(s.shelf, 'produce') <= 0) {
@@ -308,7 +474,16 @@ export const GOALS: GoalDef[] = [
     hint: 'Settle wholesale invoices before they age — keep the yard float clean.',
     done: (s) => (s.depth?.invoicesOnTime ?? 0) >= DEPTH.invoiceOnTimeNeedSideYard,
     progress: (s) => frac(s.depth?.invoicesOnTime ?? 0, DEPTH.invoiceOnTimeNeedSideYard),
+    counts: (s) => {
+      const have = s.depth?.invoicesOnTime ?? 0
+      const line = `${have}/${DEPTH.invoiceOnTimeNeedSideYard}`
+      if (have >= DEPTH.invoiceOnTimeNeedSideYard) return line
+      if (s.depth?.autoPayInvoices !== false) return `${line} · the book pays when cash covers`
+      return line
+    },
     action: (s) => {
+      // Autopay is the default: no Do it nag for each invoice.
+      if (s.depth?.autoPayInvoices !== false) return null
       const inv = s.depth?.invoices?.find((i) => !i.paid)
       return inv ? { type: 'payInvoice', id: inv.id } : { type: 'buyWholesale' }
     },
@@ -317,16 +492,17 @@ export const GOALS: GoalDef[] = [
     id: 'dock-check-in',
     era: 1,
     title: 'Check in at the dock',
-    hint: 'Put a receiver on shift, then stamp the bay on cooldown.',
+    hint: 'Choose the aisle for the first trucks. After that, a receiver on shift finishes the rest.',
     done: (s) => (s.depth?.dockCheckIns ?? 0) >= DEPTH.dockCheckInNeed,
     progress: (s) => frac(s.depth?.dockCheckIns ?? 0, DEPTH.dockCheckInNeed),
+    counts: (s) => dockStatus(s),
     action: (s) => {
       const receiver = s.staff.find((m) => m.role === 'receiver')
       if (!receiver) return { type: 'hire', role: 'receiver' }
-      const onBoard = (['open', 'mid', 'close'] as const).some((slot) =>
-        (s.depth?.shifts?.[slot] ?? []).includes(receiver.id),
-      )
-      if (!onBoard) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
+      if (!receiverOnBoard(s)) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
+      // Lesson done and autopilot on: the receiver stamps without a Do it nag.
+      if (dockRunningItself(s)) return null
+      if ((s.depth?.nextDockAt ?? 0) > s.time) return null
       return { type: 'dockCheckIn' }
     },
   },
@@ -334,7 +510,7 @@ export const GOALS: GoalDef[] = [
     id: 'flagship-planogram',
     era: 1,
     title: 'File the flagship planogram',
-    hint: 'Practice twice, then file a layout scoring ≥ 0.72.',
+    hint: 'Practice twice, then file a layout scoring 72% or better.',
     done: (s) => !!s.depth?.flagship?.credited,
     progress: (s) => {
       const f = s.depth?.flagship
@@ -343,16 +519,29 @@ export const GOALS: GoalDef[] = [
       const practices = DEPTH.flagshipPracticePerEra - f.practiceLeft
       return Math.min(0.9, practices / DEPTH.flagshipPracticePerEra * 0.6 + frac(f.score, DEPTH.flagshipSlow) * 0.3)
     },
+    counts: (s) => {
+      const f = s.depth?.flagship
+      if (!f) return `0/${DEPTH.flagshipPracticePerEra} practice`
+      if (f.credited) return 'Filed'
+      if (f.practiceLeft > 0) return `Practice ${DEPTH.flagshipPracticePerEra - f.practiceLeft}/${DEPTH.flagshipPracticePerEra}`
+      return `Score ${Math.round((f.score ?? 0) * 100)}% · need ${Math.round(DEPTH.flagshipSlow * 100)}%`
+    },
     action: () => ({ type: 'fileStandardFlagship' }),
   },
   {
     id: 'regulars-block',
     era: 1,
     title: 'Earn the block’s trust',
-    hint: 'Satisfy twelve regulars before the side yard.',
+    hint: 'Keep the shelf stocked — matching neighbours leave happy on their own after the layaway lesson.',
     done: (s) => (s.depth?.regularSatisfied ?? 0) >= DEPTH.era2RegularNeed,
     progress: (s) => frac(s.depth?.regularSatisfied ?? 0, DEPTH.era2RegularNeed),
-    action: (s) => serveOrPrep(s),
+    counts: (s) => `${s.depth?.regularSatisfied ?? 0}/${DEPTH.era2RegularNeed}`,
+    action: (s) => {
+      // Only nudge when someone is waiting who cannot auto-serve yet.
+      if (s.depth?.regulars?.activeId && s.depth.regulars.layaway) return serveOrPrep(s)
+      if (s.depth?.regulars?.activeId) return serveOrPrep(s)
+      return restockCommand(s)
+    },
   },
   {
     id: 'lot-survey',
@@ -361,6 +550,10 @@ export const GOALS: GoalDef[] = [
     hint: 'Earn lifetime revenue, pay invoices, then file the Lot Survey memo.',
     done: (s) => memo(s, 'lot-survey') || !!s.expansions['side-yard'],
     progress: (s) => frac(s.lifetimeRevenue, LOT_SURVEY_LIFETIME),
+    counts: (s) =>
+      memo(s, 'lot-survey') || s.expansions['side-yard']
+        ? 'Filed'
+        : `Sales $${Math.floor(s.lifetimeRevenue).toLocaleString()} / $${LOT_SURVEY_LIFETIME.toLocaleString()}`,
     cash: () => 500,
     action: () => ({ type: 'buyMemo', id: 'lot-survey' }),
   },
@@ -368,45 +561,17 @@ export const GOALS: GoalDef[] = [
     id: 'side-yard',
     era: 1,
     title: 'Buy the side yard',
-    hint: 'Write-offs, Fresh lead, dairy, regulars, invoices, dock check-ins, planogram, Open day, then buy.',
+    hint: 'When every row below is done, buy the lot next door.',
     done: (s) => s.era >= 2,
     progress: (s) => {
-      const write = frac(s.depth?.writeOffs ?? 0, DEPTH.writeOffNeedEra2) * 0.1
-      const lead =
-        s.staff.some((m) => m.role === 'produceLead') ||
-        (s.depth?.departments?.fresh?.leadId ?? null) != null
-          ? 0.08
-          : 0
-      const build = (s.builds.storefront ?? 1) >= 2 ? 0.08 : 0
-      const dairy = s.categories.dairy ? 0.08 : 0
-      const regs = frac(s.depth?.regularSatisfied ?? 0, DEPTH.era2RegularNeed) * 0.12
-      const inv = frac(s.depth?.invoicesOnTime ?? 0, DEPTH.invoiceOnTimeNeedSideYard) * 0.12
-      const dock = frac(s.depth?.dockCheckIns ?? 0, DEPTH.dockCheckInNeed) * 0.14
-      const flag = s.depth?.flagship?.credited ? 0.08 : 0
-      const shift = frac(s.depth?.shifts?.daysCoveredOpen ?? 0, DEPTH.openDaysNeedSideYard) * 0.08
-      return Math.min(
-        1,
-        write + lead + build + dairy + regs + inv + dock + flag + shift + frac(s.cash, 2500) * 0.12,
-      )
+      const parts = sideYardParts(s)
+      return parts.length ? parts.filter((p) => p.done).length / parts.length : 0
     },
     cash: () => 2500,
-    // Nine parts behind one goal: say which are still open, so the long stretch has a checklist.
+    doorParts: (s) => sideYardParts(s),
     counts: (s) => {
-      const d = s.depth
-      const left: string[] = []
-      const part = (label: string, have: number, need: number) => {
-        if (have < need) left.push(`${label} ${Math.floor(have)}/${need}`)
-      }
-      part('Write-offs', d?.writeOffs ?? 0, DEPTH.writeOffNeedEra2)
-      if (!s.staff.some((m) => m.role === 'produceLead') && (d?.departments?.fresh?.leadId ?? null) == null) left.push('Fresh lead')
-      if ((s.builds.storefront ?? 1) < 2) left.push('Storefront 2')
-      if (!s.categories.dairy) left.push('Dairy')
-      part('Regulars', d?.regularSatisfied ?? 0, DEPTH.era2RegularNeed)
-      part('Invoices on time', d?.invoicesOnTime ?? 0, DEPTH.invoiceOnTimeNeedSideYard)
-      part('Dock check-ins', d?.dockCheckIns ?? 0, DEPTH.dockCheckInNeed)
-      if (!d?.flagship?.credited) left.push('Planogram')
-      part('Open days', d?.shifts?.daysCoveredOpen ?? 0, DEPTH.openDaysNeedSideYard)
-      return left.length ? `Still to do: ${left.join(' · ')}` : 'All set: buy the side yard.'
+      const left = joinLeft(sideYardParts(s))
+      return left || 'All set: buy the side yard.'
     },
     action: (s) => {
       if ((s.depth?.writeOffs ?? 0) < DEPTH.writeOffNeedEra2) {
@@ -432,14 +597,15 @@ export const GOALS: GoalDef[] = [
       if ((s.depth?.dockCheckIns ?? 0) < DEPTH.dockCheckInNeed) {
         const receiver = s.staff.find((m) => m.role === 'receiver')
         if (!receiver) return { type: 'hire', role: 'receiver' }
-        const onBoard = (['open', 'mid', 'close'] as const).some((slot) =>
-          (s.depth?.shifts?.[slot] ?? []).includes(receiver.id),
-        )
-        if (!onBoard) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
+        if (!receiverOnBoard(s)) return { type: 'assignShift', slot: 'open', staffId: receiver.id }
+        if (dockRunningItself(s)) return null
+        if ((s.depth?.nextDockAt ?? 0) > s.time) return null
         return { type: 'dockCheckIn' }
       }
-      const unpaid = s.depth?.invoices?.find((i) => !i.paid)
-      if (unpaid) return { type: 'payInvoice', id: unpaid.id }
+      if (s.depth?.autoPayInvoices === false) {
+        const unpaid = s.depth?.invoices?.find((i) => !i.paid)
+        if (unpaid) return { type: 'payInvoice', id: unpaid.id }
+      }
       return { type: 'expandLot', id: 'side-yard' }
     },
     opensEra: 2,
@@ -527,6 +693,7 @@ export const GOALS: GoalDef[] = [
     hint: 'Print a week, keep your shelf price at or below the flyer price until it ends, wait, repeat.',
     done: (s) => (s.depth?.flyerWeeks ?? 0) >= DEPTH.flyerWeeksNeed,
     progress: (s) => frac(s.depth?.flyerWeeks ?? 0, DEPTH.flyerWeeksNeed),
+    counts: (s) => `${s.depth?.flyerWeeks ?? 0}/${DEPTH.flyerWeeksNeed}`,
     action: (s) => {
       const cats = (['cans', 'produce', 'dairy', 'household', 'bakery', 'deli'] as const).filter(
         (c) => s.categories[c],
@@ -547,6 +714,7 @@ export const GOALS: GoalDef[] = [
     hint: 'When a block event lights a trait, match a store policy before the window ends.',
     done: (s) => (s.depth?.hotTraitWalks ?? 0) >= DEPTH.hotTraitWalkNeed,
     progress: (s) => frac(s.depth?.hotTraitWalks ?? 0, DEPTH.hotTraitWalkNeed),
+    counts: (s) => `${s.depth?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed}`,
     action: (s) => {
       const hot = s.depth?.blockEvent?.traitBias
       if (hot && (s.depth?.blockEvent?.until ?? 0) > s.time) {
@@ -598,28 +766,13 @@ export const GOALS: GoalDef[] = [
     id: 'cold-permit',
     era: 2,
     title: 'File the Cold Plant Permit',
-    hint: 'Band-held flyer weeks, hot-trait walks, matched stores, stars, depot, chain planogram — then stamp.',
+    hint: 'When every row below is done, stamp the permit in Memos.',
     done: (s) => s.era >= 3,
-    counts: (s) => {
-      const d = s.depth
-      const left: string[] = []
-      if ((d?.flyerWeeks ?? 0) < DEPTH.flyerWeeksNeed) left.push(`Flyer weeks ${d?.flyerWeeks ?? 0}/${DEPTH.flyerWeeksNeed}`)
-      if ((d?.hotTraitWalks ?? 0) < DEPTH.hotTraitWalkNeed) left.push(`Hot-trait walks ${d?.hotTraitWalks ?? 0}/${DEPTH.hotTraitWalkNeed}`)
-      if (matchedStoreCount(s) < DEPTH.matchedStoresNeed) left.push(`Matched stores ${matchedStoreCount(s)}/${DEPTH.matchedStoresNeed}`)
-      if ((d?.stars ?? 0) < DEPTH.coldPermitStarMin) left.push(`Stars ${(d?.stars ?? 0).toFixed(1)}/${DEPTH.coldPermitStarMin}`)
-      if (!(s.depot || d?.contracts?.commissary)) left.push('Depot')
-      if (!d?.flagship?.chainCredited) left.push('Chain planogram')
-      return left.length ? `Still to do: ${left.join(' · ')}` : ''
-    },
+    doorParts: (s) => coldPermitParts(s),
+    counts: (s) => joinLeft(coldPermitParts(s)),
     progress: (s) => {
-      const flyers = frac(s.depth?.flyerWeeks ?? 0, DEPTH.flyerWeeksNeed) * 0.15
-      const walks = frac(s.depth?.hotTraitWalks ?? 0, DEPTH.hotTraitWalkNeed) * 0.2
-      const match = frac(matchedStoreCount(s), DEPTH.matchedStoresNeed) * 0.15
-      const stars = (s.depth?.stars ?? 0) >= DEPTH.coldPermitStarMin ? 0.1 : 0
-      const depot = s.depot || s.depth?.contracts?.commissary ? 0.1 : 0
-      const plan = s.depth?.flagship?.chainCredited ? 0.1 : 0
-      const cashBit = frac(s.cash, memoCash(s, 'cold-plant-permit')) * 0.2
-      return Math.min(1, flyers + walks + match + stars + depot + plan + cashBit)
+      const parts = coldPermitParts(s)
+      return parts.length ? parts.filter((p) => p.done).length / parts.length : 0
     },
     cash: (s) => memoCash(s, 'cold-plant-permit'),
     action: () => ({ type: 'buyMemo', id: 'cold-plant-permit' }),
@@ -680,10 +833,24 @@ export const GOALS: GoalDef[] = [
     hint: 'Sign the cooler temperature log in Cold when it is due. A plant operator on shift signs it for you.',
     done: (s) => (s.depth?.cooler?.logsSigned ?? 0) >= DEPTH.coolerLogNeed,
     progress: (s) => frac(s.depth?.cooler?.logsSigned ?? 0, DEPTH.coolerLogNeed),
+    counts: (s) => {
+      const have = s.depth?.cooler?.logsSigned ?? 0
+      const line = `${have}/${DEPTH.coolerLogNeed}`
+      if (have >= DEPTH.coolerLogNeed) return line
+      const next = (s.depth?.cooler?.nextDueAt ?? 0) - s.time
+      if (s.staff.some((m) => m.role === 'plantOperator') && next > 0) {
+        return `${line} · operator signs when due · ${waitLabel(next)}`
+      }
+      if (next > 0) return `${line} · next due in ${waitLabel(next)}`
+      return line
+    },
     action: (s) =>
       !s.staff.some((m) => m.role === 'plantOperator')
         ? { type: 'hire', role: 'plantOperator' }
-        : { type: 'signCoolerLog' },
+        : // Operator on staff: the log signs itself when due.
+          (s.depth?.cooler?.nextDueAt ?? 0) > s.time
+          ? null
+          : { type: 'signCoolerLog' },
   },
   {
     id: 'cold-leads-board',

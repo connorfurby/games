@@ -13,7 +13,8 @@ import { runPacing } from './bots'
  * (measured 40.5 min). Eight slips at 90s finish at 13.5 min; baskets close
  * the door at ~25.8 min (seeds 1 and 42: 1546s / 1553s). Era 2 stays 12601s.
  *
- * Measured bot (seed 1): Era 1 ≈ 25.8 min · Era 2 ≈ 3.50 h.
+ * Measured bot (seed 1): Era 1 ≈ 25.8 min · Era 2 ≈ 3.50 h
+ * (2026-11-20 road+chores: still 1548s / 12601s after dockAutoAfter 3).
  * 4.0 adds tournament cooldown + Read gates — default CI still green; pad waits if LONG slips.
  *
  * LONG=1: Era 3–6 plan windows (Phase 3 SAVE 24+).

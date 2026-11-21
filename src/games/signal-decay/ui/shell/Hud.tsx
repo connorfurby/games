@@ -37,7 +37,7 @@ function bottleneck(s: GameState, c: number): Alert | null {
 }
 
 export function Hud({ onMore }: { onMore?: () => void }) {
-  const { state, dispatch, setActiveMenu, tick, reducedMotion } = useGame()
+  const { state, dispatch, setActiveMenu, reducedMotion } = useGame()
   const engine = getSignalEngine()
   const c = clarity(state)
   const under = state.air.tuned && c < DECAY.clarityFloor
@@ -50,11 +50,13 @@ export function Hud({ onMore }: { onMore?: () => void }) {
 
   const [, bump] = useState(0)
   const canUndo = engine.canUndo()
+  const undoDeadline = engine.undoDeadline()
   useEffect(() => {
-    if (!canUndo) return
-    const id = window.setInterval(() => bump((n) => n + 1), 500)
-    return () => window.clearInterval(id)
-  }, [canUndo, tick])
+    if (!undoDeadline) return
+    const wait = Math.max(20, undoDeadline - Date.now() + 20)
+    const id = window.setTimeout(() => bump((n) => n + 1), wait)
+    return () => window.clearTimeout(id)
+  }, [undoDeadline])
 
   const speeds = SPEEDS as readonly number[]
   const speed = speeds.includes(state.speed) ? state.speed : 1

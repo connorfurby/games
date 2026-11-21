@@ -183,11 +183,15 @@ export function SuppliersPanel() {
       <Sheet open onClose={() => {}} title={`Dock check-in · ${s.depth?.dockCheckIns ?? 0} of ${DEPTH.dockCheckInNeed}`} deskHidden={s.era < 1}>
         <div className="p6-stack" data-coach-id="suppliers-dock-check">
           <p className="p6-copy">
-            When a truck checks in, choose which aisle's back stock gets it. A full crate takes longer; a short one is
-            quicker with fewer units.
+            {(s.depth?.dockCheckIns ?? 0) < DEPTH.dockAutoAfter
+              ? 'Choose which aisle gets the truck. After a few by hand, a receiver on shift finishes the rest.'
+              : s.depth?.autoDock !== false
+                ? 'Your receiver is checking trucks in. Pick an aisle below if you want the next one by hand.'
+                : 'When a truck checks in, choose which aisle gets it. A short crate is quicker with fewer units.'}
             {(s.depth?.nextDockAt ?? 0) > s.time
               ? ` Next truck in ${waitLabel((s.depth?.nextDockAt ?? 0) - s.time)}.`
-              : ''}
+              : ''}{' '}
+            {s.depth?.dockCheckIns ?? 0}/{DEPTH.dockCheckInNeed} for the side yard.
           </p>
           {(() => {
             // One tap: send the truck to the aisle with the least back stock.

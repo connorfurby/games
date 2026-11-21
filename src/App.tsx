@@ -69,7 +69,8 @@ function PresenceBridge() {
     else if (loc.pathname.startsWith('/play/signal-decay')) game = 'signal-decay'
     startPresence(user.id, game)
     setPlayingGame(game)
-    if (game) void publishPublicStats(user.id)
+    // Stats publish from Social mount / autosave glance — avoid full-save parse on every route.
+    if (game && !document.hidden) void publishPublicStats(user.id)
   }, [user, savesReady, loc.pathname])
   return null
 }

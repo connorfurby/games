@@ -2237,6 +2237,53 @@
     height: 100%;
     background: var(--g2-tag, #f2c14e);
   }
+
+  /* Door checklist: every remaining part of the era gate, always visible. */
+  .ra-parts {
+    list-style: none;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .ra-parts li {
+    display: grid;
+    grid-template-columns: 0.9rem minmax(0, 1fr) auto;
+    gap: 0.35rem;
+    align-items: baseline;
+    font-size: var(--t-xs);
+    color: var(--ge-ink);
+    padding: 0;
+  }
+
+  .ra-parts li.is-done {
+    color: var(--ge-muted);
+  }
+
+  .ra-parts li.is-done .ra-parts__label {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
+  .ra-parts__mark {
+    font-weight: 700;
+    color: var(--ge-muted);
+  }
+
+  .ra-parts li:not(.is-done) .ra-parts__mark {
+    color: var(--g2-tag, #f2c14e);
+  }
+
+  .ra-parts__label {
+    min-width: 0;
+  }
+
+  .ra-parts__detail {
+    color: var(--ge-muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
 }
 
 @layer shell {

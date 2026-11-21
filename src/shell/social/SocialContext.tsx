@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { FriendshipRow, ProfileRow } from '@/shared/database.types'
 import { useAuth } from '../AuthContext'
 import { social } from './backend'
@@ -34,11 +35,13 @@ interface SocialCtx {
 
 const Ctx = createContext<SocialCtx | null>(null)
 
-const POLL_MS = 45_000
+const POLL_MS = 120_000
 
 /** One shared, polled view of your social graph, so every room is instant and consistent. */
 export function SocialProvider({ children }: { children: ReactNode }) {
   const { user, savesReady } = useAuth()
+  const loc = useLocation()
+  const onSocial = loc.pathname.startsWith('/social') || loc.pathname.startsWith('/compete') || loc.pathname.startsWith('/boards') || loc.pathname.startsWith('/friends') || loc.pathname.startsWith('/you') || loc.pathname.startsWith('/u/') || loc.pathname.startsWith('/add/')
   const uid = user?.id ?? null
   const [ready, setReady] = useState(false)
   const [v2, setV2] = useState(false)
@@ -48,6 +51,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   const [challenges, setChallenges] = useState<ChallengeView[]>([])
   const [leagues, setLeagues] = useState<LeagueView[]>([])
   const busy = useRef(false)
+  const unreadRef = useRef(0)
 
   const refresh = useCallback(async () => {
     if (!uid || busy.current) return
@@ -96,15 +100,34 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       }
       if (!stop) await refresh()
     })()
-    const id = window.setInterval(() => {
-      void publishPublicStats(uid)
-      void refresh()
-    }, POLL_MS)
     return () => {
       stop = true
-      window.clearInterval(id)
     }
   }, [uid, savesReady, refresh])
+
+  // Slow poll only on Social routes (or while you have unread badges and the tab is visible).
+  useEffect(() => {
+    if (!uid || !savesReady) return
+    const shouldPoll = () => {
+      if (document.hidden) return false
+      return onSocial || unreadRef.current > 0
+    }
+    const tick = () => {
+      if (!shouldPoll()) return
+      void publishPublicStats(uid)
+      void refresh()
+    }
+    const id = window.setInterval(tick, POLL_MS)
+    const onVis = () => {
+      if (!document.hidden && onSocial) tick()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    if (onSocial) tick()
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [uid, savesReady, refresh, onSocial])
 
   const links = useMemo(() => {
     const mk = (f: FriendshipRow): FriendLink => {
@@ -142,6 +165,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<SocialCtx>(() => {
     const unread = notifications.filter((n) => !n.read_at).length
+    unreadRef.current = unread
     const waitingChallenges = challenges.filter((c) => c.status === 'pending' && c.opponent_id === uid).length
     return {
       ready,

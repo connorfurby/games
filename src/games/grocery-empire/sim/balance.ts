@@ -4,7 +4,7 @@ export const TICK_HZ = 10
 export const DT = 1 / TICK_HZ
 export const OFFLINE_STEP_SEC = 1
 export const OFFLINE_CAP_SEC = 8 * 60 * 60
-export const AUTOSAVE_MS = 10_000
+export const AUTOSAVE_MS = 45_000
 export const SAVE_VERSION = 45
 
 /** Re-export puzzle bars used across goals / UI (same numbers as HORIZON / content). */
@@ -33,8 +33,11 @@ export const DEPTH = {
   /** Side-yard path: receiver check-ins at the dock. */
   dockCheckInNeed: 28,
   dockCheckInCooldownSec: 120,
-  /** After this many by hand, the receiver checks trucks in on their own (same 2-min rhythm). */
-  dockAutoAfter: 5,
+  /**
+   * After this many by hand (aisle choice), the receiver finishes the rest on their own
+   * (same 2-min rhythm). Short lesson — the era clock is Open days, not these clicks.
+   */
+  dockAutoAfter: 3,
   era2RegularNeed: 24,
   era1StarMin: 3.5,
   writeOffNeedEra2: 3,

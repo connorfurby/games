@@ -2,7 +2,7 @@ import type { GameState } from './state'
 import { serializeState, deserializeState } from '@/shared/save'
 
 const WINDOW_MS = 5000
-const MAX = 8
+const MAX = 2
 
 interface Snap {
   at: number
@@ -56,11 +56,18 @@ export function undoLabel(raw: string): string {
 /** Push a snapshot before a risky player command (ads, builds, big spends). */
 export function pushUndo(s: GameState, label: string) {
   try {
-    stack.push({ at: Date.now(), label: undoLabel(label), raw: serializeState(s) })
-    if (stack.length > MAX) stack.shift()
+    const now = Date.now()
+    stack = stack.filter((snap) => now - snap.at <= WINDOW_MS)
+    stack.push({ at: now, label: undoLabel(label), raw: serializeState(s) })
+    while (stack.length > MAX) stack.shift()
   } catch {
     /* ignore */
   }
+}
+
+/** Test helper — current undo stack depth. */
+export function __undoStackLength(): number {
+  return stack.length
 }
 
 export function canUndo(): { ok: boolean; label?: string } {

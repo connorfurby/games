@@ -1,5 +1,6 @@
 import { engine } from '@/games/grocery-empire/sim/engine'
 import { PRIMARY_SAVE_ID, setActiveSaveId } from '@/games/grocery-empire/sim/saveKey'
+import { getCampaignGlance, hasCampaignSave } from '@/shared/saveGlance'
 import { exportSave, loadGame, saveGame, saveRaw } from '@/shared/save'
 import type { MetaSave } from '@/shared/types'
 import { localDayKey } from './dailyStamp'
@@ -94,6 +95,7 @@ export function stashPrimaryToSlot3(): boolean {
 }
 
 export function hasPrimaryGrocerySave(): boolean {
+  if (hasCampaignSave('grocery-empire')) return true
   return !!exportSave('grocery-empire')
 }
 
@@ -134,6 +136,8 @@ export function maybeRecordDailyBest(
 
 /** Glance baskets from the primary grocery save (for shelf UI). */
 export function glanceBasketsFromPrimary(): number | null {
+  const glance = getCampaignGlance('grocery-empire')
+  if (glance) return Math.floor(glance.headline)
   const parsed = loadGame<{ baskets?: number }>('grocery-empire')
   return typeof parsed?.baskets === 'number' ? Math.floor(parsed.baskets) : null
 }

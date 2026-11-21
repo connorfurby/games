@@ -68,6 +68,7 @@ function clauseHint(act: Command | null, fallback: string): string {
     case 'printFlyerWeek':
       return 'Team → Marketing → Weekly flyer.'
     case 'fileFlagshipPlanogram':
+    case 'fileStandardFlagship':
     case 'fileStandardPlanogram':
       return 'Store → Floor → Regulars.'
     case 'toggleClause':
@@ -89,6 +90,66 @@ function clauseHint(act: Command | null, fallback: string): string {
     default:
       return fallback.includes(',') ? fallback.split(',')[0]!.trim() + '.' : fallback
   }
+}
+
+/** Verb on the ready button — not a bare "Do it". */
+function verbLabel(act: Command): string {
+  switch (act.type) {
+    case 'unpack':
+      return 'Unpack'
+    case 'setFacing':
+      return 'Feature'
+    case 'buyWholesale':
+      return 'Buy crate'
+    case 'serveRegular':
+      return 'Serve'
+    case 'dockCheckIn':
+      return 'Check in'
+    case 'hire':
+      return 'Hire'
+    case 'assignShift':
+      return 'Assign'
+    case 'buyMemo':
+      return 'Buy memo'
+    case 'buyBuild':
+      return 'Build'
+    case 'openStore':
+      return 'Open store'
+    case 'expandLot':
+      return 'Buy lot'
+    case 'payInvoice':
+    case 'payAllInvoices':
+      return 'Pay'
+    case 'morningWriteOff':
+      return 'Write off'
+    case 'signCoolerLog':
+      return 'Sign log'
+    case 'printFlyerWeek':
+      return 'Print flyer'
+    case 'fileStandardFlagship':
+    case 'fileFlagshipPlanogram':
+      return 'File'
+    case 'leaveRegion':
+      return 'Leave'
+    case 'launchBarge':
+      return 'Launch'
+    case 'dispatchHauler':
+      return 'Dispatch'
+    default:
+      return 'Do it'
+  }
+}
+
+/** A cooldown / timer reason — Show me would open a dead button. */
+function isWaitReason(reason: string | undefined): boolean {
+  if (!reason) return false
+  return (
+    /next .+ in /i.test(reason) ||
+    / in \d/i.test(reason) ||
+    /due in /i.test(reason) ||
+    /cooldown/i.test(reason) ||
+    /wait/i.test(reason)
+  )
 }
 
 /**
@@ -160,12 +221,17 @@ export function NextGoal({
   const needs = goalNeeds(s, g)
   const act = act0
   const ready = readyCalm
+  const check = act ? can(s, act) : null
+  const reason = check && !check.ok ? check.reason : null
+  const waiting = !!reason && isWaitReason(reason)
   const t = needs.cash > 0 && !ready ? eta(etaSec(s, needs.cash)) : null
   const also: string[] = []
   if (needs.attention > 0) also.push(`${qty(needs.attention, numberFormat)} Attention`)
   if (needs.ideas > 0) also.push(`${qty(needs.ideas, numberFormat)} Ideas`)
   const dest = goalDest(act)
-  const showGo = !!dest && !!onMenu && (dest === 'memos' || dest !== activeMenu) && (dest === 'memos' || !!s.menus[dest])
+  // Show me only when the desk has a live control — never for a cooldown wait.
+  const showGo =
+    !waiting && !!dest && !!onMenu && (dest === 'memos' || dest !== activeMenu) && (dest === 'memos' || !!s.menus[dest])
   const go = (el?: HTMLElement | null) => {
     if (el) celebrate('small', el)
     if (dest === 'memos') requestInbox('memos')
@@ -182,8 +248,13 @@ export function NextGoal({
   } catch {
     /* never break the HUD */
   }
-  const hint = choices || g.id === 'corner-store' ? g.hint : clauseHint(act, g.hint)
-  const blocked = isFree && act && !ready && !showGo ? (can(s, act).reason ?? 'Not yet') : null
+  // Door goals and chore-running goals keep their own hint; others get a direction.
+  const keepHint = !act || !!choices || g.id === 'corner-store' || g.id === 'side-yard' || g.id === 'cold-permit'
+  const hint = keepHint ? g.hint : clauseHint(act, g.hint)
+  // Free click that cannot run and cannot usefully navigate: plate, not Do it.
+  const blocked = isFree && act && !ready && !showGo ? (reason ?? 'Not yet') : null
+  // Chore finishing itself (null action): no button — the counts line is the signal.
+  const choreRunning = !act && !choices
 
   const stars = s.depth?.stars ?? DEPTH.starsStart
   const starsLocked =
@@ -194,6 +265,7 @@ export function NextGoal({
     ? `Star Board ${stars.toFixed(1)}★ · frozen during ration week`
     : `Star Board ${stars.toFixed(1)}★ — soft-caps demand and franchise loyalty`
   const pct = Math.round(progress * 100)
+  const readyVerb = act ? verbLabel(act) : 'Do it'
 
   return (
     <div className={`g2-goal${ready ? ' is-ready' : ''}`} role="group" aria-label={`Next goal: ${g.title}`}>
@@ -210,7 +282,7 @@ export function NextGoal({
             <span className="g2-goal__eta"> Also needs {also.slice(isFree ? 0 : 1).join(' and ')}.</span>
           ) : null}
           {t ? <span className="g2-goal__eta"> Ready in {t}.</span> : null}
-          {blocked ? <span className="g2-goal__eta"> {blocked}</span> : null}
+          {blocked && !waiting ? <span className="g2-goal__eta"> {blocked}</span> : null}
         </span>
         {counts ? <span className="g2-goal__counts">{counts}</span> : null}
       </div>
@@ -227,15 +299,15 @@ export function NextGoal({
       {choices ? (
         <div className="g2-goal__forks" role="group" aria-label={`${g.title} choices`}>
           {choices.map((c) => {
-            const check = can(s, c.action)
+            const forkCheck = can(s, c.action)
             return (
               <button
                 key={c.id}
                 type="button"
                 className="g2-goal__fork"
-                disabled={!check.ok}
+                disabled={!forkCheck.ok}
                 onClick={() => dispatch(c.action)}
-                title={check.ok ? `${c.label}: ${c.line}` : (check.reason ?? 'Not yet')}
+                title={forkCheck.ok ? `${c.label}: ${c.line}` : (forkCheck.reason ?? 'Not yet')}
               >
                 <strong>{c.label}</strong>
                 <span>{c.line}</span>
@@ -243,18 +315,24 @@ export function NextGoal({
             )
           })}
         </div>
+      ) : choreRunning ? (
+        <div className="g2-goal__acts">
+          <p className="g2-goal__wait" title={counts || undefined}>
+            {counts.includes('·') ? counts.split('·').slice(1).join('·').trim() || 'Running' : 'Running'}
+          </p>
+        </div>
       ) : act ? (
         <div className="g2-goal__acts">
-          {blocked ? (
-            <p className="g2-goal__wait">Not yet</p>
+          {blocked || waiting ? (
+            <p className="g2-goal__wait">{waiting ? reason! : blocked!}</p>
           ) : isFree ? (
             <button
               type="button"
               className="g2-goal__do g2-goal__do--free"
               onClick={(e) => (ready ? dispatch(act) : go(e.currentTarget))}
-              title={ready ? 'Do it now' : `${can(s, act).reason ?? 'Not yet'} · ${whereTitle}`}
+              title={ready ? `${readyVerb} now` : `${reason ?? 'Not yet'} · ${whereTitle}`}
             >
-              {ready ? 'Do it' : 'Show me'}
+              {ready ? readyVerb : 'Show me'}
             </button>
           ) : (
             <button
@@ -262,10 +340,10 @@ export function NextGoal({
               className={`g2-tag${!ready ? ' is-saving' : ''}`}
               disabled={!ready && !showGo}
               onClick={(e) => (ready ? dispatch(act) : go(e.currentTarget))}
-              title={ready ? 'Do it now' : showGo ? `${can(s, act).reason ?? 'Not yet'} · ${whereTitle}` : (can(s, act).reason ?? 'Not yet')}
+              title={ready ? `${readyVerb} now` : showGo ? `${reason ?? 'Not yet'} · ${whereTitle}` : (reason ?? 'Not yet')}
             >
               <span className="g2-tag__price">{price}</span>
-              <span className="g2-tag__label">{ready ? 'Do it' : showGo ? 'Show me' : 'Saving'}</span>
+              <span className="g2-tag__label">{ready ? readyVerb : showGo ? 'Show me' : 'Saving'}</span>
             </button>
           )}
         </div>

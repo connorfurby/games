@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { loadGame } from '@/shared/save'
+import { hasCampaignSave } from '@/shared/saveGlance'
+import { exportSave } from '@/shared/save'
 import { SettingsModal } from './SettingsModal'
 
 const OPEN_HOTKEYS = 'games:open-hotkeys'
@@ -66,7 +67,7 @@ export function AppMenu({
   const loc = useLocation()
   const nav = useNavigate()
   const labelId = useId()
-  const hasSave = !!loadGame('grocery-empire')
+  const hasSave = hasCampaignSave('grocery-empire') || !!exportSave('grocery-empire')
   const inPlay = loc.pathname.startsWith('/play/')
 
   useEffect(() => {

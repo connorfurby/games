@@ -15,6 +15,7 @@ import { Button, LinkButton } from '@/games/grocery-empire/ui/kit'
 import { qty } from '@/games/grocery-empire/ui/format'
 import { engine } from '@/games/grocery-empire/sim/engine'
 
+import { getCampaignGlance } from '@/shared/saveGlance'
 import { loadGame } from '@/shared/save'
 import { hasPrimaryGrocerySave, loadDailyChallenge, prepareDailyChallengeStart, todaysChallenge } from './dailyChallenge'
 import { dailyTheme, localDayKey, streakWeek } from './dailyStamp'
@@ -47,6 +48,16 @@ function coverForGame(id: string): string | null {
 }
 
 function loadGlance(gameId: string): SaveGlance | null {
+  const cached = getCampaignGlance(gameId === 'signal-decay' ? 'signal-decay' : gameId)
+  if (cached) {
+    return {
+      era: cached.era,
+      lastSavedAt: cached.lastSavedAt,
+      baskets: gameId === 'grocery-empire' ? cached.headline : undefined,
+      stats: { playSec: cached.playSec, sold: gameId === 'grocery-empire' ? cached.headline : undefined },
+      time: gameId === 'signal-decay' ? cached.playSec : undefined,
+    }
+  }
   if (gameId === 'grocery-empire') return loadGame<SaveGlance>('grocery-empire')
   if (gameId === 'signal-decay') return loadGame<SaveGlance>(SD_PRIMARY_SAVE_ID)
   return null

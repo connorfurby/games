@@ -25,4 +25,4 @@
 
 **Shell chrome:** Profile is global — same `AccountChrome` / `ProfileSheet` as Grocery (HUD chip beside the waffle). Explicit **Shelf** control in the HUD; More sheet has **Home · Shelf**. Social rooms are URL-routed (`/social`, `/social/friends`, `/social/boards`, `/social/you`).
 
-Last pack review: 2026-11-20 (Pause clock + open on air). Earlier: 2026-11-20 (Social rooms + global profile chrome).
+Last pack review: 2026-11-20 (Cool memory: 45s autosave, glance cache, 2.5 Hz paint). Earlier: pause clock; Social rooms + global profile.

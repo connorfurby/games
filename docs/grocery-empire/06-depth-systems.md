@@ -61,7 +61,7 @@ One hard gate per era (counts + cooldowns + ETAs). Constants in `DEPTH` / `HORIZ
 
 | Era | Verb | Gate |
 | --- | --- | --- |
-| 0–1 | Layaway slips (8 at a 90s gap — finishes before baskets) / dock check-in (aisle + optional short) | Era 1 / side yard |
+| 0–1 | Layaway slips (8 at a 90s gap — finishes before baskets; after that matching visits auto-serve) / dock check-in (first 3 choose aisle, then receiver + Autopilot finish 28) | Era 1 / side yard |
 | 2–3 | Flyer band lock / hot-trait walks · Chain Patrol slows drift | Cold permit |
 | 4–6 | Exam holds / berth turnarounds / ration ledger stamps | Berth / Era 6 / Continue |
 | 7–9 | Climate neighbors (matching climate + shelf pull) / stop settlements / yield hauls | Era 8–10 |

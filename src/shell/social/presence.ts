@@ -5,9 +5,15 @@ const INTERVAL_MS = 30_000
 let timer: ReturnType<typeof setInterval> | null = null
 let currentGame: SocialGameId | null = null
 let userId: string | null = null
+let lastBeatAt = 0
 
-async function beat() {
+async function beat(force = false) {
   if (!userId) return
+  if (typeof document !== 'undefined' && document.hidden && !force) return
+  const now = Date.now()
+  // Coalesce route-change double beats (startPresence + setPlayingGame).
+  if (!force && now - lastBeatAt < 1500) return
+  lastBeatAt = now
   try {
     await social().updateProfile(userId, { last_seen_at: new Date().toISOString(), playing_game: currentGame })
   } catch {
@@ -15,15 +21,20 @@ async function beat() {
   }
 }
 
-export function startPresence(uid: string, game: SocialGameId | null) {
-  userId = uid
-  currentGame = game
-  void beat()
+function armTimer() {
   if (timer) clearInterval(timer)
   timer = setInterval(() => void beat(), INTERVAL_MS)
 }
 
+export function startPresence(uid: string, game: SocialGameId | null) {
+  userId = uid
+  currentGame = game
+  void beat()
+  armTimer()
+}
+
 export function setPlayingGame(game: SocialGameId | null) {
+  if (currentGame === game) return
   currentGame = game
   void beat()
 }
@@ -40,4 +51,10 @@ export function stopPresence() {
     void social()
       .updateProfile(uid, { playing_game: null, last_seen_at: new Date().toISOString() })
       .catch(() => {})
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && userId) void beat(true)
+  })
 }

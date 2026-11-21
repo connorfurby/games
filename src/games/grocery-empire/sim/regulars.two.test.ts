@@ -105,6 +105,23 @@ describe('two regulars at once (SAVE 31)', () => {
     expect(r.arrivesAt).toBe(s.time + DEPTH.regularVisitGapSec)
   })
 
+  it('after the layaway lesson, matching visits clear on their own', () => {
+    const s = createInitialState(13)
+    s.shelf.push({ cat: 'cans', qty: 20, age: 0 })
+    s.depth.layawaySlips = DEPTH.layawaySlipNeed
+    s.depth.facings.cans = 'tomatoes'
+    s.time = 200
+    const r = s.depth.regulars
+    r.activeId = 'mae'
+    r.patienceUntil = s.time + 40
+    r.layaway = true // leftover flag from earlier visits
+    r.arrivesAt = s.time + 500
+    const before = s.depth.regularSatisfied
+    tickRegulars(s, 1)
+    expect(s.depth.regularSatisfied).toBe(before + 1)
+    expect(r.activeId).toBeNull()
+  })
+
   it('migrate keeps waiting, defaults old saves, and drops orphans', () => {
     const s = twoShoppers()
     const m = migrate(JSON.parse(JSON.stringify(s)))

@@ -413,7 +413,7 @@ describe('depth smoke', () => {
 })
 
 describe('autopilot pieces', () => {
-  it('dock check-ins run themselves only after the gate is earned', async () => {
+  it('dock check-ins run themselves only after the lesson is earned', async () => {
     const { createInitialState } = await import('./state')
     const { tickAutoDock } = await import('./systems/dock')
     const { DEPTH } = await import('./balance')
@@ -423,6 +423,7 @@ describe('autopilot pieces', () => {
     s.staff.push({ id: 9001, role: 'receiver' } as never)
     s.depth.shifts[DEPTH.shiftSlots[0]] = [9001]
     s.depth.nextDockAt = 0
+    s.depth.autoDock = true
     s.depth.dockCheckIns = DEPTH.dockAutoAfter - 1
     tickAutoDock(s)
     expect(s.depth.dockCheckIns).toBe(DEPTH.dockAutoAfter - 1)

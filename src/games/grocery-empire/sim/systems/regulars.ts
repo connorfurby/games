@@ -189,8 +189,10 @@ export function tickRegulars(s: GameState, dt: number) {
     r.arrivesAt = s.time + DEPTH.regularVisitGapSec * 0.5
   }
   if (r.activeId) {
-    // Layaway visits never auto-serve — player/bot must push serveRegular.
-    if (!r.layaway && tryServeRegular(s)) return
+    // Opening lesson: layaway slips never auto-serve. After the 8 are cleared, matching
+    // neighbours leave happy on their own so "Earn the block's trust" is not another click wall.
+    const lesson = (s.depth.layawaySlips ?? 0) < DEPTH.layawaySlipNeed
+    if ((!r.layaway || !lesson) && tryServeRegular(s)) return
     // Waiting shopper never auto-serves; they only run out of patience.
     if (r.waitingId && s.time >= r.waitingPatienceUntil) expireWaiting(s)
     if (s.time >= r.patienceUntil) {
@@ -204,7 +206,7 @@ export function tickRegulars(s: GameState, dt: number) {
         r.waitingId = def.id
         r.waitingPatienceUntil = s.time + DEPTH.regularPatienceSec
         const visits = Object.values(r.seen).reduce((n, v) => n + v, 0)
-        r.waitingLayaway = visits >= 1
+        r.waitingLayaway = visits >= 1 && (s.depth.layawaySlips ?? 0) < DEPTH.layawaySlipNeed
         r.arrivesAt = s.time + DEPTH.regularVisitGapSec
       }
     }
@@ -221,9 +223,9 @@ export function tickRegulars(s: GameState, dt: number) {
   // While this visit is live, arrivesAt is when a second shopper may walk in.
   r.arrivesAt = s.time + DEPTH.regularVisitGapSec
   r.patienceUntil = s.time + DEPTH.regularPatienceSec
-  // Deterministic layaway cadence: every visit after the first is a slip.
+  // Opening lesson only: every visit after the first is a slip until 8 are cleared.
   const visits = Object.values(r.seen).reduce((n, v) => n + v, 0)
-  r.layaway = visits >= 1
+  r.layaway = visits >= 1 && (s.depth.layawaySlips ?? 0) < DEPTH.layawaySlipNeed
 }
 
 function midHasOrbit(s: GameState): boolean {

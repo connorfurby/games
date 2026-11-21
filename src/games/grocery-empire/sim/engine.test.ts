@@ -19,12 +19,13 @@ describe('GroceryEngine React snapshot identity', () => {
     expect(b.state.stats.unpackedManual).toBeGreaterThan(0)
   })
 
-  it('getSnapshot identity changes every pulse tick', () => {
+  it('getSnapshot identity changes on paint cadence', () => {
     vi.useFakeTimers()
     const eng = new GroceryEngine(createInitialState(11))
     const before = eng.getSnapshot()
     eng.start()
-    vi.advanceTimersByTime(250) // ~2–3 ticks at 10Hz
+    // 10 Hz sim, paint every 4 pulses → need ≥400ms for one UI bump.
+    vi.advanceTimersByTime(450)
     eng.stop()
     const after = eng.getSnapshot()
     expect(after).not.toBe(before)

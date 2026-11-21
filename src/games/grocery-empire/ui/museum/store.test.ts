@@ -63,4 +63,25 @@ describe('museumStore cloud hydrate', () => {
     expect(m.chests.map((c) => c.id)).toEqual(['c2'])
     expect(m.opened).toBe(4)
   })
+
+  it('does not saveGame on playClock-only bank; saves on chest grant', () => {
+    museumStore.get()
+    expect(getRawSlot('grocery-museum')).toBeNull()
+
+    museumStore.apply((m) => {
+      m.playClock += 12
+      return 'later'
+    })
+    expect(getRawSlot('grocery-museum')).toBeNull()
+    expect(museumStore.get().playClock).toBe(12)
+
+    museumStore.apply((m) => {
+      m.chests.push({ id: 'grant', rarity: 'common', wing: null, source: 'Test', at: 1 })
+      m.unlocked = true
+      return 'now'
+    })
+    expect(getRawSlot('grocery-museum')).toBeTruthy()
+    expect(museumStore.get().chests.map((c) => c.id)).toEqual(['grant'])
+  })
 })
+

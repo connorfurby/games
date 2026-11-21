@@ -10,6 +10,7 @@ import {
   snapshotGame,
   type SnapshotInfo,
 } from '@/shared/save'
+import { setCampaignGlance } from '@/shared/saveGlance'
 import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
 import { can as canCmd, run as runCmd, tickAutoRestock, type Check, type Command } from './commands'
 import { migrate } from './migrate'
@@ -21,6 +22,19 @@ import { canCarry, canRebrand, rebrand as rebrandState, type RebrandCarry } from
 import { applyUndo, canUndo as undoAvailable, clearUndo, pushUndo } from './undo'
 
 type Listener = () => void
+
+function noteGroceryGlance(id: string, s: GameState) {
+  if (id.includes('-dev')) return
+  const baskets = Math.max(0, Math.floor(Number(s.baskets ?? 0)))
+  setCampaignGlance(id === 'grocery-empire' || !id.includes('slot') ? 'grocery-empire' : id, {
+    era: Math.max(0, Math.floor(s.era ?? 0)),
+    lifetimeRevenue: Math.max(0, Math.floor(Number(s.lifetimeRevenue ?? 0))),
+    headline: baskets,
+    playSec: Math.max(0, Math.floor(Number(s.stats?.playSec ?? 0))),
+    lastSavedAt: s.lastSavedAt ?? Date.now(),
+    headlineLabel: `${baskets.toLocaleString()} baskets`,
+  })
+}
 
 /** Away gaps at or above this many seconds catch up a slice per frame behind a loading screen. */
 const ASYNC_CATCHUP_SEC = 60
@@ -37,8 +51,8 @@ export interface CatchUpInfo {
   total: number
 }
 
-/** Sim pulses per UI repaint (10 Hz sim → 5 Hz paint). */
-const PULSES_PER_PAINT = 2
+/** Sim pulses per UI repaint (10 Hz sim → 2.5 Hz paint). */
+const PULSES_PER_PAINT = 4
 
 /**
  * React `useSyncExternalStore` compares snapshots with Object.is.
@@ -70,6 +84,7 @@ export class GroceryEngine {
     this.pendingOffline = bootPending
     bootPending = null
     this.snapshot = { v: this.version, state: this.state }
+    noteGroceryGlance(getActiveSaveId(), this.state)
   }
 
   /** Non-null while away time is being caught up (the UI shows a loading screen). */
@@ -228,7 +243,7 @@ export class GroceryEngine {
       this.autosaveAcc = 0
       this.save()
     }
-    // The sim ticks at 10 Hz; the UI repaints at 5 Hz (dispatches still repaint at once).
+    // The sim ticks at 10 Hz; the UI repaints at 2.5 Hz (dispatches still repaint at once).
     this.pulses += 1
     if (this.pulses % PULSES_PER_PAINT === 0) this.bump()
   }
@@ -303,10 +318,12 @@ export class GroceryEngine {
     if (this.catchRun || this.pendingOffline) return
     this.state.lastSavedAt = Date.now()
     try {
-      saveGame(getActiveSaveId(), this.state)
+      const id = getActiveSaveId()
+      saveGame(id, this.state)
       // Rolling backup every ten minutes of play (cheap: one JSON copy, newest three kept).
       const s = this.state
-      snapshotGame(getActiveSaveId(), s, `Era ${s.era} · ${Math.floor(s.baskets).toLocaleString()} baskets`)
+      snapshotGame(id, s, `Era ${s.era} · ${Math.floor(s.baskets).toLocaleString()} baskets`)
+      noteGroceryGlance(id, s)
     } catch {
       /* ignore quota */
     }
@@ -355,6 +372,7 @@ export class GroceryEngine {
   reloadFromDisk() {
     this.cancelCatchUp()
     this.state = GroceryEngine.loadState()
+    noteGroceryGlance(getActiveSaveId(), this.state)
     const pending = bootPending
     bootPending = null
     if (pending && this.running) this.beginCatchUp(pending.elapsed, pending.showReceipt)
@@ -442,6 +460,8 @@ export class GroceryEngine {
   private bump() {
     this.version += 1
     this.snapshot = { v: this.version, state: this.state }
+    // Background tabs: keep the snapshot current, skip React notify until visible.
+    if (typeof document !== 'undefined' && document.hidden) return
     for (const l of this.listeners) l()
   }
 }

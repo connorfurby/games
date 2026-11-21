@@ -2,6 +2,25 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## BA. Cool memory / main-thread heat (2026-11-20)
+
+No `SAVE_VERSION` / `GAME_VERSION` bump (perf + sync only).
+
+- Museum: persist only on real grants / opens; `playClock` banks in memory and debounces ~30s.
+- Campaign autosave **45s**; cloud flush skips identical payloads; hide/pagehide still flushes.
+- Social poll **120s** and only on `/social` (or unread + visible); campaign glance cache for Shelf / boards / presence; presence pauses while the tab is hidden.
+- UI paint **2.5 Hz** (`PULSES_PER_PAINT=4`); skip React notify while hidden; undo stack **MAX=2**.
+
+## AZ. Road ahead + chore lessons (2026-11-20)
+
+No `SAVE_VERSION` bump. `GAME_VERSION` **1.0.5**.
+
+- Road ahead only explained the current step. The side-yard checklist lived on the door goal and stayed hidden. The next-chapter card quoted Era 2’s flyer line as if it were the door.
+- Every step now has a status line. Door goals expose `doorParts` (corner store, side yard, cold permit) and Road ahead always expands those rows. The next-chapter card is title + epigraph only.
+- Dock: `dockAutoAfter` 5 → 3. After three aisle choices, the receiver (Autopilot on by default) finishes 28. Next Goal returns null while that runs — no Do it every 2 minutes. Invoices stay quiet while autopay is on. After 8 layaway slips, matching visits auto-serve.
+- Top bar: ready button uses the verb (`Check in`, `Serve`, `Hire`…). A wait reason is a plate, never Show me to a dead button. A self-running chore shows Running / the status line.
+- Measured seeds 1 / 42: Era 1 **1548s** (~25.8 min), Era 2 **12601s** (3.50 h). Floors unchanged.
+
 ## AY. Back office is a card (2026-11-20)
 
 No `SAVE_VERSION` bump. `GAME_VERSION` **1.0.3**.
