@@ -1,6 +1,5 @@
 import { DAILY_RULE_ORDER, type DailyRuleId } from './balance'
 import { cashLabel } from '@/shared/bn'
-import { valueMul } from './systems/network'
 import { buyout, canBuyout, canPriceWar, priceWar } from './systems/rivals'
 import type { RivalId } from '../content/rivals'
 import {
@@ -42,7 +41,6 @@ import {
   PERK_RESPEC,
   PRICE,
   PRICE_LOCK,
-  RESTOCK_SMARTS,
   WHOLESALE,
 } from './balance'
 import {
@@ -53,6 +51,7 @@ import {
   crateCost,
   crateSize,
   deliveryTime,
+  doorOverflow,
   hireCost,
   hoursMax,
   manualUnpackAmount,
@@ -1991,40 +1990,84 @@ export function run(s: GameState, cmd: Command): Check {
   return ok
 }
 
-/** Auto-restock tick helper — places orders through the same buy path. */
+/** Same ceiling as the Suppliers fill control — auto-order never goes bigger. */
+const MAX_AUTO_CRATES = 200
+
+/**
+ * Auto-restock tick — fills backroom room at the live wholesale price.
+ * Ignores legacy maxCost / minUnits (kept on the save for migrate). Restock Smarts
+ * no longer waits for a dip; the rank stays wired for Hands Off.
+ */
 export function tickAutoRestock(s: GameState) {
   if (!s.autoRestock.enabled) return
   if (!s.memos['auto-order']) return
-  if (s.orders.length > 0) return
-  const back = sumQty(s.backroom)
-  if (back >= s.autoRestock.minUnits) return
-  // Restock Smarts: wait for a dip vs the slow EMA — unless the floor is already dry.
-  const smarts = up(s, 'restock-smarts')
-  if (smarts > 0 && sumQty(s.shelf) + back > 0) {
-    const tip = Number.isFinite(s.wholesale.tipIndex) ? s.wholesale.tipIndex : s.wholesale.index
-    const tol = RESTOCK_SMARTS.tolBase - RESTOCK_SMARTS.tolPerRank * smarts
-    if (s.wholesale.index > tip * tol) return
-  }
-  // Neediest aisle first (furthest below its mix target in the backroom); skip any over the
-  // cost cap or unaffordable so one pricey aisle never blocks the cheaper ones.
+  // Keep Restock Smarts wired (Hands Off prereq). It no longer delays buys.
+  void up(s, 'restock-smarts')
+
+  const unitsEach = crateSize(s)
+  const minCrates = s.supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
+  const pending = (s.orders ?? []).reduce((n, o) => n + o.qty, 0)
+  const room = Math.max(0, backroomCap(s) + doorOverflow(s) - sumQty(s.backroom) - pending)
+  if (room < unitsEach * minCrates) return
+
+  let cratesLeft = Math.min(MAX_AUTO_CRATES, Math.floor(room / Math.max(1, unitsEach)))
+  if (cratesLeft < minCrates) return
+
   const targets = restockTargets(s)
-  const backTotal = Math.max(1, back)
-  const ranked: { cat: CategoryId; gap: number }[] = []
+  const stockTotal = Math.max(1, sumQty(s.backroom) + pending)
+  const inboundByCat: Partial<Record<CategoryId, number>> = {}
+  for (const o of s.orders ?? []) {
+    inboundByCat[o.cat] = (inboundByCat[o.cat] ?? 0) + o.qty
+  }
+  const ranked: { cat: CategoryId; gap: number; weight: number }[] = []
   for (const c of CATEGORY_IDS) {
-    const target = targets[c]
-    if (target == null) continue
-    ranked.push({ cat: c, gap: target - sumQty(s.backroom, c) / backTotal })
+    const weight = targets[c]
+    if (weight == null) continue
+    const have = sumQty(s.backroom, c) + (inboundByCat[c] ?? 0)
+    ranked.push({ cat: c, gap: weight - have / stockTotal, weight })
   }
   ranked.sort((a, b) => b.gap - a.gap)
-  const order: CategoryId[] = ranked.map((r) => r.cat)
-  if (!order.length && s.categories[s.orderCat]) order.push(s.orderCat)
-  const crates = s.supplier === 'b' ? WHOLESALE.supplierB.minSpools : 1
-  for (const cat of order) {
-    // maxCost is in base (stall-tier) dollars so the cap survives the 2.0 value ladder.
-    if (unitCost(s, cat) / valueMul(s) > s.autoRestock.maxCost) continue
-    if (!can(s, { type: 'buyWholesale', cat, crates }).ok) continue
-    run(s, { type: 'buyWholesale', cat, crates })
-    return
+  if (!ranked.length && s.categories[s.orderCat]) {
+    ranked.push({ cat: s.orderCat, gap: 1, weight: 1 })
+  }
+  if (!ranked.length) return
+
+  // Split crates by mix weight; emptiest aisle (first) gets rounding leftovers.
+  const plan: { cat: CategoryId; crates: number }[] = ranked.map((r) => ({ cat: r.cat, crates: 0 }))
+  let used = 0
+  for (let i = 0; i < plan.length; i++) {
+    const w = ranked[i]!.weight
+    const n = i === plan.length - 1 ? cratesLeft - used : Math.floor(cratesLeft * w)
+    plan[i]!.crates = Math.max(0, n)
+    used += plan[i]!.crates
+  }
+  if (used < cratesLeft) plan[0]!.crates += cratesLeft - used
+
+  // Supplier B needs a legal minimum — fold undersized aisle shares into the emptiest.
+  if (minCrates > 1) {
+    for (let i = 1; i < plan.length; i++) {
+      if (plan[i]!.crates > 0 && plan[i]!.crates < minCrates) {
+        plan[0]!.crates += plan[i]!.crates
+        plan[i]!.crates = 0
+      }
+    }
+  }
+
+  for (const row of plan) {
+    if (row.crates < minCrates) continue
+    const cmd = { type: 'buyWholesale' as const, cat: row.cat, crates: row.crates }
+    if (can(s, cmd).ok) {
+      run(s, cmd)
+      continue
+    }
+    // Invoice book may be full or aisle locked — try min-crate bites, then stop.
+    let left = row.crates
+    while (left >= minCrates) {
+      const bite = { type: 'buyWholesale' as const, cat: row.cat, crates: minCrates }
+      if (!can(s, bite).ok) return
+      run(s, bite)
+      left -= minCrates
+    }
   }
 }
 

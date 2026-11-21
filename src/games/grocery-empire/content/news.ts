@@ -5,7 +5,7 @@
  * Protocol: bump GAME_VERSION (patch/minor), prepend a NEWS article, keep newest first.
  */
 
-export const GAME_VERSION = '1.0.5'
+export const GAME_VERSION = '1.0.6'
 
 /** Era bands the News filter offers. `meta` is shell/site news that isn't about an era. */
 export type NewsBand = 'e01' | 'e23' | 'e46' | 'e712' | 'meta'
@@ -53,6 +53,20 @@ export function newsArt(a: NewsArticle): NewsArt {
 
 /** Newest first. Agents: prepend — never bury the latest bulletin. */
 export const NEWS: NewsArticle[] = [
+  {
+    id: '2026-11-20-auto-restock-fill',
+    bands: ['e01'],
+    date: '2026-11-20',
+    version: '1.0.6',
+    kicker: 'Desk',
+    art: 'counter',
+    headline: 'The clipboard fills the backroom',
+    dek: 'Auto-restock buys at today’s price until the dock is full — no min/max dials.',
+    body: [
+      'With the Auto-Order Clipboard on, the desk keeps ordering at the live wholesale price until on-hand stock and trucks on the road fill the backroom. Emptiest aisle first. You can still tap Buy by hand.',
+      'The old max-cost and keep-in-back dials are gone. Restock Smarts no longer waits for a dip — the clipboard buys through spikes so the shelf does not run dry.',
+    ],
+  },
   {
     id: '2026-11-20-road-and-chores',
     bands: ['e01', 'e23'],

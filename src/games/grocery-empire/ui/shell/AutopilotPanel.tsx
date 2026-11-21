@@ -63,7 +63,7 @@ export function AutopilotPanel({ onOpenMenu }: { onOpenMenu: (m: MenuId) => void
     rows.push({
       id: 'restock',
       title: 'Restocking',
-      what: 'Orders a crate when the back runs low and the price is under your limit.',
+      what: 'Fills the backroom at today’s price, emptiest aisle first.',
       on: hasClip && s.autoRestock.enabled,
       control: hasClip ? (
         <Toggle checked={s.autoRestock.enabled} onChange={(on) => dispatch({ type: 'setAutoRestock', enabled: on })}>
@@ -71,7 +71,7 @@ export function AutopilotPanel({ onOpenMenu }: { onOpenMenu: (m: MenuId) => void
         </Toggle>
       ) : undefined,
       earn: hasClip ? undefined : 'Buy the Auto-Order Clipboard memo (after about 30 orders by hand).',
-      go: hasClip ? goto('suppliers', 'Limits in Suppliers') : { label: 'Memos', run: () => requestInbox('memos') },
+      go: hasClip ? goto('suppliers', 'Open Suppliers') : { label: 'Memos', run: () => requestInbox('memos') },
     })
 
     // 4. Dock check-ins

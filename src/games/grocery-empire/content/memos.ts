@@ -651,7 +651,7 @@ export const MEMOS: MemoDef[] = [
     id: 'auto-order',
     name: 'Auto-Order Clipboard',
     voice: 'A clipboard by the phone with a number circled: call when below this.',
-    effect: 'Unlocks auto-restock: buys crates when the backroom runs low and cost is under your limit.',
+    effect: 'Unlocks auto-restock: fills the backroom at today’s price, emptiest aisle first.',
     era: 1,
     cost: c(200, 6000),
     visible: (s) => s.compute.unlocked && s.stats.ordersPlaced >= 30,

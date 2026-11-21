@@ -72,14 +72,6 @@ export function SuppliersPanel() {
   const expressCost = crateCost(s, cat, 'a')
   const budgetCrates = WHOLESALE.supplierB.minSpools
   const budgetCost = crateCost(s, cat, 'b') * budgetCrates
-  const setAuto = (patch: { enabled?: boolean; maxCost?: number; minUnits?: number }) =>
-    dispatch({
-      type: 'setAutoRestock',
-      enabled: patch.enabled ?? !!s.autoRestock.enabled,
-      maxCost: patch.maxCost ?? s.autoRestock.maxCost,
-      minUnits: patch.minUnits ?? s.autoRestock.minUnits,
-    })
-
   const orders = s.orders ?? []
   const safety: {
     key: string
@@ -240,38 +232,15 @@ export function SuppliersPanel() {
         <div className="p6-stack" data-coach-id="suppliers-autorestock">
           {autoOn ? (
             <>
-              <Toggle checked={!!s.autoRestock?.enabled} onChange={(enabled) => setAuto({ enabled })}>
+              <Toggle
+                checked={!!s.autoRestock?.enabled}
+                onChange={(enabled) => dispatch({ type: 'setAutoRestock', enabled })}
+              >
                 {s.autoRestock?.enabled ? 'Reordering for you' : 'Off'}
               </Toggle>
-              <p className="p6-copy">Reorders the emptiest aisle when the backroom runs low.</p>
-                <div className="p6-row">
-                  <label className="p6-field">
-                    Max cost / unit
-                    <input
-                      type="number"
-                      min={0.05}
-                      step={0.05}
-                      value={s.autoRestock.maxCost}
-                      onChange={(e) => {
-                        const v = Number(e.target.value)
-                        if (Number.isFinite(v) && v > 0) setAuto({ maxCost: v })
-                      }}
-                    />
-                  </label>
-                  <label className="p6-field">
-                    Keep in back
-                    <input
-                      type="number"
-                      min={1}
-                      step={1}
-                      value={s.autoRestock.minUnits}
-                      onChange={(e) => {
-                        const v = Math.floor(Number(e.target.value))
-                        if (Number.isFinite(v) && v >= 1) setAuto({ minUnits: v })
-                      }}
-                    />
-                  </label>
-                </div>
+              <p className="p6-copy">
+                Fills the backroom at today’s price, emptiest aisle first. You can still order by hand.
+              </p>
             </>
           ) : (
             <p className="p6-copy">Buy the Auto-order memo and the desk will reorder for you.</p>

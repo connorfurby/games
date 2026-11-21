@@ -321,9 +321,6 @@ export const WHOLESALE = {
   supplierB: { discount: 0.85, delaySec: 30, minSpools: 2, shortShipChance: 0.15, shortShipFrac: 0.75 },
 }
 
-/** Restock Smarts: auto-order only when index <= tipIndex * (base − perRank × rank). */
-export const RESTOCK_SMARTS = { tolBase: 1.04, tolPerRank: 0.02 }
-
 export const SHELF = { baseCap: 40 }
 export const BACKROOM = { baseCap: 60, perRackLevel: 25 }
 

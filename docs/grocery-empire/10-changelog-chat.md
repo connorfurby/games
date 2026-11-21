@@ -2,6 +2,15 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## BE. Smarter auto-restock (2026-11-20)
+
+`GAME_VERSION` **1.0.6**. No `SAVE_VERSION` bump (`maxCost` / `minUnits` stay on the save, unused).
+
+- Auto-restock fills backroom room at the live wholesale price (emptiest aisle / mix first), including while trucks are inbound.
+- Removed the max-cost and keep-in-back dials from Suppliers / Autopilot copy.
+- Restock Smarts no longer waits for a wholesale dip; ranks still gate Hands Off.
+- Dropped the duplicate `tickAutoRestock` call from the live engine pulse (tick path only).
+
 ## BD. Fleet list soft caps (2026-11-20)
 
 No `SAVE_VERSION` / `GAME_VERSION` bump (perf + leak).

@@ -12,7 +12,7 @@ import {
 } from '@/shared/save'
 import { setCampaignGlance } from '@/shared/saveGlance'
 import { AUTOSAVE_MS, DT, TICK_HZ } from './balance'
-import { can as canCmd, run as runCmd, tickAutoRestock, type Check, type Command } from './commands'
+import { can as canCmd, run as runCmd, type Check, type Command } from './commands'
 import { migrate } from './migrate'
 import { openUnpaused } from './pause'
 import { getActiveSaveId } from './saveKey'
@@ -236,7 +236,6 @@ export class GroceryEngine {
     const dt = DT * Math.max(0, this.state.speed) * this.softPauseMul
     if (!this.state.paused && dt > 0) {
       applyTick(this.state, dt)
-      tickAutoRestock(this.state)
     }
     this.autosaveAcc += 1000 / TICK_HZ
     if (this.autosaveAcc >= AUTOSAVE_MS) {
