@@ -13,6 +13,7 @@ export type NotificationKind =
   | 'challenge_result'
   | 'league_join'
   | 'cup_result'
+  | 'beta_key'
 export type SocialGameId = 'grocery-empire' | 'signal-decay'
 
 export interface ProfileRow {

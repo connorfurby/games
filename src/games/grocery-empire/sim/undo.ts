@@ -71,9 +71,13 @@ export function __undoStackLength(): number {
 }
 
 export function canUndo(): { ok: boolean; label?: string } {
+  const now = Date.now()
+  // Drop expired JSON blobs so late-game saves (~hundreds of KB) do not linger.
+  if (stack.some((snap) => now - snap.at > WINDOW_MS)) {
+    stack = stack.filter((snap) => now - snap.at <= WINDOW_MS)
+  }
   const top = stack[stack.length - 1]
   if (!top) return { ok: false }
-  if (Date.now() - top.at > WINDOW_MS) return { ok: false }
   return { ok: true, label: top.label }
 }
 

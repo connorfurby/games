@@ -2,6 +2,23 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## BD. Fleet list soft caps (2026-11-20)
+
+No `SAVE_VERSION` / `GAME_VERSION` bump (perf + leak).
+
+- **Root cause of ~1GB climb on long/late tabs:** Replication (and bot open-lane spam) grew `fleet.bargeList` into the thousands (~200KB JSON alone). Undo + autosave kept cloning that blob.
+- Hard caps: barges **24**, lanes **24**, franchises **24**. `repair` / migrate trim oversized saves; replication stops at the berth cap.
+- Expired undo JSON is dropped on `canUndo` (not only on the next push).
+
+## BC. Shell paints ~1 Hz (2026-11-20)
+
+No `SAVE_VERSION` / `GAME_VERSION` bump (perf only).
+
+- `getPanelSnapshot` keeps the play shell (and every `useGame()` panel) on ~1 sim-second + commands, not every 2.5 Hz bump. Cash/baskets still subscribe live.
+- Dropped CSS `filter: blur` on page transitions (Chrome GPU layer bloat).
+- Lazy-load DevMode + wiki from the tools drawer; grocery engine pinned on `globalThis` like Signal.
+- Snapshot keep **2**; live `seenHeadlines` capped at 80; storefront coins on their own interval.
+
 ## BB. Stop the paint loop (2026-11-20)
 
 No `SAVE_VERSION` / `GAME_VERSION` bump (perf only).

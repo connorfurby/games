@@ -12,7 +12,7 @@ Play: `/play/grocery-empire` · DevMode `/play/grocery-empire/dev`
 
 **Living agent briefing:** `docs/signal-decay/` — start at `docs/signal-decay/README.md`.
 
-Play: `/play/signal-decay` · DevMode `/play/signal-decay/dev`
+Play: `/play/signal-decay` is closed beta (shelf Beta flag). Only @connorfurby can send a key, and only to a friend. DevMode `/play/signal-decay/dev` uses the same gate.
 
 Pacing flags (independent of Grocery): default Era 1–2 · `SD_LONG=1` Eras 3–6 · `SD_HORIZON=1` Eras 7–12.
 

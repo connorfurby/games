@@ -92,6 +92,24 @@ describe('demo town', () => {
     expect(now.ends_at).toBeTruthy()
   })
 
+  it('only @connorfurby can send a Signal Decay beta key, and only to a friend', async () => {
+    const fs = await db.friendships(DEMO_ME)
+    const friend = fs.find((f) => f.status === 'accepted')!
+    const other = friend.requester_id === DEMO_ME ? friend.addressee_id : friend.requester_id
+    expect((await db.grantBetaKey(DEMO_ME, other)).error).toMatch(/connorfurby/)
+    expect((await db.betaState(other)).games).not.toContain('signal-decay')
+
+    expect((await db.updateProfile(DEMO_ME, { handle: 'connorfurby' })).error).toBeNull()
+    const stranger = (await db.suggestions(DEMO_ME))[0]!.profile
+    expect((await db.grantBetaKey(DEMO_ME, stranger.id)).error).toMatch(/friends/)
+    expect((await db.grantBetaKey(DEMO_ME, other)).error).toBeNull()
+    expect((await db.betaState(other)).games).toContain('signal-decay')
+    expect((await db.betaState(DEMO_ME)).sentTo).toContain(other)
+    expect((await db.notifications(other)).filter((n) => n.kind === 'beta_key')).toHaveLength(1)
+    expect((await db.grantBetaKey(DEMO_ME, other)).error).toBeNull()
+    expect((await db.notifications(other)).filter((n) => n.kind === 'beta_key')).toHaveLength(1)
+  })
+
   it('challenging a stranger is refused', async () => {
     const s = (await db.suggestions(DEMO_ME))[0]!.profile
     const r = await db.createChallenge({ creatorId: DEMO_ME, opponentId: s.id, gameId: 'grocery-empire', metric: 'revenue', hours: 24, message: '' })

@@ -133,7 +133,7 @@ export function loadMeta<T>(fallback: T): T {
 }
 
 export const SNAP_EVERY_MS = 10 * 60 * 1000
-export const SNAP_KEEP = 3
+export const SNAP_KEEP = 2
 
 export interface SnapshotInfo {
   at: number

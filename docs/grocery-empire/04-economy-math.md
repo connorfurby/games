@@ -77,7 +77,7 @@ Wholesale index: sine + drift (`WHOLESALE`); Market Bell counts orders at/below 
 
 - **Cold plants:** typed compressor (income drip) / tunnel (spoil cut) / **blast** (only yield drain). Yield sized so staffed blast clears in tens of minutes after log/bill work — all-compressor yards never leave.
 - **Lanes / franchises:** minutes-of-revenue first buy, then geometric; matched wet cargo → `perLane`, mismatch ≈ `perDryLane`.
-- **Barges:** priced by **launches** (not barge count); growth steep (~2.4). Pocket Ops trips replace idle biomass drain.
+- **Barges:** priced by **launches** (not barge count); growth steep (~2.4). Pocket Ops trips replace idle biomass drain. **Hard list cap** `FLEET.bargeSoftCap` (24) — replication stops there (network already soft-weights past 6 once a planet is stocked). Lanes / franchises hard-cap at `LOGISTICS.laneSoftCap` / `franchiseSoftCap` (24).
 - **Horizon:** cash buys floor at `HORIZON.cashGateSec` (300s of revenue). Puzzle verbs spend survey / freight / seed / signal / seal.
 
 ## Prestige

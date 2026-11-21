@@ -1187,17 +1187,35 @@ function SceneLive({ s, reducedMotion, view }: { s: GameState; reducedMotion: bo
   const nextId = useRef(1)
   const rev = Math.max(0, s.rates.revenuePerSec)
 
+  // Own interval — do not re-arm on every shell paint / sim-second.
+  const revBucket = Math.round(rev * 4) / 4
   useEffect(() => {
-    if (reducedMotion || s.paused || rev <= 0) return
+    if (reducedMotion || s.paused || revBucket <= 0) return
+    const drops: number[] = []
+    const fire = () => {
+      const id = nextId.current++
+      const x = L.doorX + (Math.random() - 0.5) * 40
+      setCoins((c) => [...c.slice(-5), { id, x, text: `+${money(revBucket * 1.1)}` }])
+      drops.push(
+        window.setTimeout(() => {
+          setCoins((c) => c.filter((k) => k.id !== id))
+        }, 1700),
+      )
+    }
     const now = performance.now()
-    if (now - last.current < 1100) return
-    last.current = now
-    const id = nextId.current++
-    const x = L.doorX + (Math.random() - 0.5) * 40
-    setCoins((c) => [...c.slice(-5), { id, x, text: `+${money(rev * 1.1)}` }])
-    const t = window.setTimeout(() => setCoins((c) => c.filter((k) => k.id !== id)), 1700)
-    return () => window.clearTimeout(t)
-  }, [reducedMotion, s.paused, rev, L.doorX, s.time])
+    if (now - last.current >= 1100) {
+      last.current = now
+      fire()
+    }
+    const t = window.setInterval(() => {
+      last.current = performance.now()
+      fire()
+    }, 1100)
+    return () => {
+      window.clearInterval(t)
+      for (const d of drops) window.clearTimeout(d)
+    }
+  }, [reducedMotion, s.paused, revBucket, L.doorX])
 
   // Truck: appears 30 s out and drives to the loading dock.
   // Order.eta is already remaining seconds (market ticks it down).

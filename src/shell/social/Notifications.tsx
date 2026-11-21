@@ -17,6 +17,8 @@ function hrefFor(n: NotificationWithActor): string {
     case 'league_join':
     case 'cup_result':
       return '/social/compete'
+    case 'beta_key':
+      return '/play/signal-decay'
     default:
       return '/social'
   }
@@ -32,6 +34,7 @@ const ICON: Record<NotificationWithActor['kind'], string> = {
   challenge_result: '🏁',
   league_join: '🏟',
   cup_result: '🏆',
+  beta_key: '🔑',
 }
 
 export function Notifications({ compact = false, onPick }: { compact?: boolean; onPick?: () => void }) {

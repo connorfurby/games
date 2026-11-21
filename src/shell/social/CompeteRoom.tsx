@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, SegmentedControl } from '@/games/grocery-empire/ui/kit'
+import { socialGames } from '@/shell/beta'
 import type { SocialGameId } from '@/shared/database.types'
 import { useAuth } from '../AuthContext'
 import { Avatar, PlayerName } from './Avatar'
@@ -16,12 +17,15 @@ const PLACE = ['1st', '2nd', '3rd']
 /** The weekly cup: sales since Monday; the top three each week go in the record book. */
 function WeeklyCup() {
   const { profile } = useAuth()
+  const { canPlay } = useSocial()
+  const games = socialGames(canPlay('signal-decay'))
   const [game, setGame] = useState<SocialGameId>((profile?.favorite_game as SocialGameId) ?? 'grocery-empire')
-  const { board } = useBoard(game, 'week', 'global', undefined, 5)
+  const shown = games.includes(game) ? game : 'grocery-empire'
+  const { board } = useBoard(shown, 'week', 'global', undefined, 5)
   const [past, setPast] = useState<CupResult[]>([])
   useEffect(() => {
-    void social().cupResults(game, 4).then(setPast)
-  }, [game])
+    void social().cupResults(shown, 4).then(setPast)
+  }, [shown])
   const weeks = [...new Set(past.map((p) => p.week_key))]
   const me = board?.me
   return (
@@ -29,26 +33,28 @@ function WeeklyCup() {
       <header className="sc-cup__head">
         <div>
           <span className="sd-eyebrow sd-eyebrow--tag">Weekly cup</span>
-          <h3 className="sc-h2">{GAME_NAME[game]}</h3>
+          <h3 className="sc-h2">{GAME_NAME[shown]}</h3>
           <p className="sc-muted">Most sales earned this week. Ends in {timeLeft(weekEndsAt().toISOString()).replace(' left', '')}.</p>
         </div>
-        <SegmentedControl
-          aria-label="Cup game"
-          value={game}
-          onChange={setGame}
-          options={(['grocery-empire', 'signal-decay'] as SocialGameId[]).map((g) => ({
-            value: g,
-            label: g === 'grocery-empire' ? 'Grocery' : 'Signal',
-          }))}
-        />
+        {games.length > 1 ? (
+          <SegmentedControl
+            aria-label="Cup game"
+            value={shown}
+            onChange={setGame}
+            options={games.map((g) => ({
+              value: g,
+              label: g === 'grocery-empire' ? 'Grocery' : 'Signal',
+            }))}
+          />
+        ) : null}
       </header>
       {me ? (
         <div className="sc-cup__me">
           <strong>#{me.rank}</strong>
           <span>
-            You’ve earned <strong>{metricValue('week', me.value, game)}</strong> this week
+            You’ve earned <strong>{metricValue('week', me.value, shown)}</strong> this week
             {board && me.rank > 3 && board.entries[2]
-              ? ` · ${metricValue('week', Math.max(0, board.entries[2].value - me.value), game)} to the podium`
+              ? ` · ${metricValue('week', Math.max(0, board.entries[2].value - me.value), shown)} to the podium`
               : ''}
           </span>
         </div>
@@ -59,11 +65,11 @@ function WeeklyCup() {
             <span className="sc-mini__rank">{e.rank}</span>
             <Avatar profile={e.profile} size={26} />
             <PlayerName profile={e.profile} handle={false} />
-            <strong>{metricValue('week', e.value, game)}</strong>
+            <strong>{metricValue('week', e.value, shown)}</strong>
           </li>
         ))}
       </ol>
-      <Link to={`/social/boards?game=${game}&metric=week`} className="sc-link">
+      <Link to={`/social/boards?game=${shown}&metric=week`} className="sc-link">
         Full cup standings →
       </Link>
       {weeks.length ? (
@@ -296,11 +302,13 @@ function LeagueCard({ l }: { l: LeagueView }) {
 
 function Leagues() {
   const { user, profile } = useAuth()
-  const { leagues, refresh, v2 } = useSocial()
+  const { leagues, refresh, v2, canPlay } = useSocial()
+  const games = socialGames(canPlay('signal-decay'))
   const [mode, setMode] = useState<'none' | 'create' | 'join'>('none')
   const [name, setName] = useState('')
   const [motto, setMotto] = useState('')
   const [game, setGame] = useState<SocialGameId>((profile?.favorite_game as SocialGameId) ?? 'grocery-empire')
+  const shown = games.includes(game) ? game : 'grocery-empire'
   const [code, setCode] = useState('')
   const [err, setErr] = useState<string | null>(null)
   if (!user) return null
@@ -358,7 +366,7 @@ function Leagues() {
           onSubmit={async (e) => {
             e.preventDefault()
             setErr(null)
-            const { error } = await social().createLeague(user.id, name, game, motto)
+            const { error } = await social().createLeague(user.id, name, shown, motto)
             if (error) return setErr(error)
             setName('')
             setMotto('')
@@ -380,15 +388,17 @@ function Leagues() {
             <span className="sc-form__label">Motto (optional)</span>
             <input className="sc-input" value={motto} maxLength={80} onChange={(e) => setMotto(e.target.value)} />
           </label>
-          <div className="sc-form__field">
-            <span className="sc-form__label">Game</span>
-            <SegmentedControl
-              aria-label="League game"
-              value={game}
-              onChange={setGame}
-              options={(['grocery-empire', 'signal-decay'] as SocialGameId[]).map((g) => ({ value: g, label: GAME_NAME[g] }))}
-            />
-          </div>
+          {games.length > 1 ? (
+            <div className="sc-form__field">
+              <span className="sc-form__label">Game</span>
+              <SegmentedControl
+                aria-label="League game"
+                value={shown}
+                onChange={setGame}
+                options={games.map((g) => ({ value: g, label: GAME_NAME[g] }))}
+              />
+            </div>
+          ) : null}
           <Button type="submit" tone="free" disabled={name.trim().length < 3}>
             Create league
           </Button>

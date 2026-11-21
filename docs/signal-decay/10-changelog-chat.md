@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-20 — closed beta
+
+- Shelf status is `beta` with a Beta flag. `/play/signal-decay` and DevMode open only for @connorfurby or a friend he has keyed.
+- Friends list shows **Send key** on his account only. The server refuses every other sender, and refuses anyone who is not an accepted friend.
+- No save or economy change.
+
+## 2026-11-20 — shell paints ~1 Hz
+
+- `getPanelSnapshot` + `notePanelAction`: play shell repaints ~1 sim-second / on commands; cash figure still live-subscribes.
+- No `SAVE_VERSION` / `GAME_VERSION` bump.
+
 ## 2026-11-20 — cool memory / main-thread heat
 
 - Autosave **45s**; cloud identical-payload skip; campaign glance cache for Social/Shelf.

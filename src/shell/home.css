@@ -273,9 +273,44 @@ button.hm-card {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.hm-spine.is-playable {
+.hm-spine.is-playable,
+.hm-spine.is-beta {
   height: 92%;
   flex-basis: 150px;
+}
+.hm-beta-flag,
+.hm-spine__flag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28em 0.55em 0.22em;
+  border-radius: 2px;
+  background: #2ec4b6;
+  color: #06211e;
+  font: 800 0.72rem / 1 var(--ge-font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+.hm-spine__flag {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  z-index: 2;
+  font-size: 0.62rem;
+  box-shadow: 0 8px 16px rgb(0 0 0 / 0.35);
+}
+.hm-vault {
+  max-width: 36rem;
+  margin: 12vh auto;
+  padding: 0 24px;
+  color: var(--ge-ink, #fbf1df);
+}
+.hm-vault h1 {
+  margin: 8px 0 12px;
+  font-family: var(--sd-masthead, serif);
+}
+.hm-vault p {
+  margin: 0 0 18px;
 }
 .hm-spine.is-on {
   outline: 2px solid var(--card-accent);

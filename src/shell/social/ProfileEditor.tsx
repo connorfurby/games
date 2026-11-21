@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ACHIEVEMENTS } from '@/achievements/registry'
 import { Button, SegmentedControl, Toggle } from '@/games/grocery-empire/ui/kit'
+import { socialGames } from '@/shell/beta'
 import type { AccentId, ProfileRow, ProfileSettings, SocialGameId } from '@/shared/database.types'
 import { useAuth } from '../AuthContext'
 import { useMeta } from '../MetaContext'
@@ -8,6 +9,7 @@ import { Avatar } from './Avatar'
 import { social } from './backend'
 import type { ProfilePatch } from './model'
 import { ACCENTS, GAME_NAME, cleanHandle, cleanName, handleProblem, settingsOf } from './people'
+import { useSocial } from './SocialContext'
 
 type HandleState = 'same' | 'checking' | 'free' | 'taken' | 'bad'
 
@@ -63,13 +65,20 @@ export function AccentPicker({ value, onChange }: { value: AccentId; onChange: (
 }
 
 export function GamePicker({ value, onChange }: { value: SocialGameId | null; onChange: (g: SocialGameId) => void }) {
+  const { canPlay } = useSocial()
+  const games = socialGames(canPlay('signal-decay'))
+  if (games.length < 2) return null
+  const shown = value && games.includes(value) ? value : 'grocery-empire'
   return (
-    <SegmentedControl
-      aria-label="Favourite game"
-      value={value ?? 'grocery-empire'}
-      onChange={onChange}
-      options={(['grocery-empire', 'signal-decay'] as SocialGameId[]).map((g) => ({ value: g, label: GAME_NAME[g] }))}
-    />
+    <div className="sc-form__field">
+      <span className="sc-form__label">Favourite game</span>
+      <SegmentedControl
+        aria-label="Favourite game"
+        value={shown}
+        onChange={onChange}
+        options={games.map((g) => ({ value: g, label: GAME_NAME[g] }))}
+      />
+    </div>
   )
 }
 
@@ -155,10 +164,7 @@ export function ProfileEditor({ onSaved, compact = false }: { onSaved?: () => vo
         <span className="sc-form__label">Colour</span>
         <AccentPicker value={accent} onChange={setAccent} />
       </div>
-      <div className="sc-form__field">
-        <span className="sc-form__label">Favourite game</span>
-        <GamePicker value={game} onChange={setGame} />
-      </div>
+      <GamePicker value={game} onChange={setGame} />
       {!compact ? (
         <div className="sc-form__field">
           <span className="sc-form__label">Pinned awards ({pinned.length}/3)</span>

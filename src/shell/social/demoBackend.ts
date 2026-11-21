@@ -22,6 +22,7 @@ import type {
   StatsPublish,
   Suggestion,
 } from './model'
+import { BETA_GAME_ID, isBetaIssuer } from '@/shell/beta'
 import { isoWeekKey, prevWeekKey, settingsOf, statValue } from './people'
 
 /**
@@ -131,6 +132,7 @@ interface DemoDb {
   leagues: LeagueRow[]
   members: { league_id: string; user_id: string }[]
   cups: CupResult[]
+  betaGrants: { game_id: string; grantee_id: string; granted_by: string }[]
 }
 
 let db: DemoDb | null = null
@@ -363,6 +365,7 @@ function seed(): DemoDb {
     leagues,
     members,
     cups,
+    betaGrants: [],
   }
 }
 
@@ -802,6 +805,33 @@ export const demoBackend: SocialBackend = {
       .slice(0, 50)
       .map<NotificationWithActor>((n) => ({ ...n, actor: n.actor_id ? (d.profiles.get(n.actor_id) ?? null) : null }))
   },
+  async betaState(userId) {
+    const p = userId === DEMO_ME ? ensureDemoMe() : D().profiles.get(userId)
+    const granted = D().betaGrants.some((g) => g.game_id === BETA_GAME_ID && g.grantee_id === userId)
+    return {
+      games: isBetaIssuer(p?.handle) || granted ? [BETA_GAME_ID] : [],
+      sentTo: D().betaGrants.filter((g) => g.granted_by === userId).map((g) => g.grantee_id),
+    }
+  },
+
+  async grantBetaKey(fromId, toId) {
+    const from = fromId === DEMO_ME ? ensureDemoMe() : D().profiles.get(fromId)
+    if (!isBetaIssuer(from?.handle)) return { error: 'Only @connorfurby can send a beta key.' }
+    if (!friendsOf(fromId).has(toId)) return { error: 'Beta keys go only to friends.' }
+    const d = D()
+    if (!d.betaGrants.some((g) => g.game_id === BETA_GAME_ID && g.grantee_id === toId)) {
+      d.betaGrants.push({ game_id: BETA_GAME_ID, grantee_id: toId, granted_by: fromId })
+      note({
+        recipient_id: toId,
+        actor_id: fromId,
+        kind: 'beta_key',
+        post_id: null,
+        body: 'sent you a Signal Decay beta key',
+      })
+    }
+    return ok
+  },
+
   async markRead(userId) {
     for (const n of D().notifications) if (n.recipient_id === userId && !n.read_at) n.read_at = iso(0)
   },

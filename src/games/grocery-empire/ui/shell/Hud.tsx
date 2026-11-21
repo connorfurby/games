@@ -77,7 +77,7 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="cash" size={13} /> Cash
           </span>
-          <CashFigure value={s.cash} reducedMotion={reducedMotion} />
+          <CashFigure reducedMotion={reducedMotion} />
           <span className={`g2-stat__rate${net < 0 ? ' is-neg' : ''}`} title="Net income, smoothed over 45 s">
             {perSec(net, 'named')}
           </span>
@@ -86,7 +86,7 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="baskets" size={13} /> Baskets
           </span>
-          <BasketsFigure value={s.baskets} reducedMotion={reducedMotion} />
+          <BasketsFigure reducedMotion={reducedMotion} />
           {/* Floaters rise beside the column, never over the number. */}
           <PopLayer pops={pops} />
           <span className="g2-stat__rate">

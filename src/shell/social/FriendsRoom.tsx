@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/games/grocery-empire/ui/kit'
 import type { ProfileRow } from '@/shared/database.types'
+import { isBetaIssuer } from '@/shell/beta'
 import { useAuth } from '../AuthContext'
 import { Avatar, PlayerName } from './Avatar'
 import { social } from './backend'
@@ -193,8 +194,37 @@ function Suggestions() {
   )
 }
 
+function SendBetaKey({ friendId, sent }: { friendId: string; sent: boolean }) {
+  const { sendBetaKey } = useSocial()
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  if (sent) return <span className="sc-pill">Key sent</span>
+  return (
+    <>
+      <Button
+        size="sm"
+        tone="secondary"
+        disabled={busy}
+        title="Send a Signal Decay beta key. Only you can send these, and only to a friend."
+        onClick={() => {
+          setBusy(true)
+          void sendBetaKey(friendId).then((e) => {
+            setErr(e)
+            setBusy(false)
+          })
+        }}
+      >
+        {busy ? 'Sending…' : 'Send key'}
+      </Button>
+      {err ? <span className="sc-err">{err}</span> : null}
+    </>
+  )
+}
+
 export function FriendsRoom() {
-  const { friends, incoming, outgoing, answerFriend, removeFriend, ready } = useSocial()
+  const { profile } = useAuth()
+  const { friends, incoming, outgoing, answerFriend, removeFriend, ready, betaSentTo } = useSocial()
+  const issuer = isBetaIssuer(profile?.handle)
   const [challenge, setChallenge] = useState<ProfileRow | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const sorted = useMemo(() => {
@@ -247,6 +277,8 @@ export function FriendsRoom() {
                 f={f}
                 confirming={confirmRemove === f.friendship.id}
                 onChallenge={() => setChallenge(f.profile)}
+                issuer={issuer}
+                keyed={betaSentTo.includes(f.otherId)}
                 onAskRemove={() => setConfirmRemove(f.friendship.id)}
                 onCancelRemove={() => setConfirmRemove(null)}
                 onRemove={() => void removeFriend(f.friendship).then(() => setConfirmRemove(null))}
@@ -291,6 +323,8 @@ function FriendRow({
   f,
   first,
   confirming,
+  issuer,
+  keyed,
   onChallenge,
   onAskRemove,
   onCancelRemove,
@@ -299,6 +333,8 @@ function FriendRow({
   f: ReturnType<typeof useSocial>['friends'][number]
   first: boolean
   confirming: boolean
+  issuer: boolean
+  keyed: boolean
   onChallenge: () => void
   onAskRemove: () => void
   onCancelRemove: () => void
@@ -328,6 +364,7 @@ function FriendRow({
               <Button size="sm" tone="primary" onClick={onChallenge}>
                 Challenge
               </Button>
+              {issuer ? <SendBetaKey friendId={f.otherId} sent={keyed} /> : null}
               <Button size="sm" tone="ghost" onClick={onAskRemove} title={`Remove ${nameOf(f.profile)} from friends`}>
                 Remove
               </Button>

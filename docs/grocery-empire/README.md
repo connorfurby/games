@@ -29,4 +29,4 @@
 
 **Museum save:** Chests/relics live in the `grocery-museum` cloud slot (not the campaign run). `museumStore` must `reload()` on `games:cloud-reloaded` — an early empty read used to stick, let `earn()` re-grant every claim, and overwrite opened chests.
 
-Last pack review: 2026-11-20 (Paint-loop cool: tween figures isolated, plain number format, throttled suggestions/hire outlooks).
+Last pack review: 2026-11-20 (Fleet list soft caps — barges/lanes/franchises; shell ~1 Hz paint).

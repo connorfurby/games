@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { SegmentedControl } from '@/games/grocery-empire/ui/kit'
+import { socialGames } from '@/shell/beta'
 import type { SocialGameId } from '@/shared/database.types'
 import { useAuth } from '../AuthContext'
 import { Avatar, PlayerName } from './Avatar'
@@ -153,8 +154,10 @@ function Standing({ board, metric, gameId }: { board: Board; metric: BoardMetric
 
 export function BoardsRoom() {
   const [params, setParams] = useSearchParams()
-  const { leagues } = useSocial()
-  const gameId = (params.get('game') as SocialGameId) || 'grocery-empire'
+  const { leagues, canPlay } = useSocial()
+  const games = socialGames(canPlay('signal-decay'))
+  const requested = (params.get('game') as SocialGameId) || 'grocery-empire'
+  const gameId = games.includes(requested) ? requested : 'grocery-empire'
   const metrics = BOARD_METRICS.filter((m) => m.games.includes(gameId))
   const metric = (metrics.find((m) => m.id === params.get('metric'))?.id ?? 'week') as BoardMetric
   const scopeParam = params.get('scope') ?? 'global'
@@ -175,12 +178,14 @@ export function BoardsRoom() {
     <div className="sc-boards">
       <div className="sc-card sc-filters">
         <div className="sc-filters__row">
-          <SegmentedControl
-            aria-label="Game"
-            value={gameId}
-            onChange={(v) => set('game', v)}
-            options={(['grocery-empire', 'signal-decay'] as SocialGameId[]).map((g) => ({ value: g, label: GAME_NAME[g] }))}
-          />
+          {games.length > 1 ? (
+            <SegmentedControl
+              aria-label="Game"
+              value={gameId}
+              onChange={(v) => set('game', v)}
+              options={games.map((g) => ({ value: g, label: GAME_NAME[g] }))}
+            />
+          ) : null}
           <div className="sc-chips" role="group" aria-label="Who">
             <button type="button" className={`sc-chip${scope === 'global' ? ' is-on' : ''}`} onClick={() => set('scope', 'global')}>
               Everyone

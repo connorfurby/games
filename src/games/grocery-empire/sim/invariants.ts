@@ -4,6 +4,7 @@ import { COMPUTE, DEPTH, HORIZON, HOURS, MORALE, PRICE } from './balance'
 import { hoursMax } from './formulas'
 import { clamp, compact } from './helpers'
 import { isRivalKind, type Batch, type GameState } from './state'
+import { trimFleetLists } from './systems/fleet'
 
 function finite(n: number, fallback = 0) {
   return Number.isFinite(n) ? n : fallback
@@ -514,9 +515,11 @@ export function repair(s: GameState): GameState {
   if (!s.fleet.nextFranchiseId) s.fleet.nextFranchiseId = Math.max(1, s.fleet.franchiseList.length + 1)
   if (!s.fleet.nextBargeId) s.fleet.nextBargeId = Math.max(1, s.fleet.bargeList.length + 1)
   if (s.fleet.lastManifestAt == null) s.fleet.lastManifestAt = -1e9
+  // Prefer list length as truth, then trim runaway replication / bot spam.
   s.fleet.lanes = Math.max(s.fleet.lanes, s.fleet.laneList.length)
   s.fleet.franchises = Math.max(s.fleet.franchises, s.fleet.franchiseList.length)
   s.fleet.barges = Math.max(s.fleet.barges, s.fleet.bargeList.length)
+  trimFleetLists(s)
 
   return s
 }

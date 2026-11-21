@@ -9,7 +9,7 @@ export interface GameDefinition {
   tagline: string
   accent: string
   coverKey: string
-  status: 'playable' | 'coming-soon'
+  status: 'playable' | 'beta' | 'coming-soon'
   defaultTexturePack: string
   achievementNamespace: string
   component: ComponentType

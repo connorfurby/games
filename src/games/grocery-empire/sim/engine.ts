@@ -466,15 +466,46 @@ export class GroceryEngine {
   }
 }
 
-/** Singleton for useSyncExternalStore + UI dispatch. */
-export const engine = GroceryEngine.loadOrNew()
+/** One live engine for the tab — survives Vite HMR dual-module copies. */
+const g = globalThis as typeof globalThis & { __groceryEmpireEngine?: GroceryEngine }
 
 export function getGroceryEngine(): GroceryEngine {
-  return engine
+  if (!g.__groceryEmpireEngine) g.__groceryEmpireEngine = GroceryEngine.loadOrNew()
+  return g.__groceryEmpireEngine
 }
 
+/** Singleton for useSyncExternalStore + UI dispatch. */
+export const engine = getGroceryEngine()
+
 export function resetGroceryEngine(seed?: number): GroceryEngine {
-  engine.stop()
-  engine.reset(seed)
-  return engine
+  const eng = getGroceryEngine()
+  eng.stop()
+  eng.reset(seed)
+  return eng
+}
+
+/** Bump so the play shell repaints immediately after a player command. */
+let panelAction = 0
+export function notePanelAction() {
+  panelAction += 1
+}
+
+let panelCache: { key: string; snap: EngineSnapshot } | null = null
+
+/**
+ * Shell snapshot for React. The engine still notifies at 2.5 Hz; we return the
+ * same object until a sim-second ticks, catch-up advances, or notePanelAction()
+ * ran — so the full tree does not rebuild every paint.
+ */
+export function getPanelSnapshot(): EngineSnapshot {
+  const eng = getGroceryEngine()
+  const snap = eng.getSnapshot()
+  const catchUp = eng.catchUp()
+  const key = catchUp
+    ? `c:${Math.floor(catchUp.progress * 40)}:${Math.floor(catchUp.total)}`
+    : `t:${Math.floor(snap.state.time)}:a:${panelAction}`
+  if (panelCache?.key === key) return panelCache.snap
+  const next: EngineSnapshot = { v: snap.v, state: snap.state }
+  panelCache = { key, snap: next }
+  return next
 }

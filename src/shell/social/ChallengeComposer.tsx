@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button, Modal, SegmentedControl } from '@/games/grocery-empire/ui/kit'
+import { socialGames } from '@/shell/beta'
 import type { ProfileRow, SocialGameId } from '@/shared/database.types'
 import { useAuth } from '../AuthContext'
 import { Avatar } from './Avatar'
@@ -17,7 +18,8 @@ const HOURS: { value: '24' | '72' | '168'; label: string }[] = [
 /** Challenge a friend: pick a game, what counts, and how long. Progress counts from when they accept. */
 export function ChallengeComposer({ opponent, onClose }: { opponent?: ProfileRow | null; onClose: () => void }) {
   const { user, profile } = useAuth()
-  const { friends, refresh, v2 } = useSocial()
+  const { friends, refresh, v2, canPlay } = useSocial()
+  const games = socialGames(canPlay('signal-decay'))
   const [who, setWho] = useState<string | null>(opponent?.id ?? null)
   const [game, setGame] = useState<SocialGameId>((profile?.favorite_game as SocialGameId) ?? 'grocery-empire')
   const [metric, setMetric] = useState<ChallengeMetric>('revenue')
@@ -50,7 +52,7 @@ export function ChallengeComposer({ opponent, onClose }: { opponent?: ProfileRow
               const { error } = await social().createChallenge({
                 creatorId: user.id,
                 opponentId: target.id,
-                gameId: game,
+                gameId: games.includes(game) ? game : 'grocery-empire',
                 metric,
                 hours: Number(hours) as 24 | 72 | 168,
                 message,
@@ -94,15 +96,17 @@ export function ChallengeComposer({ opponent, onClose }: { opponent?: ProfileRow
             )}
           </div>
         )}
-        <div className="sc-form__field">
-          <span className="sc-form__label">Game</span>
-          <SegmentedControl
-            aria-label="Game"
-            value={game}
-            onChange={setGame}
-            options={(['grocery-empire', 'signal-decay'] as SocialGameId[]).map((g) => ({ value: g, label: GAME_NAME[g] }))}
-          />
-        </div>
+        {games.length > 1 ? (
+          <div className="sc-form__field">
+            <span className="sc-form__label">Game</span>
+            <SegmentedControl
+              aria-label="Game"
+              value={games.includes(game) ? game : 'grocery-empire'}
+              onChange={setGame}
+              options={games.map((g) => ({ value: g, label: GAME_NAME[g] }))}
+            />
+          </div>
+        ) : null}
         <div className="sc-form__field">
           <span className="sc-form__label">What counts</span>
           <SegmentedControl

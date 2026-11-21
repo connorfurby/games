@@ -1,4 +1,4 @@
-import { engine } from '../../sim/engine'
+import { engine, notePanelAction } from '../../sim/engine'
 import { canUndo } from '../../sim/undo'
 
 const TOAST = 'ge:toast'
@@ -21,6 +21,7 @@ export function onToastRequest(fn: (text: string) => void): () => void {
 export function performUndo(): boolean {
   const gate = canUndo()
   if (!gate.ok) return false
+  notePanelAction()
   const check = engine.undo()
   if (check.ok) requestToast(`Undid ${gate.label ?? 'last purchase'}.`)
   return check.ok

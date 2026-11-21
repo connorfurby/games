@@ -1,6 +1,6 @@
 import type { MenuId } from '../../content/menus'
 import { DAILY_RULE_TEXT, dailyRuleForSeed } from '../../content/dailyRules'
-import { useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { NumberFormat } from '@/shared/bn'
 import { deserializeState, exportSave, importSave } from '@/shared/save'
@@ -31,8 +31,9 @@ import { useGame } from '../GameContext'
 import { clock, qty } from '../format'
 import { Btn } from '../components/Btn'
 import { ConfirmModal, type ConfirmSpec } from '../components/ConfirmModal'
-import { DevModePanel } from '../components/DevModePanel'
 import { Panel } from '../components/Panel'
+
+const DevModePanel = lazy(() => import('../components/DevModePanel').then((m) => ({ default: m.DevModePanel })))
 import { Sparkline } from '../components/Sparkline'
 import { withCurtain } from '../components/curtainBus'
 import { RoadAhead } from '../shell/RoadAhead'
@@ -191,7 +192,11 @@ export function MoreSections({ only, onOpenMenu }: { only?: MoreSection; onOpenM
 
   return (
     <>
-      {inDev && !only ? <DevModePanel /> : null}
+      {inDev && !only ? (
+        <Suspense fallback={null}>
+          <DevModePanel />
+        </Suspense>
+      ) : null}
 
       <div className={`ge-more${only ? ' ge-more--one' : ''}`}>
         {show('run') ? (

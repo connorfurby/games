@@ -203,4 +203,9 @@ export interface SocialBackend {
   // Notifications
   notifications(userId: string): Promise<NotificationWithActor[]>
   markRead(userId: string): Promise<void>
+
+  /** Signal Decay closed beta: games this player may open, and friend ids this player has keyed. */
+  betaState(userId: string): Promise<{ games: string[]; sentTo: string[] }>
+  /** Server accepts this only from @connorfurby, and only for an accepted friend. */
+  grantBetaKey(fromId: string, toId: string): Promise<Result>
 }

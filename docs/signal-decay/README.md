@@ -23,6 +23,8 @@
 
 **Accounts:** Google sign-in is required to play. Campaign saves live on the account in Supabase (no localStorage). DevMode (`signal-decay-dev`) is ephemeral and never ranks.
 
+**Access:** Closed beta. The shelf shows a Beta flag. Play and DevMode stay shut until a key arrives. Only @connorfurby can send one, and only to an accepted friend (`beta_grants`).
+
 **Shell chrome:** Profile is global — same `AccountChrome` / `ProfileSheet` as Grocery (HUD chip beside the waffle). Explicit **Shelf** control in the HUD; More sheet has **Home · Shelf**. Social rooms are URL-routed (`/social`, `/social/friends`, `/social/boards`, `/social/you`).
 
-Last pack review: 2026-11-20 (Cool memory: 45s autosave, glance cache, 2.5 Hz paint). Earlier: pause clock; Social rooms + global profile.
+Last pack review: 2026-11-20 (Closed beta: Beta flag, keys from @connorfurby to friends only). Earlier: cool memory; pause clock; Social rooms + global profile.

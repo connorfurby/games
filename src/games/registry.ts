@@ -3,7 +3,7 @@ import { templateDefinition } from '@/games/_template/definition'
 import { GroceryEmpireApp } from '@/games/grocery-empire/ui/GroceryEmpireApp'
 import { SignalDecayApp } from '@/games/signal-decay/ui/SignalDecayApp'
 
-/** Locked shelf placeholders — copy `_template` when promoting one to playable. */
+/** Locked shelf placeholders — copy `_template` when promoting one to playable. Signal Decay is `beta`, not one of these. */
 function comingSoon(
   partial: Omit<typeof templateDefinition, 'status' | 'defaultTexturePack'> & {
     accent: string
@@ -36,7 +36,7 @@ export const GAMES: GameDefinition[] = [
     tagline: 'From one dial in a basement to the last hour of a broadcast that is already dying.',
     accent: '#2ec4b6',
     coverKey: 'signal',
-    status: 'playable',
+    status: 'beta',
     defaultTexturePack: 'receipt-classic',
     achievementNamespace: 'signal',
     component: SignalDecayApp,

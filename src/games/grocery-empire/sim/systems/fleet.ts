@@ -65,6 +65,42 @@ function ensureLaneList(s: GameState) {
   if (s.fleet.nextFranchiseId == null) s.fleet.nextFranchiseId = s.fleet.franchiseList.length + 1
   if (s.fleet.nextBargeId == null) s.fleet.nextBargeId = s.fleet.bargeList.length + 1
   if (s.fleet.lastManifestAt == null) s.fleet.lastManifestAt = -1e9
+  trimFleetLists(s)
+}
+
+/**
+ * Drop runaway lane / franchise / barge list growth (replication + bot spam).
+ * Prefer keeping arks, then replicators, then haulers; newest of a class last.
+ * Count-only legacy fields (empty lists) stay, but never above the soft cap.
+ */
+export function trimFleetLists(s: GameState) {
+  if (s.fleet.laneList.length > LOGISTICS.laneSoftCap) {
+    s.fleet.laneList = s.fleet.laneList.slice(-LOGISTICS.laneSoftCap)
+  }
+  if (s.fleet.laneList.length > 0) s.fleet.lanes = s.fleet.laneList.length
+  else s.fleet.lanes = Math.min(Math.max(0, s.fleet.lanes), LOGISTICS.laneSoftCap)
+
+  if (s.fleet.franchiseList.length > LOGISTICS.franchiseSoftCap) {
+    s.fleet.franchiseList = s.fleet.franchiseList.slice(-LOGISTICS.franchiseSoftCap)
+  }
+  if (s.fleet.franchiseList.length > 0) s.fleet.franchises = s.fleet.franchiseList.length
+  else s.fleet.franchises = Math.min(Math.max(0, s.fleet.franchises), LOGISTICS.franchiseSoftCap)
+
+  if (s.fleet.bargeList.length > FLEET.bargeSoftCap) {
+    const rank = (c: BargeClassId) => (c === 'ark' ? 0 : c === 'replicator' ? 1 : 2)
+    const sorted = [...s.fleet.bargeList].sort((a, b) => {
+      const d = rank(a.class) - rank(b.class)
+      if (d !== 0) return d
+      return a.id.localeCompare(b.id)
+    })
+    s.fleet.bargeList = sorted.slice(0, FLEET.bargeSoftCap)
+  }
+  if (s.fleet.bargeList.length > 0) s.fleet.barges = s.fleet.bargeList.length
+  else s.fleet.barges = Math.min(Math.max(0, s.fleet.barges), FLEET.bargeSoftCap)
+}
+
+function bargeCount(s: GameState): number {
+  return Math.max(s.fleet.bargeList.length, s.fleet.barges)
 }
 
 export function pocketClearPerTrip(pocketMax: number): number {
@@ -285,6 +321,10 @@ export function canOpenLane(s: GameState, route?: string): string | null {
   if (s.era < 4 && !s.politics.leftRegion) return 'Leave the region first (Era 4).'
   if (route && !isLaneRouteId(route)) return 'Unknown route.'
   if (!route) return 'Pick a route for this lane.'
+  ensureLaneList(s)
+  if (Math.max(s.fleet.laneList.length, s.fleet.lanes) >= LOGISTICS.laneSoftCap) {
+    return 'Lane board is full.'
+  }
   const cash = LOGISTICS.laneCash * Math.pow(LOGISTICS.laneGrowth, s.fleet.lanes)
   const ctl = LOGISTICS.laneControl * (1 + s.fleet.lanes)
   if (s.cash < cash && s.control < ctl) return `Need ${cashLabel(Math.ceil(cash))} or ${Math.ceil(ctl)} Control.`
@@ -326,6 +366,10 @@ export function buyFuel(s: GameState) {
 
 export function canFranchise(s: GameState): string | null {
   if (s.fleet.lanes < 1) return 'Open a lane first.'
+  ensureLaneList(s)
+  if (Math.max(s.fleet.franchiseList.length, s.fleet.franchises) >= LOGISTICS.franchiseSoftCap) {
+    return 'Franchise roster is full.'
+  }
   const fc = franchiseCost(s)
   if (s.cash < fc) return `Need ${cashLabel(fc)}.`
   return null
@@ -634,6 +678,8 @@ function bargeGateBlocked(s: GameState): string | null {
 export function canLaunchBarge(s: GameState, bargeClass?: string): string | null {
   if (s.era < 5 && !(s.memos['barge-berth'] > 0)) return 'Seed Barge Berth required.'
   if (bargeClass && !isBargeClass(bargeClass)) return 'Unknown barge class.'
+  ensureLaneList(s)
+  if (bargeCount(s) >= FLEET.bargeSoftCap) return 'Berths are full.'
   const gate = bargeGateBlocked(s)
   if (gate) return gate
   const bc = bargeCost(s)
@@ -1100,9 +1146,14 @@ export function tickFleet(s: GameState, dt: number) {
   // Pocket Ops: hauler trips resolve on ETA (no idle biomass drain).
   resolveArrivedTrips(s)
 
-  // Replicator barges + replication axis
+  // Replicator barges + replication axis (hard-capped — never grow the list forever).
   const reps = (s.fleet.bargeList ?? []).filter((b) => b.class === 'replicator').length
-  if (s.fleet.barges > 0 && (replication > 0 || reps > 0) && s.fleet.biomass > 0) {
+  if (
+    bargeCount(s) > 0 &&
+    bargeCount(s) < FLEET.bargeSoftCap &&
+    (replication > 0 || reps > 0) &&
+    s.fleet.biomass > 0
+  ) {
     const p = Math.min(
       0.25,
       (FLEET.replicationPerSec * replication + FLEET.replicatorCopyChance * reps) * dt,
@@ -1117,7 +1168,9 @@ export function tickFleet(s: GameState, dt: number) {
         ration: donor?.ration,
       })
       s.fleet.barges = s.fleet.bargeList.length
-      log(s, `Replication: barge count ${s.fleet.barges}.`, 'info')
+      if (s.fleet.barges === FLEET.bargeSoftCap || s.fleet.barges % 4 === 0) {
+        log(s, `Replication: barge count ${s.fleet.barges}.`, 'info')
+      }
     }
   }
 

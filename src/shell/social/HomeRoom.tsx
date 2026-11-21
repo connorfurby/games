@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, SegmentedControl } from '@/games/grocery-empire/ui/kit'
+import { socialGames } from '@/shell/beta'
 import type { SocialGameId } from '@/shared/database.types'
 import { useAuth } from '../AuthContext'
 import { Avatar, PlayerName } from './Avatar'
@@ -16,12 +17,13 @@ import { runCardFromLocal } from './stats'
 /** "You reached Era N — share it?" once per era. */
 function MilestonePrompt({ onShared }: { onShared: () => void }) {
   const { user } = useAuth()
+  const { canPlay } = useSocial()
   const [era, setEra] = useState<{ gameId: SocialGameId; era: number } | null>(null)
   useEffect(() => {
     if (!user) return
     let stop = false
     void (async () => {
-      for (const g of ['grocery-empire', 'signal-decay'] as SocialGameId[]) {
+      for (const g of socialGames(canPlay('signal-decay'))) {
         const card = runCardFromLocal(g)
         if (!card || card.era < 2) continue
         if (!(await social().milestoneShared(user.id, g, card.era))) {
@@ -33,7 +35,7 @@ function MilestonePrompt({ onShared }: { onShared: () => void }) {
     return () => {
       stop = true
     }
-  }, [user])
+  }, [user, canPlay])
   if (!user || !era) return null
   const dismiss = async () => {
     await social().shareMilestone(user.id, era.gameId, era.era)

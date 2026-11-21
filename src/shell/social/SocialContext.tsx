@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import type { FriendshipRow, ProfileRow } from '@/shared/database.types'
+import { BETA_GAME_ID, isBetaIssuer } from '@/shell/beta'
 import { useAuth } from '../AuthContext'
 import { social } from './backend'
 import type { ChallengeView, LeagueView, NotificationWithActor, Relation } from './model'
@@ -26,8 +27,13 @@ interface SocialCtx {
   /** Things waiting on you: requests and challenges to answer. */
   waiting: number
   relationTo: (id: string) => { relation: Relation; friendship: FriendshipRow | null }
+  /** True when this account may open a vaulted game. Grocery is always open. */
+  canPlay: (gameId: string) => boolean
+  /** Friend ids @connorfurby has already keyed. Empty for everyone else. */
+  betaSentTo: string[]
   refresh: () => Promise<void>
   addFriend: (id: string) => Promise<string | null>
+  sendBetaKey: (friendId: string) => Promise<string | null>
   answerFriend: (f: FriendshipRow, status: 'accepted' | 'blocked') => Promise<string | null>
   removeFriend: (f: FriendshipRow) => Promise<string | null>
   markRead: () => Promise<void>
@@ -39,7 +45,7 @@ const POLL_MS = 120_000
 
 /** One shared, polled view of your social graph, so every room is instant and consistent. */
 export function SocialProvider({ children }: { children: ReactNode }) {
-  const { user, savesReady } = useAuth()
+  const { user, profile, savesReady } = useAuth()
   const loc = useLocation()
   const onSocial = loc.pathname.startsWith('/social') || loc.pathname.startsWith('/compete') || loc.pathname.startsWith('/boards') || loc.pathname.startsWith('/friends') || loc.pathname.startsWith('/you') || loc.pathname.startsWith('/u/') || loc.pathname.startsWith('/add/')
   const uid = user?.id ?? null
@@ -50,6 +56,8 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationWithActor[]>([])
   const [challenges, setChallenges] = useState<ChallengeView[]>([])
   const [leagues, setLeagues] = useState<LeagueView[]>([])
+  const [betaGames, setBetaGames] = useState<string[]>([])
+  const [betaSentTo, setBetaSentTo] = useState<string[]>([])
   const busy = useRef(false)
   const unreadRef = useRef(0)
 
@@ -62,17 +70,20 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       setV2(hasV2)
       const fs = await b.friendships(uid)
       const ids = fs.map((f) => (f.requester_id === uid ? f.addressee_id : f.requester_id))
-      const [profiles, notes, chals, lgs] = await Promise.all([
+      const [profiles, notes, chals, lgs, beta] = await Promise.all([
         b.profilesByIds(ids),
         b.notifications(uid),
         hasV2 ? b.challenges(uid) : Promise.resolve([]),
         hasV2 ? b.leagues(uid) : Promise.resolve([]),
+        b.betaState(uid),
       ])
       setRows(fs)
       setPeople(profiles)
       setNotifications(notes)
       setChallenges(chals)
       setLeagues(lgs)
+      setBetaGames(beta.games)
+      setBetaSentTo(beta.sentTo)
       setReady(true)
     } catch (e) {
       console.warn('social refresh', e)
@@ -85,6 +96,8 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!uid || !savesReady) {
       setReady(false)
+      setBetaGames([])
+      setBetaSentTo([])
       return
     }
     let stop = false
@@ -104,6 +117,12 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       stop = true
     }
   }, [uid, savesReady, refresh])
+
+  // Home and the vaulted game re-read keys so a friend sees a grant without waiting on the poll.
+  useEffect(() => {
+    if (!uid || !savesReady) return
+    if (loc.pathname === '/' || loc.pathname.startsWith('/play/signal-decay')) void refresh()
+  }, [uid, savesReady, loc.pathname, refresh])
 
   // Slow poll only on Social routes (or while you have unread badges and the tab is visible).
   useEffect(() => {
@@ -163,6 +182,14 @@ export function SocialProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const canPlay = useCallback(
+    (gameId: string) => {
+      if (gameId !== BETA_GAME_ID) return true
+      return isBetaIssuer(profile?.handle) || betaGames.includes(BETA_GAME_ID)
+    },
+    [profile?.handle, betaGames],
+  )
+
   const value = useMemo<SocialCtx>(() => {
     const unread = notifications.filter((n) => !n.read_at).length
     unreadRef.current = unread
@@ -177,17 +204,26 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       leagues,
       waiting: links.incoming.length + waitingChallenges,
       relationTo,
+      canPlay,
+      betaSentTo,
       refresh,
       addFriend: (id) => (uid ? after(social().requestFriend(uid, id)) : Promise.resolve('Sign in first.')),
       answerFriend: (f, status) => (uid ? after(social().respondFriend(f, status, uid)) : Promise.resolve('Sign in first.')),
       removeFriend: (f) => after(social().removeFriendship(f.id)),
+      sendBetaKey: async (friendId) => {
+        if (!uid) return 'Sign in first.'
+        if (!isBetaIssuer(profile?.handle)) return 'Only @connorfurby can send a beta key.'
+        const { error } = await social().grantBetaKey(uid, friendId)
+        await refresh()
+        return error
+      },
       markRead: async () => {
         if (!uid) return
         await social().markRead(uid)
         await refresh()
       },
     }
-  }, [ready, v2, links, notifications, challenges, leagues, relationTo, refresh, after, uid])
+  }, [ready, v2, links, notifications, challenges, leagues, relationTo, canPlay, betaSentTo, refresh, after, uid, profile?.handle])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

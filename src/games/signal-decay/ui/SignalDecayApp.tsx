@@ -2,7 +2,7 @@ import './design/layers.css'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { DEPTH, DIAL, ERA_TITLES } from '../sim/balance'
 import { type Command } from '../sim/commands'
-import { getSignalEngine } from '../sim/engine'
+import { getPanelSnapshot, getSignalEngine, notePanelAction } from '../sim/engine'
 import { DEV_SAVE_ID, PRIMARY_SAVE_ID, setActiveSaveId } from '../sim/saveKey'
 import { Coach } from './coach/Coach'
 import { ChapterCard } from './story/ChapterCard'
@@ -156,7 +156,7 @@ function SignalDecayInner({ devMode }: { devMode: boolean }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [engine])
 
-  const snap = useSyncExternalStore(engine.subscribe, engine.getSnapshot, engine.getSnapshot)
+  const snap = useSyncExternalStore(engine.subscribe, getPanelSnapshot, getPanelSnapshot)
   const state = snap.state
 
   const readyHubs = useMemo(() => {
@@ -200,6 +200,7 @@ function SignalDecayInner({ devMode }: { devMode: boolean }) {
 
   const dispatch = useCallback(
     (cmd: Command) => {
+      notePanelAction()
       const check = engine.dispatch(cmd)
       if (!check.ok) {
         pushToast(check.reason, { tone: 'warn', ms: 2200 })

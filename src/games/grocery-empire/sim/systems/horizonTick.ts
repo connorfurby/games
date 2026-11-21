@@ -279,6 +279,7 @@ export function tickHeadlines(s: GameState) {
     const key = `hl-season-telegraph:${h.seasonsSeen}`
     if (left > 0 && left <= lead && !h.seenHeadlines.includes(key)) {
       h.seenHeadlines.push(key)
+      if (h.seenHeadlines.length > 80) h.seenHeadlines.splice(0, h.seenHeadlines.length - 80)
       h.headlineId = 'hl-season-telegraph'
       h.headlineUntil = s.time + left
       log(s, 'Season telegraph.', 'info')
@@ -315,7 +316,10 @@ export function tickHeadlines(s: GameState) {
   if (!pick) return
   h.headlineId = pick.id
   h.headlineUntil = s.time + Math.max(30, HORIZON.seasonSec - h.seasonT)
-  if (pick.once) h.seenHeadlines.push(pick.id)
+  if (pick.once) {
+    h.seenHeadlines.push(pick.id)
+    if (h.seenHeadlines.length > 80) h.seenHeadlines.splice(0, h.seenHeadlines.length - 80)
+  }
   // Temporary ban/demand: filed shelves go stale until refiled.
   const ban = pick.text.match(/\bbans?\s+([a-z]+)/i) || pick.helpEffect?.match(/ban\s+([a-z]+)/i)
   const demand = pick.text.match(/\bdemands?\s+([a-z]+)/i)

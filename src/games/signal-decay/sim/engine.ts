@@ -257,3 +257,21 @@ export const engine = {
     return getSignalEngine()
   },
 }
+
+let panelAction = 0
+export function notePanelAction() {
+  panelAction += 1
+}
+
+let panelCache: { key: string; snap: EngineSnapshot } | null = null
+
+/** Shell paints ~1 Hz (+ commands). Cash figures can subscribe to getSnapshot for live digits. */
+export function getPanelSnapshot(): EngineSnapshot {
+  const eng = getSignalEngine()
+  const snap = eng.getSnapshot()
+  const key = `t:${Math.floor(snap.state.time)}:a:${panelAction}`
+  if (panelCache?.key === key) return panelCache.snap
+  const next: EngineSnapshot = { v: snap.v, state: snap.state }
+  panelCache = { key, snap: next }
+  return next
+}

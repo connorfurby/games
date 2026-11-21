@@ -73,7 +73,7 @@ export function Hud({ onMore }: { onMore?: () => void }) {
       <div className="sd-hud__money">
         <div className="sd-stat sd-stat--cash" data-coach-id="hud-cash">
           <span className="sd-stat__label">Cash</span>
-          <CashFigure value={state.cash} reducedMotion={reducedMotion} />
+          <CashFigure reducedMotion={reducedMotion} />
           <span className="sd-stat__rate">+{money(state.rates.revenuePerSec)}/s</span>
         </div>
         <div className="sd-stat" data-coach-id="hud-clarity">

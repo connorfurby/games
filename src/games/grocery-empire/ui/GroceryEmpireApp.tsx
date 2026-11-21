@@ -36,7 +36,7 @@ import { can } from '../sim/commands'
 import { PRICE } from '../sim/balance'
 import type { Command } from '../sim/commands'
 import { enterDevSandbox, ensurePrimarySandbox, leaveDevSandbox } from '../sim/devMode'
-import { engine } from '../sim/engine'
+import { engine, getPanelSnapshot, notePanelAction } from '../sim/engine'
 import {
   getSuggestions,
   suggestedChannels,
@@ -158,18 +158,15 @@ const PANEL: Record<MenuId, () => ReactNode> = {
 /** Every page in hub order, for transition direction. */
 const PAGE_ORDER: MenuId[] = HUBS.flatMap((h) => h.menus)
 
-/** Page transitions: slide within a hub, rise between hubs. Springs, never linear. */
+/** Page transitions: slide within a hub, rise between hubs. Springs, never linear. No CSS filter blur — that forces huge GPU layers in Chrome. */
 const PAGE_VARIANTS = {
   enter: (dir: number) =>
-    dir === 0
-      ? { opacity: 0, y: 14, scale: 0.985, filter: 'blur(3px)' }
-      : { opacity: 0, x: dir * 28, filter: 'blur(2px)' },
+    dir === 0 ? { opacity: 0, y: 14, scale: 0.985 } : { opacity: 0, x: dir * 28 },
   center: {
     opacity: 1,
     x: 0,
     y: 0,
     scale: 1,
-    filter: 'blur(0px)',
     transition: { type: 'spring' as const, stiffness: 420, damping: 36, mass: 0.8, opacity: { duration: 0.18 } },
   },
   exit: (dir: number) =>
@@ -180,9 +177,8 @@ const PAGE_VARIANTS = {
 
 export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const { meta, metaRef, replaceMeta } = useMeta()
-  // Snapshot wrapper identity must change every tick (see engine.bump) or React
-  // skips re-renders because GameState is mutated in place.
-  const snap = useSyncExternalStore(engine.subscribe, engine.getSnapshot, engine.getSnapshot)
+  // Shell paints ~1 Hz (+ immediate on commands / catch-up). Cash figures subscribe on their own.
+  const snap = useSyncExternalStore(engine.subscribe, getPanelSnapshot, getPanelSnapshot)
   const state = snap.state
   const pinned = meta.settings.pinnedMenu
   // ?m=<menu> restores where you were (reload, shared link); locked menus fall back below.
@@ -561,6 +557,7 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
 
   // Stable identity so the GameContext value only rebuilds when the sim (or a UI field) changes.
   const dispatch = useCallback((cmd: Command) => {
+    notePanelAction()
     const check = engine.dispatch(cmd)
     if (!check.ok && check.reason) {
       if (engine.getState().tutorials.active) return
@@ -847,9 +844,9 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
     if (MENU_IDS.includes(id as MenuId) && engine.getState().menus[id as MenuId]) setMenu(id as MenuId)
   }, [])
 
-  // GameState mutates in place, so `state` identity never changes: `snap.v` is what makes
-  // the value new each pulse. Everything else is stable, so unrelated re-renders (toasts,
-  // drawers) reuse the same context object and don't re-render consumers.
+  // GameState mutates in place. getPanelSnapshot keeps snap identity stable between
+  // sim-seconds, so this context object (and every useGame() panel) only rebuilds ~1 Hz
+  // or on a command — not every 2.5 Hz engine paint.
   const ctx = useMemo<GameCtxValue>(
     () => ({
       state,

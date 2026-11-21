@@ -1193,6 +1193,9 @@ export const LOGISTICS = {
   franchiseCash: 12_000_000,
   franchiseGrowth: 1.9,
   franchiseBrandHit: 0.08,
+  /** Hard list caps — bots / idle open forever otherwise (save + heap bloat). */
+  laneSoftCap: 24,
+  franchiseSoftCap: 24,
   /** Matched wet lane cash trickle (per lane / sec). */
   matchedLaneCashPerSec: 40,
   dryLaneCashPerSec: 8,
@@ -1204,6 +1207,12 @@ export const FLEET = {
   bargeGrowth: 2.4,
   bargeLaunchRead: 8,
   bargeSoftFloor: 1,
+  /**
+   * Hard list cap. Replication used to push forever (multi-thousand bargeList →
+   * ~200KB+ save blobs and undo/autosave clones that climb the tab heap).
+   * Network already soft-weights barges past 6 once a planet is stocked.
+   */
+  bargeSoftCap: 24,
   /** Compat total; pockets are the live drain. Kept for UI/migrate. */
   biomassStart: 12_000_000,
   /** Six pockets; focused Haulers clear 4 via trip ETAs (~90 min parallel). */

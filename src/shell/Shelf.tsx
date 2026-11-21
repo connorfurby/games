@@ -90,11 +90,13 @@ export function Shelf() {
   const [burst, setBurst] = useState(false)
   const [authBusy, setAuthBusy] = useState(false)
   const [authErr, setAuthErr] = useState<string | null>(null)
-  const { friends, waiting } = useSocial()
+  const { friends, waiting, canPlay, ready: socialReady } = useSocial()
   const friendsLive = friends.filter((f) => ['playing', 'online'].includes(presenceOf(f.profile).kind)).length
   const nav = useNavigate()
   const game = GAMES.find((g) => g.id === selected) ?? GAMES[0]
-  const playable = game.status === 'playable'
+  const beta = game.status === 'beta'
+  const checkingKey = beta && !!user && !canPlay(game.id) && !socialReady
+  const playable = game.status === 'playable' || (beta && canPlay(game.id))
   const isGe = game.id === 'grocery-empire'
   const isSd = game.id === 'signal-decay'
   const save = readyToPlay && playable ? loadGlance(game.id) : null
@@ -266,6 +268,7 @@ export function Shelf() {
               <p className="sd-eyebrow sd-eyebrow--tag">
                 <span className="hm-dot" aria-hidden />
                 GAMES · long games on one shelf
+                {beta ? <span className="hm-beta-flag">Beta</span> : null}
               </p>
               <h1 className="hm-title">{game.title}</h1>
               <p className="hm-tag">{game.tagline}</p>
@@ -424,6 +427,26 @@ export function Shelf() {
                     <p className="hm-note">Clarity decays. Antenna raises the window. The Next Goal strip never strands you.</p>
                   ) : null}
                 </>
+              ) : beta ? (
+                <>
+                  {authErr ? (
+                    <p className="hm-lock hm-lock--err" role="alert">
+                      {authErr}
+                    </p>
+                  ) : null}
+                  {locked ? (
+                    <div className="hm-acts">
+                      <Button tone="free" size="lg" className="hm-play" disabled={authBusy} onClick={() => void askSignIn()}>
+                        {authBusy ? 'Signing in…' : 'Sign in'}
+                      </Button>
+                    </div>
+                  ) : null}
+                  <p className="hm-first">
+                    {checkingKey
+                      ? 'Checking your beta key…'
+                      : 'Signal Decay is vaulted. A beta key from @connorfurby, sent to a friend, is the only way in.'}
+                  </p>
+                </>
               ) : (
                 <p className="hm-first">This game is not ready yet. Check back later.</p>
               )}
@@ -448,8 +471,8 @@ export function Shelf() {
                     aria-selected={selected === g.id}
                     className={`hm-spine ${selected === g.id ? 'is-on' : ''} is-${g.status}`}
                     style={{ ['--card-accent' as string]: g.accent }}
-                    whileHover={reduce || g.status !== 'playable' ? undefined : { y: -10, rotate: -1 }}
-                    whileTap={reduce || g.status !== 'playable' ? undefined : { scale: 0.98 }}
+                    whileHover={reduce || g.status === 'coming-soon' ? undefined : { y: -10, rotate: -1 }}
+                    whileTap={reduce || g.status === 'coming-soon' ? undefined : { scale: 0.98 }}
                     transition={{ type: 'spring', stiffness: 380, damping: 28 }}
                     onClick={() => setSelected(g.id)}
                   >
@@ -457,8 +480,11 @@ export function Shelf() {
                       <span className="hm-spine__cover" style={{ backgroundImage: `url(${coverForGame(g.id)})` }} aria-hidden />
                     ) : null}
                     <span className="hm-spine__band" aria-hidden />
+                    {g.status === 'beta' ? <span className="hm-spine__flag">Beta</span> : null}
                     <span className="hm-spine__title">{g.title}</span>
-                    <span className="hm-spine__status">{g.status === 'playable' ? 'Playable' : 'Coming soon'}</span>
+                    <span className="hm-spine__status">
+                      {g.status === 'playable' ? 'Playable' : g.status === 'beta' ? 'Closed beta' : 'Coming soon'}
+                    </span>
                   </motion.button>
                 ))}
               </motion.div>

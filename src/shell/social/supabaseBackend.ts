@@ -7,6 +7,7 @@ import type {
   ReactionKind,
   SocialGameId,
 } from '@/shared/database.types'
+import { BETA_GAME_ID } from '@/shell/beta'
 import { getSupabase } from '@/shared/supabase'
 import type {
   Board,
@@ -576,6 +577,30 @@ export const supabaseBackend: SocialBackend = {
 
   async markRead(userId) {
     await sbOrThrow().from('notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null)
+  },
+
+  async betaState(userId) {
+    const sb = getSupabase()
+    if (!sb) return { games: [], sentTo: [] }
+    const [gamesRes, sentRes] = await Promise.all([
+      sb.rpc('my_beta_games'),
+      sb.from('beta_grants').select('grantee_id').eq('game_id', BETA_GAME_ID).eq('granted_by', userId),
+    ])
+    const games = gamesRes.error ? [] : ((gamesRes.data as string[] | null) ?? [])
+    const sentTo = sentRes.error ? [] : ((sentRes.data as { grantee_id: string }[] | null) ?? []).map((r) => r.grantee_id)
+    return { games, sentTo }
+  },
+
+  async grantBetaKey(_fromId, toId) {
+    const r = await asError(sbOrThrow().rpc('grant_beta_key', { p_friend: toId }))
+    if (!r.error) return { error: null }
+    if (/schema cache|could not find the function|grant_beta_key/i.test(r.error)) {
+      return { error: 'Beta keys need the latest server update.' }
+    }
+    if (/only @connorfurby/i.test(r.error)) return { error: 'Only @connorfurby can send a beta key.' }
+    if (/friends/i.test(r.error)) return { error: 'Beta keys go only to friends.' }
+    if (/sign in/i.test(r.error)) return { error: 'Sign in first.' }
+    return { error: r.error }
   },
 }
 

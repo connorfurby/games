@@ -1,6 +1,10 @@
-import { Component, type ComponentType, type ErrorInfo, type ReactNode } from 'react'
+import { Component, useEffect, useState, type ComponentType, type ErrorInfo, type ReactNode } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { GAMES } from '@/games/registry'
+import { BETA_GAME_ID, isBetaIssuer } from '@/shell/beta'
+import { useAuth } from '@/shell/AuthContext'
+import { ShellFrame } from '@/shell/ShellFrame'
+import { social } from '@/shell/social/backend'
 import {
   DEV_SAVE_ID as GE_DEV,
   PRIMARY_SAVE_ID as GE_PRIMARY,
@@ -79,16 +83,70 @@ class PlayErrorBoundary extends Component<
   }
 }
 
+function CheckingKey() {
+  return (
+    <div className="account-gate account-gate--veil" role="status">
+      <div className="account-gate__card account-gate__card--slim">
+        <p className="account-gate__title">Checking your beta key…</p>
+      </div>
+    </div>
+  )
+}
+
+function BetaVault() {
+  return (
+    <ShellFrame title="Signal Decay">
+      <div className="hm-vault">
+        <p className="sd-eyebrow sd-eyebrow--tag">Closed beta</p>
+        <h1>Signal Decay is vaulted</h1>
+        <p>A beta key from @connorfurby opens the shack. He can send one only to a friend.</p>
+        <Link to="/">Back to the shelf</Link>
+      </div>
+    </ShellFrame>
+  )
+}
+
+/** Fresh server check so a key that just arrived is not stuck behind a stale poll. */
+function BetaGate({ children }: { children: ReactNode }) {
+  const { user, profile } = useAuth()
+  const issuer = isBetaIssuer(profile?.handle)
+  const [allowed, setAllowed] = useState<boolean | null>(issuer ? true : null)
+
+  useEffect(() => {
+    if (!user || issuer) return
+    let stop = false
+    void social()
+      .betaState(user.id)
+      .then((s) => {
+        if (!stop) setAllowed(s.games.includes(BETA_GAME_ID))
+      })
+      .catch(() => {
+        if (!stop) setAllowed(false)
+      })
+    return () => {
+      stop = true
+    }
+  }, [user, issuer])
+
+  if (!user) return <Navigate to="/" replace />
+  if (issuer) return children
+  if (allowed == null) return <CheckingKey />
+  if (!allowed) return <BetaVault />
+  return children
+}
+
 export function PlayPage() {
   const { gameId } = useParams()
   const location = useLocation()
   const isDev = location.pathname.endsWith('/dev')
   const game = GAMES.find((g) => g.id === gameId)
-  if (!game || game.status !== 'playable') return <Navigate to="/" replace />
+  if (!game || game.status === 'coming-soon') return <Navigate to="/" replace />
   const Comp = game.component as ComponentType<{ devMode?: boolean }>
-  return (
+  const frame = (
     <PlayErrorBoundary wipeDev={isDev} gameId={gameId}>
       <Comp devMode={isDev} />
     </PlayErrorBoundary>
   )
+  if (game.status === 'beta') return <BetaGate>{frame}</BetaGate>
+  return frame
 }

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, SegmentedControl } from '@/games/grocery-empire/ui/kit'
+import { socialGames } from '@/shell/beta'
 import type { PostVisibility, ReactionKind, RunCard, SocialGameId } from '@/shared/database.types'
 import { useAuth } from '../AuthContext'
 import { Avatar, PlayerName } from './Avatar'
 import { social } from './backend'
 import type { CommentWithAuthor, PostWithAuthor } from './model'
 import { GAME_NAME, firstName, playTime, settingsOf, timeAgo } from './people'
+import { useSocial } from './SocialContext'
 import { runCardFromLocal } from './stats'
 
 const REACTIONS: { kind: ReactionKind; icon: string; label: string }[] = [
@@ -151,13 +153,14 @@ function Post({ p, onChange }: { p: PostWithAuthor; onChange: () => void }) {
 
 export function Composer({ onPosted }: { onPosted: () => void }) {
   const { user, profile } = useAuth()
+  const { canPlay } = useSocial()
   const [body, setBody] = useState('')
   const [visibility, setVisibility] = useState<PostVisibility>(settingsOf(profile).default_visibility)
   const [attach, setAttach] = useState<SocialGameId | 'none'>('none')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   if (!user) return null
-  const cards = (['grocery-empire', 'signal-decay'] as SocialGameId[]).filter((g) => runCardFromLocal(g))
+  const cards = socialGames(canPlay('signal-decay')).filter((g) => runCardFromLocal(g))
   const card = attach !== 'none' ? runCardFromLocal(attach) : null
   return (
     <form

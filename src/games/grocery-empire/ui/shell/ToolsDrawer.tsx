@@ -1,12 +1,15 @@
+import { lazy, Suspense } from 'react'
 import { motion } from 'motion/react'
 import { isDevSave } from '../../sim/saveKey'
-import { DevModePanel } from '../components/DevModePanel'
 import { MoreSections, type MoreSection } from '../panels/MorePanel'
 import { AutopilotPanel } from './AutopilotPanel'
 import { NoticesPanel } from './NoticesPanel'
 import { useUnreadNotices } from './notices'
-import { InGameWiki } from '../wiki/InGameWiki'
 import type { MenuId } from '../../content/menus'
+
+/** Dev fixtures + wiki stay out of the first play paint. */
+const DevModePanel = lazy(() => import('../components/DevModePanel').then((m) => ({ default: m.DevModePanel })))
+const InGameWiki = lazy(() => import('../wiki/InGameWiki').then((m) => ({ default: m.InGameWiki })))
 
 export type ToolsTab = 'dev' | 'wiki' | 'notices' | 'autopilot' | MoreSection
 
@@ -92,9 +95,13 @@ export function ToolsDrawer({
       </div>
       <div className={`g2-inbox__body${active === 'wiki' ? ' g2-tools__wiki' : ''}`}>
         {active === 'dev' ? (
-          <DevModePanel />
+          <Suspense fallback={<p className="ge-muted">Opening DevMode…</p>}>
+            <DevModePanel />
+          </Suspense>
         ) : active === 'wiki' ? (
-          <InGameWiki onOpenMenu={onOpenMenu} onPlayLesson={onPlayLesson} />
+          <Suspense fallback={<p className="ge-muted">Opening guide…</p>}>
+            <InGameWiki onOpenMenu={onOpenMenu} onPlayLesson={onPlayLesson} />
+          </Suspense>
         ) : active === 'notices' ? (
           <NoticesPanel />
         ) : active === 'autopilot' ? (
