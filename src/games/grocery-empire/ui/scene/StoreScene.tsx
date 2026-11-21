@@ -1195,8 +1195,9 @@ function SceneLive({ s, reducedMotion, view }: { s: GameState; reducedMotion: bo
     const id = nextId.current++
     const x = L.doorX + (Math.random() - 0.5) * 40
     setCoins((c) => [...c.slice(-5), { id, x, text: `+${money(rev * 1.1)}` }])
-    window.setTimeout(() => setCoins((c) => c.filter((k) => k.id !== id)), 1700)
-  })
+    const t = window.setTimeout(() => setCoins((c) => c.filter((k) => k.id !== id)), 1700)
+    return () => window.clearTimeout(t)
+  }, [reducedMotion, s.paused, rev, L.doorX, s.time])
 
   // Truck: appears 30 s out and drives to the loading dock.
   // Order.eta is already remaining seconds (market ticks it down).

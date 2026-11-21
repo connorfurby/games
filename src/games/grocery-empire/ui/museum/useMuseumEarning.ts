@@ -43,7 +43,7 @@ export function useMuseumEarning(toast: (text: string) => void) {
       lastPlay.current = play
       let notes: string[] = []
 
-      museumStore.apply((m) => {
+      museumStore.mutate((m) => {
         const before = museumFingerprint(m)
         const playClockBefore = m.playClock
         const res = earn(m, s, delta)

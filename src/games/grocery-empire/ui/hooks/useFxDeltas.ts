@@ -62,6 +62,7 @@ export function useFxDeltas(state: GameState, reducedMotion: boolean): FxFlags {
     setFlags((f) => ({ ...f, ...patch }))
     const clearKeys = Object.keys(patch) as (keyof FxFlags)[]
     const t = window.setTimeout(() => {
+      timers.current = timers.current.filter((id) => id !== t)
       setFlags((f) => {
         const out = { ...f }
         for (const k of clearKeys) {

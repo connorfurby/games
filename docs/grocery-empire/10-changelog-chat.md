@@ -2,6 +2,16 @@
 
 Two stacked overhauls on Grocery Empire 2.0, then the **2.0 expansion megaplan**, then the **feel overhaul**, then **4.0**, then **40.0**. `SAVE_VERSION` moved **12 → 36** (40.0 Phase 8 is SAVE 36); the company layer is SAVE 44–45.
 
+## BB. Stop the paint loop (2026-11-20)
+
+No `SAVE_VERSION` / `GAME_VERSION` bump (perf only).
+
+- HUD cash/baskets (and Signal cash) tween inside tiny figure components so animation frames no longer rebuild Next Goal / alerts.
+- Empire XP ring and Strategy Attention meter isolate the same way.
+- `formatBN` / `cashLabel` use plain `Math.log10` — no `break_eternity` allocations on every money string.
+- Suggestions recompute ~1 Hz + on spends; HireDesk / Staff pickHire gate on crew + bottleneck + coarse cash.
+- Museum earn mutates in place (no 1.5s `structuredClone`); storefront coin timeouts clean up; fx delta timers drop when they fire.
+
 ## BA. Cool memory / main-thread heat (2026-11-20)
 
 No `SAVE_VERSION` / `GAME_VERSION` bump (perf + sync only).

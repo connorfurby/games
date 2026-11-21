@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { ROLES, type RoleId } from '../../content/staff'
 import { engine } from '../../sim/engine'
-import { hireCost, roleCount } from '../../sim/formulas'
+import { hireCost, roleCount, salesBottleneck } from '../../sim/formulas'
 import { hireOutlook, supportNeed, type HirePick, worthFloor } from '../../sim/staffOutlook'
 import { useGame } from '../GameContext'
 import { money } from '../format'
@@ -9,13 +9,27 @@ import { Button } from '../kit'
 import { CREW_GROUPS, lineGood, lineText, roleLock } from './crewModel'
 import { RolePortrait } from './StaffPortrait'
 
+/** Crew + bottleneck + coarse cash/rate — outlooks skip pure cash-tick noise. */
+function outlookKey(s: Parameters<typeof hireOutlook>[0]): string {
+  const crew = s.staff.map((m) => `${m.id}:${m.role}:${m.level}`).join(',')
+  return [
+    crew,
+    salesBottleneck(s).kind,
+    Math.floor(Math.log2(1 + Math.max(0, s.cash))),
+    Math.floor(s.rates.revenuePerSec * 4),
+    s.era,
+    Math.floor(s.compute.attention),
+  ].join('|')
+}
+
 /**
  * Hire desk: one compact row per role, grouped. Each row says what one more hire would
  * change, measured on the real numbers, and what that's worth. The best pick is marked.
  */
 export function HireDesk({ pick }: { pick: HirePick | null }) {
-  const { state: s, tick, dispatch, numberFormat } = useGame()
+  const { state: s, dispatch, numberFormat } = useGame()
   const floor = worthFloor(s)
+  const key = outlookKey(s)
 
   const groups = useMemo(
     () =>
@@ -24,13 +38,15 @@ export function HireDesk({ pick }: { pick: HirePick | null }) {
         const next = g.roles.find((r) => roleLock(s, r) && r !== 'shiftLead')
         return { ...g, open, next, nextWhy: next ? roleLock(s, next) : null }
       }).filter((g) => g.open.length > 0 || (g.next != null && s.era >= (ROLES[g.next].era ?? 0) - 1)),
-    [tick, s],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- state is mutated in place; key is the gate
+    [key],
   )
   const outlooks = useMemo(() => {
     const m = new Map<RoleId, ReturnType<typeof hireOutlook>>()
     for (const g of groups) for (const r of g.open) m.set(r, hireOutlook(s, r))
     return m
-  }, [tick, s, groups])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- state is mutated in place; key is the gate
+  }, [key, groups])
 
   return (
     <div className="hd">

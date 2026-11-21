@@ -113,6 +113,23 @@ export const museumStore = {
     commit(next, persist)
     return persist
   },
+  /**
+   * Mutate the live museum in place (no clone). For playClock banking and earn ticks:
+   * clone only mattered when discarding — earn never rolls back.
+   */
+  mutate(fn: (m: MuseumSave) => MuseumPersist): MuseumPersist {
+    ensure()
+    const persist = fn(current)
+    if (persist === false) return false
+    if (persist === 'later') {
+      schedulePersist()
+      return 'later'
+    }
+    version++
+    writeNow()
+    notify()
+    return 'now'
+  },
   /** Empty the museum (relics, chests, progress) and save the empty copy. */
   reset() {
     ensure()

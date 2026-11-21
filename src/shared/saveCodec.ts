@@ -12,7 +12,11 @@ function isDecimal(v: unknown): boolean {
 
 export function serializeState(data: unknown): string {
   return JSON.stringify(data, (_k, v) => {
-    if (isDecimal(v)) return { __bn: String(v) }
+    // Legacy Decimal leftovers (if any) become plain numbers.
+    if (isDecimal(v)) {
+      const n = Number(String(v))
+      return Number.isFinite(n) ? n : 0
+    }
     return v
   })
 }

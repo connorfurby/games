@@ -1,45 +1,3 @@
-import Decimal from 'break_eternity.js'
-
-export type BN = Decimal
-
-export const D = (n: number | string | Decimal = 0): Decimal => new Decimal(n)
-
-export function bnAdd(a: Decimal, b: number | Decimal): Decimal {
-  return a.add(b)
-}
-
-export function bnSub(a: Decimal, b: number | Decimal): Decimal {
-  return Decimal.max(0, a.sub(b))
-}
-
-export function bnMul(a: Decimal, b: number | Decimal): Decimal {
-  return a.mul(b)
-}
-
-export function bnGte(a: Decimal, b: number | Decimal): boolean {
-  return a.gte(b)
-}
-
-export function bnGt(a: Decimal, b: number | Decimal): boolean {
-  return a.gt(b)
-}
-
-export function bnLte(a: Decimal, b: number | Decimal): boolean {
-  return a.lte(b)
-}
-
-export function bnMax(a: Decimal, b: number | Decimal): Decimal {
-  return Decimal.max(a, b)
-}
-
-export function bnMin(a: Decimal, b: number | Decimal): Decimal {
-  return Decimal.min(a, b)
-}
-
-export function bnIsFinite(a: Decimal): boolean {
-  return a.isFinite() && !a.isNan()
-}
-
 export type NumberFormat = 'named' | 'scientific' | 'engineering' | 'full'
 
 const NAMES = [
@@ -57,45 +15,37 @@ const NAMES = [
   'Dc',
 ]
 
-export function formatBN(value: Decimal | number, format: NumberFormat = 'named', digits = 2): string {
-  const d = value instanceof Decimal ? value : D(value)
-  if (!d.isFinite() || d.isNan()) return '0'
-  if (d.abs().lt(1000) && d.e < 3) {
-    const n = d.toNumber()
-    if (Math.abs(n) < 10) return n.toFixed(Math.min(digits, 2))
-    if (Math.abs(n) < 100) return n.toFixed(1)
-    return Math.floor(n).toLocaleString()
+/** Plain-number formatter. Matches the old break_eternity path for UI strings. */
+export function formatBN(value: number, format: NumberFormat = 'named', digits = 2): string {
+  if (!Number.isFinite(value)) return '0'
+  const abs = Math.abs(value)
+  if (abs < 1000) {
+    if (abs < 10) return value.toFixed(Math.min(digits, 2))
+    if (abs < 100) return value.toFixed(1)
+    return Math.floor(value).toLocaleString()
   }
   if (format === 'full') {
     // Past ~1e9, dumping every digit is unreadable in an idle game.
-    if (d.abs().lt(1e9)) {
-      try {
-        return d.toFixed(0)
-      } catch {
-        return d.toString()
-      }
-    }
+    if (abs < 1e9) return Math.trunc(value).toString()
     // Fall through to named / scientific below.
   }
   if (format === 'scientific') {
-    return d.toExponential(digits)
+    return value.toExponential(digits)
   }
+  const exp = Math.floor(Math.log10(abs))
   if (format === 'engineering') {
-    // Exponent forced to a multiple of 3 (SI-style engineering notation).
-    const e = d.e
-    const eng = Math.floor(e / 3) * 3
-    const mant = d.div(D(10).pow(eng))
+    const eng = Math.floor(exp / 3) * 3
+    const mant = value / 10 ** eng
     return `${mant.toFixed(digits)}e${eng}`
   }
-  const exp = d.e
   const tier = Math.floor(exp / 3)
   if (tier < NAMES.length) {
-    const scaled = d.div(D(10).pow(tier * 3))
+    const scaled = value / 10 ** (tier * 3)
     // Two-letter late suffixes get a thin space: in the mono face "8.14Oct" reads as "8.140ct".
     const gap = tier >= 5 ? '\u2009' : ''
     return `${scaled.toFixed(digits)}${gap}${NAMES[tier]}`
   }
-  return d.toExponential(digits)
+  return value.toExponential(digits)
 }
 
 const LONG_NAMES = [
@@ -132,15 +82,9 @@ export function cashLabel(n: number): string {
   return `${sign}$${formatBN(abs, 'named', 2)}`
 }
 
-export function serializeBN(d: Decimal): string {
-  return d.toString()
-}
-
-export function deserializeBN(s: string | number | undefined | null): Decimal {
-  if (s === undefined || s === null) return D(0)
-  try {
-    return D(s)
-  } catch {
-    return D(0)
-  }
+/** Legacy save helper — old payloads stored `{ __bn: "…" }`; now plain numbers. */
+export function D(n: number | string = 0): number {
+  if (typeof n === 'number') return Number.isFinite(n) ? n : 0
+  const v = Number(n)
+  return Number.isFinite(v) ? v : 0
 }

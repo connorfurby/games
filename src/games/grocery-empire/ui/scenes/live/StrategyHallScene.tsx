@@ -3,9 +3,9 @@ import { CAPITAL } from '../../../sim/balance'
 import { attentionCap } from '../../../sim/formulas'
 import { doctrineCost, tournamentReadPayout } from '../../../sim/systems/capital'
 import { useGame } from '../../GameContext'
-import { useTween } from '../../fx'
 import { qty } from '../../format'
 import { Badge, Hit, Person, RoomScene, Sign } from '../room'
+import { TweenAttMeter } from './TweenRing'
 
 /** Strategy hall: Read bank, Att meter, doctrine plaques — RankHall-quality composition. */
 export function StrategyHallScene() {
@@ -17,7 +17,6 @@ export function StrategyHallScene() {
   const readBank = Math.floor(s.read * 10) / 10
   const attCap = Math.max(1, attentionCap(s))
   const attFill = Math.max(0, Math.min(1, s.compute.attention / attCap))
-  const attTween = useTween(attFill, { duration: reducedMotion ? 0 : 480, reducedMotion })
   const visible = doctrinesAtEra(s.era).slice(0, 8)
   const tournyReady = coolLeft <= 0 && s.compute.attention >= CAPITAL.tournamentAttention
 
@@ -55,16 +54,7 @@ export function StrategyHallScene() {
       <g transform="translate(200 58)">
         <rect width="56" height="150" rx="6" fill="#121820" stroke="#3a4458" />
         <Sign x={28} y={18} text="Attention" small anchor="middle" />
-        <rect x="16" y="28" width="24" height="100" rx="4" fill="#1e2836" />
-        <rect
-          x="16"
-          y={28 + 100 * (1 - attTween)}
-          width="24"
-          height={100 * attTween}
-          rx="4"
-          fill={attTween >= 0.98 ? '#7cc47f' : '#5a8ab8'}
-        />
-        <Sign x={28} y={144} text={`${Math.round(attTween * 100)}%`} small anchor="middle" />
+        <TweenAttMeter fill={attFill} reducedMotion={reducedMotion} />
       </g>
 
       {/* Doctrine board with plaques */}

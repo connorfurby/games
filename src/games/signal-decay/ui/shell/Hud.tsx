@@ -4,11 +4,12 @@ import { DECAY, ERA_TITLES } from '../../sim/balance'
 import { getSignalEngine } from '../../sim/engine'
 import { clarity } from '../../sim/helpers'
 import type { GameState } from '../../sim/state'
-import { useFlash, useTween } from '../fx'
+import { useFlash } from '../fx'
 import { money, pct, qty } from '../format'
 import { AccountChrome } from '@/shell/AccountChrome'
 import { storySilence } from '../../sim/pause'
 import { useGame } from '../GameContext'
+import { CashFigure } from './CashFigure'
 import { NextGoal } from './NextGoal'
 import { PauseReminder } from './PauseReminder'
 
@@ -44,8 +45,6 @@ export function Hud({ onMore }: { onMore?: () => void }) {
   const era = ERA_TITLES[state.era] ?? `Era ${state.era}`
   const alert = bottleneck(state, c)
 
-  const cashShown = useTween(state.cash, reducedMotion ? 0 : 420)
-  const cashFlash = useFlash(state.cash)
   const starsFlash = useFlash(state.depth.stars)
 
   const [, bump] = useState(0)
@@ -74,9 +73,7 @@ export function Hud({ onMore }: { onMore?: () => void }) {
       <div className="sd-hud__money">
         <div className="sd-stat sd-stat--cash" data-coach-id="hud-cash">
           <span className="sd-stat__label">Cash</span>
-          <span className="sd-stat__value" data-fx-flash={cashFlash ?? undefined}>
-            {money(cashShown)}
-          </span>
+          <CashFigure value={state.cash} reducedMotion={reducedMotion} />
           <span className="sd-stat__rate">+{money(state.rates.revenuePerSec)}/s</span>
         </div>
         <div className="sd-stat" data-coach-id="hud-clarity">

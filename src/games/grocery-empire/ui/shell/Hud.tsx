@@ -1,4 +1,3 @@
-import { longNumber } from '@/shared/bn'
 import { Link } from 'react-router-dom'
 import { useStable } from '../useStable'
 import type { NumberFormat } from '@/shared/bn'
@@ -15,9 +14,9 @@ import { PauseReminder } from './PauseReminder'
 import { performUndo } from './undoAction'
 import { storySilence } from '../../sim/pause'
 import { PopLayer, type PopItem } from '../components/Pop'
-import { useFlash, useTween } from '../fx'
-import { money, qty, shortFigure } from '../format'
+import { money, qty } from '../format'
 import { Icon } from '../icons/Icon'
+import { BasketsFigure, CashFigure } from './HudFigures'
 import { NextGoal } from './NextGoal'
 
 function perSec(n: number, fmt: NumberFormat) {
@@ -57,10 +56,6 @@ export function Hud({
   const undo = canUndo()
   const undoText = undoLabel(undo.label ?? 'last purchase')
   const undoLeft = undoSecondsLeft()
-  const cashShown = useTween(s.cash, { duration: reducedMotion ? 0 : 420, reducedMotion, snapRatio: 0.35 })
-  const cashFlash = useFlash(s.cash, { minRatio: 0.015, minDelta: 1 })
-  const basketsShown = useTween(s.baskets, { duration: reducedMotion ? 0 : 380, reducedMotion, snapRatio: 0.4 })
-  const basketsFlash = useFlash(s.baskets, { minRatio: 0.02, minDelta: 0.5 })
 
   // One alert at a time, most urgent first (shared with hidden-tab notifications).
   // Bottleneck alerts swing with every crate; only change the banner when it settles.
@@ -82,12 +77,7 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="cash" size={13} /> Cash
           </span>
-          <span className="g2-stat__value" data-fx-flash={cashFlash ?? undefined} title={`$${longNumber(cashShown)}`}>
-            <span className="g2-stat__full">{money(cashShown, 'named')}</span>
-            <span className="g2-stat__short" aria-hidden="true">
-              {shortFigure(money(cashShown, 'named'))}
-            </span>
-          </span>
+          <CashFigure value={s.cash} reducedMotion={reducedMotion} />
           <span className={`g2-stat__rate${net < 0 ? ' is-neg' : ''}`} title="Net income, smoothed over 45 s">
             {perSec(net, 'named')}
           </span>
@@ -96,16 +86,7 @@ export function Hud({
           <span className="g2-stat__label">
             <Icon name="baskets" size={13} /> Baskets
           </span>
-          <span
-            className="g2-stat__value g2-stat__value--small"
-            data-fx-flash={basketsFlash ?? undefined}
-            title={`${longNumber(basketsShown)} baskets`}
-          >
-            <span className="g2-stat__full">{qty(basketsShown, 'named')}</span>
-            <span className="g2-stat__short" aria-hidden="true">
-              {shortFigure(qty(basketsShown, 'named'))}
-            </span>
-          </span>
+          <BasketsFigure value={s.baskets} reducedMotion={reducedMotion} />
           {/* Floaters rise beside the column, never over the number. */}
           <PopLayer pops={pops} />
           <span className="g2-stat__rate">

@@ -782,9 +782,22 @@ export function GroceryEmpireApp({ devMode = false }: { devMode?: boolean }) {
   const Active = PANEL[menu]!
 
   const suggestOn = !!meta.settings.suggestNext
+  // Once a sim-second, plus on spends/hires — not every 2.5 Hz paint (useStable already holds the tip).
+  const suggestKey = [
+    Math.floor(state.time),
+    state.stats.upgradesBought,
+    state.stats.memosDone,
+    state.stats.hires,
+    state.stats.buildsBought,
+    state.stats.adsBought,
+    state.staff.length,
+    Math.floor(Math.log2(1 + Math.max(0, state.cash))),
+    state.era,
+  ].join('|')
   const suggestionsRaw = useMemo(
     () => (suggestOn ? getSuggestions(state, 10) : []),
-    [snap.v, state, suggestOn],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- state is mutated in place; suggestKey is the gate
+    [suggestKey, suggestOn],
   )
   // Keep the top pick steady: a new #1 must hold ~2s, and a shown pick stays ≥6s.
   const suggestions = useStable(suggestionsRaw, (l) => l[0]?.id ?? '', 2000, 6000)

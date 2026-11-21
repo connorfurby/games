@@ -463,7 +463,19 @@ export function UpgradesBoard() {
   const [sel, setSel] = useState<string | null>(null)
   const [sweepNote, setSweepNote] = useState<{ text: string; bought: number } | null>(null)
 
-  const ranks = useMemo(() => treeRanks(s), [tick, s])
+  // Coarse cash + owned ranks: skip rebuilding the tree on every cash tick.
+  const treeKey = [
+    Math.floor(Math.log2(1 + Math.max(0, s.cash))),
+    s.stats.upgradesBought,
+    s.empire.level,
+    s.era,
+    tick - (tick % 4), // ~1 Hz while paint is 2.5 Hz
+  ].join('|')
+  const ranks = useMemo(
+    () => treeRanks(s),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- state mutates in place; treeKey is the gate
+    [treeKey],
+  )
 
   const trees = useMemo(
     () =>
@@ -479,7 +491,8 @@ export function UpgradesBoard() {
           ranks: ranks[id] ?? 0,
         }
       }).filter((t) => t.shown > 0),
-    [tick, s, ranks],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- state mutates in place; treeKey is the gate
+    [treeKey, ranks],
   )
 
   const active = trees.find((t) => t.id === tree) ?? trees[0]

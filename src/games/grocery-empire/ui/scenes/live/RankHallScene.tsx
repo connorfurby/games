@@ -1,10 +1,10 @@
 import { EMPIRE_REWARDS, nextEmpireReward } from '../../../content/empireRewards'
 import { empireXpToNext } from '../../../sim/formulas'
 import { useGame } from '../../GameContext'
-import { useTween } from '../../fx'
 import { qty } from '../../format'
 import { usePhone } from '../../kit/hooks'
 import { Badge, Hit, Person, RoomScene, Sign } from '../room'
+import { TweenXpRing } from './TweenRing'
 
 /** Empire rank hall: XP ring, last/next reward plaques, trait lectern, a hung banner. */
 export function RankHallScene() {
@@ -12,20 +12,18 @@ export function RankHallScene() {
   const lv = s.empire.level
   const need = Math.max(1, empireXpToNext(lv))
   const rawFill = Math.max(0, Math.min(1, s.empire.xp / need))
-  const fill = useTween(rawFill, { duration: reducedMotion ? 0 : 520, reducedMotion })
   const next = nextEmpireReward(lv)
   const last = [...EMPIRE_REWARDS].reverse().find((r) => lv >= r.level) ?? null
   const xpLeft = Math.max(0, need - s.empire.xp)
   const xpLeftLabel = xpLeft < 1000 ? String(Math.ceil(xpLeft)) : qty(xpLeft)
   const points = s.empire.points
   const c = 2 * Math.PI * 48
-  const ring = Math.max(0.02, fill)
   const phone = usePhone()
 
   // Phone: a portrait hall with the ring, the rank and what comes next, all readable.
   if (phone) {
     const chips = [
-      { label: 'XP', value: `${Math.round(fill * 100)}%` },
+      { label: 'XP', value: `${Math.round(rawFill * 100)}%` },
       { label: 'Points', value: String(points), rate: points > 0 ? 'spend' : undefined },
       next ? { label: 'Next', value: `${xpLeftLabel} XP` } : { label: 'Next', value: 'Done' },
     ]
@@ -39,16 +37,13 @@ export function RankHallScene() {
       >
         <circle cx="76" cy="86" r="58" fill="#0f131a" stroke="#3a4458" strokeWidth="2" />
         <circle cx="76" cy="86" r="50" fill="none" stroke="#3d4a62" strokeWidth="9" />
-        <circle
-          cx="76"
-          cy="86"
-          r="50"
-          fill="none"
-          stroke="#d9a441"
-          strokeWidth="9"
-          strokeDasharray={`${2 * Math.PI * 50 * ring} ${2 * Math.PI * 50}`}
-          transform="rotate(-90 76 86)"
-          strokeLinecap="round"
+        <TweenXpRing
+          fill={rawFill}
+          reducedMotion={reducedMotion}
+          cx={76}
+          cy={86}
+          r={50}
+          circumference={2 * Math.PI * 50}
         />
         <text x="76" y="72" textAnchor="middle" className="rm-sign" style={{ fontSize: 12 }}>
           Rank
@@ -79,7 +74,7 @@ export function RankHallScene() {
     <RoomScene
       label={`Empire rank ${lv}. ${points} trait points. ${next ? `Next ${next.name}` : 'All rewards claimed'}.`}
       chips={[
-        { label: 'XP', value: `${Math.round(fill * 100)}%` },
+        { label: 'XP', value: `${Math.round(rawFill * 100)}%` },
         { label: 'Points', value: String(points), rate: points > 0 ? 'spend' : undefined },
         next ? { label: 'Next', value: `${xpLeftLabel} XP` } : { label: 'Next', value: 'Done' },
       ]}
@@ -91,17 +86,7 @@ export function RankHallScene() {
       <Hit x={36} y={56} w={180} h={176} label="Empire rank ring" menu="empire" coachId="empire-rank">
         <circle cx="126" cy="142" r="54" fill="#0f131a" stroke="#3a4458" strokeWidth="2" />
         <circle cx="126" cy="142" r="48" fill="none" stroke="#3d4a62" strokeWidth="9" />
-        <circle
-          cx="126"
-          cy="142"
-          r="48"
-          fill="none"
-          stroke="#d9a441"
-          strokeWidth="9"
-          strokeDasharray={`${c * ring} ${c}`}
-          transform="rotate(-90 126 142)"
-          strokeLinecap="round"
-        />
+        <TweenXpRing fill={rawFill} reducedMotion={reducedMotion} cx={126} cy={142} r={48} circumference={c} />
         <Sign x={126} y={122} text="Rank" small anchor="middle" />
         <text x="126" y="156" textAnchor="middle" className="rm-sign" style={{ fontSize: 34, fontWeight: 700 }}>
           {lv}
@@ -150,7 +135,7 @@ export function RankHallScene() {
         </text>
       </g>
 
-      <Person x={800} y={214} tint="#c9a15a" working={fill > 0.85} delay={0.2} />
+      <Person x={800} y={214} tint="#c9a15a" working={rawFill > 0.85} delay={0.2} />
       <Person x={856} y={214} tint="#8fb6e0" delay={0.45} />
       <Person x={912} y={214} tint="#a8c090" delay={0.7} />
     </RoomScene>

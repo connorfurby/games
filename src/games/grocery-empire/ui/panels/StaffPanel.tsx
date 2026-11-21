@@ -5,7 +5,7 @@ import { DEPARTMENTS } from '../../content/depth'
 import { HOURS, MORALE } from '../../sim/balance'
 import { engine } from '../../sim/engine'
 import { annexHeadcount, annexRecommendation, annexSeatCap } from '../../sim/staffAnnex'
-import { hireCost, hoursMax, staffSeatCap } from '../../sim/formulas'
+import { hireCost, hoursMax, salesBottleneck, staffSeatCap } from '../../sim/formulas'
 import { floorHeadcount } from '../../sim/staffAnnex'
 import { pickHire, swapFor, worthFloor } from '../../sim/staffOutlook'
 import type { GameState } from '../../sim/state'
@@ -46,8 +46,16 @@ export function StaffPanel() {
   const maxH = hoursMax(s)
   const roster = s.staff ?? []
   const pizzaReady = !!s.memos['pizza-friday'] && s.cash >= MORALE.pizzaCost
-  const hireable = useMemo(() => ROLE_IDS.filter((r) => !roleLock(s, r)), [tick, s])
-  const pick = useMemo(() => pickHire(s, hireable), [tick, s, hireable])
+  // Same gate as HireDesk — avoid pickHire on every cash tick.
+  const hireKey = [
+    roster.map((m) => `${m.id}:${m.role}:${m.level}`).join(','),
+    salesBottleneck(s).kind,
+    Math.floor(Math.log2(1 + Math.max(0, s.cash))),
+    Math.floor(s.rates.revenuePerSec * 4),
+    s.era,
+  ].join('|')
+  const hireable = useMemo(() => ROLE_IDS.filter((r) => !roleLock(s, r)), [hireKey, s])
+  const pick = useMemo(() => pickHire(s, hireable), [hireKey, s, hireable])
   // Past Era 7 the floor is rarely the limit. When nothing on the floor helps, point at the annex.
   const annexRec = s.era >= 7 && !pick ? annexRecommendation(s) : null
   const shownRole: RoleId | null = pick?.role ?? annexRec?.role ?? null
