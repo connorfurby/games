@@ -157,13 +157,14 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <SocialProvider>
-        <MetaProvider>
-          <BrowserRouter>
+      <MetaProvider>
+        <BrowserRouter>
+          {/* SocialProvider uses useLocation — must sit inside the router. */}
+          <SocialProvider>
             <AppRoutes />
-          </BrowserRouter>
-        </MetaProvider>
-      </SocialProvider>
+          </SocialProvider>
+        </BrowserRouter>
+      </MetaProvider>
     </AuthProvider>
   )
 }
